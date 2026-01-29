@@ -11,8 +11,10 @@ import {
   Play, ChevronRight, Quote, BarChart3, Briefcase,
   GraduationCap, TrendingDown, Clock, ArrowUpRight, Minus,
   Code, Cpu, Database, FileText, MessageSquare, Send, Mail,
-  Calendar, Info, Eye, Layers, Activity, Sun, Moon, Twitter, Linkedin, Instagram, Github
+  Calendar, Info, Eye, Layers, Activity, Moon, Twitter, Linkedin, Instagram, Github
 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { useTheme } from "@/contexts/ThemeContext";
 import { motion, useScroll, useTransform, useSpring, AnimatePresence, useInView } from "framer-motion";
 import { useLocation } from "wouter";
 
@@ -21,7 +23,7 @@ const companyLogos = [
   "/logos/microsoft.png",
   "/logos/amazon.jpg",
   "/logos/meta.jpg",
-  "/logos/netflix.jpg",
+  { dark: "/logos/netflix_dark.jpg", light: "/logos/netflix_light.jpg" },
   "/logos/adobe.jpg",
   "/logos/uber.jpg",
   "/logos/airbnb.jpg",
@@ -32,43 +34,21 @@ const companyLogos = [
 
 // --- Inline Components ---
 
-function ThemeToggle() {
-  const [isDark, setIsDark] = useState(false);
 
-  useEffect(() => {
-    const isDarkMode = document.documentElement.classList.contains("dark");
-    setIsDark(isDarkMode);
-  }, []);
-  const toggleTheme = () => {
-    const newTheme = !isDark;
-    setIsDark(newTheme);
-    if (newTheme) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  };
-
-  return (
-    <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full w-10 h-10">
-      {isDark ? <Sun className="h-5 w-5 text-yellow-500" /> : <Moon className="h-5 w-5 text-slate-700" />}
-      <span className="sr-only">Toggle theme</span>
-    </Button>
-  );
-}
 
 function Footer({ role }: { role?: string }) {
+  const { theme } = useTheme();
   return (
     <footer className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-white/10 pt-16 pb-8 px-6">
       <div className="container mx-auto max-w-7xl">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
           <div className="col-span-2 lg:col-span-2">
-            <div className="flex items-center gap-2 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-white">
-                <Sparkles className="w-5 h-5" />
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-16 h-16 flex items-center justify-center transition-transform hover:scale-110">
+                <img src={theme === 'dark' ? "/images/NextGen_dark.png" : "/images/NextGen_light.jpg"} alt="NextGen Logo" className="w-full h-full object-contain" />
               </div>
               <span className="text-xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Campus Career
+                NextGen
               </span>
             </div>
             <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-sm font-medium">
@@ -118,7 +98,7 @@ function Footer({ role }: { role?: string }) {
         </div>
 
         <div className="border-t border-slate-100 dark:border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-slate-400 font-medium text-sm">© {new Date().getFullYear()} Campus Career Inc. All rights reserved.</p>
+          <p className="text-slate-400 font-medium text-sm">© {new Date().getFullYear()} NextGen Inc. All rights reserved.</p>
           <div className="flex gap-6">
             <span className="flex items-center gap-2 text-sm text-slate-500 font-medium">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
@@ -190,6 +170,7 @@ function AnimatedNumber({ value, duration = 2 }: { value: number; duration?: num
 }
 
 export default function PremiumLandingPage() {
+  const { theme } = useTheme();
   const [, navigate] = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -458,38 +439,49 @@ export default function PremiumLandingPage() {
         : 'bg-transparent py-4'
         }`}>
         <div className="container mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate("/")}>
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur-lg opacity-30 dark:opacity-50 group-hover:opacity-100 transition-opacity" />
-                <div className="relative w-12 h-12 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-2xl flex items-center justify-center shadow-xl">
-                  <Sparkles className="w-6 h-6 text-white" />
+          <div className="flex items-center h-20">
+            {/* Logo Section */}
+            <div className="flex-1 flex justify-start">
+              <div className="flex items-center gap-4 group cursor-pointer" onClick={() => navigate("/")}>
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur-lg opacity-30 dark:opacity-50 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative w-20 h-20 flex items-center justify-center">
+                    <img src={theme === 'dark' ? "/images/NextGen_dark.png" : "/images/NextGen_light.jpg"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
+                  </div>
                 </div>
-              </div>
-              <div>
-                <h1 className="text-xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Campus Career
-                </h1>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">AI-Driven</p>
+                <div>
+                  <h1 className="text-2xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    NextGen
+                  </h1>
+                  <p className="text-sm text-slate-500 font-bold uppercase tracking-widest">AI-Driven</p>
+                </div>
               </div>
             </div>
 
-            <div className="hidden lg:flex items-center gap-8">
-              <a href="#features" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-colors">Features</a>
-              <a href="#how-it-works" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-colors">How It Works</a>
-              <a href="#testimonials" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-colors">Students</a>
-              <a href="#pricing" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-colors">Pricing</a>
+            {/* Navigation Links - Dead Center */}
+            <div className="hidden lg:flex items-center justify-center gap-12 flex-1">
+              <a href="#features" className="text-lg font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-all hover:scale-110">Features</a>
+              <a href="#how-it-works" className="text-lg font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-all hover:scale-110">How It Works</a>
+              <a href="#testimonials" className="text-lg font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-all hover:scale-110">Students</a>
+              <a href="#pricing" className="text-lg font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-all hover:scale-110">Pricing</a>
+            </div>
+
+            {/* Right Side Actions */}
+            <div className="hidden lg:flex items-center justify-end gap-x-4 flex-1">
               <ThemeToggle />
-              <Button variant="ghost" className="text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10" onClick={() => navigate("/login")}>Login</Button>
-              <Button className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:scale-105 transition-transform text-white font-bold" onClick={() => navigate("/signup")}>
+              <Button variant="ghost" className="text-lg font-bold text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10" onClick={() => navigate("/login")}>Login</Button>
+              <Button className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:scale-105 transition-transform text-lg text-white font-bold px-8 py-6 rounded-2xl" onClick={() => navigate("/signup")}>
                 Get Started
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
 
-            <button className="lg:hidden p-2 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+            {/* Mobile Menu Toggle */}
+            <div className="lg:hidden flex items-center justify-end flex-1">
+              <button className="p-2 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
           </div>
 
           {mobileMenuOpen && (
@@ -684,7 +676,7 @@ export default function PremiumLandingPage() {
                       : "text-slate-900 dark:text-slate-300"
                       }`}
                   >
-                    Campus Career
+                    NextGen
                   </button>
                 </div>
               </div>
@@ -1151,17 +1143,20 @@ export default function PremiumLandingPage() {
       {/* Companies Scroll */}
       <section className="py-20 bg-slate-100/50 dark:bg-slate-900/20 border-y border-slate-200 dark:border-white/5">
         <div className="container mx-auto max-w-7xl px-4 overflow-hidden">
-          <p className="text-center font-bold text-blue-600 text-xl mb-10 uppercase tracking-[0.3em] text-sm">Where our students get placed</p>
+          <p className="text-center font-bold text-blue-600 text-2xl mb-12 uppercase tracking-[0.4em]">Where our students get placed</p>
           <div className="flex gap-10 animate-scroll w-max flex-nowrap">
-            {[...companyLogos, ...companyLogos].map((c, i) => (
-              <div key={i} className="flex flex-shrink-0 items-center justify-center h-36 px-16 transition-all cursor-default group">
-                <img
-                  src={c}
-                  alt="Company Logo"
-                  className="h-34 w-auto object-contain transition-all"
-                />
-              </div>
-            ))}
+            {[...companyLogos, ...companyLogos].map((c, i) => {
+              const src = typeof c === 'string' ? c : (theme === 'dark' ? c.dark : c.light);
+              return (
+                <div key={i} className="flex flex-shrink-0 items-center justify-center h-36 px-16 transition-all cursor-default group">
+                  <img
+                    src={src}
+                    alt="Company Logo"
+                    className="h-34 w-auto object-contain transition-all"
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
