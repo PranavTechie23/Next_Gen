@@ -122,4 +122,59 @@ To build a **TPO-verified digital placement ecosystem** that:
 ## 6. Eligibility Engine
 
 Supports rules like:
+CGPA >= 7.5
+AND Backlogs = 0
+AND Branch IN (CSE, IT)
+AND Year = Final
+
+
+TPO and Recruiter can override.
+
+---
+
+## 7. Security & Compliance
+
+- Role-based access control
+- Encrypted data storage
+- TPO is the Single Source of Truth
+- Audit trail for all updates
+- Complies with DPDP Act 2023
+
+---
+
+## 8. AI Data Policy
+
+Allowed:
+- TPO verified academic data
+- Recruiter hiring results
+- Interview scores
+
+Not allowed:
+- Unverified Google Forms
+- Self-reported CGPA
+- External scraped resumes
+
+---
+
+## 9. Success Metrics
+
+| Metric | Goal |
+|-------|------|
+| Shortlisting time | ↓ 70% |
+| Placement rate | ↑ 20% |
+| Data accuracy | > 98% |
+| Recruiter satisfaction | High |
+| NIRF outcome score | Improved |
+
+---
+
+## 10. Summary
+
+This system creates a **single trusted placement ecosystem** where:
+- Students showcase real skills
+- Colleges maintain credibility
+- Recruiters get verified candidates
+- AI learns from authentic data
+
+
 
