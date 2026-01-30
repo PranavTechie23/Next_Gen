@@ -5,7 +5,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import ScrollToTop from "./components/ScrollToTop";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
-import Footer from "./pages/footer"
+import Footer from "./pages/Footer";
 
 
 import StudentDashboard from "./pages/student/StudentDashboard";
@@ -49,7 +49,7 @@ function Router() {
       <Route path="/login" component={LoginPage} />
       <Route path="/careers" component={Careers} />
       <Route path="/about" component={AboutUs} />
-      <Route path = "/Footer" component={() => <Footer role="public" />}/>
+      <Route path="/Footer" component={() => <Footer role="public" />} />
 
       <Route path="/corporate_news" component={CorporateNews} />
       <Route path="/case_studies" component={CaseStudies} />

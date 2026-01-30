@@ -62,7 +62,7 @@ interface FooterProps {
 const footerConfig = {
   // Company Information
   company: {
-    name: "Campus Career",
+    name: "NextGen",
     tagline: "Empowering students to achieve their career dreams through innovation and technology.",
     logo: "C",
   },
@@ -173,8 +173,8 @@ export default function Footer({ role = "public", className = "" }: FooterProps)
           {/* Company Info */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-xl">{footerConfig.company.logo}</span>
+              <div className="w-12 h-12 flex items-center justify-center">
+                <img src={isDark ? "/images/NextGen_dark.png" : "/images/NextGen_light.jpg"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
               </div>
               <span className={`font-bold text-lg ${textPrimary}`}>{footerConfig.company.name}</span>
             </div>

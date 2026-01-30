@@ -141,8 +141,8 @@ function Typewriter({ text, speed = 30, delay = 0, className = "" }: { text: str
 }
 
 function AnimatedNumber({ value, duration = 2 }: { value: number; duration?: number }) {
-  const [displayValue, setDisplayValue] = React.useState(0);
-  const ref = React.useRef(null);
+  const [displayValue, setDisplayValue] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true });
 
   React.useEffect(() => {
@@ -177,13 +177,13 @@ export default function PremiumLandingPage() {
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [comparisonView, setComparisonView] = useState("after");
-  const [audience, setAudience] = useState("colleges");
+  const [audience, setAudience] = useState<"colleges" | "placements" | "students">("colleges");
   const [activeFeatureTab, setActiveFeatureTab] = useState(0);
-  const [activeFaq, setActiveFaq] = useState(null);
+  const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [demoOpen, setDemoOpen] = useState(false);
 
   // Use a specific ref for the journey section to perfectly sync scroll
-  const journeySectionRef = useRef(null);
+  const journeySectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
     target: journeySectionRef,
     offset: ["start 20%", "end 90%"] // Starts drawing when top hits 20%, ends when bottom hits 90%
@@ -197,7 +197,7 @@ export default function PremiumLandingPage() {
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
 
@@ -507,7 +507,7 @@ export default function PremiumLandingPage() {
             transition={{ duration: 0.8 }}
             className="flex justify-center mb-10"
           >
-            <Tabs value={audience} onValueChange={(v) => setAudience(v)} className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl p-1 rounded-2xl border border-slate-200 dark:border-white/10 shadow-lg">
+            <Tabs value={audience} onValueChange={(v) => setAudience(v as "colleges" | "placements" | "students")} className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl p-1 rounded-2xl border border-slate-200 dark:border-white/10 shadow-lg">
               <TabsList className="bg-transparent h-12">
                 <TabsTrigger value="colleges" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white font-bold rounded-xl px-6 transition-all underline-none hover:bg-blue-600 hover:text-white">Colleges</TabsTrigger>
                 <TabsTrigger value="placements" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white font-bold rounded-xl px-6 transition-all border-none hover:bg-purple-600  hover:text-white">Placement Team</TabsTrigger>
