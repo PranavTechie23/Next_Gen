@@ -296,4 +296,69 @@
   .shadow-elevated {
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   }
+
+  /* Responsive Utilities */
+  .text-responsive-xs {
+    font-size: 0.75rem;
+  }
+
+  @media (min-width: 640px) {
+    .text-responsive-xs {
+      font-size: 0.875rem;
+    }
+  }
+
+  .text-responsive-sm {
+    font-size: 0.875rem;
+  }
+
+  @media (min-width: 640px) {
+    .text-responsive-sm {
+      font-size: 1rem;
+    }
+  }
+
+  .text-responsive-base {
+    font-size: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .text-responsive-base {
+      font-size: 1.125rem;
+    }
+  }
+
+  /* Mobile-first padding utilities */
+  .p-responsive {
+    padding: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .p-responsive {
+      padding: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .p-responsive {
+      padding: 2rem;
+    }
+  }
+
+  /* Responsive grid gap */
+  .gap-responsive {
+    gap: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .gap-responsive {
+      gap: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .gap-responsive {
+      gap: 2rem;
+    }
+  }
 }

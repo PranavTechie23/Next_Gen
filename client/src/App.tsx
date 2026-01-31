@@ -21,11 +21,13 @@ import Webinar from "./pages/student/webinars";
 import Pricing from "./pages/student/pricing";
 import Wellbeing from "./pages/student/wellBeing";
 import StudentFeedback from "./pages/student/feedbackForm";
+import StudentInfo from "./pages/student/student_info";
 
 import CollegeDashboard from "./pages/college/CollegeDashboard";
 import CollegeSetting from "./pages/college/Setting";
 import CollegeFeedback from "./pages/college/feedbackForm";
-import SecurityGuidelines from "./pages/college/securityGuidelines";
+import CollegeInfo from "./pages/college/college_info";
+
 
 
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -40,6 +42,7 @@ import ContactUs from "./pages/ContactUs";
 import CookiePolicy from "./pages/Cookie";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
+import Security from "./pages/Security";
 
 
 function Router() {
@@ -73,14 +76,17 @@ function Router() {
       <Route path="/student/dashboard" component={StudentDashboard} />
       <Route path="/student/setting" component={StudentSetting} />
       <Route path="/student/feedbackForm" component={StudentFeedback} />
+      <Route path="/student/student_info" component={StudentInfo} />
 
       {/* College Routes */}
       <Route path="/college/dashboard" component={CollegeDashboard} />
       <Route path="/college/setting" component={CollegeSetting} />
       <Route path="/college/feedbackForm" component={CollegeFeedback} />
+      <Route path="/college/college_info" component={CollegeInfo} />
 
       {/* Additional Pages & Aliases */}
-      <Route path="/security-guidelines" component={SecurityGuidelines} />
+      <Route path="/security" component={Security} />
+      <Route path="/security-guidelines" component={Security} />
       <Route path="/signup" component={SignupPage} />
       <Route path="/terms" component={TermsAndCondition} />
       <Route path="/help" component={HelpCenter} />
@@ -88,7 +94,7 @@ function Router() {
 
       {/* Backward/typed URL alias */}
       <Route path="/PrivacyPage" component={PrivacyPage} />
-      <Route path="/SecurityGuidelines" component={SecurityGuidelines} />
+      <Route path="/SecurityGuidelines" component={Security} />
       <Route path="/Signup" component={SignupPage} />
       <Route path="/TermsAndCondition" component={TermsAndCondition} />
       <Route path="/HelpCenter" component={HelpCenter} />
