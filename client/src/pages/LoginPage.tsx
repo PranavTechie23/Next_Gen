@@ -76,28 +76,28 @@ export default function LoginPage() {
         }
       `}</style>
 
-      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-8 items-center relative z-10">
+      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-6 md:gap-8 items-center relative z-10">
         {/* Left side - Branding and Features */}
-        <div className="hidden md:block space-y-8 slide-in">
+        <div className="hidden md:block space-y-6 md:space-y-8 slide-in">
           <div className="float">
             <div className="inline-flex items-center gap-3 mb-6">
-              <div className="w-24 h-24 flex items-center justify-center">
+              <div className="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center">
                 <img src={isDark ? "/images/NextGen_dark.png" : "/images/NextGen_light.jpg"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
                   NextGen
                 </h1>
-                <p className="text-muted-foreground text-sm font-medium">Your Path to Success</p>
+                <p className="text-muted-foreground text-xs md:text-sm font-medium">Your Path to Success</p>
               </div>
             </div>
           </div>
 
-          <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-foreground leading-tight">
+          <div className="space-y-4 md:space-y-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground leading-tight">
               Welcome Back! 👋
             </h2>
-            <p className="text-lg text-muted-foreground leading-relaxed">
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
               Sign in to access your personalized career dashboard and continue your journey to success.
             </p>
 
