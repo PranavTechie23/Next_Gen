@@ -5,7 +5,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-export default function SecurityGuidelines() {
+export default function Security() {
   const [, navigate] = useLocation();
   const [activeSection, setActiveSection] = useState('overview');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
