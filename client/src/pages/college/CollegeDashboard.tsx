@@ -6,6 +6,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { LogOut, Settings, Users, TrendingUp, AlertTriangle, Download, Filter, Search, Bell, ChevronRight, Award, Target, BookOpen, Briefcase, Calendar, TrendingDown, ArrowUpRight, ArrowDownRight, Eye, Upload, FileText, GraduationCap, Building2, BarChart3, Activity, Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram, ExternalLink, Clock, DollarSign, Users2, Plus, Edit, Trash2, MoreVertical, CheckCircle2, XCircle, RefreshCw, FileSpreadsheet, FileBarChart, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, TrendingDown as TrendingDownIcon, Rocket, Shield, Globe, Star, MessageSquare, ArrowLeft } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useIsMobile } from "@/hooks/useMobile";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
 
 export default function CollegeDashboard() {
   const { theme } = useTheme();
@@ -14,6 +17,8 @@ export default function CollegeDashboard() {
   const [selectedView, setSelectedView] = useState("overview");
   const [selectedBranch, setSelectedBranch] = useState("all");
   const [timeRange, setTimeRange] = useState("year");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const collegeStats = [
     { label: "Total Students", value: "1,240", change: "+5%", trend: "up", icon: Users, color: "bg-blue-500" },
@@ -197,13 +202,25 @@ export default function CollegeDashboard() {
 
         {/* Navigation Tabs */}
         <div className="border-t border-border bg-background/60 backdrop-blur-md">
-          <div className="container px-6">
-            <div className="flex gap-1">
+          <div className="container px-4 sm:px-6">
+            {/* Mobile Menu Button */}
+            {isMobile && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setMobileMenuOpen(true)}
+                className="mb-4"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            )}
+            {/* Desktop Tabs */}
+            <div className={`${isMobile ? 'hidden' : 'flex'} gap-1 overflow-x-auto`}>
               {["overview", "analytics", "students", "reports"].map((view) => (
                 <button
                   key={view}
                   onClick={() => setSelectedView(view)}
-                  className={`px-6 py-3 text-sm font-bold capitalize transition-all relative ${selectedView === view
+                  className={`px-4 md:px-6 py-3 text-xs md:text-sm font-bold capitalize transition-all relative whitespace-nowrap ${selectedView === view
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     }`}
@@ -216,14 +233,38 @@ export default function CollegeDashboard() {
               ))}
             </div>
           </div>
+          
+          {/* Mobile Menu Sheet */}
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetContent side="left" className="w-64">
+              <div className="space-y-2 mt-8">
+                {["overview", "analytics", "students", "reports"].map((view) => (
+                  <button
+                    key={view}
+                    onClick={() => {
+                      setSelectedView(view);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-3 rounded-lg font-bold capitalize transition-all ${
+                      selectedView === view
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-muted/50"
+                    }`}
+                  >
+                    {view}
+                  </button>
+                ))}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </header>
 
-      <main className="container py-12 px-6 max-w-7xl mx-auto">
+      <main className="container py-6 md:py-12 px-4 sm:px-6 max-w-7xl mx-auto">
         {/* Welcome Section with Actions */}
         <div className="mb-12 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="space-y-3">
-            <h1 className="text-5xl lg:text-6xl font-black text-foreground leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-foreground leading-tight">
               {selectedView === "overview" && "College Overview"}
               {selectedView === "analytics" && "Analytics & Insights"}
               {selectedView === "students" && "Student Management"}
@@ -270,7 +311,7 @@ export default function CollegeDashboard() {
         {selectedView === "overview" && (
           <>
             {/* Primary Metrics Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8 mb-8 md:mb-12">
               {collegeStats.map((stat, idx) => {
                 const Icon = stat.icon;
                 return (
@@ -296,7 +337,7 @@ export default function CollegeDashboard() {
             </div>
 
             {/* Secondary Metrics */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
               {additionalMetrics.map((metric, idx) => {
                 const Icon = metric.icon;
                 return (
