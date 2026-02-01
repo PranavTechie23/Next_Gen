@@ -174,7 +174,7 @@ export default function Footer({ role = "public", className = "" }: FooterProps)
           <div>
             <div className="flex items-center gap-2 mb-4">
               <div className="w-12 h-12 flex items-center justify-center">
-                <img src={isDark ? "/images/NextGen_dark.png" : "/images/NextGen_light.jpg"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
+                <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
               </div>
               <span className={`font-bold text-lg ${textPrimary}`}>{footerConfig.company.name}</span>
             </div>

@@ -82,7 +82,7 @@ export default function LoginPage() {
           <div className="float">
             <div className="inline-flex items-center gap-3 mb-6">
               <div className="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center">
-                <img src={isDark ? "/images/NextGen_dark.png" : "/images/NextGen_light.jpg"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
+                <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
               </div>
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
@@ -124,7 +124,7 @@ export default function LoginPage() {
             {/* Mobile Logo */}
             <div className="md:hidden text-center mb-8">
               <div className="w-24 h-24 flex items-center justify-center mx-auto mb-4">
-                <img src={isDark ? "/images/NextGen_dark.png" : "/images/NextGen_light.jpg"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
+                <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
                 NextGen

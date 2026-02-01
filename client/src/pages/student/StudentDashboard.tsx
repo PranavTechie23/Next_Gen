@@ -675,7 +675,7 @@ export default function StudentDashboard() {
               className="w-16 h-16 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0 cursor-pointer"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             >
-              <img src={isDark ? "/images/NextGen_dark.png" : "/images/NextGen_light.jpg"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
+              <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
             </div>
             {isSidebarOpen && (
               <div className="animate-in fade-in slide-in-from-left-2 duration-500">
@@ -748,7 +748,7 @@ export default function StudentDashboard() {
             <div className="p-6 pb-4 flex items-center justify-between border-b border-white/5">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 flex items-center justify-center">
-                  <img src={isDark ? "/images/NextGen_dark.png" : "/images/NextGen_light.jpg"} alt="NextGen Logo" className="w-full h-full object-contain" />
+                  <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain" />
                 </div>
                 <div>
                   <h2 className={`font-black text-lg ${isDark ? "text-white" : "text-gray-900"}`}>Student</h2>
@@ -764,11 +764,10 @@ export default function StudentDashboard() {
                     setActiveTab(link.id);
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${
-                    activeTab === link.id
+                  className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${activeTab === link.id
                       ? `${isDark ? "bg-white/10" : "bg-blue-50"} text-blue-600`
                       : `${isDark ? "text-muted-foreground/60 hover:text-white hover:bg-white/5" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"}`
-                  }`}
+                    }`}
                 >
                   <link.icon className="w-5 h-5" />
                   <span className="font-bold text-sm">{link.label}</span>

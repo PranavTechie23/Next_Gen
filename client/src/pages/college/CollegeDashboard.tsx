@@ -153,7 +153,7 @@ export default function CollegeDashboard() {
         <div className="container flex items-center justify-between h-16 px-6">
           <div className="flex items-center gap-3">
             <div className="w-14 h-14 flex items-center justify-center">
-              <img src={isDark ? "/images/NextGen_dark.png" : "/images/NextGen_light.jpg"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
+              <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
             </div>
             <div>
               <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">NextGen</span>
@@ -233,7 +233,7 @@ export default function CollegeDashboard() {
               ))}
             </div>
           </div>
-          
+
           {/* Mobile Menu Sheet */}
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetContent side="left" className="w-64">
@@ -245,11 +245,10 @@ export default function CollegeDashboard() {
                       setSelectedView(view);
                       setMobileMenuOpen(false);
                     }}
-                    className={`w-full text-left px-4 py-3 rounded-lg font-bold capitalize transition-all ${
-                      selectedView === view
+                    className={`w-full text-left px-4 py-3 rounded-lg font-bold capitalize transition-all ${selectedView === view
                         ? "bg-primary/10 text-primary"
                         : "text-muted-foreground hover:bg-muted/50"
-                    }`}
+                      }`}
                   >
                     {view}
                   </button>

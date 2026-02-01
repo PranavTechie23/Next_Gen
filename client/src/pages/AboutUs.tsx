@@ -172,7 +172,7 @@ export default function AboutUs() {
               </Button>
               <div className="h-6 w-px bg-slate-200 dark:bg-slate-700"></div>
               <div className="w-14 h-14 flex items-center justify-center">
-                <img src={isDark ? "/images/NextGen_dark.png" : "/images/NextGen_light.jpg"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
+                <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
               </div>
               <div>
                 <span className="font-bold text-lg bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">NextGen</span>

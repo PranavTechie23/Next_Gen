@@ -39,7 +39,7 @@ export default function PrivacyPage() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 flex items-center justify-center">
-                <img src={isDark ? "/images/NextGen_dark.png" : "/images/NextGen_light.jpg"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
+                <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
               </div>
               <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">NextGen</span>
             </div>
@@ -441,7 +441,7 @@ export default function PrivacyPage() {
           <div className="text-center">
             <div className="flex items-center justify-center gap-2 mb-4">
               <div className="w-12 h-12 flex items-center justify-center">
-                <img src={isDark ? "/images/NextGen_dark.png" : "/images/NextGen_light.jpg"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
+                <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
               </div>
               <span className="font-bold text-foreground">NextGen Platform</span>
             </div>
