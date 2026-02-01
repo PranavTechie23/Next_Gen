@@ -931,6 +931,17 @@ export default function EnterpriseAdminDashboard() {
     setSelectedInstitution(college);
   }, []);
 
+  const handleLogout = useCallback(() => {
+    // Clear any stored authentication data if needed
+    // localStorage.removeItem('authToken');
+    // sessionStorage.clear();
+    navigate("/");
+  }, [navigate]);
+
+  const handleSettings = useCallback(() => {
+    navigate("/admin/setting");
+  }, [navigate]);
+
   // ==================== RENDER ====================
   return (
     <div className={`min-h-screen ${isDark ? 'bg-[#0a0b0e]' : 'bg-slate-50'} transition-colors duration-500 flex overflow-hidden`}>
@@ -975,7 +986,13 @@ export default function EnterpriseAdminDashboard() {
           {sidebarLinks.map((link, idx) => (
             <motion.button
               key={link.id}
-              onClick={() => setActiveTab(link.id)}
+              onClick={() => {
+                if (link.id === "settings") {
+                  handleSettings();
+                } else {
+                  setActiveTab(link.id);
+                }
+              }}
               whileHover={{ x: isSidebarOpen ? 4 : 0, scale: isSidebarOpen ? 1 : 1.05 }}
               whileTap={{ scale: 0.98 }}
               className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all relative group ${activeTab === link.id
@@ -1043,6 +1060,7 @@ export default function EnterpriseAdminDashboard() {
                   variant="ghost"
                   size="sm"
                   className="flex-1 h-8 text-xs font-bold rounded-lg"
+                  onClick={handleSettings}
                 >
                   <Settings className="w-3 h-3 mr-1" />
                   Settings
@@ -1051,6 +1069,7 @@ export default function EnterpriseAdminDashboard() {
                   variant="ghost"
                   size="sm"
                   className="flex-1 h-8 text-xs font-bold rounded-lg text-rose-500 hover:text-rose-600"
+                  onClick={handleLogout}
                 >
                   <LogOut className="w-3 h-3 mr-1" />
                   Logout
@@ -1283,14 +1302,15 @@ export default function EnterpriseAdminDashboard() {
                         </div>
                         <div className="p-2">
                           {[
-                            { icon: Users2, label: "Profile" },
-                            { icon: Settings, label: "Settings" },
-                            { icon: HelpCircle, label: "Help & Support" },
+                            { icon: Users2, label: "Profile", action: () => {} },
+                            { icon: Settings, label: "Settings", action: handleSettings },
+                            { icon: HelpCircle, label: "Help & Support", action: () => {} },
                           ].map((item, idx) => (
                             <Button
                               key={idx}
                               variant="ghost"
                               className="w-full justify-start text-sm font-bold rounded-lg"
+                              onClick={item.action}
                             >
                               <item.icon className="w-4 h-4 mr-2" />
                               {item.label}
@@ -1301,6 +1321,7 @@ export default function EnterpriseAdminDashboard() {
                           <Button
                             variant="ghost"
                             className="w-full justify-start text-sm font-bold rounded-lg text-rose-500 hover:text-rose-600"
+                            onClick={handleLogout}
                           >
                             <LogOut className="w-4 h-4 mr-2" />
                             Logout
@@ -2329,14 +2350,7 @@ export default function EnterpriseAdminDashboard() {
                   © {new Date().getFullYear()} NextGen Enterprise. All rights reserved.
                 </p>
                 <div className="flex items-center gap-4">
-                  {['Privacy', 'Terms', 'Security', 'Status'].map((item) => (
-                    <Button
-                      key={item}
-                      variant="link"
-                      className="text-xs font-bold text-muted-foreground p-0 h-auto"
-                    >
-                      {item}
-                    </Button>
+                  {['Privacy', 'Terms', 'Security', 'Status'].map((item) => ( <a href={item === "Privacy" ? "/PrivacyPage" : item === "Terms" ? "/TermsAndCondition" : item === "Security" ? "/Security" : item === "Feedback" ? "/Feedback" : ""} className="text-xs font-bold text-muted-foreground p-0 h-auto">{item}</a>
                   ))}
                 </div>
               </div>
