@@ -44,24 +44,34 @@ export default function CookiePolicy() {
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border shadow-sm">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={handleBack}>
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-              <div className="h-6 w-px bg-border"></div>
-              <div className="w-14 h-14 flex items-center justify-center">
-                <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
-              </div>
-              <div>
-                <span className="font-bold text-lg bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">NextGen</span>
-                <p className="text-xs text-muted-foreground">Legal Documentation</p>
+      <header className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl border-b border-slate-200 dark:border-white/5 transition-all duration-500">
+        <div className="max-w-[1700px] mx-auto px-6 sm:px-10">
+          <div className="flex items-center justify-between h-20">
+            <div className="flex items-center gap-6">
+              <button
+                onClick={handleBack}
+                className="px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl font-black text-sm tracking-tight hover:shadow-[0_10px_30px_rgba(249,115,22,0.4)] transition-all flex items-center gap-2 hover:scale-105 active:scale-95 group"
+              >
+                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                Back
+              </button>
+              <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
+              <div className="flex items-center gap-4">
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-orange-600 rounded-xl blur-xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
+                  <div className="relative w-12 h-12 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center shadow-lg border border-slate-200 dark:border-white/10">
+                    <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-8 h-8 object-contain" />
+                  </div>
+                </div>
+                <div className="hidden xs:flex flex-col">
+                  <span className="font-black text-xl bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent leading-none">NextGen</span>
+                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Cookie Policy</span>
+                </div>
               </div>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-4">
+              <ThemeToggle className="!h-12 !w-12 bg-slate-100 dark:bg-white/5 backdrop-blur-md border border-slate-200 dark:border-white/10 hover:border-orange-500/30 !rounded-xl transition-all flex items-center justify-center shadow-lg hover:scale-110 text-slate-600 dark:text-white" />
+            </div>
           </div>
         </div>
       </header>
