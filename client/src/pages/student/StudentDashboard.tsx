@@ -4,12 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useLocation } from "wouter";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useIsMobile } from "@/hooks/useMobile";
-import { Menu } from "lucide-react";
 // Import all student feature components
 import Careers from "@/pages/student/careers";
 import StudentWebinar from "@/pages/student/webinars";
@@ -45,11 +42,9 @@ export default function StudentDashboard() {
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState(null);
   const [viewMode, setViewMode] = useState("radar");
   const isDark = theme === "dark";
-  const isMobile = useIsMobile();
 
   // Student Profile Data
   const studentProfile = {
@@ -651,22 +646,8 @@ export default function StudentDashboard() {
 
   return (
     <div className={`flex h-screen ${isDark ? "bg-black" : "bg-background"} text-foreground font-sans selection:bg-blue-500/30 overflow-hidden`}>
-      {/* Mobile Menu Button */}
-      {isMobile && (
-        <div className="fixed top-4 left-4 z-50">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setMobileMenuOpen(true)}
-            className="bg-background/80 backdrop-blur-sm border-2"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-        </div>
-      )}
-
-      {/* Sleek Sidebar - Desktop */}
-      <aside className={`hidden md:block sticky top-0 h-screen z-40 transition-all duration-500 ${isSidebarOpen ? "w-72" : "w-24"} p-6 flex flex-col shrink-0 bg-transparent`}>
+      {/* Sleek Sidebar */}
+      <aside className={`sticky top-0 h-screen z-50 transition-all duration-500 ${isSidebarOpen ? "w-72" : "w-24"} p-6 flex flex-col shrink-0 bg-transparent`}>
         <div className={`flex-1 ${isDark ? "bg-[#0c0c14]" : "bg-sidebar/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[2.5rem] flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.05)] overflow-hidden relative group`}>
           <div className={`absolute inset-0 bg-gradient-to-b ${isDark ? "from-blue-500/5" : "from-blue-500/5"} via-transparent ${isDark ? "to-purple-500/5" : "to-purple-500/5"} opacity-50 pointer-events-none`}></div>
 
@@ -741,90 +722,13 @@ export default function StudentDashboard() {
         </div>
       </aside>
 
-      {/* Mobile Sidebar Sheet */}
-      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="left" className="w-80 p-0 bg-sidebar/95 backdrop-blur-3xl border-r border-white/5">
-          <div className="flex flex-col h-full">
-            <div className="p-6 pb-4 flex items-center justify-between border-b border-white/5">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 flex items-center justify-center">
-                  <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain" />
-                </div>
-                <div>
-                  <h2 className={`font-black text-lg ${isDark ? "text-white" : "text-gray-900"}`}>Student</h2>
-                  <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest">Career Hub</p>
-                </div>
-              </div>
-            </div>
-            <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-              {sidebarLinks.map((link) => (
-                <button
-                  key={link.id}
-                  onClick={() => {
-                    setActiveTab(link.id);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${activeTab === link.id
-                      ? `${isDark ? "bg-white/10" : "bg-blue-50"} text-blue-600`
-                      : `${isDark ? "text-muted-foreground/60 hover:text-white hover:bg-white/5" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"}`
-                    }`}
-                >
-                  <link.icon className="w-5 h-5" />
-                  <span className="font-bold text-sm">{link.label}</span>
-                </button>
-              ))}
-            </nav>
-            <div className="p-6 border-t border-white/5 space-y-4">
-              <div className={`p-4 ${isDark ? "bg-white/5" : "bg-slate-50"} rounded-2xl`}>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center font-black text-white">
-                    {studentProfile.avatar}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`font-black text-xs ${isDark ? "text-white" : "text-slate-900"} truncate uppercase`}>
-                      {studentProfile.name}
-                    </p>
-                    <p className={`text-[10px] ${isDark ? "text-muted-foreground" : "text-slate-500"} truncate`}>
-                      {studentProfile.id}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    navigate("/student/setting");
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex-1"
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
-                </Button>
-                <ThemeToggle />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/")}
-                  className="text-red-400"
-                >
-                  <LogOut className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
-
       {/* Main Content Area */}
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar relative bg-transparent">
+      <main className="flex-1 p-8 overflow-y-auto custom-scrollbar relative bg-transparent">
         <div className="max-w-[1400px] mx-auto space-y-10 pb-20">
 
-          <header className={`${isSidebarOpen ? 'flex' : 'flex flex-col items-center'} items-end justify-between gap-6 mb-6 md:mb-8 text-center sm:text-left`}>
-            <div className={`${!isSidebarOpen && 'flex flex-col items-center'} w-full`}>
-              <h1 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight capitalize mb-2`}>
+          <header className={`${isSidebarOpen ? 'flex' : 'flex flex-col items-center'} items-end justify-between gap-6 mb-8 text-center sm:text-left`}>
+            <div className={`${!isSidebarOpen && 'flex flex-col items-center'}`}>
+              <h1 className={`text-6xl font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight capitalize mb-2`}>
                 {sidebarLinks.find(l => l.id === activeTab)?.label || activeTab}
               </h1>
               <p className={`${isDark ? "text-blue-400" : "text-blue-600"} text-base font-bold uppercase tracking-widest opacity-90`}>
@@ -855,10 +759,10 @@ export default function StudentDashboard() {
                 <div className={`absolute top-0 right-0 w-[600px] h-[600px] ${isDark ? "bg-blue-500/5" : "bg-blue-500/5"} rounded-full -mr-80 -mt-80 blur-[150px] pointer-events-none`}></div>
                 <div className={`absolute bottom-0 left-0 w-[400px] h-[400px] ${isDark ? "bg-purple-500/5" : "bg-purple-500/5"} rounded-full -ml-60 -mb-60 blur-[100px] pointer-events-none`}></div>
 
-                <CardContent className="p-6 md:p-12">
+                <CardContent className="p-12">
                   <div className="flex flex-col lg:flex-row items-start justify-between gap-8 relative z-10">
                     <div className="flex-1">
-                      <h2 className={`text-2xl sm:text-3xl md:text-4xl font-black ${isDark ? "text-white" : "text-slate-900"} mb-4 tracking-tight leading-tight`}>
+                      <h2 className={`text-4xl font-black ${isDark ? "text-white" : "text-slate-900"} mb-4 tracking-tight leading-tight`}>
                         Welcome back,<br />
                         <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                           {studentProfile.name.split(' ')[0]}! 👋
@@ -883,8 +787,8 @@ export default function StudentDashboard() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex flex-col sm:flex-row lg:flex-col gap-4 w-full lg:w-fit">
-                      <Button className="h-12 md:h-14 px-6 md:px-8 bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:opacity-90 font-black text-base md:text-lg rounded-2xl flex-1 shadow-xl shadow-blue-500/30 gap-3 ring-4 ring-blue-500/20">
+                    <div className="flex flex-row lg:flex-col gap-4 w-full lg:w-fit">
+                      <Button className="h-14 px-8 bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:opacity-90 font-black text-lg rounded-2xl flex-1 shadow-xl shadow-blue-500/30 gap-3 ring-4 ring-blue-500/20">
                         <Rocket className="w-6 h-6" />
                         Take Skill Test
                       </Button>
@@ -909,7 +813,7 @@ export default function StudentDashboard() {
               </Card>
 
               {/* Quick Stats Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {quickStats.map((stat, idx) => {
                   const Icon = stat.icon;
                   return (
@@ -989,7 +893,7 @@ export default function StudentDashboard() {
                 {/* Daily Streak */}
                 <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] overflow-hidden relative group`}>
                   <div className={`absolute top-0 right-0 w-40 h-40 ${isDark ? "bg-amber-500/10" : "bg-amber-500/20"} rounded-full -mr-20 -mt-20 blur-2xl group-hover:scale-125 transition-transform duration-700`}></div>
-                  <CardContent className="p-6 md:p-12">
+                  <CardContent className="p-12">
                     <div className="text-center space-y-6">
                       <div className="flex items-center justify-center gap-2  relative  z-10  w-full  h-full  flex-col  items-center    justify-center  ">
                         <div className={`text-7xl font-black ${isDark ? "text-white" : "text-gray-900"} py-2 antialiased`}>12</div>
@@ -1102,7 +1006,7 @@ export default function StudentDashboard() {
               </div>
               {/* AI Recommendations - Top 3 */}
               <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] overflow-hidden shadow-2xl`}>
-                <CardContent className="p-6 md:p-12">
+                <CardContent className="p-12">
                   <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-10">
                     <div>
                       <h3 className={`text-3xl font-black flex items-center gap-4 ${isDark ? "text-white" : "text-gray-900"}`}>
@@ -1184,7 +1088,7 @@ export default function StudentDashboard() {
               <div className="grid lg:grid-cols-2 gap-8">
                 {/* Daily Challenges */}
                 <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] overflow-hidden shadow-2xl`}>
-                  <CardContent className="p-6 md:p-12">
+                  <CardContent className="p-12">
                     <div className="flex items-center justify-between mb-8">
                       <div>
                         <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-gray-900"} flex items-center gap-3`}>
@@ -1298,7 +1202,7 @@ export default function StudentDashboard() {
               <div className="grid lg:grid-cols-2 gap-8">
                 {/* Notifications */}
                 <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                  <CardContent className="p-6 md:p-12">
+                  <CardContent className="p-12">
                     <div className="flex items-center justify-between mb-8">
                       <div className="flex items-center gap-3">
                         <Bell className="w-6 h-6 text-blue-500" />
@@ -1383,7 +1287,7 @@ export default function StudentDashboard() {
             <div className="space-y-10">
               {/* Comprehensive Skill Analysis */}
               <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                <CardContent className="p-6 md:p-12">
+                <CardContent className="p-12">
                   <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-10">
                     <div>
                       <h3 className={`text-3xl font-black flex items-center gap-4 ${isDark ? "text-white" : "text-gray-900"}`}>
@@ -1470,7 +1374,7 @@ export default function StudentDashboard() {
 
               {/* Priority Skill Gaps */}
               <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                <CardContent className="p-6 md:p-12">
+                <CardContent className="p-12">
                   <div className="flex items-center gap-4 mb-10">
                     <Target className="w-8 h-8 text-orange-400" />
                     <div>
@@ -1542,7 +1446,7 @@ export default function StudentDashboard() {
           {activeTab === "opportunities" && (
             <div className="space-y-10">
               <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                <CardContent className="p-6 md:p-12">
+                <CardContent className="p-12">
                   <div className="flex items-center gap-4 mb-10">
                     <Building2 className="w-8 h-8 text-blue-400" />
                     <div>
@@ -1597,7 +1501,7 @@ export default function StudentDashboard() {
 
               {/* Placement Analysis */}
               <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                <CardContent className="p-6 md:p-12">
+                <CardContent className="p-12">
                   <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-gray-900"} mb-8`}>Placement Probability by Category</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {placementData.map((type, idx) => {
@@ -1641,7 +1545,7 @@ export default function StudentDashboard() {
           {activeTab === "learning" && (
             <div className="space-y-10">
               <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                <CardContent className="p-6 md:p-12">
+                <CardContent className="p-12">
                   <div className="flex items-center gap-4 mb-10">
                     <GraduationCap className={`w-8 h-8 ${isDark ? "text-purple-400" : "text-purple-600"}`} />
                     <div>
@@ -1695,7 +1599,7 @@ export default function StudentDashboard() {
 
               {/* Weekly Goals */}
               <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                <CardContent className="p-6 md:p-12">
+                <CardContent className="p-12">
                   <div className="flex items-center gap-4 mb-10">
                     <Flame className={`w-8 h-8 ${isDark ? "text-amber-400" : "text-amber-600"}`} />
                     <div>
@@ -1740,7 +1644,7 @@ export default function StudentDashboard() {
             <div className="space-y-10">
               {/* Evolution Track */}
               <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                <CardContent className="p-6 md:p-12">
+                <CardContent className="p-12">
                   <div className="flex items-center gap-4 mb-10">
                     <TrendingUp className={`w-8 h-8 ${isDark ? "text-green-400" : "text-green-600"}`} />
                     <div>
@@ -1816,7 +1720,7 @@ export default function StudentDashboard() {
               <div className="grid lg:grid-cols-2 gap-8">
                 {/* Career Timeline */}
                 <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                  <CardContent className="p-6 md:p-12">
+                  <CardContent className="p-12">
                     <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-slate-900"} mb-8`}>Career Timeline</h3>
                     <div className="relative pl-8">
                       <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-400 to-purple-400"></div>
@@ -1851,7 +1755,7 @@ export default function StudentDashboard() {
 
                 {/* Upcoming Tasks */}
                 <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                  <CardContent className="p-6 md:p-12">
+                  <CardContent className="p-12">
                     <div className="flex items-center justify-between mb-8">
                       <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Upcoming Tasks</h3>
                       <span className="text-sm text-gray-400">{upcomingTasks.length} remaining</span>
@@ -1909,7 +1813,7 @@ export default function StudentDashboard() {
 
               {/* Performance Summary */}
               <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                <CardContent className="p-6 md:p-12">
+                <CardContent className="p-12">
                   <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-slate-900"} mb-8`}>Performance Summary</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div className={`p-6 ${isDark ? "bg-blue-500/10" : "bg-blue-50"} rounded-2xl border ${isDark ? "border-blue-500/20" : "border-blue-100"} shadow-sm`}>

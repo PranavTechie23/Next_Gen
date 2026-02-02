@@ -176,37 +176,40 @@ export default function TermsAndConditions() {
       </div>
 
       {/* Floating Header */}
-      <div className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${scrolled ? 'bg-background/80 backdrop-blur-lg border-b border-border shadow-lg' : 'bg-transparent'
+      <div className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled
+        ? 'bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl border-b border-slate-200 dark:border-white/5 shadow-2xl'
+        : 'bg-transparent'
         }`}>
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="ghost"
+        <div className="max-w-[1700px] mx-auto px-6 sm:px-10 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <button
               onClick={handleBack}
-              className="text-foreground hover:bg-muted mr-2"
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-800 text-white rounded-xl font-black text-sm tracking-tight hover:shadow-[0_10px_30px_rgba(147,51,234,0.4)] transition-all flex items-center gap-2 hover:scale-105 active:scale-95 group"
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
               Back
-            </Button>
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-              <FileText className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-foreground font-bold text-lg">Terms & Conditions</h1>
-              <p className="text-primary text-xs">Version 2.1</p>
+            </button>
+            <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg transform group-hover:rotate-6 transition-transform">
+                <FileText className="w-7 h-7 text-white" />
+              </div>
+              <div className="hidden sm:block">
+                <h1 className="text-foreground font-black text-xl tracking-tight leading-none">Terms & Conditions</h1>
+                <span className="text-purple-600 dark:text-purple-400 text-xs font-black uppercase tracking-widest opacity-80">Legal Agreement v2.1</span>
+              </div>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <ThemeToggle />
-            <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-              <Download className="w-5 h-5 text-foreground" />
-            </button>
-            <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-              <Printer className="w-5 h-5 text-foreground" />
-            </button>
-            <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-              <Share2 className="w-5 h-5 text-foreground" />
-            </button>
+          <div className="flex items-center gap-4">
+            <ThemeToggle className="!h-12 !w-12 bg-slate-100 dark:bg-white/5 backdrop-blur-md border border-slate-200 dark:border-white/10 hover:border-purple-500/30 !rounded-xl transition-all flex items-center justify-center shadow-lg hover:scale-110 text-slate-600 dark:text-white" />
+            <div className="flex items-center gap-2">
+              <button className="p-3 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all hover:scale-110" title="Download">
+                <Download className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+              </button>
+              <button className="p-3 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all hover:scale-110" title="Print">
+                <Printer className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -275,8 +278,8 @@ export default function TermsAndConditions() {
           <button
             onClick={() => setActiveTab('terms')}
             className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'terms'
-                ? 'bg-purple-600 text-white shadow-lg'
-                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+              ? 'bg-purple-600 text-white shadow-lg'
+              : 'bg-white/5 text-gray-400 hover:bg-white/10'
               }`}
           >
             All Terms
@@ -284,8 +287,8 @@ export default function TermsAndConditions() {
           <button
             onClick={() => setActiveTab('important')}
             className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'important'
-                ? 'bg-purple-600 text-white shadow-lg'
-                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+              ? 'bg-purple-600 text-white shadow-lg'
+              : 'bg-white/5 text-gray-400 hover:bg-white/10'
               }`}
           >
             Important Only
@@ -388,8 +391,8 @@ export default function TermsAndConditions() {
                 />
                 <div
                   className={`w-6 h-6 border-2 rounded-md transition-all ${accepted
-                      ? 'bg-gradient-to-br from-purple-500 to-pink-500 border-purple-500'
-                      : 'border-gray-500 group-hover:border-purple-400'
+                    ? 'bg-gradient-to-br from-purple-500 to-pink-500 border-purple-500'
+                    : 'border-gray-500 group-hover:border-purple-400'
                     }`}
                 >
                   {accepted && (
@@ -406,8 +409,8 @@ export default function TermsAndConditions() {
               onClick={() => accepted && alert('Terms accepted! Proceeding...')}
               disabled={!accepted}
               className={`w-full py-4 px-6 rounded-xl font-semibold transition-all flex items-center justify-center space-x-2 ${accepted
-                  ? 'bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white shadow-lg shadow-primary/50 hover:shadow-xl hover:scale-105'
-                  : 'bg-muted text-muted-foreground cursor-not-allowed'
+                ? 'bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white shadow-lg shadow-primary/50 hover:shadow-xl hover:scale-105'
+                : 'bg-muted text-muted-foreground cursor-not-allowed'
                 }`}
             >
               <span>Accept & Continue</span>
