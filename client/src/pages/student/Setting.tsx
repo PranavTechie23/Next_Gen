@@ -40,6 +40,7 @@ import {
   Zap,
   Languages
 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useState } from "react";
 import { useLocation } from "wouter";
 
@@ -596,45 +597,39 @@ export default function StudentSettings(props: any) {
       {/* Header - Hide if dashboard */}
       {!isDashboard && (
         <>
-          <header className="sticky top-0 z-50 bg-[#0c0c14]/80 backdrop-blur-2xl border-b border-white/5 shadow-2xl">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <header className="sticky top-0 z-50 bg-[#0c0c14]/80 backdrop-blur-2xl border-b border-white/5 shadow-2xl transition-all duration-500">
+            <div className="max-w-[1700px] mx-auto px-6 sm:px-10">
               <div className="flex items-center justify-between h-20">
                 <div className="flex items-center gap-6">
-                  <Button
-                    variant="ghost"
-                    size="icon"
+                  <button
                     onClick={() => navigate("/student/dashboard")}
-                    className="w-12 h-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-white hover:bg-white/10 transition-all group/back shadow-xl"
+                    className="px-6 py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white rounded-xl font-black text-sm tracking-tight hover:shadow-[0_10px_30_rgba(37,99,235,0.4)] transition-all flex items-center gap-2 hover:scale-105 active:scale-95 group"
                   >
-                    <ArrowLeft className="w-5 h-5 group-hover/back:-translate-x-1 transition-transform" />
-                  </Button>
-                  <div className="h-8 w-px bg-white/10"></div>
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 group hover:rotate-6 transition-transform">
-                      <Settings className="w-6 h-6 text-white" />
+                    <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                    Back
+                  </button>
+                  <div className="h-10 w-px bg-white/10 hidden sm:block"></div>
+                  <div className="flex items-center gap-6">
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-blue-600 rounded-2xl blur-xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                      <div className="relative w-12 h-12 bg-white dark:bg-[#1a1a2e] rounded-2xl flex items-center justify-center shadow-xl border border-white/10 group-hover:scale-110 transition-transform duration-500">
+                        <img src={"/NG/NextGen_dark.png"} alt="NextGen Logo" className="w-8 h-8 object-contain" />
+                      </div>
                     </div>
-                    <div>
-                      <h1 className="text-4xl font-black text-white tracking-tighter leading-none">Settings</h1>
-                      <p className="text-blue-400 text-xs font-black uppercase tracking-widest mt-2 opacity-90">Institution Profile & Preferences</p>
+                    <div className="flex flex-col -gap-1">
+                      <span className="font-black text-2xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-tighter">NextGen</span>
+                      <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Student Settings</span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
                   {saved && (
-                    <div className="flex items-center gap-2 text-emerald-400 bg-emerald-400/10 px-4 py-2 rounded-2xl animate-in fade-in slide-in-from-top-4 border border-emerald-400/20 shadow-lg shadow-emerald-500/10">
+                    <div className="flex items-center gap-2 text-emerald-400 bg-emerald-400/10 px-4 py-2 rounded-2xl animate-in fade-in slide-in-from-top-4 border border-emerald-400/20 shadow-lg shadow-emerald-500/10 hidden md:flex">
                       <CheckCircle2 className="w-4 h-4" />
-                      <span className="font-bold text-xs uppercase tracking-wider">Changes synchronized</span>
+                      <span className="font-bold text-[10px] uppercase tracking-wider">Changes synchronized</span>
                     </div>
                   )}
-                  <div className="flex items-center gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10">
-                    <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg overflow-hidden group">
-                      <span className="text-xs font-black text-white group-hover:scale-110 transition-transform">RK</span>
-                    </div>
-                    <div className="pr-2 hidden sm:block">
-                      <p className="text-[10px] font-black text-white uppercase tracking-tight leading-none">{formData.fullName}</p>
-                      <p className="text-[9px] text-muted-foreground opacity-60 mt-1 uppercase font-bold tracking-widest">Student</p>
-                    </div>
-                  </div>
+                  <ThemeToggle className="!h-12 !w-12 bg-white/5 backdrop-blur-md border border-white/10 hover:border-blue-500/30 !rounded-xl transition-all flex items-center justify-center shadow-lg hover:scale-110 text-white" />
                 </div>
               </div>
             </div>

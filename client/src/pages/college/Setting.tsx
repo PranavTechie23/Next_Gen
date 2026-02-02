@@ -453,48 +453,37 @@ export default function CollegeSettings() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white sticky top-0 z-50 shadow-xl">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+      <header className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl border-b border-slate-200 dark:border-white/5 transition-all duration-500">
+        <div className="max-w-[1700px] mx-auto px-6 sm:px-10">
+          <div className="flex items-center justify-between h-20">
+            <div className="flex items-center gap-6">
               <button
                 onClick={() => navigate('/college/dashboard')}
-                className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center hover:bg-white/30 transition-all shadow-lg hover:scale-105"
-                title="Go back to Dashboard"
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white rounded-xl font-black text-sm tracking-tight hover:shadow-[0_10px_30_rgba(37,99,235,0.4)] transition-all flex items-center gap-2 hover:scale-105 active:scale-95 group"
               >
-                <ArrowLeft className="w-6 h-6" />
+                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                Back
               </button>
-              <div className="h-8 w-px bg-white/30"></div>
+              <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
               <div className="flex items-center gap-6">
-                <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-2xl">
-                  <Settings className="w-9 h-9" />
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-blue-600 rounded-2xl blur-xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                  <div className="relative w-12 h-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center shadow-xl border border-slate-200 dark:border-white/10 group-hover:scale-110 transition-transform duration-500">
+                    <img src={"/NG/NextGen_dark.png"} alt="NextGen Logo" className="w-8 h-8 object-contain" />
+                  </div>
                 </div>
-                <div>
-                  <h1 className="text-3xl font-black tracking-tight">College Settings</h1>
-                  <p className="text-blue-100 font-medium mt-1">Manage your institution profile and preferences</p>
+                <div className="flex flex-col -gap-1">
+                  <span className="font-black text-2xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-tighter">NextGen</span>
+                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">College Settings</span>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <ThemeToggle className="!h-12 !w-12 bg-white/20 backdrop-blur-sm border-white/30 hover:bg-white/30 !rounded-xl transition-all flex items-center justify-center shadow-lg hover:scale-105 cursor-pointer text-white" />
-              <button
-                onClick={() => navigate('/college/dashboard')}
-                className="px-5 py-3 bg-white/20 backdrop-blur-sm rounded-xl font-bold hover:bg-white/30 transition-all flex items-center gap-2"
-              >
-                <Home className="w-5 h-5" />
-                Dashboard
-              </button>
-              <button
-                onClick={() => navigate('/')}
-                className="px-5 py-3 bg-white/20 backdrop-blur-sm rounded-xl font-bold hover:bg-red-500/80 transition-all flex items-center gap-2"
-              >
-                <LogOut className="w-5 h-5" />
-                Logout
-              </button>
+            <div className="flex items-center gap-4">
+              <ThemeToggle className="!h-12 !w-12 bg-slate-100 dark:bg-white/5 backdrop-blur-md border border-slate-200 dark:border-white/10 hover:border-blue-500/30 !rounded-xl transition-all flex items-center justify-center shadow-lg hover:scale-110 text-slate-600 dark:text-white" />
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Success Message */}
       {showSuccessMessage && (
