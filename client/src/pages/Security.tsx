@@ -69,11 +69,11 @@ export default function Security() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
               <button
-                onClick={() => navigate('/college/dashboard')}
-                className="w-14 h-14 bg-slate-100 dark:bg-white/5 backdrop-blur-md rounded-2xl flex items-center justify-center border border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10 transition-all shadow-xl hover:scale-110 active:scale-95 group"
-                title="Go back to Dashboard"
+                onClick={() => window.history.back()}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white rounded-xl font-black text-sm tracking-tight hover:shadow-[0_10px_30px_rgba(37,99,235,0.4)] transition-all flex items-center gap-2 hover:scale-105 active:scale-95 group"
               >
-                <ArrowLeft className="w-7 h-7 text-slate-600 dark:text-white group-hover:-translate-x-1 transition-transform" />
+                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                Back
               </button>
               <div className="h-12 w-px bg-slate-200 dark:bg-white/10"></div>
               <div className="flex items-center gap-8">
@@ -92,13 +92,6 @@ export default function Security() {
 
             <div className="flex items-center gap-6">
               <ThemeToggle className="!h-14 !w-14 bg-slate-100 dark:bg-white/5 backdrop-blur-md border border-slate-200 dark:border-white/10 hover:border-blue-500/30 !rounded-2xl transition-all flex items-center justify-center shadow-xl hover:scale-110 cursor-pointer text-slate-600 dark:text-white" />
-              <button
-                onClick={() => navigate('/college/dashboard')}
-                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-lg hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center gap-3 shadow-[0_10px_30px_rgba(37,99,235,0.3)] hover:scale-105 active:scale-95"
-              >
-                <Home className="w-6 h-6" />
-                Dashboard
-              </button>
               <div className="flex flex-col gap-2">
                 <span className="bg-slate-100 dark:bg-white/5 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-black uppercase tracking-widest text-slate-500 dark:text-blue-200">Jan 2026</span>
                 <span className="bg-green-600/10 dark:bg-green-600/20 backdrop-blur-md px-4 py-2 rounded-xl border border-green-500/30 text-xs font-black uppercase tracking-widest text-green-600 dark:text-green-300">v3.2 PRO</span>

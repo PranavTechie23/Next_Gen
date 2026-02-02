@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
-import { ArrowLeft, Shield, AlertCircle, Lock, Eye, Users, Target, TrendingUp, Mail, Phone, MessageSquare, CheckCircle, Database, Brain, Scale, Heart, Sparkles, FileText, UserCheck } from "lucide-react";
+import { ArrowLeft, Shield, AlertCircle, Lock, Eye, Users, Target, TrendingUp, Mail, Phone, MessageSquare, CheckCircle, Database, Brain, Scale, Heart, Sparkles, FileText, UserCheck, Clock } from "lucide-react";
 import { useState } from "react";
 
 export default function PrivacyPage() {
@@ -33,63 +33,76 @@ export default function PrivacyPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border shadow-sm">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 flex items-center justify-center">
-                <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
-              </div>
-              <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">NextGen</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <ThemeToggle />
-              <Button
-                variant="ghost"
+      <header className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl border-b border-slate-200 dark:border-white/5 transition-all duration-500">
+        <div className="max-w-[1700px] mx-auto px-6 sm:px-10">
+          <div className="flex items-center justify-between h-20">
+            <div className="flex items-center gap-6">
+              <button
                 onClick={handleBack}
-                className="text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white rounded-xl font-black text-sm tracking-tight hover:shadow-[0_10px_30px_rgba(37,99,235,0.4)] transition-all flex items-center gap-2 hover:scale-105 active:scale-95 group"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
+                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                 Back
-              </Button>
+              </button>
+              <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
+              <div className="flex items-center gap-6">
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-blue-600 rounded-2xl blur-xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                  <div className="relative w-12 h-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center shadow-xl border border-slate-200 dark:border-white/10 group-hover:scale-110 transition-transform duration-500">
+                    <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-8 h-8 object-contain" />
+                  </div>
+                </div>
+                <div className="flex flex-col -gap-1">
+                  <span className="font-black text-2xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-tighter">NextGen</span>
+                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Legal Portal</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <ThemeToggle className="!h-12 !w-12 bg-slate-100 dark:bg-white/5 backdrop-blur-md border border-slate-200 dark:border-white/10 hover:border-blue-500/30 !rounded-xl transition-all flex items-center justify-center shadow-lg hover:scale-110 text-slate-600 dark:text-white" />
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-[1700px] mx-auto px-6 sm:px-10 py-16">
         <div className="max-w-6xl mx-auto">
           {/* Hero Section */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl mb-6 shadow-xl">
-              <Shield className="w-10 h-10 text-white" />
+          <div className="text-center mb-16 relative">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-12 w-64 h-64 bg-blue-600/10 rounded-full blur-[100px] -z-10"></div>
+            <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2rem] mb-8 shadow-2xl relative group">
+              <div className="absolute inset-0 bg-blue-600 rounded-[2rem] blur-2xl opacity-40 group-hover:opacity-60 transition-opacity"></div>
+              <Shield className="w-12 h-12 text-white relative z-10 animate-pulse" />
             </div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+            <h1 className="text-6xl font-black bg-gradient-to-r from-slate-900 via-blue-600 to-slate-900 dark:from-white dark:via-blue-100 dark:to-white bg-clip-text text-transparent mb-6 tracking-tighter">
               Privacy, Ethics & AI Disclosure
             </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-4">
-              Your trust matters. Here's how we protect your data and ensure fairness.
+            <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-6 font-medium leading-relaxed">
+              Our commitment to radical transparency and data sovereignty for every member of the institutional ecosystem.
             </p>
-            <p className="text-sm text-muted-foreground">Last updated: January 2025</p>
+            <div className="flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 font-black text-xs uppercase tracking-widest">
+              <Clock className="w-4 h-4" />
+              Last updated: January 2026
+            </div>
           </div>
 
           {/* Quick Navigation */}
-          <div className="mb-8 bg-card/80 backdrop-blur-sm border border-border rounded-2xl shadow-lg p-4 sticky top-20 z-40">
+          <div className="mb-12 sticky top-24 z-40 bg-white/50 dark:bg-slate-900/50 backdrop-blur-2xl p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none transition-all duration-500">
             <div className="flex flex-wrap gap-2 justify-center">
               {sections.map((section) => {
                 const Icon = section.icon;
+                const isActive = activeSection === section.id;
                 return (
                   <button
                     key={section.id}
                     onClick={() => scrollToSection(section.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${activeSection === section.id
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all duration-500 font-bold text-sm tracking-tight ${isActive
+                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25 scale-105"
+                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"
                       }`}
                   >
-                    <Icon className="w-4 h-4" />
-                    <span className="text-sm font-medium">{section.label}</span>
+                    <Icon className={`w-4 h-4 transition-transform duration-500 ${isActive ? "scale-110" : ""}`} />
+                    <span>{section.label}</span>
                   </button>
                 );
               })}
