@@ -707,43 +707,40 @@ export default function AdminSettings() {
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border shadow-sm">
-        <div className="container flex items-center justify-between h-16">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => window.history.back()} className="hover:bg-muted">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <div className="h-6 w-px bg-border"></div>
-            <div className="w-14 h-14 flex items-center justify-center">
-              <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
-            </div>
-            <div>
-              <span className="font-bold text-lg bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">Settings</span>
-              <p className="text-xs text-muted-foreground">Admin Configuration</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <Button variant="ghost" size="sm" className="relative hover:bg-muted">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </Button>
-            <div className="h-6 w-px bg-border"></div>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                <span className="text-xs font-semibold text-primary">AD</span>
+      <header className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl border-b border-slate-200 dark:border-white/5 transition-all duration-500">
+        <div className="max-w-[1700px] mx-auto px-6 sm:px-10">
+          <div className="flex items-center justify-between h-20">
+            <div className="flex items-center gap-6">
+              <button
+                onClick={() => window.history.back()}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white rounded-xl font-black text-sm tracking-tight hover:shadow-[0_10px_30_rgba(37,99,235,0.4)] transition-all flex items-center gap-2 hover:scale-105 active:scale-95 group"
+              >
+                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                Back
+              </button>
+              <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
+              <div className="flex items-center gap-6">
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-blue-600 rounded-2xl blur-xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                  <div className="relative w-12 h-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center shadow-xl border border-slate-200 dark:border-white/10 group-hover:scale-110 transition-transform duration-500">
+                    <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-8 h-8 object-contain" />
+                  </div>
+                </div>
+                <div className="flex flex-col -gap-1">
+                  <span className="font-black text-2xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-tighter">NextGen</span>
+                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Admin Settings</span>
+                </div>
               </div>
-              <span className="text-sm font-medium text-foreground">Admin User</span>
             </div>
-            <Button variant="ghost" size="sm" className="hover:bg-muted" onClick={() => navigate("/")}>
-              <LogOut className="w-4 h-4" />
-            </Button>
+            <div className="flex items-center gap-4">
+              <ThemeToggle className="!h-12 !w-12 bg-slate-100 dark:bg-white/5 backdrop-blur-md border border-slate-200 dark:border-white/10 hover:border-blue-500/30 !rounded-xl transition-all flex items-center justify-center shadow-lg hover:scale-110 text-slate-600 dark:text-white" />
+            </div>
           </div>
         </div>
       </header>
 
       {/* Navigation Tabs */}
-      <div className="bg-card border-b border-border sticky top-16 z-40 shadow-sm transition-colors duration-300">
+      <div className="bg-card border-b border-border sticky top-20 z-40 shadow-sm transition-colors duration-300">
         <div className="container">
           <div className="flex space-x-1 overflow-x-auto">
             <button
