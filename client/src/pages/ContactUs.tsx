@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import {
+  ArrowLeft,
   Mail,
   Phone,
   MapPin,
@@ -495,57 +496,89 @@ const ContactUsPage: React.FC = () => {
         <MessageSquare className="w-6 h-6" />
       </button>
 
-      {/* Header */}
+      <header className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl border-b border-slate-200 dark:border-white/5 transition-all duration-500">
+        <div className="max-w-[1700px] mx-auto px-6 sm:px-10">
+          <div className="flex items-center justify-between h-20">
+            <div className="flex items-center gap-6">
+              <button
+                onClick={handleBack}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white rounded-xl font-black text-sm tracking-tight hover:shadow-[0_10px_30px_rgba(37,99,235,0.4)] transition-all flex items-center gap-2 hover:scale-105 active:scale-95 group"
+              >
+                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                Back
+              </button>
+              <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
+              <div className="flex items-center gap-4">
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-blue-600 rounded-xl blur-xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
+                  <div className="relative w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg transform group-hover:rotate-6 transition-transform">
+                    <MessageSquare className="w-7 h-7 text-white" />
+                  </div>
+                </div>
+                <div className="hidden sm:flex flex-col">
+                  <span className="font-black text-xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent leading-none">NextGen</span>
+                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Contact Center</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="hidden md:flex flex-col items-end mr-4">
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Support Active</span>
+                <span className="text-xs font-bold text-green-500 flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                  Online Now
+                </span>
+              </div>
+              <button
+                onClick={() => setChatOpen(true)}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-black text-sm tracking-tight hover:shadow-[0_10px_30px_rgba(37,99,235,0.4)] transition-all flex items-center gap-2 hover:scale-105 active:scale-95 group"
+              >
+                Live Support
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section */}
       <div className="relative overflow-hidden">
-        <div className={`absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 ${darkMode ? 'opacity-90' : ''}`} />
+        <div className={`absolute inset-0 bg-gradient-to-r from-blue-700 via-indigo-800 to-purple-900 ${darkMode ? 'opacity-90' : ''}`} />
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=2000')] opacity-10 mix-blend-overlay" />
 
         <div className="relative">
-          <div className="max-w-7xl mx-auto px-4 py-20">
-            <Button
-              variant="ghost"
-              onClick={handleBack}
-              className={`mb-6 ${darkMode ? 'text-white hover:bg-white/20' : 'text-white hover:bg-white/20'}`}
-            >
-              <ChevronLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Button>
-
-            <div className="text-center max-w-4xl mx-auto">
-              <div className="w-24 h-24 mx-auto mb-6 bg-white/20 backdrop-blur-sm rounded-3xl flex items-center justify-center">
-                <MessageSquare className="w-12 h-12 text-white" />
-              </div>
-              <h1 className="text-5xl md:text-6xl font-bold mb-4 text-white">
-                Contact <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-pink-300">Us</span>
-              </h1>
-              <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-                We're here to help you succeed. Reach out to our team for support, partnerships, or just to say hello.
-              </p>
-
-              <div className="flex flex-wrap justify-center gap-4 mb-8">
-                <Badge variant="secondary" className="bg-white/20 text-white backdrop-blur-sm">
-                  <Shield className="w-3 h-3 mr-1" />
-                  Secure Communication
-                </Badge>
-                <Badge variant="secondary" className="bg-white/20 text-white backdrop-blur-sm">
-                  <Zap className="w-3 h-3 mr-1" />
-                  24/7 Support
-                </Badge>
-                <Badge variant="secondary" className="bg-white/20 text-white backdrop-blur-sm">
-                  <Globe className="w-3 h-3 mr-1" />
-                  Global Team
-                </Badge>
-              </div>
-
-              <Button
-                onClick={scrollToForm}
-                size="lg"
-                className="bg-white text-purple-600 hover:bg-white/90 hover:scale-105 transition-all shadow-2xl"
-              >
-                Get in Touch
-                <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
+          <div className="max-w-7xl mx-auto px-6 py-24 text-center">
+            <div className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 mb-8 text-white text-xs font-black uppercase tracking-widest">
+              <Sparkles className="w-4 h-4 text-yellow-400" />
+              We're here to help you succeed
             </div>
+            <h1 className="text-7xl md:text-8xl font-black mb-6 text-white tracking-tighter leading-none">
+              Get in <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-200">Touch</span>
+            </h1>
+            <p className="text-2xl text-white/80 mb-12 max-w-3xl mx-auto font-medium leading-relaxed">
+              Reach out to our global team for personalized support, innovative partnerships, or specialized career guidance.
+            </p>
+
+            <div className="flex flex-wrap justify-center gap-6 mb-12">
+              {[
+                { label: "Secure Link", icon: Shield },
+                { label: "AI Powered", icon: Zap },
+                { label: "Global 24/7", icon: Globe }
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3 px-6 py-3 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 group hover:bg-white/10 transition-all cursor-default">
+                  <item.icon className="w-5 h-5 text-blue-400" />
+                  <span className="text-white font-bold tracking-tight">{item.label}</span>
+                </div>
+              ))}
+            </div>
+
+            <Button
+              onClick={scrollToForm}
+              size="lg"
+              className="bg-white text-blue-700 hover:bg-blue-50 hover:scale-105 transition-all shadow-[0_20px_50px_rgba(0,0,0,0.3)] px-10 py-8 rounded-2xl font-black text-xl"
+            >
+              Start Conversation
+              <ChevronRight className="ml-2 h-6 w-6" />
+            </Button>
           </div>
         </div>
       </div>
