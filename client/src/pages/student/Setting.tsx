@@ -38,12 +38,14 @@ import {
   Code,
   Palette,
   Zap,
-  Languages
+  Languages,
+  ChevronRight
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { motion } from "framer-motion";
 
 export default function StudentSettings(props: any) {
   const isDashboard = props?.isDashboard || false;
@@ -138,80 +140,83 @@ export default function StudentSettings(props: any) {
     switch (activeTab) {
       case 'overview':
         return (
-          <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {stats.map((stat, idx) => {
                 const Icon = stat.icon;
                 return (
-                  <div key={idx} className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-[2rem] p-8 overflow-hidden group hover:scale-[1.02] transition-all duration-300 relative shadow-lg`}>
+                  <div key={idx} className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-2xl p-6 overflow-hidden group hover:scale-[1.02] transition-all duration-300 relative shadow-lg`}>
                     <div className={`absolute -right-4 -top-4 w-24 h-24 bg-gradient-to-br ${stat.color} opacity-[0.05] rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700`}></div>
-                    <div className="flex items-center justify-between mb-6">
-                      <div className={`w-14 h-14 bg-gradient-to-br ${stat.color} rounded-2xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform flex-shrink-0`}>
-                        <Icon className="w-7 h-7 text-white" />
+                    <div className="flex items-center justify-between mb-4">
+                      <div className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform flex-shrink-0`}>
+                        <Icon className="w-6 h-6 text-white" />
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <p className={`text-[11px] font-black uppercase tracking-[0.25em] leading-none ${isDark ? 'text-white/40' : 'text-slate-600'}`}>{stat.label}</p>
-                      <p className={`text-4xl font-black tracking-tight py-2 leading-none ${isDark ? 'text-white' : 'text-slate-900'}`}>{stat.value}</p>
+                      <p className={`text-xs font-semibold uppercase tracking-wide leading-none ${isDark ? 'text-white/50' : 'text-slate-500'}`}>{stat.label}</p>
+                      <p className={`text-3xl font-bold tracking-tight py-1 leading-none ${isDark ? 'text-white' : 'text-slate-900'}`}>{stat.value}</p>
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            {/* Profile Summary */}
-            <div className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-[3rem] p-12 overflow-hidden shadow-2xl relative group`}>
-              <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full -mr-40 -mt-40 blur-[130px] pointer-events-none"></div>
-              <div className="flex flex-col md:flex-row items-center md:items-start gap-12 relative z-10">
+            {/* Quick Profile Widget - Compact */}
+            <div className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-2xl p-6 overflow-hidden shadow-lg relative group cursor-pointer hover:scale-[1.01] transition-all`} onClick={() => setActiveTab('profile')}>
+              <div className="flex items-center gap-6">
                 <div className="relative group/avatar">
-                  <div className="w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-4xl font-black shadow-[0_20px_50px_rgba(59,130,246,0.3)] group-hover/avatar:rotate-3 transition-transform duration-500">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg group-hover/avatar:rotate-3 transition-transform duration-500">
                     {formData.fullName.split(' ').map(n => n[0]).join('')}
                   </div>
-                  <div className={`absolute -bottom-2 -right-2 w-10 h-10 bg-emerald-500 border-4 ${isDark ? 'border-[#0c0c14]' : 'border-white'} rounded-2xl shadow-xl flex items-center justify-center`}>
-                    <CheckCircle2 className="w-5 h-5 text-white" />
+                  <div className={`absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 border-2 ${isDark ? 'border-[#0c0c14]' : 'border-white'} rounded-lg shadow-lg flex items-center justify-center`}>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-white" />
                   </div>
                 </div>
-                <div className="flex-1 text-center md:text-left space-y-6">
-                  <div className="space-y-2">
-                    <h3 className={`text-5xl font-black tracking-tighter leading-none ${isDark ? 'text-white' : 'text-slate-900'}`}>{formData.fullName}</h3>
-                    <p className="text-blue-400 font-black uppercase tracking-[0.4em] text-[12px] opacity-80">{formData.branch} • {formData.year}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="space-y-1">
+                    <h3 className={`text-xl font-bold tracking-tight leading-none ${isDark ? 'text-white' : 'text-slate-900'}`}>{formData.fullName}</h3>
+                    <p className="text-blue-400 font-semibold text-sm">{formData.branch} • {formData.college}</p>
                   </div>
-                  <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                  <div className="flex flex-wrap gap-2 mt-3">
                     {[
-                      { label: formData.college, icon: Building2, color: "text-blue-400" },
                       { label: `GPA: ${formData.cgpa}`, icon: Award, color: "text-emerald-400" },
                       { label: formData.targetRole, icon: Target, color: "text-purple-400" }
                     ].map((chip, i) => (
-                      <div key={i} className={`flex items-center gap-3 ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100/80 border-slate-200/50'} backdrop-blur-md px-6 py-3 rounded-2xl border group/chip ${isDark ? 'hover:bg-white/10' : 'hover:bg-slate-200/80'} transition-all`}>
-                        <chip.icon className={`w-5 h-5 ${chip.color} group-hover/chip:scale-110 transition-transform`} />
-                        <span className={`text-xs font-black uppercase tracking-widest ${isDark ? 'text-white' : 'text-slate-900'}`}>{chip.label}</span>
+                      <div key={i} className={`flex items-center gap-2 ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100/80 border-slate-200/50'} px-3 py-1.5 rounded-lg border text-xs font-semibold`}>
+                        <chip.icon className={`w-3.5 h-3.5 ${chip.color}`} />
+                        <span className={`${isDark ? 'text-white' : 'text-slate-900'}`}>{chip.label}</span>
                       </div>
                     ))}
                   </div>
                 </div>
+                <div className="flex items-center gap-2 text-blue-400 group-hover:text-blue-300 transition-colors">
+                  <span className="text-sm font-semibold">View Profile</span>
+                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </div>
               </div>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-8">
+            <div className="grid lg:grid-cols-2 gap-6">
               {/* Recent Activity */}
-              <div className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-[3rem] p-10 overflow-hidden relative shadow-lg`}>
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className={`text-sm font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-slate-600'}`}>Recent Activity</h3>
+              <div className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-2xl p-6 overflow-hidden relative shadow-lg`}>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Recent Activity</h3>
+                  <Button variant="ghost" size="sm" className="text-xs font-semibold">View All</Button>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {[
                     { title: "Completed Python Assessment", sub: "Scored 85% • 2 hours ago", icon: Award, color: "text-blue-400", bg: "bg-blue-400/10" },
                     { title: "Profile Updated", sub: "Added new skills • 1 day ago", icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-400/10" },
                     { title: "Applied to Google", sub: "Software Engineer role • 2 days ago", icon: Target, color: "text-purple-400", bg: "bg-purple-400/10" }
                   ].map((activity, i) => (
-                    <div key={i} className={`flex items-start gap-4 p-4 ${isDark ? 'hover:bg-white/5' : 'hover:bg-slate-100/50'} rounded-[1.5rem] transition-colors group`}>
-                      <div className={`w-12 h-12 ${activity.bg} rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
-                        <activity.icon className={`w-6 h-6 ${activity.color}`} />
+                    <div key={i} className={`flex items-start gap-3 p-3 ${isDark ? 'hover:bg-white/5' : 'hover:bg-slate-100/50'} rounded-xl transition-colors group cursor-pointer`}>
+                      <div className={`w-10 h-10 ${activity.bg} rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
+                        <activity.icon className={`w-5 h-5 ${activity.color}`} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{activity.title}</p>
-                        <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${isDark ? 'text-muted-foreground opacity-60' : 'text-slate-600'}`}>{activity.sub}</p>
+                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{activity.title}</p>
+                        <p className={`text-xs mt-0.5 ${isDark ? 'text-white/60' : 'text-slate-600'}`}>{activity.sub}</p>
                       </div>
                     </div>
                   ))}
@@ -219,20 +224,21 @@ export default function StudentSettings(props: any) {
               </div>
 
               {/* Top Skills */}
-              <div className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-[3rem] p-10 overflow-hidden relative shadow-lg`}>
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className={`text-sm font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-slate-600'}`}>Skill Architecture</h3>
+              <div className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-2xl p-6 overflow-hidden relative shadow-lg`}>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Top Skills</h3>
+                  <Button variant="ghost" size="sm" className="text-xs font-semibold">View All</Button>
                 </div>
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {skills.map((skill, idx) => (
-                    <div key={idx} className="space-y-3">
-                      <div className="flex items-center justify-between px-1">
-                        <span className={`text-xs font-black uppercase tracking-widest ${isDark ? 'text-white' : 'text-slate-900'}`}>{skill.name}</span>
-                        <span className="text-xs font-black text-blue-400">{skill.level}%</span>
+                    <div key={idx} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{skill.name}</span>
+                        <span className="text-sm font-bold text-blue-400">{skill.level}%</span>
                       </div>
-                      <div className={`h-2.5 rounded-full overflow-hidden p-0.5 ${isDark ? 'bg-white/5' : 'bg-slate-200'}`}>
+                      <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-white/5' : 'bg-slate-200'}`}>
                         <div
-                          className={`h-full ${skill.color} rounded-full shadow-[0_0_15px_rgba(59,130,246,0.3)] transition-all duration-1000`}
+                          className={`h-full ${skill.color} rounded-full transition-all duration-1000`}
                           style={{ width: `${skill.level}%` }}
                         ></div>
                       </div>
@@ -248,46 +254,46 @@ export default function StudentSettings(props: any) {
         return (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Profile Header Card */}
-            <div className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-[3rem] p-10 overflow-hidden shadow-2xl relative group`}>
+            <div className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-2xl p-8 overflow-hidden shadow-2xl relative group`}>
               <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/5 rounded-full -mr-20 -mt-20 blur-[100px] pointer-events-none"></div>
-              <div className="flex flex-col md:flex-row items-center md:items-start gap-10 relative z-10">
+              <div className="flex flex-col md:flex-row items-center md:items-start gap-8 relative z-10">
                 <div className="relative group/avatar">
-                  <div className="w-40 h-40 rounded-[3rem] bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-5xl font-black shadow-2xl group-hover/avatar:rotate-3 transition-transform duration-500">
+                  <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-4xl font-bold shadow-2xl group-hover/avatar:rotate-3 transition-transform duration-500">
                     {formData.fullName.split(' ').map(n => n[0]).join('')}
                   </div>
-                  <button className={`absolute -bottom-2 -right-2 w-12 h-12 bg-blue-600 border-4 ${isDark ? 'border-[#0c0c14]' : 'border-white'} rounded-2xl flex items-center justify-center text-white hover:bg-blue-500 transition-all shadow-xl group/cam`}>
-                    <Camera className="w-5 h-5 group-hover/cam:scale-110 transition-transform" />
+                  <button className={`absolute -bottom-2 -right-2 w-10 h-10 bg-blue-600 border-4 ${isDark ? 'border-[#0c0c14]' : 'border-white'} rounded-xl flex items-center justify-center text-white hover:bg-blue-500 transition-all shadow-xl group/cam`}>
+                    <Camera className="w-4 h-4 group-hover/cam:scale-110 transition-transform" />
                   </button>
                 </div>
-                <div className="flex-1 text-center md:text-left space-y-6">
+                <div className="flex-1 text-center md:text-left space-y-4">
                   <div>
-                    <h3 className={`text-4xl font-black tracking-tighter mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{formData.fullName}</h3>
-                    <p className="text-blue-400 font-black uppercase tracking-[0.3em] text-[11px] opacity-80">{formData.branch} • {formData.college}</p>
+                    <h3 className={`text-3xl font-bold tracking-tight mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{formData.fullName}</h3>
+                    <p className="text-blue-400 font-semibold text-sm">{formData.branch} • {formData.college}</p>
                   </div>
-                  <div className="flex flex-wrap justify-center md:justify-start gap-3">
-                    <span className="px-5 py-2.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-2">
+                  <div className="flex flex-wrap justify-center md:justify-start gap-2">
+                    <span className="px-4 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl text-xs font-semibold inline-flex items-center gap-2">
                       <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                       Account Active
                     </span>
-                    <span className="px-5 py-2.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4" />
+                    <span className="px-4 py-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl text-xs font-semibold inline-flex items-center gap-2">
+                      <ShieldCheck className="w-3.5 h-3.5" />
                       Verified
                     </span>
                   </div>
                 </div>
                 <div className="flex gap-3">
                   {!isEditing ? (
-                    <Button onClick={() => setIsEditing(true)} className="h-14 px-8 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all shadow-xl shadow-blue-500/20">
-                      <Settings className="w-4 h-4 mr-3" />
-                      Configure
+                    <Button onClick={() => setIsEditing(true)} className="h-12 px-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold text-sm transition-all shadow-lg shadow-blue-500/20">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Edit Profile
                     </Button>
                   ) : (
                     <div className="flex gap-3">
-                      <Button onClick={handleSave} className="h-14 px-8 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all shadow-xl shadow-emerald-500/20">
-                        <Save className="w-4 h-4 mr-3" />
-                        Save Sync
+                      <Button onClick={handleSave} className="h-12 px-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold text-sm transition-all shadow-lg shadow-emerald-500/20">
+                        <Save className="w-4 h-4 mr-2" />
+                        Save Changes
                       </Button>
-                      <Button onClick={() => setIsEditing(false)} variant="outline" className="h-14 px-8 border-white/10 hover:bg-white/5 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all">
+                      <Button onClick={() => setIsEditing(false)} variant="outline" className={`h-12 px-6 ${isDark ? 'border-white/10 hover:bg-white/5 text-white' : 'border-slate-200 hover:bg-slate-100 text-slate-900'} rounded-xl font-semibold text-sm transition-all`}>
                         Cancel
                       </Button>
                     </div>
@@ -297,34 +303,34 @@ export default function StudentSettings(props: any) {
             </div>
 
             {/* Input Sections */}
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-2 gap-6">
               {/* Personal Info */}
-              <div className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-[2.5rem] p-8 space-y-8 shadow-lg`}>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center">
-                    <User className="w-6 h-6 text-blue-400" />
+              <div className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-2xl p-6 space-y-6 shadow-lg`}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                    <User className="w-5 h-5 text-blue-400" />
                   </div>
-                  <h4 className={`text-sm font-black uppercase tracking-widest ${isDark ? 'text-white' : 'text-slate-900'}`}>Personal Matrix</h4>
+                  <h4 className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Personal Information</h4>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-5">
                   {[
                     { label: "Full Name", name: "fullName", icon: User },
                     { label: "Email Address", name: "email", icon: Mail },
-                    { label: "Phone Connection", name: "phone", icon: Phone },
-                    { label: "Geographic Location", name: "location", icon: MapPin }
+                    { label: "Phone Number", name: "phone", icon: Phone },
+                    { label: "Location", name: "location", icon: MapPin }
                   ].map((field) => (
                     <div key={field.name} className="space-y-2">
-                      <label className={`text-[10px] font-black uppercase tracking-[0.2em] ml-1 ${isDark ? 'text-white/40' : 'text-slate-600'}`}>{field.label}</label>
+                      <label className={`text-xs font-semibold ${isDark ? 'text-white/70' : 'text-slate-700'}`}>{field.label}</label>
                       <div className="relative">
-                        <field.icon className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-white/20' : 'text-slate-400'}`} />
+                        <field.icon className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-white/30' : 'text-slate-400'}`} />
                         <input
                           type="text"
                           name={field.name}
                           value={(formData as any)[field.name]}
                           onChange={handleChange}
                           disabled={!isEditing}
-                          className={`w-full ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'} border rounded-2xl py-4 pl-12 pr-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 transition-all disabled:opacity-40`}
+                          className={`w-full ${isDark ? 'bg-white/5 border-white/10 text-white placeholder:text-white/30' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400'} border rounded-xl py-3 pl-10 pr-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
                         />
                       </div>
                     </div>
@@ -333,44 +339,44 @@ export default function StudentSettings(props: any) {
               </div>
 
               {/* Academic Grid */}
-              <div className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-[2.5rem] p-8 space-y-8 shadow-lg`}>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center">
-                    <GraduationCap className="w-6 h-6 text-purple-400" />
+              <div className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-2xl p-6 space-y-6 shadow-lg`}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
+                    <GraduationCap className="w-5 h-5 text-purple-400" />
                   </div>
-                  <h4 className={`text-sm font-black uppercase tracking-widest ${isDark ? 'text-white' : 'text-slate-900'}`}>Academic Core</h4>
+                  <h4 className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Academic Information</h4>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-5">
                   <div className="space-y-2">
-                    <label className={`text-[10px] font-black uppercase tracking-[0.2em] ml-1 ${isDark ? 'text-white/40' : 'text-slate-600'}`}>Institution</label>
+                    <label className={`text-xs font-semibold ${isDark ? 'text-white/70' : 'text-slate-700'}`}>Institution</label>
                     <div className="relative">
-                      <Building2 className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-white/20' : 'text-slate-400'}`} />
+                      <Building2 className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-white/30' : 'text-slate-400'}`} />
                       <input
                         type="text"
                         name="college"
                         value={formData.college}
                         onChange={handleChange}
                         disabled={!isEditing}
-                        className={`w-full ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'} border rounded-2xl py-4 pl-12 pr-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 transition-all disabled:opacity-40`}
+                        className={`w-full ${isDark ? 'bg-white/5 border-white/10 text-white placeholder:text-white/30' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400'} border rounded-xl py-3 pl-10 pr-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <label className={`text-[10px] font-black uppercase tracking-[0.2em] ml-1 ${isDark ? 'text-white/40' : 'text-slate-600'}`}>Branch</label>
+                      <label className={`text-xs font-semibold ${isDark ? 'text-white/70' : 'text-slate-700'}`}>Branch</label>
                       <select name="branch" value={formData.branch} onChange={handleChange} disabled={!isEditing}
-                        className={`w-full ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'} border rounded-2xl py-4 px-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all disabled:opacity-40 appearance-none`}>
+                        className={`w-full ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'} border rounded-xl py-3 px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none`}>
                         <option className={isDark ? 'bg-[#0c0c14]' : 'bg-white'}>Computer Science</option>
                         <option className={isDark ? 'bg-[#0c0c14]' : 'bg-white'}>Electronics</option>
                         <option className={isDark ? 'bg-[#0c0c14]' : 'bg-white'}>Information Technology</option>
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className={`text-[10px] font-black uppercase tracking-[0.2em] ml-1 ${isDark ? 'text-white/40' : 'text-slate-600'}`}>Level</label>
+                      <label className={`text-xs font-semibold ${isDark ? 'text-white/70' : 'text-slate-700'}`}>Level</label>
                       <select name="year" value={formData.year} onChange={handleChange} disabled={!isEditing}
-                        className={`w-full ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'} border rounded-2xl py-4 px-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all disabled:opacity-40 appearance-none`}>
+                        className={`w-full ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'} border rounded-xl py-3 px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none`}>
                         <option className={isDark ? 'bg-[#0c0c14]' : 'bg-white'}>First Year</option>
                         <option className={isDark ? 'bg-[#0c0c14]' : 'bg-white'}>Second Year</option>
                         <option className={isDark ? 'bg-[#0c0c14]' : 'bg-white'}>Third Year</option>
@@ -379,16 +385,16 @@ export default function StudentSettings(props: any) {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <label className={`text-[10px] font-black uppercase tracking-[0.2em] ml-1 ${isDark ? 'text-white/40' : 'text-slate-600'}`}>Index (CGPA)</label>
+                      <label className={`text-xs font-semibold ${isDark ? 'text-white/70' : 'text-slate-700'}`}>CGPA</label>
                       <input type="text" name="cgpa" value={formData.cgpa} onChange={handleChange} disabled={!isEditing}
-                        className={`w-full ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'} border rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all disabled:opacity-40`} />
+                        className={`w-full ${isDark ? 'bg-white/5 border-white/10 text-white placeholder:text-white/30' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400'} border rounded-xl py-3 px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed`} />
                     </div>
                     <div className="space-y-2">
-                      <label className={`text-[10px] font-black uppercase tracking-[0.2em] ml-1 ${isDark ? 'text-white/40' : 'text-slate-600'}`}>Cycle Year</label>
+                      <label className={`text-xs font-semibold ${isDark ? 'text-white/70' : 'text-slate-700'}`}>Graduation Year</label>
                       <input type="text" name="graduationYear" value={formData.graduationYear} onChange={handleChange} disabled={!isEditing}
-                        className={`w-full ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'} border rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all disabled:opacity-40`} />
+                        className={`w-full ${isDark ? 'bg-white/5 border-white/10 text-white placeholder:text-white/30' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400'} border rounded-xl py-3 px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed`} />
                     </div>
                   </div>
                 </div>
@@ -401,13 +407,13 @@ export default function StudentSettings(props: any) {
         return (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-[3rem] p-10 relative overflow-hidden shadow-lg`}>
-              <div className="flex items-center gap-4 mb-10">
-                <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center">
-                  <Bell className="w-7 h-7 text-blue-400" />
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center">
+                  <Bell className="w-6 h-6 text-blue-400" />
                 </div>
                 <div>
-                  <h3 className={`text-xl font-black uppercase tracking-widest ${isDark ? 'text-white' : 'text-slate-900'}`}>Network Alerts</h3>
-                  <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-slate-600'}`}>Manage your synchronization preferences</p>
+                  <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Notification Preferences</h3>
+                  <p className={`text-xs ${isDark ? 'text-white/60' : 'text-slate-600'}`}>Manage how and when you receive notifications</p>
                 </div>
               </div>
 
@@ -419,19 +425,19 @@ export default function StudentSettings(props: any) {
                         <Bell className={`w-5 h-5 ${value ? 'text-blue-400' : isDark ? 'text-white/20' : 'text-slate-400'}`} />
                       </div>
                       <div>
-                        <h4 className={`text-sm font-black uppercase tracking-tight group-hover:text-blue-400 transition-colors ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          {key === 'emailNotifications' && 'Global Email Sync'}
-                          {key === 'jobAlerts' && 'Career Opportunity Feeds'}
-                          {key === 'assessmentReminders' && 'Milestone Alerts'}
-                          {key === 'weeklyDigest' && 'Performance Analytics'}
-                          {key === 'mentorMessages' && 'Expert Link Direct'}
+                        <h4 className={`text-sm font-semibold group-hover:text-blue-400 transition-colors ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                          {key === 'emailNotifications' && 'Email Notifications'}
+                          {key === 'jobAlerts' && 'Job Alerts'}
+                          {key === 'assessmentReminders' && 'Assessment Reminders'}
+                          {key === 'weeklyDigest' && 'Weekly Digest'}
+                          {key === 'mentorMessages' && 'Mentor Messages'}
                         </h4>
-                        <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${isDark ? 'text-white/40' : 'text-slate-600'}`}>
-                          {key === 'emailNotifications' && 'Status updates routed to your primary terminal'}
-                          {key === 'jobAlerts' && 'Real-time matching with high-priority vacancies'}
-                          {key === 'assessmentReminders' && 'Critical path assessment countdowns'}
-                          {key === 'weeklyDigest' && 'Full system telemetry report delivered weekly'}
-                          {key === 'mentorMessages' && 'Encrypted communication from field leads'}
+                        <p className={`text-xs mt-0.5 ${isDark ? 'text-white/60' : 'text-slate-600'}`}>
+                          {key === 'emailNotifications' && 'Receive email updates about your account'}
+                          {key === 'jobAlerts' && 'Get notified about new job opportunities'}
+                          {key === 'assessmentReminders' && 'Reminders for upcoming assessments'}
+                          {key === 'weeklyDigest' && 'Weekly summary of your progress'}
+                          {key === 'mentorMessages' && 'Notifications from your mentors'}
                         </p>
                       </div>
                     </div>
@@ -452,13 +458,13 @@ export default function StudentSettings(props: any) {
         return (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-[3rem] p-10 shadow-lg`}>
-              <div className="flex items-center gap-4 mb-10">
-                <div className="w-14 h-14 bg-red-500/10 rounded-2xl flex items-center justify-center">
-                  <Lock className="w-7 h-7 text-red-400" />
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center">
+                  <Lock className="w-6 h-6 text-red-400" />
                 </div>
                 <div>
-                  <h3 className={`text-xl font-black uppercase tracking-widest ${isDark ? 'text-white' : 'text-slate-900'}`}>Protocol Shield</h3>
-                  <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-slate-600'}`}>Security authorization & access control</p>
+                  <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Security Settings</h3>
+                  <p className={`text-xs ${isDark ? 'text-white/60' : 'text-slate-600'}`}>Manage your account security and access</p>
                 </div>
               </div>
 
@@ -474,8 +480,8 @@ export default function StudentSettings(props: any) {
                         <item.icon className={`w-8 h-8 ${item.color}`} />
                       </div>
                       <div>
-                        <h4 className={`text-sm font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h4>
-                        <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${isDark ? 'text-white/40' : 'text-slate-600'}`}>{item.desc}</p>
+                        <h4 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h4>
+                        <p className={`text-xs mt-0.5 ${isDark ? 'text-white/60' : 'text-slate-600'}`}>{item.desc}</p>
                         {item.active && (
                           <span className="inline-flex items-center gap-2 text-[9px] text-emerald-400 font-black uppercase tracking-widest mt-2 px-3 py-1 bg-emerald-400/5 rounded-full border border-emerald-400/10">
                             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
@@ -484,16 +490,16 @@ export default function StudentSettings(props: any) {
                         )}
                       </div>
                     </div>
-                    <Button variant="outline" className={`h-12 ${isDark ? 'border-white/10 hover:bg-white/5 text-white' : 'border-slate-200 hover:bg-slate-100 text-slate-900'} rounded-xl font-black uppercase tracking-widest text-[10px] px-6`}>
-                      Execute
+                    <Button variant="outline" className={`h-10 ${isDark ? 'border-white/10 hover:bg-white/5 text-white' : 'border-slate-200 hover:bg-slate-100 text-slate-900'} rounded-lg font-semibold text-xs px-4`}>
+                      Manage
                     </Button>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-[3rem] p-10 shadow-lg`}>
-              <h3 className={`text-sm font-black uppercase tracking-[0.2em] mb-8 px-2 ${isDark ? 'text-white/40' : 'text-slate-600'}`}>Active Terminals</h3>
+            <div className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-2xl p-6 shadow-lg`}>
+              <h3 className={`text-base font-bold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>Active Sessions</h3>
               <div className="grid gap-4">
                 {[
                   { name: "Chrome Matrix v124", loc: "Mumbai Sector 4 • ID: 103.**.**.45", icon: Globe, current: true },
@@ -505,16 +511,16 @@ export default function StudentSettings(props: any) {
                         <session.icon className={`w-5 h-5 ${session.current ? 'text-emerald-400' : isDark ? 'text-white/40' : 'text-slate-600'}`} />
                       </div>
                       <div>
-                        <div className="flex items-center gap-3">
-                          <h4 className={`text-sm font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{session.name}</h4>
-                          {session.current && <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 bg-emerald-500 text-white rounded-md">Master</span>}
+                        <div className="flex items-center gap-2">
+                          <h4 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{session.name}</h4>
+                          {session.current && <span className="text-xs font-semibold px-2 py-0.5 bg-emerald-500 text-white rounded">Current</span>}
                         </div>
-                        <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${isDark ? 'text-white/40' : 'text-slate-600'}`}>{session.loc}</p>
+                        <p className={`text-xs mt-0.5 ${isDark ? 'text-white/60' : 'text-slate-600'}`}>{session.loc}</p>
                       </div>
                     </div>
                     {!session.current && (
-                      <Button variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-400/10 font-black uppercase tracking-widest text-[10px]">
-                        Nullify
+                      <Button variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-400/10 font-semibold text-xs">
+                        Revoke
                       </Button>
                     )}
                   </div>
@@ -528,13 +534,13 @@ export default function StudentSettings(props: any) {
         return (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-3xl border rounded-[3rem] p-10 shadow-lg`}>
-              <div className="flex items-center gap-4 mb-10">
-                <div className="w-14 h-14 bg-orange-500/10 rounded-2xl flex items-center justify-center">
-                  <Database className="w-7 h-7 text-orange-400" />
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 bg-orange-500/10 rounded-xl flex items-center justify-center">
+                  <Database className="w-6 h-6 text-orange-400" />
                 </div>
                 <div>
-                  <h3 className={`text-xl font-black uppercase tracking-widest ${isDark ? 'text-white' : 'text-slate-900'}`}>Data Architecture</h3>
-                  <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white/40' : 'text-slate-600'}`}>Privacy filters & data encryption settings</p>
+                  <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Privacy Settings</h3>
+                  <p className={`text-xs ${isDark ? 'text-white/60' : 'text-slate-600'}`}>Control your data and privacy preferences</p>
                 </div>
               </div>
 
@@ -551,8 +557,8 @@ export default function StudentSettings(props: any) {
                         <item.icon className="w-5 h-5 text-orange-400" />
                       </div>
                       <div>
-                        <h4 className={`text-sm font-black uppercase tracking-tight group-hover:text-orange-400 transition-colors ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h4>
-                        <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${isDark ? 'text-white/40' : 'text-slate-600'}`}>{item.desc}</p>
+                        <h4 className={`text-sm font-semibold group-hover:text-orange-400 transition-colors ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h4>
+                        <p className={`text-xs mt-0.5 ${isDark ? 'text-white/60' : 'text-slate-600'}`}>{item.desc}</p>
                       </div>
                     </div>
                     <button
@@ -573,11 +579,11 @@ export default function StudentSettings(props: any) {
                   <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center">
                     <Trash2 className="w-6 h-6 text-red-500" />
                   </div>
-                  <h3 className="text-sm font-black text-red-500 uppercase tracking-[0.2em]">Destruction Protocol</h3>
+                  <h3 className="text-base font-bold text-red-500">Danger Zone</h3>
                 </div>
-                <p className={`text-xs font-bold mb-8 max-w-xl uppercase tracking-widest leading-relaxed ${isDark ? 'text-white/60' : 'text-slate-700'}`}>Warning: Initiating account deletion will permanently purge all achievement records, verified certificates, and career analytics from the master grid. This operation is non-recoverable.</p>
-                <Button variant="destructive" className="h-14 px-10 bg-red-600 hover:bg-red-500 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-2xl shadow-red-500/20">
-                  Execute Deletion
+                <p className={`text-sm mb-6 max-w-xl leading-relaxed ${isDark ? 'text-white/70' : 'text-slate-700'}`}>Warning: Deleting your account will permanently remove all your data, achievements, and progress. This action cannot be undone.</p>
+                <Button variant="destructive" className="h-11 px-6 bg-red-600 hover:bg-red-500 text-white rounded-xl font-semibold text-sm shadow-lg shadow-red-500/20">
+                  Delete Account
                 </Button>
               </div>
             </div>
@@ -642,29 +648,39 @@ export default function StudentSettings(props: any) {
 
           <div className={`${isDark ? 'bg-[#0c0c14]/40 border-white/5' : 'bg-white/80 border-slate-200/50'} backdrop-blur-2xl border-b sticky top-20 z-40 shadow-xl`}>
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex space-x-1 overflow-x-auto py-2 items-center no-scrollbar">
-                {[
-                  { id: 'overview', label: 'Overview', icon: BarChart3 },
-                  { id: 'profile', label: 'Profile', icon: User },
-                  { id: 'notifications', label: 'Notifications', icon: Bell },
-                  { id: 'security', label: 'Security', icon: Lock },
-                  { id: 'privacy', label: 'Privacy', icon: Database }
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
-                    className={`py-4 px-8 rounded-2xl font-bold text-sm tracking-wide transition-all whitespace-nowrap flex items-center gap-3 group relative ${activeTab === tab.id
-                      ? isDark ? 'bg-white/10 text-blue-400 shadow-[0_10px_30px_rgba(59,130,246,0.1)] border border-white/10' : 'bg-blue-50 text-blue-600 shadow-[0_10px_30px_rgba(59,130,246,0.1)] border border-blue-200'
-                      : isDark ? 'text-muted-foreground opacity-60 hover:opacity-100 hover:bg-white/5' : 'text-slate-600 opacity-60 hover:opacity-100 hover:bg-slate-100'
-                      }`}
-                  >
-                    <tab.icon className={`w-5 h-5 transition-colors ${activeTab === tab.id ? "text-blue-500" : isDark ? "group-hover:text-white" : "group-hover:text-slate-900"}`} />
-                    <span>{tab.label}</span>
-                    {activeTab === tab.id && (
-                      <div className="absolute -bottom-[1px] left-0 right-0 h-1 bg-blue-500 rounded-t-full shadow-[0_0_20px_rgba(59,130,246,1)]"></div>
-                    )}
-                  </button>
-                ))}
+              <div className="flex justify-center items-center py-4">
+                <div className="flex space-x-2 items-center bg-white/5 dark:bg-white/5 rounded-2xl p-1.5 border border-white/10 dark:border-white/10 shadow-inner">
+                  {[
+                    { id: 'overview', label: 'Overview', icon: BarChart3 },
+                    { id: 'profile', label: 'Profile', icon: User },
+                    { id: 'notifications', label: 'Notifications', icon: Bell },
+                    { id: 'security', label: 'Security', icon: Lock },
+                    { id: 'privacy', label: 'Privacy', icon: Database }
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as any)}
+                      className={`relative py-3 px-6 rounded-xl font-semibold text-base transition-all duration-200 whitespace-nowrap flex items-center gap-2.5 group ${activeTab === tab.id
+                        ? isDark 
+                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-105' 
+                          : 'bg-blue-600 text-white shadow-lg shadow-blue-500/20 scale-105'
+                        : isDark 
+                          ? 'text-white/70 hover:text-white hover:bg-white/10' 
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                        }`}
+                    >
+                      <tab.icon className={`w-5 h-5 transition-all ${activeTab === tab.id ? "scale-110" : "group-hover:scale-110"}`} />
+                      <span className="font-medium">{tab.label}</span>
+                      {activeTab === tab.id && (
+                        <motion.div
+                          layoutId="activeTab"
+                          className="absolute inset-0 rounded-xl bg-blue-600/20 -z-10"
+                          transition={{ type: "spring" as const, bounce: 0.2, duration: 0.6 }}
+                        />
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
