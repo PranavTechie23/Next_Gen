@@ -32,7 +32,13 @@ import CollegeInfo from "./pages/college/college_info";
 
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminSetting from "./pages/admin/Setting";
-import AdminFeedback from "./pages/admin/feedback";
+import AdminFeedback from "./pages/admin/Feedback";
+import AdminInstitutions from "./pages/admin/Institutions";
+import AdminStudents from "./pages/admin/Students";
+import AdminAssessments from "./pages/admin/Assessments";
+import AdminReports from "./pages/admin/Reports";
+import AdminIntegrations from "./pages/admin/Integration";
+import AdminAnalytics from "./pages/admin/Analytics";
 
 import PrivacyPage from "./pages/PrivacyPage";
 import SignupPage from "./pages/SignupPage";
@@ -43,6 +49,9 @@ import CookiePolicy from "./pages/Cookie";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
 import Security from "./pages/Security";
+import SuccessStories from "./pages/SuccessStories";
+import ResumeBuilder from "./pages/ResumeBuilder";
+import InterviewPrep from "./pages/InterviewPrep";
 
 
 function Router() {
@@ -71,6 +80,12 @@ function Router() {
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/setting" component={AdminSetting} />
       <Route path="/admin/feedback" component={AdminFeedback} />
+      <Route path="/admin/institutions" component={AdminInstitutions} />
+      <Route path="/admin/students" component={AdminStudents} />
+      <Route path="/admin/assessments" component={AdminAssessments} />
+      <Route path="/admin/reports" component={AdminReports} />
+      <Route path="/admin/integrations" component={AdminIntegrations} />
+      <Route path="/admin/analytics" component={AdminAnalytics} />
 
       {/* Student Routes */}
       <Route path="/student/dashboard" component={StudentDashboard} />
@@ -91,6 +106,9 @@ function Router() {
       <Route path="/terms" component={TermsAndCondition} />
       <Route path="/help" component={HelpCenter} />
       <Route path="/cookie" component={CookiePolicy} />
+      <Route path="/SuccessStories" component={SuccessStories} />
+      <Route path="/ResumeBuilder" component={ResumeBuilder} />
+      <Route path="/InterviewPrep" component={InterviewPrep} />
 
       {/* Backward/typed URL alias */}
       <Route path="/PrivacyPage" component={PrivacyPage} />

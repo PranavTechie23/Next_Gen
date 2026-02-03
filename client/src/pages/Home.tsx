@@ -68,7 +68,7 @@ function Footer({ role }: { role?: string }) {
             <ul className="space-y-4">
               {["Features", "Pricing", "Success Stories", "For Colleges", "For Students"].map((item) => (
                 <li key={item}>
-                  <a href={item === "Features" ? "/features" : item === "Pricing" ? "/pricing" : item === "Success Stories" ? "/success_stories" : item === "For Colleges" ? "/college/college_info" : item === "For Students" ? "/student/student_info" : ""} className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{item}</a>
+                  <a href={item === "Features" ? "/features" : item === "Pricing" ? "/pricing" : item === "Success Stories" ? "/SuccessStories" : item === "For Colleges" ? "/college/college_info" : item === "For Students" ? "/student/student_info" : ""} className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{item}</a>
                 </li>
               ))}
             </ul>
