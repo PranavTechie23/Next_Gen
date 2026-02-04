@@ -1,6 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLocation } from "wouter";
+import { toast } from "sonner";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, RadarChart, Radar,
@@ -38,6 +44,13 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+// Import page components
+import InstitutionsPage from "./Institutions";
+import AnalyticsPage from "./Analytics";
+import AssessmentsPage from "./Assessments";
+import AdminStudents from "./Students";
+import AdminReports from "./Reports";
+import AdminIntegrations from "./Integration";
 
 // ==================== TYPE DEFINITIONS ====================
 interface College {
@@ -123,6 +136,18 @@ export default function EnterpriseAdminDashboard() {
   const [comparisonMode, setComparisonMode] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [performanceView, setPerformanceView] = useState<"overview" | "detailed">("overview");
+  const [showAddInstitution, setShowAddInstitution] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [commandSearch, setCommandSearch] = useState("");
+  const [institutionForm, setInstitutionForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
+    type: "",
+    established: "",
+    plan: "Standard" as "Premium" | "Standard" | "Basic"
+  });
 
   // ==================== REAL-TIME UPDATES ====================
   useEffect(() => {
@@ -835,12 +860,12 @@ export default function EnterpriseAdminDashboard() {
   ];
 
   const quickActions = [
-    { icon: Plus, label: "Add Institution", color: "blue", action: () => console.log("Add") },
-    { icon: Upload, label: "Import Data", color: "emerald", action: () => console.log("Import") },
-    { icon: Download, label: "Export Report", color: "indigo", action: () => console.log("Export") },
+    { icon: Plus, label: "Add Institution", color: "blue", action: () => setShowAddInstitution(true) },
+    { icon: Upload, label: "Import Data", color: "emerald", action: () => setShowImportDialog(true) },
+    { icon: Download, label: "Export Report", color: "indigo", action: () => handleExport() },
     { icon: RefreshCw, label: "Sync Data", color: "amber", action: () => handleRefresh() },
-    { icon: Bell, label: "Send Alert", color: "rose", action: () => console.log("Alert") },
-    { icon: Settings, label: "Configure", color: "violet", action: () => console.log("Config") },
+    { icon: Bell, label: "Send Alert", color: "rose", action: () => toast.info("Alert sent to all institutions") },
+    { icon: Settings, label: "Configure", color: "violet", action: () => handleSettings() },
   ];
 
   const revenueByPlan = [
@@ -924,7 +949,90 @@ export default function EnterpriseAdminDashboard() {
 
   const handleExport = useCallback(() => {
     setIsExporting(true);
-    setTimeout(() => setIsExporting(false), 1500);
+    toast.loading("Exporting report...", { id: "export" });
+
+    // Simulate export process
+    setTimeout(() => {
+      setIsExporting(false);
+      toast.success("Report exported successfully!", { id: "export" });
+
+      // Create CSV content
+      const csvContent = [
+        ["Institution", "Students", "Placement %", "Status", "Plan", "Revenue"],
+        ...collegeList.map(college => [
+          college.name,
+          college.students.toString(),
+          college.placement.toString(),
+          college.status,
+          college.plan,
+          college.revenue
+        ])
+      ].map(row => row.join(",")).join("\n");
+
+      // Download CSV
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `admin-report-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }, 1500);
+  }, [collegeList]);
+
+  const handleImportData = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    toast.loading("Importing data...", { id: "import" });
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        // Simulate processing
+        setTimeout(() => {
+          toast.success(`Successfully imported ${file.name}`, { id: "import" });
+          setShowImportDialog(false);
+        }, 2000);
+      } catch (error) {
+        toast.error("Failed to import file. Please check the format.", { id: "import" });
+      }
+    };
+    reader.readAsText(file);
+  }, []);
+
+  const handleAddInstitution = useCallback(() => {
+    if (!institutionForm.name || !institutionForm.email || !institutionForm.location) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    toast.loading("Adding institution...", { id: "add-institution" });
+
+    // Simulate API call
+    setTimeout(() => {
+      toast.success(`${institutionForm.name} has been added successfully!`, { id: "add-institution" });
+      setShowAddInstitution(false);
+      setInstitutionForm({
+        name: "",
+        email: "",
+        phone: "",
+        location: "",
+        type: "",
+        established: "",
+        plan: "Standard"
+      });
+    }, 1500);
+  }, [institutionForm]);
+
+  const handleDeleteInstitution = useCallback((id: number, name: string) => {
+    toast.loading("Deleting institution...", { id: `delete-${id}` });
+    setTimeout(() => {
+      toast.success(`${name} has been removed`, { id: `delete-${id}` });
+    }, 1000);
   }, []);
 
   const handleCollegeClick = useCallback((college: College) => {
@@ -932,15 +1040,81 @@ export default function EnterpriseAdminDashboard() {
   }, []);
 
   const handleLogout = useCallback(() => {
-    // Clear any stored authentication data if needed
-    // localStorage.removeItem('authToken');
-    // sessionStorage.clear();
-    navigate("/");
+    toast.loading("Logging out...", { id: "logout" });
+    setTimeout(() => {
+      // Clear any stored authentication data if needed
+      // localStorage.removeItem('authToken');
+      // sessionStorage.clear();
+      toast.success("Logged out successfully", { id: "logout" });
+      navigate("/");
+    }, 500);
   }, [navigate]);
 
   const handleSettings = useCallback(() => {
     navigate("/admin/setting");
   }, [navigate]);
+
+  // Command palette commands
+  const commands = useMemo(() => [
+    {
+      category: "Navigation",
+      items: [
+        { id: "dashboard", label: "Go to Dashboard", icon: LayoutDashboard, action: () => { setActiveTab("overview"); setShowCommandPalette(false); } },
+        { id: "institutions", label: "View Institutions", icon: Building2, action: () => { setActiveTab("institutions"); setShowCommandPalette(false); } },
+        { id: "analytics", label: "Open Analytics", icon: BarChart3, action: () => { setActiveTab("analytics"); setShowCommandPalette(false); } },
+        { id: "settings", label: "Open Settings", icon: Settings, action: () => { handleSettings(); setShowCommandPalette(false); } },
+      ]
+    },
+    {
+      category: "Actions",
+      items: [
+        { id: "add-institution", label: "Add Institution", icon: Plus, action: () => { setShowAddInstitution(true); setShowCommandPalette(false); } },
+        { id: "import-data", label: "Import Data", icon: Upload, action: () => { setShowImportDialog(true); setShowCommandPalette(false); } },
+        { id: "export-report", label: "Export Report", icon: Download, action: () => { handleExport(); setShowCommandPalette(false); } },
+        { id: "refresh", label: "Refresh Data", icon: RefreshCw, action: () => { handleRefresh(); setShowCommandPalette(false); } },
+      ]
+    },
+    {
+      category: "System",
+      items: [
+        { id: "logout", label: "Logout", icon: LogOut, action: () => { handleLogout(); setShowCommandPalette(false); } },
+        { id: "fullscreen", label: "Toggle Fullscreen", icon: isFullscreen ? Minimize2 : Maximize2, action: () => { setIsFullscreen(!isFullscreen); setShowCommandPalette(false); } },
+      ]
+    }
+  ], [handleSettings, handleExport, handleRefresh, handleLogout, isFullscreen]);
+
+  const filteredCommands = useMemo(() => {
+    if (!commandSearch) return commands;
+    const searchLower = commandSearch.toLowerCase();
+    return commands.map(category => ({
+      ...category,
+      items: category.items.filter(item =>
+        item.label.toLowerCase().includes(searchLower) ||
+        item.id.toLowerCase().includes(searchLower)
+      )
+    })).filter(category => category.items.length > 0);
+  }, [commandSearch, commands]);
+
+  // Enhanced sorting
+  const sortedColleges = useMemo(() => {
+    const filtered = filteredColleges;
+    return [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "students":
+          return b.students - a.students;
+        case "placement":
+          return b.placement - a.placement;
+        case "revenue":
+          const aRev = parseFloat(a.revenue.replace('₹', '').replace('L', ''));
+          const bRev = parseFloat(b.revenue.replace('₹', '').replace('L', ''));
+          return bRev - aRev;
+        default:
+          return 0;
+      }
+    });
+  }, [filteredColleges, sortBy]);
 
   // ==================== RENDER ====================
   return (
@@ -1105,8 +1279,9 @@ export default function EnterpriseAdminDashboard() {
           } relative`}
       >
         {/* ==================== ENHANCED HEADER ==================== */}
-        <header className={`sticky top-0 z-40 backdrop-blur-xl border-b ${isDark ? 'bg-black/60 border-white/5' : 'bg-white/60 border-slate-200'
-          } shadow-lg`}>
+        {activeTab === "overview" && (
+          <header className={`sticky top-0 z-40 backdrop-blur-xl border-b ${isDark ? 'bg-black/60 border-white/5' : 'bg-white/60 border-slate-200'
+            } shadow-lg`}>
           <div className="px-8 py-4">
             <div className="flex items-center justify-between">
               {/* Left Section */}
@@ -1302,9 +1477,9 @@ export default function EnterpriseAdminDashboard() {
                         </div>
                         <div className="p-2">
                           {[
-                            { icon: Users2, label: "Profile", action: () => {} },
+                            { icon: Users2, label: "Profile", action: () => { } },
                             { icon: Settings, label: "Settings", action: handleSettings },
-                            { icon: HelpCircle, label: "Help & Support", action: () => {} },
+                            { icon: HelpCircle, label: "Help & Support", action: () => { navigate('/HelpCenter'); } },
                           ].map((item, idx) => (
                             <Button
                               key={idx}
@@ -1321,7 +1496,7 @@ export default function EnterpriseAdminDashboard() {
                           <Button
                             variant="ghost"
                             className="w-full justify-start text-sm font-bold rounded-lg text-rose-500 hover:text-rose-600"
-                            onClick={handleLogout}
+                            onClick={handleLogout || navigate('/Home')}
                           >
                             <LogOut className="w-4 h-4 mr-2" />
                             Logout
@@ -1374,16 +1549,21 @@ export default function EnterpriseAdminDashboard() {
             </div>
           </div>
         </header>
+        )}
 
         {/* ==================== SCROLLABLE CONTENT ==================== */}
-        <div className="p-8 space-y-8 overflow-y-auto h-[calc(100vh-170px)] scrollbar-thin scrollbar-thumb-blue-500/20 scrollbar-track-transparent">
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="space-y-8"
-          >
-            {/* ==================== KEY METRICS GRID ==================== */}
+        <div className={`space-y-8 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-500/20 scrollbar-track-transparent ${activeTab === "overview" ? "p-8 h-[calc(100vh-170px)]" : "h-screen"}`}>
+          <AnimatePresence mode="wait">
+            {activeTab === "overview" && (
+              <motion.div
+                key="overview"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                className="space-y-8"
+              >
+                {/* ==================== KEY METRICS GRID ==================== */}
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {collegeStats.map((stat, idx) => (
                 <motion.div key={idx} variants={itemVariants}>
@@ -2058,7 +2238,7 @@ export default function EnterpriseAdminDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredColleges.map((college) => (
+                        {sortedColleges.map((college) => (
                           <motion.tr
                             key={college.id}
                             initial={{ opacity: 0, y: 10 }}
@@ -2156,7 +2336,7 @@ export default function EnterpriseAdminDashboard() {
                                   size="icon"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    console.log('Delete', college.id);
+                                    handleDeleteInstitution(college.id, college.name);
                                   }}
                                   className="h-8 w-8 rounded-lg text-rose-500 hover:text-rose-600"
                                 >
@@ -2173,7 +2353,7 @@ export default function EnterpriseAdminDashboard() {
                   {/* Pagination */}
                   <div className="flex items-center justify-between mt-6">
                     <div className="text-sm text-muted-foreground font-bold">
-                      Showing {filteredColleges.length} of {collegeList.length} institutions
+                      Showing {sortedColleges.length} of {collegeList.length} institutions
                     </div>
                     <div className="flex items-center gap-2">
                       <Button variant="outline" size="sm" className="rounded-xl font-bold">
@@ -2338,35 +2518,124 @@ export default function EnterpriseAdminDashboard() {
                 </Card>
               </motion.div>
             </div>
-          </motion.div>
 
+                {/* ==================== FOOTER ==================== */}
+                <footer className={`py-6 border-t ${isDark ? 'border-white/5' : 'border-slate-200'
+                  }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                      <p className="text-sm text-muted-foreground font-bold">
+                        © {new Date().getFullYear()} NextGen Enterprise. All rights reserved.
+                      </p>
+                      <div className="flex items-center gap-4">
+                        {['Privacy', 'Terms', 'Security', 'Status'].map((item) => (<a key={item} href={item === "Privacy" ? "/PrivacyPage" : item === "Terms" ? "/TermsAndCondition" : item === "Security" ? "/Security" : item === "Feedback" ? "/Feedback" : ""} className="text-xs font-bold text-muted-foreground p-0 h-auto">{item}</a>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                        <Twitter className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                        <Linkedin className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                        <Github className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </footer>
+              </motion.div>
+            )}
 
-          {/* ==================== FOOTER ==================== */}
-          <footer className={`py-6 border-t ${isDark ? 'border-white/5' : 'border-slate-200'
-            }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <p className="text-sm text-muted-foreground font-bold">
-                  © {new Date().getFullYear()} NextGen Enterprise. All rights reserved.
-                </p>
-                <div className="flex items-center gap-4">
-                  {['Privacy', 'Terms', 'Security', 'Status'].map((item) => ( <a href={item === "Privacy" ? "/PrivacyPage" : item === "Terms" ? "/TermsAndCondition" : item === "Security" ? "/Security" : item === "Feedback" ? "/Feedback" : ""} className="text-xs font-bold text-muted-foreground p-0 h-auto">{item}</a>
-                  ))}
+            {/* ==================== INSTITUTIONS TAB ==================== */}
+            {activeTab === "institutions" && (
+              <motion.div
+                key="institutions"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="relative w-full h-full"
+              >
+                <div className="[&_aside]:hidden [&_.ml-64]:ml-0">
+                  <InstitutionsPage />
                 </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
-                  <Twitter className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
-                  <Linkedin className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
-                  <Github className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </footer>
+              </motion.div>
+            )}
+
+            {/* ==================== ANALYTICS TAB ==================== */}
+            {activeTab === "analytics" && (
+              <motion.div
+                key="analytics"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="relative"
+              >
+                <AnalyticsPage />
+              </motion.div>
+            )}
+
+            {/* ==================== STUDENTS TAB ==================== */}
+            {activeTab === "students" && (
+              <motion.div
+                key="students"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="relative"
+              >
+                <AdminStudents />
+              </motion.div>
+            )}
+
+            {/* ==================== ASSESSMENTS TAB ==================== */}
+            {activeTab === "assessments" && (
+              <motion.div
+                key="assessments"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="relative w-full h-full"
+              >
+                <div className="[&_aside]:hidden [&_header]:sticky [&_header]:top-0 [&_header]:z-30">
+                  <AssessmentsPage />
+                </div>
+              </motion.div>
+            )}
+
+            {/* ==================== REPORTS TAB ==================== */}
+            {activeTab === "reports" && (
+              <motion.div
+                key="reports"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="relative"
+              >
+                <AdminReports />
+              </motion.div>
+            )}
+
+            {/* ==================== INTEGRATIONS TAB ==================== */}
+            {activeTab === "integrations" && (
+              <motion.div
+                key="integrations"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="relative"
+              >
+                <AdminIntegrations />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* ==================== COMMAND PALETTE ==================== */}
@@ -2394,6 +2663,8 @@ export default function EnterpriseAdminDashboard() {
                     <input
                       type="text"
                       placeholder="Type a command or search..."
+                      value={commandSearch}
+                      onChange={(e) => setCommandSearch(e.target.value)}
                       className="flex-1 bg-transparent focus:outline-none text-lg font-bold"
                       autoFocus
                     />
@@ -2403,27 +2674,36 @@ export default function EnterpriseAdminDashboard() {
                   </div>
                 </div>
                 <div className="max-h-96 overflow-y-auto p-2">
-                  {[
-                    { category: 'Navigation', commands: ['Dashboard', 'Institutions', 'Analytics'] },
-                    { category: 'Actions', commands: ['Add Institution', 'Export Data', 'Generate Report'] },
-                    { category: 'Settings', commands: ['User Settings', 'System Settings', 'Billing'] },
-                  ].map((group, idx) => (
+                  {filteredCommands.map((group, idx) => (
                     <div key={idx} className="mb-4">
                       <p className="text-xs font-bold uppercase text-muted-foreground px-3 py-2">
                         {group.category}
                       </p>
-                      {group.commands.map((cmd, cmdIdx) => (
-                        <motion.button
-                          key={cmdIdx}
-                          whileHover={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
-                          className="w-full text-left px-3 py-2.5 rounded-lg flex items-center justify-between"
-                        >
-                          <span className="font-bold">{cmd}</span>
-                          <span className="text-xs text-muted-foreground">↲ Enter</span>
-                        </motion.button>
-                      ))}
+                      {group.items.map((cmd) => {
+                        const Icon = cmd.icon;
+                        return (
+                          <motion.button
+                            key={cmd.id}
+                            whileHover={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
+                            onClick={cmd.action}
+                            className="w-full text-left px-3 py-2.5 rounded-lg flex items-center justify-between group"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Icon className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
+                              <span className="font-bold">{cmd.label}</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">↲ Enter</span>
+                          </motion.button>
+                        );
+                      })}
                     </div>
                   ))}
+                  {filteredCommands.every(c => c.items.length === 0) && (
+                    <div className="p-8 text-center text-muted-foreground">
+                      <p className="font-bold">No commands found</p>
+                      <p className="text-xs mt-1">Try a different search term</p>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </motion.div>
@@ -2451,14 +2731,14 @@ export default function EnterpriseAdminDashboard() {
                 <CardHeader className="flex flex-row items-center justify-between border-b border-white/5">
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-black text-white text-xl">
-                      {selectedInstitution.name.charAt(0)}
+                      {selectedInstitution?.name.charAt(0)}
                     </div>
                     <div>
                       <CardTitle className="text-2xl font-black">
-                        {selectedInstitution.name}
+                        {selectedInstitution?.name}
                       </CardTitle>
                       <CardDescription className="font-bold">
-                        {selectedInstitution.location} • Est. {selectedInstitution.established}
+                        {selectedInstitution?.location} • Est. {selectedInstitution?.established}
                       </CardDescription>
                     </div>
                   </div>
@@ -2475,7 +2755,7 @@ export default function EnterpriseAdminDashboard() {
                   <div className="grid grid-cols-3 gap-6">
                     <div className="col-span-2 space-y-6">
                       <div className="grid grid-cols-3 gap-4">
-                        {[
+                        {selectedInstitution && [
                           { label: 'Rating', value: selectedInstitution.rating, icon: Star, color: 'amber' },
                           { label: 'Growth', value: `${selectedInstitution.growth}%`, icon: TrendingUp, color: 'emerald' },
                           { label: 'Courses', value: selectedInstitution.courses, icon: BookOpen, color: 'blue' },
@@ -2509,7 +2789,7 @@ export default function EnterpriseAdminDashboard() {
                         }`}>
                         <h4 className="font-bold text-lg mb-4">Performance Overview</h4>
                         <div className="space-y-4">
-                          {[
+                          {selectedInstitution && [
                             { label: 'Engagement Rate', value: selectedInstitution.engagement, color: 'blue' },
                             { label: 'Retention Rate', value: selectedInstitution.retention, color: 'emerald' },
                             { label: 'Satisfaction Score', value: selectedInstitution.satisfaction, color: 'amber' },
@@ -2539,18 +2819,22 @@ export default function EnterpriseAdminDashboard() {
                       <div>
                         <h4 className="font-bold mb-3">Contact Information</h4>
                         <div className="space-y-3">
-                          <div className="flex items-center gap-2 text-sm">
-                            <Mail className="w-4 h-4 text-muted-foreground" />
-                            <span>{selectedInstitution.email}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <Phone className="w-4 h-4 text-muted-foreground" />
-                            <span>{selectedInstitution.phone}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <MapPin className="w-4 h-4 text-muted-foreground" />
-                            <span>{selectedInstitution.location}</span>
-                          </div>
+                          {selectedInstitution && (
+                            <>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Mail className="w-4 h-4 text-muted-foreground" />
+                                <span>{selectedInstitution.email}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Phone className="w-4 h-4 text-muted-foreground" />
+                                <span>{selectedInstitution.phone}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <MapPin className="w-4 h-4 text-muted-foreground" />
+                                <span>{selectedInstitution.location}</span>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
                       <div className={`p-4 rounded-2xl ${isDark ? 'bg-white/5' : 'bg-slate-50'
@@ -2607,6 +2891,199 @@ export default function EnterpriseAdminDashboard() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* ==================== ADD INSTITUTION MODAL ==================== */}
+        <Dialog open={showAddInstitution} onOpenChange={setShowAddInstitution}>
+          <DialogContent className={`max-w-2xl ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black flex items-center gap-2">
+                <Plus className="w-6 h-6 text-blue-500" />
+                Add New Institution
+              </DialogTitle>
+              <DialogDescription>
+                Fill in the details to add a new institution to the platform
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="font-bold">Institution Name *</Label>
+                  <Input
+                    id="name"
+                    placeholder="e.g., IIT Delhi"
+                    value={institutionForm.name}
+                    onChange={(e) => setInstitutionForm({ ...institutionForm, name: e.target.value })}
+                    className="font-medium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="font-bold">Email Address *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="admin@institution.edu"
+                    value={institutionForm.email}
+                    onChange={(e) => setInstitutionForm({ ...institutionForm, email: e.target.value })}
+                    className="font-medium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="font-bold">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+91 11 2659 1000"
+                    value={institutionForm.phone}
+                    onChange={(e) => setInstitutionForm({ ...institutionForm, phone: e.target.value })}
+                    className="font-medium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="location" className="font-bold">Location *</Label>
+                  <Input
+                    id="location"
+                    placeholder="City, State"
+                    value={institutionForm.location}
+                    onChange={(e) => setInstitutionForm({ ...institutionForm, location: e.target.value })}
+                    className="font-medium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="type" className="font-bold">Institution Type</Label>
+                  <Input
+                    id="type"
+                    placeholder="Engineering, Medical, etc."
+                    value={institutionForm.type}
+                    onChange={(e) => setInstitutionForm({ ...institutionForm, type: e.target.value })}
+                    className="font-medium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="established" className="font-bold">Established Year</Label>
+                  <Input
+                    id="established"
+                    type="number"
+                    placeholder="1961"
+                    value={institutionForm.established}
+                    onChange={(e) => setInstitutionForm({ ...institutionForm, established: e.target.value })}
+                    className="font-medium"
+                  />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="plan" className="font-bold">Subscription Plan</Label>
+                  <Select
+                    value={institutionForm.plan}
+                    onValueChange={(value: "Premium" | "Standard" | "Basic") =>
+                      setInstitutionForm({ ...institutionForm, plan: value })
+                    }
+                  >
+                    <SelectTrigger className="font-medium">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Premium">Premium</SelectItem>
+                      <SelectItem value="Standard">Standard</SelectItem>
+                      <SelectItem value="Basic">Basic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowAddInstitution(false);
+                  setInstitutionForm({
+                    name: "",
+                    email: "",
+                    phone: "",
+                    location: "",
+                    type: "",
+                    established: "",
+                    plan: "Standard"
+                  });
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAddInstitution}
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 font-bold"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Institution
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* ==================== IMPORT DATA MODAL ==================== */}
+        <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+          <DialogContent className={`max-w-lg ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black flex items-center gap-2">
+                <Upload className="w-6 h-6 text-emerald-500" />
+                Import Data
+              </DialogTitle>
+              <DialogDescription>
+                Upload a CSV or Excel file to import institution data
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className={`border-2 border-dashed rounded-xl p-8 text-center ${isDark ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-slate-50'
+                }`}>
+                <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <Label htmlFor="file-upload" className="cursor-pointer">
+                  <span className="font-bold text-foreground">Click to upload</span>
+                  <span className="text-muted-foreground"> or drag and drop</span>
+                </Label>
+                <Input
+                  id="file-upload"
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  onChange={handleImportData}
+                  className="hidden"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  CSV, XLSX up to 10MB
+                </p>
+              </div>
+              <div className={`p-4 rounded-lg ${isDark ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-blue-50 border border-blue-200'
+                }`}>
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-blue-500 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-bold text-foreground mb-1">File Format Requirements</p>
+                    <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                      <li>First row should contain column headers</li>
+                      <li>Required columns: Name, Email, Location</li>
+                      <li>Optional columns: Phone, Type, Established</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowImportDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  const input = document.getElementById('file-upload') as HTMLInputElement;
+                  input?.click();
+                }}
+                className="bg-gradient-to-r from-emerald-500 to-teal-600 font-bold"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Choose File
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main >
     </div >
   );
