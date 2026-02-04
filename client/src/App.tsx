@@ -79,7 +79,7 @@ function Router() {
       {/* Admin Routes */}
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/setting" component={AdminSetting} />
-      <Route path="/admin/feedback" component={AdminFeedback} />
+      <Route path="/admin/Feedback" component={AdminFeedback} />
       <Route path="/admin/institutions" component={AdminInstitutions} />
       <Route path="/admin/students" component={AdminStudents} />
       <Route path="/admin/assessments" component={AdminAssessments} />
