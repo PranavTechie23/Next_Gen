@@ -194,7 +194,7 @@ const studentsData: Student[] = Array.from({ length: 150 }, (_, i) => {
   const statuses: Student['status'][] = ['Active', 'Inactive', 'Suspended', 'Graduated', 'Dropout'];
   const placementStatuses: Student['placementStatus'][] = ['Placed', 'Unplaced', 'Interviewing', 'Internship', 'PPO'];
   const companies = ['Google', 'Microsoft', 'Amazon', 'Meta', 'Adobe', 'Goldman Sachs', 'JP Morgan', 'TCS', 'Infosys', 'Wipro'];
-  
+
   return {
     id: `STU${String(i + 1).padStart(5, '0')}`,
     rollNumber: `22${dept}${String(Math.floor(Math.random() * 200)).padStart(3, '0')}`,
@@ -257,7 +257,8 @@ const StudentCard: React.FC<{
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onMessage: (id: string) => void;
-}> = ({ student, onView, onEdit, onDelete, onMessage }) => {
+  isDark: boolean;
+}> = ({ student, onView, onEdit, onDelete, onMessage, isDark }) => {
   const getStatusVariant = (status: Student['status']) => {
     switch (status) {
       case 'Active': return 'default';
@@ -281,31 +282,26 @@ const StudentCard: React.FC<{
   };
 
   return (
-    <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all duration-200 group border-border/50 hover:border-primary/20">
+    <Card className={`transition-all duration-300 group border shadow-sm hover:shadow-xl ${isDark
+      ? 'bg-slate-900/50 border-white/10 hover:border-blue-500/30 backdrop-blur-md'
+      : 'bg-white border-slate-200 hover:border-blue-400 hover:shadow-2xl hover:shadow-blue-500/10'
+      }`}>
       <CardContent className="p-6">
         {/* Header Section */}
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center space-x-4 flex-1 min-w-0">
-            <div className="relative flex-shrink-0">
-              <img
-                src={student.avatar}
-                alt={student.name}
-                className="w-14 h-14 rounded-full border-2 border-border shadow-sm"
-              />
-              <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-card ${
-                student.status === 'Active' ? 'bg-green-500' :
-                student.status === 'Inactive' ? 'bg-muted-foreground' :
-                'bg-destructive'
-              }`} />
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-600'
+              }`}>
+              <GraduationCap className="w-6 h-6" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-lg text-foreground truncate mb-1">{student.name}</h3>
-              <p className="text-sm text-muted-foreground mb-3">{student.rollNumber}</p>
+              <h3 className={`font-bold text-lg truncate mb-0.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>{student.name}</h3>
+              <p className={`text-sm mb-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{student.rollNumber}</p>
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant={getStatusVariant(student.status) as any} className="text-xs">
+                <Badge variant={getStatusVariant(student.status) as any} className="text-[10px] uppercase font-bold tracking-wider px-2 py-0">
                   {student.status}
                 </Badge>
-                <Badge variant={getPlacementVariant(student.placementStatus) as any} className="text-xs">
+                <Badge variant={getPlacementVariant(student.placementStatus) as any} className="text-[10px] uppercase font-bold tracking-wider px-2 py-0">
                   {student.placementStatus}
                 </Badge>
               </div>
@@ -334,18 +330,21 @@ const StudentCard: React.FC<{
         </div>
 
         {/* Key Metrics - Simplified */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="text-center p-3 bg-muted/30 dark:bg-muted/20 rounded-lg">
-            <div className="text-xs text-muted-foreground mb-1">CGPA</div>
-            <div className="text-lg font-bold text-foreground">{student.cgpa}</div>
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className={`text-center p-3 rounded-2xl border transition-colors ${isDark ? 'bg-white/5 border-white/5 group-hover:bg-white/10' : 'bg-slate-50 border-slate-100 group-hover:bg-blue-50/50'
+            }`}>
+            <div className={`text-[10px] font-black uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>CGPA</div>
+            <div className={`text-lg font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>{student.cgpa}</div>
           </div>
-          <div className="text-center p-3 bg-muted/30 dark:bg-muted/20 rounded-lg">
-            <div className="text-xs text-muted-foreground mb-1">Attendance</div>
-            <div className="text-lg font-bold text-foreground">{student.attendance}%</div>
+          <div className={`text-center p-3 rounded-2xl border transition-colors ${isDark ? 'bg-white/5 border-white/5 group-hover:bg-white/10' : 'bg-slate-50 border-slate-100 group-hover:bg-blue-50/50'
+            }`}>
+            <div className={`text-[10px] font-black uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Attendance</div>
+            <div className={`text-lg font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>{student.attendance}%</div>
           </div>
-          <div className="text-center p-3 bg-muted/30 dark:bg-muted/20 rounded-lg">
-            <div className="text-xs text-muted-foreground mb-1">Projects</div>
-            <div className="text-lg font-bold text-foreground">{student.projects}</div>
+          <div className={`text-center p-3 rounded-2xl border transition-colors ${isDark ? 'bg-white/5 border-white/5 group-hover:bg-white/10' : 'bg-slate-50 border-slate-100 group-hover:bg-blue-50/50'
+            }`}>
+            <div className={`text-[10px] font-black uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Projects</div>
+            <div className={`text-lg font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>{student.projects}</div>
           </div>
         </div>
 
@@ -433,7 +432,8 @@ const StudentTable: React.FC<{
   sortBy: string;
   sortOrder: 'asc' | 'desc';
   onSort: (column: string) => void;
-}> = ({ students, selectedStudents, onSelect, onSelectAll, onView, onEdit, onDelete, onMessage, sortBy, sortOrder, onSort }) => {
+  isDark: boolean;
+}> = ({ students, selectedStudents, onSelect, onSelectAll, onView, onEdit, onDelete, onMessage, sortBy, sortOrder, onSort, isDark }) => {
   const getStatusVariant = (status: Student['status']) => {
     switch (status) {
       case 'Active': return 'default';
@@ -503,82 +503,80 @@ const StudentTable: React.FC<{
             className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
           />
         );
-      
+
       case 'name':
         return (
           <div className="flex items-center space-x-3">
-            <img
-              src={student.avatar}
-              alt={student.name}
-              className="w-8 h-8 rounded-full border border-border"
-            />
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-600'
+              }`}>
+              <GraduationCap className="w-4 h-4" />
+            </div>
             <div>
-              <div className="font-medium text-foreground">{student.name}</div>
-              <div className="text-sm text-muted-foreground">{student.email}</div>
+              <div className="font-bold text-foreground">{student.name}</div>
+              <div className="text-xs text-muted-foreground">{student.email}</div>
             </div>
           </div>
         );
-      
+
       case 'cgpa':
         return (
           <div className="flex items-center">
-            <div className="w-16 bg-slate-800 rounded-full h-2 mr-2">
+            <div className={`w-16 h-1.5 rounded-full mr-2 overflow-hidden ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}>
               <div
-                className={`h-2 rounded-full ${
-                  student.cgpa >= 8.5 ? 'bg-green-500' :
-                  student.cgpa >= 7.5 ? 'bg-yellow-500' :
-                  'bg-red-500'
-                }`}
+                className={`h-full rounded-full ${student.cgpa >= 8.5 ? 'bg-emerald-500' :
+                  student.cgpa >= 7.5 ? 'bg-blue-500' :
+                    'bg-rose-500'
+                  }`}
                 style={{ width: `${(student.cgpa / 10) * 100}%` }}
               />
             </div>
-            <span className="font-medium">{student.cgpa}</span>
+            <span className="font-black text-xs">{student.cgpa}</span>
           </div>
         );
-      
+
       case 'placementStatus':
         return (
           <div className="flex items-center gap-2">
-            <Badge variant={getPlacementVariant(student.placementStatus) as any}>
+            <Badge variant={getPlacementVariant(student.placementStatus) as any} className="text-[10px] font-bold uppercase py-0 px-2 tracking-wider">
               {student.placementStatus}
             </Badge>
             {student.placementCompany && (
-              <span className="text-xs text-muted-foreground">• {student.placementCompany}</span>
+              <span className="text-[11px] font-medium text-muted-foreground text-opacity-80">@{student.placementCompany}</span>
             )}
           </div>
         );
-      
+
       case 'status':
         return (
-          <Badge variant={getStatusVariant(student.status) as any}>
+          <Badge variant={getStatusVariant(student.status) as any} className="text-[10px] font-bold uppercase py-0 px-2 tracking-wider">
             {student.status}
           </Badge>
         );
-      
+
       case 'leetcodeSolved':
         return (
           <div className="flex items-center">
-            <Code className="w-4 h-4 mr-2 text-orange-500" />
-            <span className="font-medium">{student.leetcodeSolved}</span>
+            <Code className="w-3.5 h-3.5 mr-2 text-orange-500" />
+            <span className="font-bold text-xs">{student.leetcodeSolved}</span>
           </div>
         );
-      
+
       case 'githubCommits':
         return (
           <div className="flex items-center">
-            <Github className="w-4 h-4 mr-2 text-gray-800" />
-            <span className="font-medium">{student.githubCommits}</span>
+            <Github className={`w-3.5 h-3.5 mr-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`} />
+            <span className="font-bold text-xs">{student.githubCommits}</span>
           </div>
         );
-      
+
       case 'actions':
         return (
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
             <Button
               variant="ghost"
               size="icon-sm"
               onClick={() => onView(student.id)}
-              title="View Details"
+              className="h-8 w-8 hover:bg-blue-500/10 hover:text-blue-500"
             >
               <Eye className="w-4 h-4" />
             </Button>
@@ -586,7 +584,7 @@ const StudentTable: React.FC<{
               variant="ghost"
               size="icon-sm"
               onClick={() => onEdit(student.id)}
-              title="Edit"
+              className="h-8 w-8 hover:bg-amber-500/10 hover:text-amber-500"
             >
               <Edit className="w-4 h-4" />
             </Button>
@@ -594,7 +592,7 @@ const StudentTable: React.FC<{
               variant="ghost"
               size="icon-sm"
               onClick={() => onMessage(student.id)}
-              title="Send Message"
+              className="h-8 w-8 hover:bg-emerald-500/10 hover:text-emerald-500"
             >
               <MessageSquare className="w-4 h-4" />
             </Button>
@@ -602,13 +600,13 @@ const StudentTable: React.FC<{
               variant="ghost"
               size="icon-sm"
               onClick={() => onDelete(student.id)}
-              title="Delete"
+              className="h-8 w-8 hover:bg-rose-500/10 hover:text-rose-500"
             >
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
         );
-      
+
       default:
         return <span>{student[column.id as keyof Student] as string}</span>;
     }
@@ -662,9 +660,8 @@ const StudentTable: React.FC<{
             {students.map(student => (
               <tr
                 key={student.id}
-                className={`hover:bg-muted/50 ${
-                  selectedStudents.has(student.id) ? 'bg-primary/5' : ''
-                }`}
+                className={`hover:bg-muted/50 ${selectedStudents.has(student.id) ? 'bg-primary/5' : ''
+                  }`}
               >
                 {columns.map(column => (
                   <td
@@ -691,110 +688,106 @@ const StatsCards: React.FC<{
   avgCGPA: number;
   placementRate: number;
   avgAttendance: number;
-}> = ({ totalStudents, activeStudents, placedStudents, avgCGPA, placementRate, avgAttendance }) => {
+  isDark: boolean;
+}> = ({ totalStudents, activeStudents, placedStudents, avgCGPA, placementRate, avgAttendance, isDark }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
-      <Card className="border-border/50 hover:border-primary/30 transition-colors">
+      <Card className={`transition-all duration-300 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'}`}>
         <CardContent className="p-5">
           <div className="flex items-center justify-between mb-3">
-            <div className="p-2.5 bg-primary/10 dark:bg-primary/20 text-primary rounded-lg">
+            <div className={`p-2.5 rounded-lg ${isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
               <Users className="w-5 h-5" />
             </div>
-            <div className="flex items-center text-xs text-green-600 dark:text-green-400">
+            <div className={`flex items-center text-xs font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
               <TrendingUp className="w-3 h-3 mr-1" />
               +5.2%
             </div>
           </div>
-          <div className="text-2xl font-bold text-foreground mb-1">{totalStudents.toLocaleString()}</div>
-          <div className="text-sm text-muted-foreground">Total Students</div>
+          <div className={`text-2xl font-black mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{totalStudents.toLocaleString()}</div>
+          <div className={`text-xs font-black uppercase tracking-tighter ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Total Students</div>
         </CardContent>
       </Card>
 
-      <Card className="border-border/40 bg-gradient-to-br from-emerald-900/40 to-slate-900 shadow-elevated">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-medium">
-              <UserCheck className="w-4 h-4" />
-              Active
+      <Card className={`border shadow-lg ${isDark ? 'bg-gradient-to-br from-emerald-500/20 to-slate-900/50 border-emerald-500/20' : 'bg-white border-slate-200'}`}>
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className={`p-2.5 rounded-lg ${isDark ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-50 text-emerald-600'}`}>
+              <UserCheck className="w-5 h-5" />
             </div>
-            <span className="text-xs text-slate-400">
+            <span className={`text-[10px] font-black uppercase ${isDark ? 'text-emerald-400/80' : 'text-emerald-600/80'}`}>
               {((activeStudents / totalStudents) * 100).toFixed(1)}% of total
             </span>
           </div>
-          <div className="text-3xl font-semibold text-emerald-300 tracking-tight mb-1">
+          <div className={`text-2xl font-black mb-1 ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`}>
             {activeStudents.toLocaleString()}
           </div>
-          <p className="text-xs text-slate-400">Currently engaged students</p>
+          <p className={`text-xs font-black uppercase tracking-tighter ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Currently engaged</p>
         </CardContent>
       </Card>
 
-      <Card className="border-border/40 bg-gradient-to-br from-blue-900/40 via-slate-900 to-slate-950 shadow-elevated">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-300 text-xs font-medium">
-              <Briefcase className="w-4 h-4" />
-              Placed
+      <Card className={`border shadow-lg ${isDark ? 'bg-gradient-to-br from-blue-500/20 to-slate-900/50 border-blue-500/20' : 'bg-white border-slate-200'}`}>
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className={`p-2.5 rounded-lg ${isDark ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-50 text-blue-600'}`}>
+              <Briefcase className="w-5 h-5" />
             </div>
-          <div className="flex items-center text-xs text-emerald-400">
-            <Target className="w-3 h-3 mr-1" />
-            {placementRate.toFixed(1)}%
+            <div className={`flex items-center text-xs font-bold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+              <Target className="w-3 h-3 mr-1" />
+              {placementRate.toFixed(1)}%
+            </div>
           </div>
-          </div>
-          <div className="text-3xl font-semibold text-blue-300 tracking-tight mb-1">
+          <div className={`text-2xl font-black mb-1 ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>
             {placedStudents.toLocaleString()}
           </div>
-          <p className="text-xs text-slate-400">Students with confirmed offers</p>
+          <p className={`text-xs font-black uppercase tracking-tighter ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Students Placed</p>
         </CardContent>
       </Card>
 
-      <Card className="border-border/40 bg-gradient-to-br from-violet-900/40 to-slate-950 shadow-elevated">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-violet-500/15 text-violet-300 text-xs font-medium">
-              <GraduationCap className="w-4 h-4" />
-              Avg CGPA
+      <Card className={`border shadow-lg ${isDark ? 'bg-gradient-to-br from-violet-500/20 to-slate-900/50 border-violet-500/20' : 'bg-white border-slate-200'}`}>
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className={`p-2.5 rounded-lg ${isDark ? 'bg-violet-500/20 text-violet-300' : 'bg-violet-50 text-violet-600'}`}>
+              <GraduationCap className="w-5 h-5" />
             </div>
-            <div className="flex items-center text-xs text-violet-300">
+            <div className={`flex items-center text-xs font-bold ${isDark ? 'text-violet-400' : 'text-violet-600'}`}>
               <TrendingUp className="w-3 h-3 mr-1" />
               +0.2
             </div>
           </div>
-          <div className="text-3xl font-semibold text-violet-300 tracking-tight mb-1">
+          <div className={`text-2xl font-black mb-1 ${isDark ? 'text-violet-300' : 'text-violet-600'}`}>
             {avgCGPA.toFixed(2)}
           </div>
-          <p className="text-xs text-slate-400">Cohort-wide academic performance</p>
+          <p className={`text-xs font-black uppercase tracking-tighter ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Avg CGPA Score</p>
         </CardContent>
       </Card>
 
-      <Card className="border-border/40 bg-gradient-to-br from-amber-900/40 to-slate-950 shadow-elevated">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 text-xs font-medium">
-              <Clock className="w-4 h-4" />
-              Attendance
+      <Card className={`border shadow-lg ${isDark ? 'bg-gradient-to-br from-amber-500/20 to-slate-900/50 border-amber-500/20' : 'bg-white border-slate-200'}`}>
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className={`p-2.5 rounded-lg ${isDark ? 'bg-amber-500/20 text-amber-300' : 'bg-amber-50 text-amber-600'}`}>
+              <Clock className="w-5 h-5" />
             </div>
-            <span className="text-xs text-slate-400">
+            <span className={`text-[10px] font-black uppercase ${avgAttendance > 85 ? 'text-emerald-400' : 'text-amber-400'}`}>
               {avgAttendance > 85 ? 'Healthy' : 'Needs focus'}
             </span>
           </div>
-          <div className="text-3xl font-semibold text-amber-300 tracking-tight mb-1">
+          <div className={`text-2xl font-black mb-1 ${isDark ? 'text-amber-300' : 'text-amber-600'}`}>
             {avgAttendance.toFixed(1)}%
           </div>
-          <p className="text-xs text-slate-400">Average attendance across batches</p>
+          <p className={`text-xs font-black uppercase tracking-tighter ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Avg Attendance</p>
         </CardContent>
       </Card>
 
-      <Card className="border-border/40 bg-gradient-to-br from-indigo-900/40 to-slate-950 shadow-elevated">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-indigo-500/15 text-indigo-300 text-xs font-medium">
-              <Building className="w-4 h-4" />
-              Departments
+      <Card className={`border shadow-lg ${isDark ? 'bg-gradient-to-br from-indigo-500/20 to-slate-900/50 border-indigo-500/20' : 'bg-white border-slate-200'}`}>
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className={`p-2.5 rounded-lg ${isDark ? 'bg-indigo-500/20 text-indigo-300' : 'bg-indigo-50 text-indigo-600'}`}>
+              <Building className="w-5 h-5" />
             </div>
-            <span className="text-xs text-slate-400">8 depts</span>
+            <span className={`text-[10px] font-black uppercase ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>8 depts</span>
           </div>
-          <div className="text-3xl font-semibold text-white tracking-tight mb-1">8</div>
-          <p className="text-xs text-slate-400">Engineering & emerging tech streams</p>
+          <div className={`text-2xl font-black mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>8</div>
+          <p className={`text-xs font-black uppercase tracking-tighter ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Active streams</p>
         </CardContent>
       </Card>
     </div>
@@ -861,58 +854,58 @@ const PerformanceMetrics: React.FC<{ student?: Student }> = ({ student }) => {
         <CardTitle>Performance Metrics</CardTitle>
       </CardHeader>
       <CardContent>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {metrics.map(metric => (
-          <div key={metric.label} className="text-center">
-            <div className="relative inline-flex items-center justify-center w-24 h-24">
-              <svg className="w-full h-full" viewBox="0 0 100 100">
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  fill="none"
-                  stroke="#e5e7eb"
-                  strokeWidth="8"
-                />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                  strokeLinecap="round"
-                  className={metric.color.replace('text-', 'stroke-')}
-                  strokeDasharray={`${(metric.value / metric.max) * 251} 251`}
-                  transform="rotate(-90 50 50)"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <div className={`text-2xl font-bold ${metric.color}`}>{metric.value}</div>
-                <div className="text-xs text-gray-500">/100</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {metrics.map(metric => (
+            <div key={metric.label} className="text-center">
+              <div className="relative inline-flex items-center justify-center w-24 h-24">
+                <svg className="w-full h-full" viewBox="0 0 100 100">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="none"
+                    stroke="#e5e7eb"
+                    strokeWidth="8"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    className={metric.color.replace('text-', 'stroke-')}
+                    strokeDasharray={`${(metric.value / metric.max) * 251} 251`}
+                    transform="rotate(-90 50 50)"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className={`text-2xl font-bold ${metric.color}`}>{metric.value}</div>
+                  <div className="text-xs text-gray-500">/100</div>
+                </div>
+              </div>
+              <div className="mt-2 flex items-center justify-center space-x-1">
+                {metric.icon}
+                <span className="font-medium">{metric.label}</span>
               </div>
             </div>
-            <div className="mt-2 flex items-center justify-center space-x-1">
-              {metric.icon}
-              <span className="font-medium">{metric.label}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-      {student && (
-        <div className="mt-6 pt-6 border-t">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm text-muted-foreground">Overall Performance</div>
-              <div className="text-2xl font-bold text-foreground">{student.performance.overall}/100</div>
-            </div>
-            <Badge variant={student.performance.overall >= 80 ? 'default' : student.performance.overall >= 60 ? 'secondary' : 'destructive'}>
-              {student.performance.overall >= 80 ? 'Excellent' :
-               student.performance.overall >= 60 ? 'Good' : 'Needs Improvement'}
-            </Badge>
-          </div>
+          ))}
         </div>
-      )}
+        {student && (
+          <div className="mt-6 pt-6 border-t">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-muted-foreground">Overall Performance</div>
+                <div className="text-2xl font-bold text-foreground">{student.performance.overall}/100</div>
+              </div>
+              <Badge variant={student.performance.overall >= 80 ? 'default' : student.performance.overall >= 60 ? 'secondary' : 'destructive'}>
+                {student.performance.overall >= 80 ? 'Excellent' :
+                  student.performance.overall >= 60 ? 'Good' : 'Needs Improvement'}
+              </Badge>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -951,7 +944,7 @@ const StudentDetailModal: React.FC<{
               </button>
             </div>
           </div>
-          
+
           <div className="p-6">
             <div className="flex flex-col items-center mb-6">
               <img
@@ -962,20 +955,18 @@ const StudentDetailModal: React.FC<{
               <h3 className="text-xl font-bold">{student.name}</h3>
               <p className="text-muted-foreground">{student.rollNumber}</p>
               <p className="text-sm text-muted-foreground">{student.department} • Batch {student.batch}</p>
-              
+
               <div className="flex items-center space-x-2 mt-4">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  student.status === 'Active' ? 'bg-emerald-500/10 text-emerald-300' :
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${student.status === 'Active' ? 'bg-emerald-500/10 text-emerald-300' :
                   student.status === 'Inactive' ? 'bg-slate-700/60 text-slate-200' :
-                  'bg-red-500/10 text-red-300'
-                }`}>
+                    'bg-red-500/10 text-red-300'
+                  }`}>
                   {student.status}
                 </span>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  student.placementStatus === 'Placed' ? 'bg-emerald-500/10 text-emerald-300' :
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${student.placementStatus === 'Placed' ? 'bg-emerald-500/10 text-emerald-300' :
                   student.placementStatus === 'Unplaced' ? 'bg-red-500/10 text-red-300' :
-                  'bg-amber-500/10 text-amber-300'
-                }`}>
+                    'bg-amber-500/10 text-amber-300'
+                  }`}>
                   {student.placementStatus}
                 </span>
               </div>
@@ -1050,11 +1041,10 @@ const StudentDetailModal: React.FC<{
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
-                    activeTab === tab.id
-                      ? 'bg-primary/20 text-primary'
-                      : 'text-muted-foreground hover:bg-muted/40'
-                  }`}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${activeTab === tab.id
+                    ? 'bg-primary/20 text-primary'
+                    : 'text-muted-foreground hover:bg-muted/40'
+                    }`}
                 >
                   {tab.icon}
                   <span>{tab.label}</span>
@@ -1067,7 +1057,7 @@ const StudentDetailModal: React.FC<{
             {activeTab === 'overview' && (
               <div className="space-y-6">
                 <PerformanceMetrics student={student} />
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="bg-card rounded-xl border border-border/60 p-6">
                     <h4 className="font-semibold mb-4">Academic Summary</h4>
@@ -1127,11 +1117,10 @@ const StudentDetailModal: React.FC<{
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Status</span>
-                          <span className={`font-bold ${
-                            student.placementStatus === 'Placed' ? 'text-green-600' :
+                          <span className={`font-bold ${student.placementStatus === 'Placed' ? 'text-green-600' :
                             student.placementStatus === 'PPO' ? 'text-purple-600' :
-                            'text-yellow-600'
-                          }`}>
+                              'text-yellow-600'
+                            }`}>
                             {student.placementStatus}
                           </span>
                         </div>
@@ -1185,10 +1174,9 @@ const StudentDetailModal: React.FC<{
                       </div>
                       <div className="w-full bg-muted rounded-full h-3">
                         <div
-                          className={`h-3 rounded-full ${
-                            student.attendance >= 85 ? 'bg-green-500' :
+                          className={`h-3 rounded-full ${student.attendance >= 85 ? 'bg-green-500' :
                             student.attendance >= 75 ? 'bg-yellow-500' : 'bg-red-500'
-                          }`}
+                            }`}
                           style={{ width: `${student.attendance}%` }}
                         />
                       </div>
@@ -1441,35 +1429,32 @@ const StudentFormModal: React.FC<{
               <X className="w-5 h-5" />
             </button>
           </div>
-          
+
           {/* Progress Steps */}
           <div className="mt-6">
             <div className="flex items-center justify-between">
               {steps.map((step, index) => (
                 <div key={step} className="flex items-center">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
-                      index === activeStep
-                        ? 'bg-primary text-primary-foreground'
-                        : index < activeStep
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${index === activeStep
+                      ? 'bg-primary text-primary-foreground'
+                      : index < activeStep
                         ? 'bg-emerald-500/10 text-emerald-400'
                         : 'bg-muted text-muted-foreground'
-                    }`}
+                      }`}
                   >
                     {index < activeStep ? <Check className="w-4 h-4" /> : index + 1}
                   </div>
                   <div
-                    className={`ml-2 text-sm font-medium ${
-                      index === activeStep ? 'text-primary' : 'text-muted-foreground'
-                    }`}
+                    className={`ml-2 text-sm font-medium ${index === activeStep ? 'text-primary' : 'text-muted-foreground'
+                      }`}
                   >
                     {step}
                   </div>
                   {index < steps.length - 1 && (
                     <div
-                      className={`mx-4 w-16 h-0.5 ${
-                        index < activeStep ? 'bg-emerald-500/60' : 'bg-muted'
-                      }`}
+                      className={`mx-4 w-16 h-0.5 ${index < activeStep ? 'bg-emerald-500/60' : 'bg-muted'
+                        }`}
                     />
                   )}
                 </div>
@@ -2039,6 +2024,8 @@ const BatchAnalysis: React.FC<{ batches: Batch[] }> = ({ batches }) => {
 
 // Main Students Page Component
 const StudentsPage: React.FC = () => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [students, setStudents] = useState<Student[]>(studentsData);
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
@@ -2104,8 +2091,8 @@ const StudentsPage: React.FC = () => {
         return false;
       }
       if (searchTerm && !student.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !student.email.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !student.rollNumber.toLowerCase().includes(searchTerm.toLowerCase())) {
+        !student.email.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !student.rollNumber.toLowerCase().includes(searchTerm.toLowerCase())) {
         return false;
       }
       return true;
@@ -2113,9 +2100,9 @@ const StudentsPage: React.FC = () => {
     .sort((a, b) => {
       const aValue = a[sortBy as keyof Student];
       const bValue = b[sortBy as keyof Student];
-      
+
       if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortOrder === 'asc' 
+        return sortOrder === 'asc'
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
       }
@@ -2188,7 +2175,7 @@ const StudentsPage: React.FC = () => {
   const handleSaveStudent = (studentData: Student) => {
     if (editingStudent) {
       // Update existing student
-      setStudents(prev => prev.map(student => 
+      setStudents(prev => prev.map(student =>
         student.id === editingStudent.id ? studentData : student
       ));
     } else {
@@ -2222,12 +2209,12 @@ const StudentsPage: React.FC = () => {
           window.open(`mailto:${emails}`, '_blank');
           break;
         case 'status-active':
-          setStudents(prev => prev.map(student => 
+          setStudents(prev => prev.map(student =>
             selectedStudents.has(student.id) ? { ...student, status: 'Active' } : student
           ));
           break;
         case 'status-inactive':
-          setStudents(prev => prev.map(student => 
+          setStudents(prev => prev.map(student =>
             selectedStudents.has(student.id) ? { ...student, status: 'Inactive' } : student
           ));
           break;
@@ -2243,10 +2230,10 @@ const StudentsPage: React.FC = () => {
   };
 
   const handleExport = () => {
-    const data = Array.from(selectedStudents).map(id => 
+    const data = Array.from(selectedStudents).map(id =>
       students.find(s => s.id === id)
     ).filter(Boolean);
-    
+
     // In a real application, this would generate and download the file
     alert(`Exporting ${data.length} students in ${exportFormat.toUpperCase()} format`);
     setShowExportModal(false);
@@ -2276,25 +2263,25 @@ const StudentsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0b0e]">
+    <div className={`min-h-screen transition-colors duration-500 ${isDark ? 'bg-[#0a0b0e] text-slate-100' : 'bg-gradient-to-br from-gray-50 via-white to-blue-50/30 text-gray-900'}`}>
       {/* Header */}
-      <div className="border-b border-border/50 px-6 md:px-8 py-8">
+      <div className={`border-b transition-colors px-6 md:px-8 py-8 ${isDark ? 'border-white/5' : 'border-slate-200'}`}>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div className="space-y-2">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">Students Management</h1>
-            <p className="text-muted-foreground text-base">Manage student profiles, track performance, and monitor placements</p>
+            <h1 className={`text-3xl md:text-4xl font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Students Management</h1>
+            <p className={`${isDark ? 'text-slate-400' : 'text-slate-500'} text-base font-medium`}>Manage student profiles, track performance, and monitor placements</p>
           </div>
-          <Button
+          <button
             onClick={() => {
               setEditingStudent(undefined);
               setShowFormModal(true);
             }}
-            size="lg"
-            className="gap-2 w-full md:w-auto"
+            className="group relative inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-2xl font-black uppercase text-sm hover:shadow-xl hover:shadow-blue-500/25 transition-all duration-300 w-full md:w-auto overflow-hidden"
           >
-            <UserPlus className="w-5 h-5" />
-            <span>Add Student</span>
-          </Button>
+            <UserPlus className="w-5 h-5 relative z-10" />
+            <span className="relative z-10">Add Student</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-700 to-blue-800 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </button>
         </div>
 
         {/* Stats */}
@@ -2305,6 +2292,7 @@ const StudentsPage: React.FC = () => {
           avgCGPA={avgCGPA}
           placementRate={placementRate}
           avgAttendance={avgAttendance}
+          isDark={isDark}
         />
 
         {/* Search and Controls */}
@@ -2418,161 +2406,161 @@ const StudentsPage: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
-                <div className="space-y-2">
-                  {departments.map(dept => (
-                    <label key={dept.id} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={filters.department.includes(dept.code)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFilters(prev => ({
-                              ...prev,
-                              department: [...prev.department, dept.code],
-                            }));
-                          } else {
-                            setFilters(prev => ({
-                              ...prev,
-                              department: prev.department.filter(d => d !== dept.code),
-                            }));
-                          }
-                        }}
-                        className="w-4 h-4 text-blue-600 rounded border-gray-300"
-                      />
-                      <span className="ml-2 text-sm">{dept.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                <div className="space-y-2">
-                  {['Active', 'Inactive', 'Suspended', 'Graduated', 'Dropout'].map(status => (
-                    <label key={status} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={filters.status.includes(status)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFilters(prev => ({
-                              ...prev,
-                              status: [...prev.status, status],
-                            }));
-                          } else {
-                            setFilters(prev => ({
-                              ...prev,
-                              status: prev.status.filter(s => s !== status),
-                            }));
-                          }
-                        }}
-                        className="w-4 h-4 text-blue-600 rounded border-gray-300"
-                      />
-                      <span className="ml-2 text-sm">{status}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Placement Status</label>
-                <div className="space-y-2">
-                  {['Placed', 'Unplaced', 'Interviewing', 'Internship', 'PPO'].map(status => (
-                    <label key={status} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={filters.placementStatus.includes(status)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFilters(prev => ({
-                              ...prev,
-                              placementStatus: [...prev.placementStatus, status],
-                            }));
-                          } else {
-                            setFilters(prev => ({
-                              ...prev,
-                              placementStatus: prev.placementStatus.filter(s => s !== status),
-                            }));
-                          }
-                        }}
-                        className="w-4 h-4 text-blue-600 rounded border-gray-300"
-                      />
-                      <span className="ml-2 text-sm">{status}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">CGPA Range</label>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm text-gray-600 mb-1">
-                      <span>Min: {filters.cgpaRange[0].toFixed(1)}</span>
-                      <span>Max: {filters.cgpaRange[1].toFixed(1)}</span>
-                    </div>
-                    <div className="flex space-x-4">
-                      <input
-                        type="range"
-                        min="0"
-                        max="10"
-                        step="0.1"
-                        value={filters.cgpaRange[0]}
-                        onChange={(e) => setFilters(prev => ({
-                          ...prev,
-                          cgpaRange: [parseFloat(e.target.value), prev.cgpaRange[1]],
-                        }))}
-                        className="w-full"
-                      />
-                      <input
-                        type="range"
-                        min="0"
-                        max="10"
-                        step="0.1"
-                        value={filters.cgpaRange[1]}
-                        onChange={(e) => setFilters(prev => ({
-                          ...prev,
-                          cgpaRange: [prev.cgpaRange[0], parseFloat(e.target.value)],
-                        }))}
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Batch</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {['2026', '2025', '2024', '2023'].map(year => (
-                        <label key={year} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={filters.batch.includes(year)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setFilters(prev => ({
-                                  ...prev,
-                                  batch: [...prev.batch, year],
-                                }));
-                              } else {
-                                setFilters(prev => ({
-                                  ...prev,
-                                  batch: prev.batch.filter(b => b !== year),
-                                }));
-                              }
-                            }}
-                            className="w-4 h-4 text-blue-600 rounded border-gray-300"
-                          />
-                          <span className="ml-2 text-sm">{year}</span>
-                        </label>
-                      ))}
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                  <div className="space-y-2">
+                    {departments.map(dept => (
+                      <label key={dept.id} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={filters.department.includes(dept.code)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFilters(prev => ({
+                                ...prev,
+                                department: [...prev.department, dept.code],
+                              }));
+                            } else {
+                              setFilters(prev => ({
+                                ...prev,
+                                department: prev.department.filter(d => d !== dept.code),
+                              }));
+                            }
+                          }}
+                          className="w-4 h-4 text-blue-600 rounded border-gray-300"
+                        />
+                        <span className="ml-2 text-sm">{dept.name}</span>
+                      </label>
+                    ))}
                   </div>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                  <div className="space-y-2">
+                    {['Active', 'Inactive', 'Suspended', 'Graduated', 'Dropout'].map(status => (
+                      <label key={status} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={filters.status.includes(status)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFilters(prev => ({
+                                ...prev,
+                                status: [...prev.status, status],
+                              }));
+                            } else {
+                              setFilters(prev => ({
+                                ...prev,
+                                status: prev.status.filter(s => s !== status),
+                              }));
+                            }
+                          }}
+                          className="w-4 h-4 text-blue-600 rounded border-gray-300"
+                        />
+                        <span className="ml-2 text-sm">{status}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Placement Status</label>
+                  <div className="space-y-2">
+                    {['Placed', 'Unplaced', 'Interviewing', 'Internship', 'PPO'].map(status => (
+                      <label key={status} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={filters.placementStatus.includes(status)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFilters(prev => ({
+                                ...prev,
+                                placementStatus: [...prev.placementStatus, status],
+                              }));
+                            } else {
+                              setFilters(prev => ({
+                                ...prev,
+                                placementStatus: prev.placementStatus.filter(s => s !== status),
+                              }));
+                            }
+                          }}
+                          className="w-4 h-4 text-blue-600 rounded border-gray-300"
+                        />
+                        <span className="ml-2 text-sm">{status}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">CGPA Range</label>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between text-sm text-gray-600 mb-1">
+                        <span>Min: {filters.cgpaRange[0].toFixed(1)}</span>
+                        <span>Max: {filters.cgpaRange[1].toFixed(1)}</span>
+                      </div>
+                      <div className="flex space-x-4">
+                        <input
+                          type="range"
+                          min="0"
+                          max="10"
+                          step="0.1"
+                          value={filters.cgpaRange[0]}
+                          onChange={(e) => setFilters(prev => ({
+                            ...prev,
+                            cgpaRange: [parseFloat(e.target.value), prev.cgpaRange[1]],
+                          }))}
+                          className="w-full"
+                        />
+                        <input
+                          type="range"
+                          min="0"
+                          max="10"
+                          step="0.1"
+                          value={filters.cgpaRange[1]}
+                          onChange={(e) => setFilters(prev => ({
+                            ...prev,
+                            cgpaRange: [prev.cgpaRange[0], parseFloat(e.target.value)],
+                          }))}
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Batch</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {['2026', '2025', '2024', '2023'].map(year => (
+                          <label key={year} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={filters.batch.includes(year)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFilters(prev => ({
+                                    ...prev,
+                                    batch: [...prev.batch, year],
+                                  }));
+                                } else {
+                                  setFilters(prev => ({
+                                    ...prev,
+                                    batch: prev.batch.filter(b => b !== year),
+                                  }));
+                                }
+                              }}
+                              className="w-4 h-4 text-blue-600 rounded border-gray-300"
+                            />
+                            <span className="ml-2 text-sm">{year}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
             </CardContent>
           </Card>
         )}
@@ -2661,6 +2649,7 @@ const StudentsPage: React.FC = () => {
                     onEdit={handleEditStudent}
                     onDelete={handleDeleteStudent}
                     onMessage={handleMessageStudent}
+                    isDark={isDark}
                   />
                 ))}
               </div>
@@ -2677,6 +2666,7 @@ const StudentsPage: React.FC = () => {
                 sortBy={sortBy}
                 sortOrder={sortOrder}
                 onSort={handleSort}
+                isDark={isDark}
               />
             )}
 
@@ -2750,7 +2740,7 @@ const StudentsPage: React.FC = () => {
             <div className="space-y-6">
               <DepartmentPerformance departments={departments} />
               <BatchAnalysis batches={batches} />
-              
+
               {/* Quick Stats */}
               <Card className="border-border/50">
                 <CardHeader className="pb-4">
@@ -2846,31 +2836,28 @@ const StudentsPage: React.FC = () => {
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => setExportFormat('csv')}
-                    className={`py-3 rounded-lg border ${
-                      exportFormat === 'csv'
-                        ? 'bg-blue-50 border-blue-500 text-blue-700'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
+                    className={`py-3 rounded-lg border ${exportFormat === 'csv'
+                      ? 'bg-blue-50 border-blue-500 text-blue-700'
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
                   >
                     CSV
                   </button>
                   <button
                     onClick={() => setExportFormat('excel')}
-                    className={`py-3 rounded-lg border ${
-                      exportFormat === 'excel'
-                        ? 'bg-blue-50 border-blue-500 text-blue-700'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
+                    className={`py-3 rounded-lg border ${exportFormat === 'excel'
+                      ? 'bg-blue-50 border-blue-500 text-blue-700'
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
                   >
                     Excel
                   </button>
                   <button
                     onClick={() => setExportFormat('pdf')}
-                    className={`py-3 rounded-lg border ${
-                      exportFormat === 'pdf'
-                        ? 'bg-blue-50 border-blue-500 text-blue-700'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
+                    className={`py-3 rounded-lg border ${exportFormat === 'pdf'
+                      ? 'bg-blue-50 border-blue-500 text-blue-700'
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
                   >
                     PDF
                   </button>
