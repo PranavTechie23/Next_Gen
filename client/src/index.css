@@ -241,6 +241,15 @@
   .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background-color: rgba(51, 65, 85, 0.6);
   }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 @layer components {
