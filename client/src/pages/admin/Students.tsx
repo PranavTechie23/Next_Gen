@@ -472,12 +472,12 @@ const StudentTable: React.FC<{
 
   const getStatusColor = (status: Student['status']) => {
     switch (status) {
-      case 'Active': return 'text-green-700 bg-green-50 border-green-200';
-      case 'Inactive': return 'text-gray-700 bg-black border-gray-200';
-      case 'Suspended': return 'text-red-700 bg-red-50 border-red-200';
-      case 'Graduated': return 'text-blue-700 bg-blue-50 border-blue-200';
-      case 'Dropout': return 'text-orange-700 bg-orange-50 border-orange-200';
-      default: return 'text-gray-700 bg-gray-50 border-gray-200';
+      case 'Active': return 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30';
+      case 'Inactive': return 'text-slate-300 bg-slate-700/40 border-slate-600/60';
+      case 'Suspended': return 'text-red-300 bg-red-500/10 border-red-500/30';
+      case 'Graduated': return 'text-sky-300 bg-sky-500/10 border-sky-500/30';
+      case 'Dropout': return 'text-amber-300 bg-amber-500/10 border-amber-500/30';
+      default: return 'text-slate-300 bg-slate-700/40 border-slate-600/60';
     }
   };
 
@@ -522,7 +522,7 @@ const StudentTable: React.FC<{
       case 'cgpa':
         return (
           <div className="flex items-center">
-            <div className="w-16 bg-black rounded-full h-2 mr-2">
+            <div className="w-16 bg-slate-800 rounded-full h-2 mr-2">
               <div
                 className={`h-2 rounded-full ${
                   student.cgpa >= 8.5 ? 'bg-green-500' :
@@ -710,78 +710,91 @@ const StatsCards: React.FC<{
         </CardContent>
       </Card>
 
-      <Card className="border-border/50 hover:border-primary/30 transition-colors">
-        <CardContent className="p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2.5 bg-green-500/10 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-lg">
-              <UserCheck className="w-5 h-5" />
+      <Card className="border-border/40 bg-gradient-to-br from-emerald-900/40 to-slate-900 shadow-elevated">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-medium">
+              <UserCheck className="w-4 h-4" />
+              Active
             </div>
-            <div className="text-xs text-muted-foreground">
-              {((activeStudents / totalStudents) * 100).toFixed(1)}%
-            </div>
+            <span className="text-xs text-slate-400">
+              {((activeStudents / totalStudents) * 100).toFixed(1)}% of total
+            </span>
           </div>
-          <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">{activeStudents.toLocaleString()}</div>
-          <div className="text-sm text-muted-foreground">Active Students</div>
+          <div className="text-3xl font-semibold text-emerald-300 tracking-tight mb-1">
+            {activeStudents.toLocaleString()}
+          </div>
+          <p className="text-xs text-slate-400">Currently engaged students</p>
         </CardContent>
       </Card>
 
-      <Card className="border-border/50 hover:border-primary/30 transition-colors">
-        <CardContent className="p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2.5 bg-primary/10 dark:bg-primary/20 text-primary rounded-lg">
-              <Briefcase className="w-5 h-5" />
+      <Card className="border-border/40 bg-gradient-to-br from-blue-900/40 via-slate-900 to-slate-950 shadow-elevated">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-300 text-xs font-medium">
+              <Briefcase className="w-4 h-4" />
+              Placed
             </div>
-            <div className="flex items-center text-xs text-green-600 dark:text-green-400">
-              <Target className="w-3 h-3 mr-1" />
-              {placementRate.toFixed(1)}%
-            </div>
+          <div className="flex items-center text-xs text-emerald-400">
+            <Target className="w-3 h-3 mr-1" />
+            {placementRate.toFixed(1)}%
           </div>
-          <div className="text-2xl font-bold text-primary mb-1">{placedStudents.toLocaleString()}</div>
-          <div className="text-sm text-muted-foreground">Placed Students</div>
+          </div>
+          <div className="text-3xl font-semibold text-blue-300 tracking-tight mb-1">
+            {placedStudents.toLocaleString()}
+          </div>
+          <p className="text-xs text-slate-400">Students with confirmed offers</p>
         </CardContent>
       </Card>
 
-      <Card className="border-border/50 hover:border-primary/30 transition-colors">
-        <CardContent className="p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2.5 bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-lg">
-              <GraduationCap className="w-5 h-5" />
+      <Card className="border-border/40 bg-gradient-to-br from-violet-900/40 to-slate-950 shadow-elevated">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-violet-500/15 text-violet-300 text-xs font-medium">
+              <GraduationCap className="w-4 h-4" />
+              Avg CGPA
             </div>
-            <div className="flex items-center text-xs text-green-600 dark:text-green-400">
+            <div className="flex items-center text-xs text-violet-300">
               <TrendingUp className="w-3 h-3 mr-1" />
               +0.2
             </div>
           </div>
-          <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-1">{avgCGPA.toFixed(2)}</div>
-          <div className="text-sm text-muted-foreground">Average CGPA</div>
+          <div className="text-3xl font-semibold text-violet-300 tracking-tight mb-1">
+            {avgCGPA.toFixed(2)}
+          </div>
+          <p className="text-xs text-slate-400">Cohort-wide academic performance</p>
         </CardContent>
       </Card>
 
-      <Card className="border-border/50 hover:border-primary/30 transition-colors">
-        <CardContent className="p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2.5 bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-lg">
-              <Clock className="w-5 h-5" />
+      <Card className="border-border/40 bg-gradient-to-br from-amber-900/40 to-slate-950 shadow-elevated">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 text-xs font-medium">
+              <Clock className="w-4 h-4" />
+              Attendance
             </div>
-            <div className="text-xs text-muted-foreground">
-              {avgAttendance > 85 ? 'Good' : 'Needs improvement'}
-            </div>
+            <span className="text-xs text-slate-400">
+              {avgAttendance > 85 ? 'Healthy' : 'Needs focus'}
+            </span>
           </div>
-          <div className="text-2xl font-bold text-amber-600 dark:text-amber-400 mb-1">{avgAttendance.toFixed(1)}%</div>
-          <div className="text-sm text-muted-foreground">Avg Attendance</div>
+          <div className="text-3xl font-semibold text-amber-300 tracking-tight mb-1">
+            {avgAttendance.toFixed(1)}%
+          </div>
+          <p className="text-xs text-slate-400">Average attendance across batches</p>
         </CardContent>
       </Card>
 
-      <Card className="border-border/50 hover:border-primary/30 transition-colors">
-        <CardContent className="p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2.5 bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-lg">
-              <Building className="w-5 h-5" />
+      <Card className="border-border/40 bg-gradient-to-br from-indigo-900/40 to-slate-950 shadow-elevated">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-indigo-500/15 text-indigo-300 text-xs font-medium">
+              <Building className="w-4 h-4" />
+              Departments
             </div>
-            <div className="text-xs text-muted-foreground">8 depts</div>
+            <span className="text-xs text-slate-400">8 depts</span>
           </div>
-          <div className="text-2xl font-bold text-foreground mb-1">8</div>
-          <div className="text-sm text-muted-foreground">Departments</div>
+          <div className="text-3xl font-semibold text-white tracking-tight mb-1">8</div>
+          <p className="text-xs text-slate-400">Engineering & emerging tech streams</p>
         </CardContent>
       </Card>
     </div>
@@ -952,16 +965,16 @@ const StudentDetailModal: React.FC<{
               
               <div className="flex items-center space-x-2 mt-4">
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  student.status === 'Active' ? 'bg-green-100 text-green-800' :
-                  student.status === 'Inactive' ? 'bg-black-100 text-gray-800' :
-                  'bg-red-100 text-red-800'
+                  student.status === 'Active' ? 'bg-emerald-500/10 text-emerald-300' :
+                  student.status === 'Inactive' ? 'bg-slate-700/60 text-slate-200' :
+                  'bg-red-500/10 text-red-300'
                 }`}>
                   {student.status}
                 </span>
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  student.placementStatus === 'Placed' ? 'bg-green-100 text-green-800' :
-                  student.placementStatus === 'Unplaced' ? 'bg-red-100 text-red-800' :
-                  'bg-yellow-100 text-yellow-800'
+                  student.placementStatus === 'Placed' ? 'bg-emerald-500/10 text-emerald-300' :
+                  student.placementStatus === 'Unplaced' ? 'bg-red-500/10 text-red-300' :
+                  'bg-amber-500/10 text-amber-300'
                 }`}>
                   {student.placementStatus}
                 </span>
@@ -1039,8 +1052,8 @@ const StudentDetailModal: React.FC<{
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
                     activeTab === tab.id
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-600 hover:bg-black-100'
+                      ? 'bg-primary/20 text-primary'
+                      : 'text-muted-foreground hover:bg-muted/40'
                   }`}
                 >
                   {tab.icon}
@@ -2886,7 +2899,7 @@ const StudentsPage: React.FC = () => {
               <div className="flex justify-end space-x-3">
                 <button
                   onClick={() => setShowExportModal(false)}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-black-50"
+                  className="px-6 py-2 border border-input text-muted-foreground rounded-lg hover:bg-muted/40"
                 >
                   Cancel
                 </button>
