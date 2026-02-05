@@ -389,9 +389,9 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white p-8">
-      {/* Animated Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+    <div className="min-h-screen bg-[#f5f7fb] text-slate-900 dark:bg-[#050712] dark:text-white p-8">
+      {/* Animated Background (dark mode only) */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none hidden dark:block">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse"
           style={{ animationDuration: '8s' }} />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse"
@@ -404,11 +404,13 @@ export default function ReportsPage() {
         {/* ========== HEADER ========== */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-cyan-200 bg-clip-text text-transparent mb-2"
-              style={{ fontFamily: "'Manrope', sans-serif", letterSpacing: '-0.03em' }}>
+            <h1
+              className="text-4xl font-bold mb-2 text-slate-900 dark:bg-gradient-to-r dark:from-white dark:via-blue-100 dark:to-cyan-200 dark:bg-clip-text dark:text-transparent"
+              style={{ fontFamily: "'Manrope', sans-serif", letterSpacing: '-0.03em' }}
+            >
               Reports & Analytics
             </h1>
-            <p className="text-gray-400 flex items-center gap-2">
+            <p className="text-slate-500 dark:text-gray-400 flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Generate, manage, and download comprehensive reports
             </p>
@@ -417,26 +419,77 @@ export default function ReportsPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowScheduleModal(true)}
-              className="px-4 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 flex items-center gap-2"
+              className="px-4 py-2.5 rounded-xl transition-all border flex items-center gap-2 bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200 dark:bg-white/5 dark:border-white/10 dark:text-white dark:hover:bg-white/10"
             >
               <Clock className="w-4 h-4" />
               Schedule
             </button>
-            <button className="px-4 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 flex items-center gap-2">
+            <button className="px-4 py-2.5 rounded-xl transition-all border flex items-center gap-2 bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200 dark:bg-white/5 dark:border-white/10 dark:text-white dark:hover:bg-white/10">
               <Upload className="w-4 h-4" />
               Import
             </button>
-            <button className="px-4 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 flex items-center gap-2">
+            <button className="px-4 py-2.5 rounded-xl transition-all border flex items-center gap-2 bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200 dark:bg-white/5 dark:border-white/10 dark:text-white dark:hover:bg-white/10">
               <Share2 className="w-4 h-4" />
               Share
             </button>
             <button
               onClick={() => setShowNewReportModal(true)}
-              className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 rounded-xl transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2 font-semibold"
+              className="px-6 py-2.5 rounded-xl transition-all shadow-lg flex items-center gap-2 font-semibold bg-blue-600 text-white hover:bg-blue-700 dark:bg-gradient-to-r dark:from-blue-500 dark:to-cyan-500 dark:hover:from-blue-600 dark:hover:to-cyan-600 dark:shadow-blue-500/20"
             >
               <Plus className="w-5 h-5" />
               New Report
             </button>
+          </div>
+        </div>
+
+        {/* ========== OVERVIEW WAVE (fills empty space) ========== */}
+        <div className="overflow-hidden rounded-3xl border bg-gradient-to-br from-amber-400/10 via-blue-500/5 to-transparent border-amber-400/20 dark:from-amber-400/15 dark:via-blue-500/10 dark:to-transparent dark:border-amber-400/30 shadow-[0_18px_45px_rgba(15,23,42,0.45)]">
+          <div className="px-8 pt-6 pb-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-amber-500/80 mb-2">Realtime Overview</p>
+              <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-1">
+                Reporting activity across your campus
+              </h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl">
+                Monitor how institutions, departments, and placement cells are generating reports in the last 30 days.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-4 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_0_4px_rgba(251,191,36,0.25)]" />
+                  <span className="text-slate-600 dark:text-slate-300">Live generation trend</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                  <ArrowUpRight className="w-3 h-3 text-emerald-400" />
+                  18.4% more reports vs last week
+                </div>
+              </div>
+            </div>
+
+            <div className="relative w-full lg:w-[420px] h-32">
+              <svg
+                viewBox="0 0 400 120"
+                className="absolute inset-0 w-full h-full text-amber-400/80 drop-shadow-[0_0_25px_rgba(250,204,21,0.5)]"
+                preserveAspectRatio="none"
+              >
+                <defs>
+                  <linearGradient id="reportWave" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="rgba(250,204,21,0.6)" />
+                    <stop offset="100%" stopColor="rgba(250,204,21,0)" />
+                  </linearGradient>
+                </defs>
+                <path
+                  d="M0,80 C60,20 120,40 180,70 C240,100 300,60 360,50 C380,48 390,48 400,50"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M0,80 C60,20 120,40 180,70 C240,100 300,60 360,50 C380,48 390,48 400,50 L400,120 L0,120 Z"
+                  fill="url(#reportWave)"
+                />
+              </svg>
+            </div>
           </div>
         </div>
 
@@ -445,12 +498,7 @@ export default function ReportsPage() {
           {stats.map((stat, index) => (
             <div
               key={index}
-              className="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl rounded-2xl p-6 border border-white/10 hover:border-white/20 transition-all group"
-              style={{
-                animation: 'fadeInUp 0.5s ease-out forwards',
-                animationDelay: `${index * 100}ms`,
-                opacity: 0
-              }}
+              className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all group dark:bg-gradient-to-br dark:from-white/5 dark:to-white/[0.02] dark:border-white/10 dark:hover:border-white/20"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg`}>
@@ -462,25 +510,25 @@ export default function ReportsPage() {
                   {Math.abs(stat.change)}%
                 </div>
               </div>
-              <p className="text-3xl font-bold text-white mb-1">{stat.value}</p>
-              <p className="text-sm text-gray-400">{stat.label}</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white mb-1">{stat.value}</p>
+              <p className="text-sm text-slate-500 dark:text-gray-400">{stat.label}</p>
             </div>
           ))}
         </div>
 
         {/* ========== FILTERS & SEARCH ========== */}
-        <div className="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+        <div className="rounded-2xl p-6 border bg-white border-slate-200 shadow-sm dark:bg-gradient-to-br dark:from-white/5 dark:to-white/[0.02] dark:border-white/10">
           <div className="flex flex-wrap gap-4">
             {/* Search */}
             <div className="flex-1 min-w-[300px]">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search reports by name, description, or tags..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 transition-all"
+                  className="w-full pl-12 pr-4 py-3 rounded-xl border transition-all bg-slate-100 border-slate-200 text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500/50 dark:bg-white/5 dark:border-white/10 dark:text-white dark:placeholder-gray-500"
                 />
                 {searchQuery && (
                   <button
@@ -494,14 +542,14 @@ export default function ReportsPage() {
             </div>
 
             {/* Category Filter */}
-            <div className="flex gap-2 bg-white/5 border border-white/10 rounded-xl p-1">
+            <div className="flex gap-2 bg-slate-100 border border-slate-200 rounded-xl p-1 dark:bg-white/5 dark:border-white/10">
               {['all', 'Financial', 'Academic', 'Operational', 'Custom'].map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat as any)}
                   className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${selectedCategory === cat
-                      ? 'bg-blue-500/20 text-blue-400'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-slate-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white'
                     }`}
                 >
                   {cat.charAt(0).toUpperCase() + cat.slice(1)}
@@ -513,7 +561,7 @@ export default function ReportsPage() {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value as any)}
-              className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500/50 transition-all cursor-pointer"
+              className="px-4 py-3 rounded-xl border cursor-pointer bg-slate-100 border-slate-200 text-slate-900 focus:outline-none focus:border-blue-500/50 dark:bg-white/5 dark:border-white/10 dark:text-white"
             >
               <option value="all">All Status</option>
               <option value="Ready">Ready</option>
@@ -526,7 +574,7 @@ export default function ReportsPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500/50 transition-all cursor-pointer"
+              className="px-4 py-3 rounded-xl border cursor-pointer bg-slate-100 border-slate-200 text-slate-900 focus:outline-none focus:border-blue-500/50 dark:bg-white/5 dark:border-white/10 dark:text-white"
             >
               <option value="date">Sort by Date</option>
               <option value="name">Sort by Name</option>
@@ -534,12 +582,12 @@ export default function ReportsPage() {
             </select>
 
             {/* View Mode */}
-            <div className="flex gap-2 bg-white/5 border border-white/10 rounded-xl p-1">
+            <div className="flex gap-2 bg-slate-100 border border-slate-200 rounded-xl p-1 dark:bg-white/5 dark:border-white/10">
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-2 rounded-lg transition-all ${viewMode === 'grid'
-                    ? 'bg-blue-500/20 text-blue-400'
-                    : 'text-gray-400 hover:text-white'
+                    ? 'bg-slate-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                    : 'text-slate-600 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white'
                   }`}
               >
                 <Grid className="w-5 h-5" />
@@ -547,15 +595,15 @@ export default function ReportsPage() {
               <button
                 onClick={() => setViewMode('list')}
                 className={`p-2 rounded-lg transition-all ${viewMode === 'list'
-                    ? 'bg-blue-500/20 text-blue-400'
-                    : 'text-gray-400 hover:text-white'
+                    ? 'bg-slate-900 text-white dark:bg-blue-500/20 dark:text-blue-400'
+                    : 'text-slate-600 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white'
                   }`}
               >
                 <List className="w-5 h-5" />
               </button>
             </div>
 
-            <button className="px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 flex items-center gap-2">
+            <button className="px-4 py-3 rounded-xl transition-all border flex items-center gap-2 bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200 dark:bg-white/5 dark:border-white/10 dark:text-white dark:hover:bg-white/10">
               <Filter className="w-4 h-4" />
               More
             </button>
@@ -563,16 +611,16 @@ export default function ReportsPage() {
         </div>
 
         {/* ========== REPORT TEMPLATES ========== */}
-        <div className="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+        <div className="rounded-2xl p-6 border bg-white border-slate-200 shadow-sm dark:bg-gradient-to-br dark:from-white/5 dark:to-white/[0.02] dark:border-white/10">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-blue-400" />
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-blue-500 dark:text-blue-400" />
                 Quick Generate Templates
               </h2>
-              <p className="text-sm text-gray-400">Start with pre-built report templates</p>
+              <p className="text-sm text-slate-500 dark:text-gray-400">Start with pre-built report templates</p>
             </div>
-            <button className="text-sm text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1">
+            <button className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors flex items-center gap-1">
               View All
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -584,27 +632,27 @@ export default function ReportsPage() {
                 key={template.id}
                 className="relative group cursor-pointer transition-transform duration-200 hover:-translate-y-1"
               >
-                <div className="bg-white/5 hover:bg-white/10 rounded-xl p-5 border border-white/10 hover:border-white/20 transition-all">
+                <div className="rounded-xl p-5 border bg-slate-50 hover:bg-slate-100 border-slate-200 hover:border-slate-300 transition-all dark:bg-white/5 dark:hover:bg-white/10 dark:border-white/10 dark:hover:border-white/20">
                   <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${template.color} flex items-center justify-center mb-4 shadow-lg`}>
                     {template.icon}
                   </div>
-                  <h3 className="text-sm font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">
                     {template.name}
                   </h3>
-                  <p className="text-xs text-gray-400 mb-3 line-clamp-2">{template.description}</p>
+                  <p className="text-xs text-slate-500 dark:text-gray-400 mb-3 line-clamp-2">{template.description}</p>
 
                   <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1 text-gray-500">
+                    <div className="flex items-center gap-1 text-slate-500 dark:text-gray-500">
                       <Clock className="w-3 h-3" />
                       {template.estimatedTime}
                     </div>
-                    <div className="flex items-center gap-1 text-blue-400">
-                      <Star className="w-3 h-3 fill-blue-400" />
+                    <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                      <Star className="w-3 h-3 fill-blue-600 dark:fill-blue-400" />
                       {template.popularity}%
                     </div>
                   </div>
 
-                  <button className="w-full mt-4 px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 rounded-lg text-blue-400 text-xs font-semibold transition-all border border-blue-500/30 flex items-center justify-center gap-1">
+                  <button className="w-full mt-4 px-3 py-2 rounded-lg text-xs font-semibold transition-all border flex items-center justify-center gap-1 bg-slate-900 text-white border-slate-900 hover:bg-slate-800 dark:bg-blue-500/20 dark:hover:bg-blue-500/30 dark:text-blue-400 dark:border-blue-500/30">
                     <Plus className="w-3 h-3" />
                     Generate
                   </button>
