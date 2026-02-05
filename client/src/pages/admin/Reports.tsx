@@ -300,8 +300,8 @@ export default function ReportsPage() {
       const matchesCategory = selectedCategory === 'all' || report.category === selectedCategory;
       const matchesStatus = selectedStatus === 'all' || report.status === selectedStatus;
       const matchesSearch = report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           report.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           report.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+        report.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        report.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
       return matchesCategory && matchesStatus && matchesSearch;
     }).sort((a, b) => {
       switch (sortBy) {
@@ -392,12 +392,12 @@ export default function ReportsPage() {
     <div className="min-h-screen bg-[#0a0a0f] text-white p-8">
       {/* Animated Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse" 
-             style={{ animationDuration: '8s' }} />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse" 
-             style={{ animationDuration: '12s', animationDelay: '2s' }} />
-        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-cyan-500/3 rounded-full blur-3xl animate-pulse" 
-             style={{ animationDuration: '15s', animationDelay: '5s' }} />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse"
+          style={{ animationDuration: '8s' }} />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse"
+          style={{ animationDuration: '12s', animationDelay: '2s' }} />
+        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-cyan-500/3 rounded-full blur-3xl animate-pulse"
+          style={{ animationDuration: '15s', animationDelay: '5s' }} />
       </div>
 
       <div className="relative max-w-[1800px] mx-auto space-y-6">
@@ -405,7 +405,7 @@ export default function ReportsPage() {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-cyan-200 bg-clip-text text-transparent mb-2"
-                style={{ fontFamily: "'Manrope', sans-serif", letterSpacing: '-0.03em' }}>
+              style={{ fontFamily: "'Manrope', sans-serif", letterSpacing: '-0.03em' }}>
               Reports & Analytics
             </h1>
             <p className="text-gray-400 flex items-center gap-2">
@@ -415,7 +415,7 @@ export default function ReportsPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={() => setShowScheduleModal(true)}
               className="px-4 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 flex items-center gap-2"
             >
@@ -430,7 +430,7 @@ export default function ReportsPage() {
               <Share2 className="w-4 h-4" />
               Share
             </button>
-            <button 
+            <button
               onClick={() => setShowNewReportModal(true)}
               className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 rounded-xl transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2 font-semibold"
             >
@@ -456,9 +456,8 @@ export default function ReportsPage() {
                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg`}>
                   {stat.icon}
                 </div>
-                <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
-                  stat.change >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
-                }`}>
+                <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${stat.change >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+                  }`}>
                   {stat.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                   {Math.abs(stat.change)}%
                 </div>
@@ -500,11 +499,10 @@ export default function ReportsPage() {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat as any)}
-                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                    selectedCategory === cat
+                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${selectedCategory === cat
                       ? 'bg-blue-500/20 text-blue-400'
                       : 'text-gray-400 hover:text-white'
-                  }`}
+                    }`}
                 >
                   {cat.charAt(0).toUpperCase() + cat.slice(1)}
                 </button>
@@ -539,21 +537,19 @@ export default function ReportsPage() {
             <div className="flex gap-2 bg-white/5 border border-white/10 rounded-xl p-1">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-lg transition-all ${
-                  viewMode === 'grid'
+                className={`p-2 rounded-lg transition-all ${viewMode === 'grid'
                     ? 'bg-blue-500/20 text-blue-400'
                     : 'text-gray-400 hover:text-white'
-                }`}
+                  }`}
               >
                 <Grid className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-2 rounded-lg transition-all ${
-                  viewMode === 'list'
+                className={`p-2 rounded-lg transition-all ${viewMode === 'list'
                     ? 'bg-blue-500/20 text-blue-400'
                     : 'text-gray-400 hover:text-white'
-                }`}
+                  }`}
               >
                 <List className="w-5 h-5" />
               </button>
@@ -583,15 +579,10 @@ export default function ReportsPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-            {reportTemplates.map((template, index) => (
+            {reportTemplates.map((template) => (
               <div
                 key={template.id}
-                className="relative group cursor-pointer"
-                style={{
-                  animation: 'zoomIn 0.4s ease-out forwards',
-                  animationDelay: `${index * 80}ms`,
-                  opacity: 0
-                }}
+                className="relative group cursor-pointer transition-transform duration-200 hover:-translate-y-1"
               >
                 <div className="bg-white/5 hover:bg-white/10 rounded-xl p-5 border border-white/10 hover:border-white/20 transition-all">
                   <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${template.color} flex items-center justify-center mb-4 shadow-lg`}>
@@ -601,7 +592,7 @@ export default function ReportsPage() {
                     {template.name}
                   </h3>
                   <p className="text-xs text-gray-400 mb-3 line-clamp-2">{template.description}</p>
-                  
+
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-1 text-gray-500">
                       <Clock className="w-3 h-3" />
@@ -898,7 +889,7 @@ export default function ReportsPage() {
               >
                 <ChevronDown className="w-5 h-5 rotate-90" />
               </button>
-              
+
               <div className="flex items-center gap-1">
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let pageNum;
@@ -911,16 +902,15 @@ export default function ReportsPage() {
                   } else {
                     pageNum = currentPage - 2 + i;
                   }
-                  
+
                   return (
                     <button
                       key={i}
                       onClick={() => setCurrentPage(pageNum)}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                        currentPage === pageNum
+                      className={`px-4 py-2 rounded-lg font-medium transition-all ${currentPage === pageNum
                           ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                           : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
-                      }`}
+                        }`}
                     >
                       {pageNum}
                     </button>
@@ -1100,44 +1090,7 @@ export default function ReportsPage() {
         </div>
       )}
 
-      <style jsx>{`
-        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
-        
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
 
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        @keyframes zoomIn {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        * {
-          font-family: 'Inter', sans-serif;
-        }
-
-        h1, h2, h3 {
-          font-family: 'Manrope', sans-serif;
-        }
-      `}</style>
     </div>
   );
 }
