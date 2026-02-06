@@ -74,7 +74,7 @@ export default function StudentDashboard() {
     bio: "Passionate about building scalable web applications and AI-driven solutions.",
     year: "Final Year",
     cgpa: 8.5,
-    avatar: "/avatars/rahul.jpg"
+    avatar: ""
   };
 
   const resumeInputRef = useRef<HTMLInputElement>(null);
@@ -938,13 +938,16 @@ export default function StudentDashboard() {
 
             {/* Premium Header Controls - Relocated for better accessibility */}
             <div className="flex items-center gap-3 sm:gap-4">
-              <Button
-                variant="outline"
-                className={`hidden md:flex h-11 px-6 rounded-2xl font-bold text-xs uppercase tracking-widest gap-2 transform transition-all hover:scale-105 active:scale-95 ${isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}
-              >
-                <span>Company Wise Kit</span>
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              </Button>
+              {/* Company Wise Kit button removed on Skill Test view for a cleaner assessment experience */}
+              {activeTab !== "skill-test" && (
+                <Button
+                  variant="outline"
+                  className={`hidden md:flex h-11 px-6 rounded-2xl font-bold text-xs uppercase tracking-widest gap-2 transform transition-all hover:scale-105 active:scale-95 ${isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}
+                >
+                  <span>Company Wise Kit</span>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                </Button>
+              )}
 
               <div className={`h-11 w-11 flex items-center justify-center rounded-2xl border transition-all ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}>
                 <ThemeToggle className="!h-10 !w-10 !rounded-xl border-0 bg-transparent hover:bg-transparent" />
@@ -1009,8 +1012,8 @@ export default function StudentDashboard() {
                   <button className="flex items-center gap-3 focus:outline-none group">
                     <div className="relative">
                       <Avatar className={`w-11 h-11 rounded-2xl border-2 transition-all group-hover:border-blue-500/50 ${isDark ? "border-white/10" : "border-white shadow-md shadow-slate-200/50"}`}>
-                        <AvatarImage src="" />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-sm">{studentProfile.avatar}</AvatarFallback>
+                        <AvatarImage src={studentProfile.avatar} />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-sm">{studentProfile.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 ${isDark ? "border-[#0c0c14]" : "border-white"} bg-green-500 shadow-sm`} />
                     </div>
@@ -1020,7 +1023,7 @@ export default function StudentDashboard() {
                   <DropdownMenuLabel className="mb-2">
                     <div className="flex items-center gap-3 px-2 py-2">
                       <Avatar className="w-11 h-11 rounded-xl">
-                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-sm">{studentProfile.avatar}</AvatarFallback>
+                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-sm">{studentProfile.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col min-w-0 text-left">
                         <span className={`font-black text-[11px] uppercase tracking-tight`}>{studentProfile.name}</span>
@@ -1030,23 +1033,11 @@ export default function StudentDashboard() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className={`${isDark ? "bg-white/5" : "bg-slate-100"} -mx-2 my-2`} />
                   <DropdownMenuGroup className="p-1 space-y-1">
-                    <DropdownMenuItem onClick={() => setActiveTab("overview")} className={`rounded-xl flex items-center gap-3 p-3 transition-all cursor-pointer ${isDark ? "hover:bg-white/5" : "hover:bg-slate-50"}`}>
-                      <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                        <User className="w-4 h-4 text-blue-500" />
-                      </div>
-                      <span className="font-bold text-[11px] uppercase tracking-widest">Public Profile</span>
-                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/student/setting")} className={`rounded-xl flex items-center gap-3 p-3 transition-all cursor-pointer ${isDark ? "hover:bg-white/5" : "hover:bg-slate-50"}`}>
                       <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
-                        <Settings className="w-4 h-4 text-indigo-500" />
+                        <User className="w-4 h-4 text-indigo-500" />
                       </div>
-                      <span className="font-bold text-[11px] uppercase tracking-widest">Account & Privacy</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className={`rounded-xl flex items-center gap-3 p-3 transition-all cursor-pointer ${isDark ? "hover:bg-white/5" : "hover:bg-slate-50"}`}>
-                      <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                        <CreditCard className="w-4 h-4 text-purple-500" />
-                      </div>
-                      <span className="font-bold text-[11px] uppercase tracking-widest">Billing & Plans</span>
+                      <span className="font-bold text-[10px] uppercase tracking-widest text-inherit">Profile Setting</span>
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator className={`${isDark ? "bg-white/5" : "bg-slate-100"} -mx-2 my-2`} />
@@ -1054,7 +1045,7 @@ export default function StudentDashboard() {
                     <div className={`w-8 h-8 rounded-lg ${isDark ? "bg-red-500/10" : "bg-red-500/5"} flex items-center justify-center transition-colors group-hover/signout:bg-red-500/20`}>
                       <LogOut className="w-4 h-4" />
                     </div>
-                    <span className="font-black text-[11px] uppercase tracking-[0.1em]">Terminate Session</span>
+                    <span className="font-black text-[10px] uppercase tracking-[0.15em]">Log Out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

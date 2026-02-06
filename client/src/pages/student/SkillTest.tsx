@@ -17,6 +17,13 @@ import {
     Lightbulb
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle
+} from '@/components/ui/dialog';
 
 const questions = [
     {
@@ -62,6 +69,7 @@ export default function SkillTest({ onComplete, onBack }: { onComplete?: (score:
     const [answers, setAnswers] = useState<number[]>([]);
     const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
     const [isGameOver, setIsGameOver] = useState(false);
+    const [isReportOpen, setIsReportOpen] = useState(false);
 
     useEffect(() => {
         let timer: any;
@@ -99,7 +107,14 @@ export default function SkillTest({ onComplete, onBack }: { onComplete?: (score:
     };
 
     const score = answers.reduce((acc, curr, idx) => acc + (curr === questions[idx].answer ? 1 : 0), 0);
-    const percentage = (score / questions.length) * 100;
+    const percentage = Math.round((score / questions.length) * 100);
+    const timeTakenSeconds = Math.max(0, 300 - timeLeft);
+    const insightText =
+        percentage >= 80
+            ? "Excellent! You have a strong grasp of fundamental engineering principles. You are in the top 10% of candidates for roles at companies like Google or SpaceX."
+            : percentage >= 60
+                ? "Good job! You understand most concepts well, but some refinement in circuits and dynamics would push you into the elite bracket."
+                : "Keep practicing! You have the basics down, but consistent study in mechanics and electrical fundamentals will significantly boost your readiness.";
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -108,12 +123,12 @@ export default function SkillTest({ onComplete, onBack }: { onComplete?: (score:
     };
 
     return (
-        <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
             <AnimatePresence mode="wait">
                 {currentStep === 'intro' && (
                     <motion.div
                         key="intro"
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         className="space-y-6"
@@ -122,20 +137,26 @@ export default function SkillTest({ onComplete, onBack }: { onComplete?: (score:
                             <Button
                                 variant="ghost"
                                 onClick={onBack}
-                                className="group flex items-center gap-2 text-muted-foreground hover:text-white transition-colors p-0 hover:bg-transparent"
+                                className="group inline-flex items-center gap-3 text-muted-foreground hover:text-slate-900 dark:hover:text-white transition-colors p-0 hover:bg-transparent"
                             >
-                                <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-blue-500/50 transition-colors">
-                                    <ArrowRight className="w-4 h-4 rotate-180 hover:text-blue-500 transition-colors" />
+                                <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center group-hover:border-blue-500/60 group-hover:bg-blue-50 dark:bg-white/5 dark:border-white/10 dark:group-hover:bg-blue-500/10 transition-colors">
+                                    <ArrowRight className="w-4 h-4 rotate-180 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
                                 </div>
-                                <span className="font-bold text-sm uppercase tracking-widest hover:text-blue-500 transition-colors">Back to Dashboard</span>
+                                <span className="font-semibold text-xs sm:text-sm uppercase tracking-[0.2em]">
+                                    Back to Dashboard
+                                </span>
                             </Button>
                         )}
-                        <Card className="rounded-[2.5rem] overflow-hidden border-blue-500/20 bg-card/50 backdrop-blur-xl shadow-2xl">
+                        <Card className="rounded-[2.75rem] overflow-hidden border border-slate-200/80 bg-gradient-to-b from-slate-50 via-white to-slate-50 shadow-[0_40px_120px_rgba(15,23,42,0.12)] dark:border-blue-500/15 dark:from-blue-950/70 dark:via-slate-950/80 dark:to-slate-950/95 dark:shadow-[0_40px_120px_rgba(15,23,42,0.9)] backdrop-blur-2xl">
                             <CardContent className="p-8 sm:p-12 text-center space-y-8">
                                 <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl mx-auto flex items-center justify-center shadow-xl shadow-blue-500/20">
                                     <Brain className="w-12 h-12 text-white" />
                                 </div>
                                 <div className="space-y-4">
+                                    <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-slate-100 border border-slate-200 text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-700 dark:bg-white/5 dark:border-white/10 dark:text-blue-200/80">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_4px_rgba(16,185,129,0.35)]" />
+                                        Skill Test · Skill Proficiency Assessment
+                                    </div>
                                     <h2 className="text-3xl sm:text-4xl font-black tracking-tight">Engineering Aptitude Test</h2>
                                     <p className="text-lg text-muted-foreground font-medium max-w-2xl mx-auto">
                                         Test your fundamental knowledge in Mechanics, Circuits, and Dynamics.
@@ -144,22 +165,22 @@ export default function SkillTest({ onComplete, onBack }: { onComplete?: (score:
                                 </div>
 
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4">
-                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                                    <div className="p-4 rounded-2xl bg-white/80 border border-slate-200/80 shadow-sm dark:bg-white/5 dark:border-white/10 space-y-1">
                                         <Clock className="w-5 h-5 text-blue-400 mx-auto" />
                                         <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Time</p>
                                         <p className="text-lg font-black">5 Min</p>
                                     </div>
-                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                                    <div className="p-4 rounded-2xl bg-white/80 border border-slate-200/80 shadow-sm dark:bg-white/5 dark:border-white/10 space-y-1">
                                         <Target className="w-5 h-5 text-purple-400 mx-auto" />
                                         <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Items</p>
                                         <p className="text-lg font-black">5 Qs</p>
                                     </div>
-                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                                    <div className="p-4 rounded-2xl bg-white/80 border border-slate-200/80 shadow-sm dark:bg-white/5 dark:border-white/10 space-y-1">
                                         <Zap className="w-5 h-5 text-amber-400 mx-auto" />
                                         <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Focus</p>
                                         <p className="text-lg font-black">Physics</p>
                                     </div>
-                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                                    <div className="p-4 rounded-2xl bg-white/80 border border-slate-200/80 shadow-sm dark:bg-white/5 dark:border-white/10 space-y-1">
                                         <Trophy className="w-5 h-5 text-green-400 mx-auto" />
                                         <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Reward</p>
                                         <p className="text-lg font-black">Badge</p>
@@ -168,7 +189,7 @@ export default function SkillTest({ onComplete, onBack }: { onComplete?: (score:
 
                                 <Button
                                     onClick={handleStart}
-                                    className="h-16 px-12 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-xl hover:opacity-90 shadow-xl shadow-blue-500/30 gap-3 group"
+                                    className="h-16 px-12 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-xl hover:shadow-[0_20px_60px_rgba(37,99,235,0.6)] hover:-translate-y-0.5 transition-all shadow-xl shadow-blue-500/30 gap-3 group"
                                 >
                                     Start Assessment
                                     <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
@@ -263,17 +284,16 @@ export default function SkillTest({ onComplete, onBack }: { onComplete?: (score:
                                         <Lightbulb className="w-6 h-6 text-amber-400" />
                                         AI Insight Report
                                     </h4>
-                                    <div className="p-6 rounded-2xl bg-blue-500/5 border border-blue-500/20 space-y-4 font-medium text-blue-100/80 leading-relaxed">
-                                        <p>
-                                            {percentage >= 80
-                                                ? "Excellent! You have a strong grasp of fundamental engineering principles. You are in the top 10% of candidates for roles at companies like Google or SpaceX."
-                                                : percentage >= 60
-                                                    ? "Good job! You understand most concepts well, but some refinement in circuits and dynamics would push you into the elite bracket."
-                                                    : "Keep practicing! You have the basics down, but consistent study in mechanics and electrical fundamentals will significantly boost your readiness."
-                                            }
-                                        </p>
-                                        <Button variant="link" className="text-blue-400 p-0 font-black uppercase text-xs tracking-widest">
-                                            View Detailed Roadmap
+                                    <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-4 font-medium text-slate-600 leading-relaxed dark:bg-blue-500/5 dark:border-blue-500/20 dark:text-blue-100/80">
+                                        <p>{insightText}</p>
+                                        <Button
+                                            variant="link"
+                                            className="text-blue-600 hover:text-blue-700 dark:text-blue-400 p-0 font-black uppercase text-xs tracking-widest inline-flex items-center"
+                                            onClick={() => {
+                                                setIsReportOpen(true);
+                                            }}
+                                        >
+                                            View Detailed Report
                                             <ChevronRight className="w-4 h-4 ml-1" />
                                         </Button>
                                     </div>
@@ -282,7 +302,7 @@ export default function SkillTest({ onComplete, onBack }: { onComplete?: (score:
                                 <div className="flex flex-col sm:flex-row gap-4 pt-6">
                                     <Button
                                         onClick={handleStart}
-                                        className="flex-1 h-14 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-black gap-2 transition-all"
+                                        className="flex-1 h-14 rounded-2xl bg-slate-100 border border-slate-200 text-slate-900 hover:bg-slate-50 hover:border-slate-300 font-black gap-2 transition-all shadow-sm dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:text-white"
                                     >
                                         <RefreshCw className="w-5 h-5" />
                                         Retake Test
@@ -300,6 +320,48 @@ export default function SkillTest({ onComplete, onBack }: { onComplete?: (score:
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Detailed report popup (no navigation) */}
+            <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
+                <DialogContent className="rounded-2xl sm:rounded-3xl p-0 overflow-hidden max-w-xl">
+                    <div className="p-6 sm:p-8 space-y-6 bg-white dark:bg-slate-950">
+                        <DialogHeader className="space-y-2">
+                            <DialogTitle className="text-2xl font-black tracking-tight">Skill Test Report</DialogTitle>
+                            <DialogDescription className="text-slate-500 dark:text-slate-400 font-medium">
+                                Quick summary of your latest attempt.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="grid grid-cols-3 gap-3">
+                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-center dark:bg-white/5 dark:border-white/10">
+                                <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{score}/{questions.length}</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Score</p>
+                            </div>
+                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-center dark:bg-white/5 dark:border-white/10">
+                                <p className="text-2xl font-black text-purple-600 dark:text-purple-400">{percentage}%</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Accuracy</p>
+                            </div>
+                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-center dark:bg-white/5 dark:border-white/10">
+                                <p className="text-2xl font-black text-amber-600 dark:text-amber-400">{formatTime(timeTakenSeconds)}</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Time</p>
+                            </div>
+                        </div>
+
+                        <div className="p-5 rounded-2xl bg-blue-50 border border-blue-100 text-slate-700 leading-relaxed font-medium dark:bg-blue-500/5 dark:border-blue-500/20 dark:text-blue-100/80">
+                            {insightText}
+                        </div>
+
+                        <div className="flex justify-end">
+                            <Button
+                                className="h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black px-5"
+                                onClick={() => setIsReportOpen(false)}
+                            >
+                                Close
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
