@@ -38,7 +38,7 @@ import {
   MoreHorizontal, X, Check, Minus, SlidersHorizontal, ListFilter, CalendarDays,
   Timer, Hourglass, Waves, Wind, Droplets, CloudRain, Snowflake, Umbrella,
   Battery, BatteryCharging, Signal, SignalHigh, SignalLow, SignalMedium, Rss,
-  Newspaper, BookMarked, Library, Users2, UserPlus, UserMinus
+  Newspaper, BookMarked, Library, Users2, UserPlus, UserMinus, Menu
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -133,6 +133,8 @@ export default function EnterpriseAdminDashboard() {
   const [apiCalls, setApiCalls] = useState(15420);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [selectedInstitution, setSelectedInstitution] = useState<College | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -158,6 +160,27 @@ export default function EnterpriseAdminDashboard() {
     if (typeof window !== "undefined") {
       window.localStorage.setItem("adminActiveTab", activeTab);
     }
+  }, [activeTab]);
+
+  // ==================== RESPONSIVENESS ====================
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (mobile) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Close mobile menu on tab change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
   }, [activeTab]);
 
   // ==================== REAL-TIME UPDATES ====================
@@ -1129,14 +1152,51 @@ export default function EnterpriseAdminDashboard() {
 
   // ==================== RENDER ====================
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-[#0a0b0e]' : 'bg-slate-50'} transition-colors duration-500 flex overflow-hidden`}>
+    <div className={`min-h-screen ${isDark ? 'bg-[#0a0b0e]' : 'bg-slate-50'} transition-colors duration-500 flex flex-col lg:flex-row overflow-hidden`}>
+
+      {/* Mobile Header */}
+      <div className={`lg:hidden flex items-center justify-between p-4 border-b z-[60] sticky top-0 backdrop-blur-xl ${isDark ? 'bg-black/60 border-white/5' : 'bg-white/95 border-slate-200'}`}>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-violet-600 flex items-center justify-center shadow-lg">
+            <Zap className="w-6 h-6 text-white" />
+          </div>
+          <span className="font-black text-xl bg-gradient-to-r from-blue-500 to-violet-500 bg-clip-text text-transparent">NextGen</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="rounded-xl"
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </Button>
+        </div>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[50] lg:hidden"
+          />
+        )}
+      </AnimatePresence>
 
       {/* ==================== ENHANCED SIDEBAR ==================== */}
       <motion.aside
         initial={false}
-        animate={{ width: isSidebarOpen ? 280 : 88 }}
-        className={`fixed left-0 top-0 h-screen z-50 border-r ${isDark ? 'border-white/5 bg-black/60' : 'border-slate-200 bg-white/95'
-          } backdrop-blur-2xl flex flex-col shadow-2xl`}
+        animate={{
+          width: isMobile ? (isMobileMenuOpen ? '85%' : 0) : (isSidebarOpen ? 280 : 88),
+          x: isMobile ? (isMobileMenuOpen ? 0 : -280) : 0
+        }}
+        className={`fixed left-0 top-0 h-screen z-[55] lg:z-50 border-r ${isDark ? 'border-white/5 bg-black/80' : 'border-slate-200 bg-white/95'
+          } backdrop-blur-2xl flex flex-col shadow-2xl transition-all duration-300`}
       >
         {/* Logo Section */}
         <div className="p-6 flex items-center gap-4 mb-4 border-b border-white/5">
@@ -1264,41 +1324,43 @@ export default function EnterpriseAdminDashboard() {
           )}
         </AnimatePresence>
 
-        {/* Collapse Toggle */}
-        <div className="p-3 border-t border-white/5">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setSidebarOpen(!isSidebarOpen)}
-            className={`w-full flex items-center justify-center gap-3 p-3 rounded-xl transition-all ${isDark ? 'hover:bg-white/5' : 'hover:bg-slate-100'
-              }`}
-          >
-            <motion.div
-              animate={{ rotate: isSidebarOpen ? 180 : 0 }}
-              transition={{ duration: 0.3 }}
+        {/* Collapse Toggle - Hidden on Mobile */}
+        {!isMobile && (
+          <div className="p-3 border-t border-white/5">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setSidebarOpen(!isSidebarOpen)}
+              className={`w-full flex items-center justify-center gap-3 p-3 rounded-xl transition-all ${isDark ? 'hover:bg-white/5' : 'hover:bg-slate-100'
+                }`}
             >
-              <ChevronRight className="w-5 h-5" />
-            </motion.div>
-            {isSidebarOpen && <span className="font-bold text-sm">Collapse</span>}
-          </motion.button>
-        </div>
+              <motion.div
+                animate={{ rotate: isSidebarOpen ? 180 : 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </motion.div>
+              {isSidebarOpen && <span className="font-bold text-sm">Collapse</span>}
+            </motion.button>
+          </div>
+        )}
       </motion.aside>
 
       {/* ==================== MAIN CONTENT ==================== */}
       <main
-        className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-[280px]' : 'ml-[88px]'
-          } relative`}
+        className={`flex-1 transition-all duration-300 ${isMobile ? 'ml-0' : (isSidebarOpen ? 'ml-[280px]' : 'ml-[88px]')
+          } relative w-full overflow-x-hidden`}
       >
         {/* ==================== ENHANCED HEADER ==================== */}
         {activeTab === "overview" && (
           <header className={`sticky top-0 z-40 backdrop-blur-xl border-b ${isDark ? 'bg-black/60 border-white/5' : 'bg-white/60 border-slate-200'
             } shadow-lg`}>
-            <div className="px-8 py-4">
-              <div className="flex items-center justify-between">
+            <div className="px-4 lg:px-8 py-4">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 {/* Left Section */}
                 <div className="space-y-1">
-                  <div className="flex items-center gap-4">
-                    <h1 className="text-2xl font-black tracking-tight flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h1 className="text-xl lg:text-2xl font-black tracking-tight flex items-center gap-3">
                       <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-violet-500">
                         Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}
                       </span>
@@ -1312,12 +1374,12 @@ export default function EnterpriseAdminDashboard() {
                           repeat: Infinity,
                           repeatDelay: 3
                         }}
-                        className="text-3xl"
+                        className="text-2xl lg:text-3xl"
                       >
                         👋
                       </motion.span>
                     </h1>
-                    <div className="flex items-center gap-2">
+                    <div className="hidden sm:flex items-center gap-2">
                       <div className={`px-3 py-1 rounded-lg text-xs font-black uppercase flex items-center gap-1.5 ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
                         }`}>
                         <motion.div
@@ -1325,54 +1387,59 @@ export default function EnterpriseAdminDashboard() {
                           transition={{ duration: 2, repeat: Infinity }}
                           className="w-1.5 h-1.5 rounded-full bg-emerald-500"
                         />
-                        All Systems Operational
+                        <span className="hidden xs:inline">All Systems Operational</span>
                       </div>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground font-medium flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5" />
-                    {currentTime.toLocaleString('en-US', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                    <span className="mx-2">•</span>
-                    <Users className="w-3.5 h-3.5" />
-                    {activeUsers.toLocaleString()} active users
+                  <p className="text-xs lg:text-sm text-muted-foreground font-medium flex flex-wrap items-center gap-x-4 gap-y-1">
+                    <span className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      {currentTime.toLocaleString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                    <span className="hidden sm:inline opacity-30">•</span>
+                    <span className="flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5" />
+                      {activeUsers.toLocaleString()} online
+                    </span>
                   </p>
                 </div>
 
                 {/* Right Section */}
-                <div className="flex items-center gap-3">
-                  {/* Enhanced Search */}
-                  <div className="relative group">
+                <div className="flex items-center gap-2 lg:gap-3">
+                  {/* Enhanced Search - Hidden on tiny screens, icon only on small, full on large */}
+                  <div className="relative group flex-1 lg:flex-none">
                     <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isDark ? 'text-slate-500 group-focus-within:text-blue-400' : 'text-slate-400 group-focus-within:text-blue-500'
                       }`} />
                     <input
                       type="text"
-                      placeholder="Search anything... (⌘K)"
+                      placeholder="Search... (⌘K)"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onFocus={() => setShowCommandPalette(true)}
-                      className={`pl-10 pr-16 py-2.5 rounded-xl text-sm border-2 focus:outline-none transition-all w-80 font-medium ${isDark
+                      className={`pl-10 pr-4 lg:pr-16 py-2 rounded-xl text-sm border-2 focus:outline-none transition-all w-full lg:w-64 xl:w-80 font-medium ${isDark
                         ? 'bg-white/5 border-white/10 focus:border-blue-500/50 focus:bg-white/10'
                         : 'bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white'
                         }`}
                     />
-                    <kbd className={`absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 rounded text-[10px] font-bold ${isDark ? 'bg-white/10 text-slate-400' : 'bg-slate-200 text-slate-500'
+                    <kbd className={`hidden lg:block absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 rounded text-[10px] font-bold ${isDark ? 'bg-white/10 text-slate-400' : 'bg-slate-200 text-slate-500'
                       }`}>
                       ⌘K
                     </kbd>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className={`flex items-center gap-2 p-1.5 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'
+                  <div className={`flex items-center gap-1.5 lg:gap-2 p-1 lg:p-1.5 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'
                     } shadow-lg`}>
-                    <ThemeToggle />
-                    <div className={`w-px h-5 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
+                    <div className="hidden sm:block">
+                      <ThemeToggle />
+                    </div>
+                    <div className={`hidden sm:block w-px h-5 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
 
                     {/* Notifications */}
                     <div className="relative">
@@ -1521,35 +1588,38 @@ export default function EnterpriseAdminDashboard() {
               </div>
             </div>
 
-            {/* Quick Stats Bar */}
-            <div className={`px-8 py-3 border-t ${isDark ? 'border-white/5 bg-black/20' : 'border-slate-200 bg-slate-50/50'
+            <div className={`px-4 lg:px-8 py-3 border-t ${isDark ? 'border-white/5 bg-black/20' : 'border-slate-200 bg-slate-50/50'
               }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 lg:gap-6">
                   {[
                     { icon: Server, label: "Load", value: `${systemLoad.toFixed(1)}%`, color: "blue" },
                     { icon: Activity, label: "API", value: apiCalls.toLocaleString(), color: "emerald" },
                     { icon: Database, label: "Storage", value: "2.4 TB", color: "violet" },
                     { icon: Zap, label: "Uptime", value: "99.9%", color: "amber" },
                   ].map((stat, idx) => (
-                    <motion.div
-                      key={idx}
-                      whileHover={{ scale: 1.05 }}
-                      className="flex items-center gap-2 cursor-pointer"
-                    >
-                      <stat.icon className={`w-4 h-4 text-${stat.color}-500`} />
-                      <span className="text-xs font-bold text-muted-foreground">{stat.label}:</span>
-                      <span className="text-xs font-black">{stat.value}</span>
-                    </motion.div>
+                    <div key={idx} className="flex items-center gap-2">
+                      <stat.icon className={`w-3.5 h-3.5 ${stat.color === 'blue' ? 'text-blue-500' :
+                        stat.color === 'emerald' ? 'text-emerald-500' :
+                          stat.color === 'violet' ? 'text-violet-500' :
+                            'text-amber-500'
+                        }`} />
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black uppercase text-muted-foreground leading-tight">{stat.label}</span>
+                        <span className="text-xs font-black leading-tight tracking-tight">{stat.value}</span>
+                      </div>
+                    </div>
                   ))}
                 </div>
-                <div className="flex items-center gap-2">
-                  {quickActions.slice(0, 4).map((action, idx) => (
+                <div className="hidden md:flex items-center gap-2">
+                  {[
+                    { label: "Sync", icon: RefreshCw },
+                    { label: "Logs", icon: FileText },
+                  ].map((action, i) => (
                     <Button
-                      key={idx}
+                      key={i}
                       variant="ghost"
                       size="sm"
-                      onClick={action.action}
                       className="h-7 px-3 text-xs font-bold rounded-lg"
                     >
                       <action.icon className="w-3 h-3 mr-1.5" />
@@ -1563,7 +1633,7 @@ export default function EnterpriseAdminDashboard() {
         )}
 
         {/* ==================== SCROLLABLE CONTENT ==================== */}
-        <div className={`space-y-8 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-500/20 scrollbar-track-transparent ${activeTab === "overview" ? "p-8 h-[calc(100vh-170px)]" : "h-screen"}`}>
+        <div className={`flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-500/20 scrollbar-track-transparent ${activeTab === 'overview' ? 'h-[calc(100vh-170px)]' : 'h-[calc(100vh-80px)]'}`}>
           <AnimatePresence mode="wait">
             {activeTab === "overview" && (
               <motion.div
@@ -1572,7 +1642,7 @@ export default function EnterpriseAdminDashboard() {
                 initial="hidden"
                 animate="visible"
                 exit="hidden"
-                className="space-y-8"
+                className="px-4 lg:px-8 py-4 lg:py-8 space-y-4 lg:space-y-8"
               >
                 {/* ==================== KEY METRICS GRID ==================== */}
                 <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -1662,8 +1732,8 @@ export default function EnterpriseAdminDashboard() {
                   ))}
                 </section>
 
-                {/* ==================== MAIN ANALYTICS DASHBOARD ==================== */}
-                <div className="grid lg:grid-cols-3 gap-8">
+                {/* ==================== GEOGRAPHIC & TREND ANALYSIS ==================== */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
                   {/* Revenue & Growth Chart */}
                   <motion.div variants={itemVariants} className="lg:col-span-2">
                     <Card
@@ -1903,12 +1973,14 @@ export default function EnterpriseAdminDashboard() {
                   </motion.div>
                 </div>
 
-                {/* ==================== BENTO GRID SECTION ==================== */}
-                <div className="grid lg:grid-cols-4 gap-6">
-                  {/* System Health Monitor */}
-                  <motion.div variants={itemVariants} className="lg:col-span-2">
-                    <Card className={`border-none shadow-xl h-full ${isDark ? 'bg-white/[0.02]' : 'bg-white'
-                      } backdrop-blur-xl`}>
+                {/* ==================== MAIN CHARTS SECTION ==================== */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8">
+                  {/* Main Analytics Chart */}
+                  <motion.div
+                    variants={itemVariants}
+                    className="lg:col-span-8 flex flex-col gap-4 lg:gap-8"
+                  >    <Card className={`border-none shadow-xl h-full ${isDark ? 'bg-white/[0.02]' : 'bg-white'
+                    } backdrop-blur-xl`}>
                       <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                           <CardTitle className="text-lg font-black uppercase">Infrastructure Pulse</CardTitle>
@@ -1986,8 +2058,8 @@ export default function EnterpriseAdminDashboard() {
                             key={i}
                             whileHover={{ scale: 1.05 }}
                             className={`p-4 rounded-3xl border flex flex-col items-center justify-center text-center space-y-1 transition-colors ${isDark
-                                ? 'bg-white/10 border-white/10 text-white'
-                                : 'bg-slate-50 border-slate-200 text-slate-900 hover:bg-slate-100'
+                              ? 'bg-white/10 border-white/10 text-white'
+                              : 'bg-slate-50 border-slate-200 text-slate-900 hover:bg-slate-100'
                               }`}
                           >
                             <p className={`text-[10px] font-black uppercase leading-tight ${isDark ? 'opacity-60' : 'text-slate-400'}`}>{m.metric}</p>
@@ -2021,12 +2093,14 @@ export default function EnterpriseAdminDashboard() {
                   </motion.div>
                 </div>
 
-                {/* ==================== ACTIVITY FEED & TOP PERFORMERS ==================== */}
-                <div className="grid lg:grid-cols-3 gap-8">
-                  {/* Recent Activity */}
-                  <motion.div variants={itemVariants} className="lg:col-span-2">
-                    <Card className={`border-none shadow-xl ${isDark ? 'bg-white/[0.02]' : 'bg-white'
-                      } backdrop-blur-xl`}>
+                {/* ==================== PERFORMANCE & RESOURCE METRICS ==================== */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8">
+                  {/* Model Performance */}
+                  <motion.div
+                    variants={itemVariants}
+                    className="lg:col-span-7"
+                  >      <Card className={`border-none shadow-xl ${isDark ? 'bg-white/[0.02]' : 'bg-white'
+                    } backdrop-blur-xl`}>
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <div>
@@ -2538,12 +2612,12 @@ export default function EnterpriseAdminDashboard() {
                 {/* ==================== FOOTER ==================== */}
                 <footer className={`py-6 border-t ${isDark ? 'border-white/5' : 'border-slate-200'
                   }`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-6">
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="flex flex-col md:flex-row items-center gap-4 lg:gap-6 text-center md:text-left">
                       <p className="text-sm text-muted-foreground font-bold">
-                        © {new Date().getFullYear()} NextGen Enterprise. All rights reserved.
+                        © {new Date().getFullYear()} NextGen Enterprise.
                       </p>
-                      <div className="flex items-center gap-4">
+                      <div className="flex flex-wrap justify-center items-center gap-4">
                         {['Privacy', 'Terms', 'Security', 'Status'].map((item) => (<a key={item} href={item === "Privacy" ? "/PrivacyPage" : item === "Terms" ? "/TermsAndCondition" : item === "Security" ? "/Security" : item === "Feedback" ? "/Feedback" : ""} className="text-xs font-bold text-muted-foreground p-0 h-auto">{item}</a>
                         ))}
                       </div>
@@ -2564,23 +2638,19 @@ export default function EnterpriseAdminDashboard() {
               </motion.div>
             )}
 
-            {/* ==================== INSTITUTIONS TAB ==================== */}
+            {/* ==================== TAB RENDERING ==================== */}
             {activeTab === "institutions" && (
               <motion.div
                 key="institutions"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="relative w-full h-full"
+                className="w-full"
               >
-                <div className="[&_aside]:hidden [&_.ml-64]:ml-0">
-                  <InstitutionsPage />
-                </div>
+                <InstitutionsPage />
               </motion.div>
             )}
 
-            {/* ==================== ANALYTICS TAB ==================== */}
             {activeTab === "analytics" && (
               <motion.div
                 key="analytics"
@@ -2588,13 +2658,11 @@ export default function EnterpriseAdminDashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="relative"
               >
                 <AnalyticsPage />
               </motion.div>
             )}
 
-            {/* ==================== STUDENTS TAB ==================== */}
             {activeTab === "students" && (
               <motion.div
                 key="students"
@@ -2602,13 +2670,11 @@ export default function EnterpriseAdminDashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="relative"
               >
                 <AdminStudents />
               </motion.div>
             )}
 
-            {/* ==================== ASSESSMENTS TAB ==================== */}
             {activeTab === "assessments" && (
               <motion.div
                 key="assessments"
@@ -2616,15 +2682,11 @@ export default function EnterpriseAdminDashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="relative w-full h-full"
               >
-                <div className="[&_aside]:hidden [&_header]:sticky [&_header]:top-0 [&_header]:z-30">
-                  <AssessmentsPage />
-                </div>
+                <AssessmentsPage />
               </motion.div>
             )}
 
-            {/* ==================== REPORTS TAB ==================== */}
             {activeTab === "reports" && (
               <motion.div
                 key="reports"
@@ -2632,13 +2694,11 @@ export default function EnterpriseAdminDashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="relative"
               >
                 <AdminReports />
               </motion.div>
             )}
 
-            {/* ==================== INTEGRATIONS TAB ==================== */}
             {activeTab === "integrations" && (
               <motion.div
                 key="integrations"
@@ -2646,7 +2706,6 @@ export default function EnterpriseAdminDashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="relative"
               >
                 <AdminIntegrations />
               </motion.div>
