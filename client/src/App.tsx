@@ -32,7 +32,7 @@ import CollegeInfo from "./pages/college/college_info";
 
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminSetting from "./pages/admin/Setting";
-import AdminFeedback from "./pages/admin/Feedback";
+import AdminFeedback from "./pages/admin/feedback";
 import AdminInstitutions from "./pages/admin/Institutions";
 import AdminStudents from "./pages/admin/Students";
 import AdminAssessments from "./pages/admin/Assessments";
