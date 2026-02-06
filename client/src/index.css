@@ -289,6 +289,37 @@
     background: linear-gradient(180deg, rgba(59, 130, 246, 0.55), rgba(99, 102, 241, 0.55));
   }
 
+  /* Subtle scrollbar for sidebars (avoid loud “blue line”) */
+  .sidebar-scrollbar {
+    scrollbar-gutter: stable;
+  }
+
+  .sidebar-scrollbar::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  .sidebar-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sidebar-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(148, 163, 184, 0.25);
+    border-radius: 9999px;
+  }
+
+  .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(148, 163, 184, 0.4);
+  }
+
+  .dark .sidebar-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(148, 163, 184, 0.22);
+  }
+
+  .dark .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(148, 163, 184, 0.35);
+  }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
