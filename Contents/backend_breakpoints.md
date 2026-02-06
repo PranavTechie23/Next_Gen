@@ -4,7 +4,6 @@
 
 This module handles user registration, login, and request authentication
 for all roles (Student, TPO, Recruiter).
-
 ---
 
 ### 1. Register Flow
