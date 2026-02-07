@@ -20,4 +20,13 @@ const pool = mysql.createPool({
     queueLimit: 0
 });
 
+pool.getConnection((err, connection) => {
+    if (err) {
+        console.error("❌ Database Connection Failed: ", err.message);
+    } else {
+        console.log("✅ Successfully Connected to Aiven Cloud Database!");
+        connection.release(); // Always put the connection back in the pool!
+    }
+});
+
 module.exports = pool.promise();
