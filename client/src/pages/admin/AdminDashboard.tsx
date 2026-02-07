@@ -1152,15 +1152,21 @@ export default function EnterpriseAdminDashboard() {
 
   // ==================== RENDER ====================
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-[#0a0b0e]' : 'bg-slate-50'} transition-colors duration-500 flex flex-col lg:flex-row overflow-hidden`}>
+    <div className={`min-h-screen bg-background transition-colors duration-500 flex flex-col lg:flex-row overflow-hidden relative`}>
+      {/* Premium Background Glows */}
+      {isDark && (
+        <div className="premium-glow-bg">
+          <div className="premium-glow-1" />
+          <div className="premium-glow-2" />
+          <div className="premium-glow-3" />
+        </div>
+      )}
 
       {/* Mobile Header */}
       <div className={`lg:hidden flex items-center justify-between p-4 border-b z-[60] sticky top-0 backdrop-blur-xl ${isDark ? 'bg-black/60 border-white/5' : 'bg-white/95 border-slate-200'}`}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-violet-600 flex items-center justify-center shadow-lg">
-            <Zap className="w-6 h-6 text-white" />
-          </div>
-          <span className="font-black text-xl bg-gradient-to-r from-blue-500 to-violet-500 bg-clip-text text-transparent">NextGen</span>
+        <div className="flex items-center gap-0 group cursor-pointer" onClick={() => navigate("/")}>
+          <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
+          <span className="font-black text-xl bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 bg-clip-text text-transparent">NextGen</span>
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -1199,13 +1205,9 @@ export default function EnterpriseAdminDashboard() {
           } backdrop-blur-2xl flex flex-col shadow-2xl transition-all duration-300`}
       >
         {/* Logo Section */}
-        <div className="p-6 flex items-center gap-4 mb-4 border-b border-white/5">
-          <motion.div
-            whileHover={{ rotate: 360, scale: 1.1 }}
-            transition={{ duration: 0.6 }}
-            className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-2xl shadow-blue-500/30 cursor-pointer"
-          >
-            <Zap className="w-7 h-7 text-white drop-shadow-lg" />
+        <div className="p-6 flex items-center gap-0 mb-4 border-b border-white/5 group cursor-pointer" onClick={() => navigate("/")}>
+          <motion.div whileHover={{ scale: 1.1 }} transition={{ duration: 0.2 }} className="flex-shrink-0">
+            <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-14 w-14 object-contain" />
           </motion.div>
           <AnimatePresence>
             {isSidebarOpen && (
@@ -1213,12 +1215,12 @@ export default function EnterpriseAdminDashboard() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="overflow-hidden"
+                className="overflow-hidden flex flex-col justify-center"
               >
-                <span className="font-black text-2xl tracking-tight bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 bg-clip-text text-transparent">
+                <span className="font-black text-2xl tracking-tight bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 bg-clip-text text-transparent leading-none">
                   NextGen
                 </span>
-                <p className="text-[9px] uppercase font-black text-muted-foreground tracking-widest mt-0.5">
+                <p className="text-[9px] uppercase font-black text-muted-foreground tracking-widest mt-0.5 opacity-80">
                   Enterprise Command
                 </p>
               </motion.div>
@@ -1649,7 +1651,7 @@ export default function EnterpriseAdminDashboard() {
                   {collegeStats.map((stat, idx) => (
                     <motion.div key={idx} variants={itemVariants}>
                       <Card
-                        className={`group relative overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl border-none cursor-pointer ${isDark ? 'bg-white/[0.02] hover:bg-white/[0.05]' : 'bg-white hover:shadow-blue-500/10'
+                        className={`group relative overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl border-none cursor-pointer premium-card-glow ${isDark ? 'bg-zinc-900/40 hover:bg-zinc-800/60 premium-card-accent-blue' : 'bg-white hover:shadow-blue-500/10'
                           } backdrop-blur-xl`}
                       >
                         {/* Animated Background */}
@@ -1737,7 +1739,7 @@ export default function EnterpriseAdminDashboard() {
                   {/* Revenue & Growth Chart */}
                   <motion.div variants={itemVariants} className="lg:col-span-2">
                     <Card
-                      className={`h-[600px] border-none shadow-2xl relative overflow-hidden ${isDark ? 'bg-white/[0.02]' : 'bg-white'
+                      className={`h-[600px] border-none shadow-2xl relative overflow-hidden premium-card-glow ${isDark ? 'bg-zinc-900/40 premium-card-accent-blue' : 'bg-white'
                         } backdrop-blur-xl`}
                     >
                       <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-violet-500/5 to-transparent pointer-events-none" />
