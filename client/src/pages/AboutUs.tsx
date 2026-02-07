@@ -175,15 +175,14 @@ export default function AboutUs() {
                 Back
               </button>
               <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
-              <div className="flex items-center gap-4">
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-blue-600 rounded-xl blur-xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
-                  <div className="relative w-12 h-12 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center shadow-lg border border-slate-200 dark:border-white/10 transform group-hover:rotate-6 transition-transform">
-                    <Building2 className="w-7 h-7 text-blue-600" />
-                  </div>
-                </div>
+              <div className="flex items-center gap-0 group cursor-pointer" onClick={() => window.location.href = "/"}>
+                <img
+                  src="/NG/NextGen_light.png"
+                  alt="NextGen Logo"
+                  className="h-14 w-14 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110"
+                />
                 <div className="hidden sm:flex flex-col">
-                  <span className="font-black text-xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent leading-none">NextGen</span>
+                  <span className="font-black text-xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">NextGen</span>
                   <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Our Story</span>
                 </div>
               </div>

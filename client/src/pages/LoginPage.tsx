@@ -80,15 +80,15 @@ export default function LoginPage() {
         {/* Left side - Branding and Features */}
         <div className="hidden md:block space-y-6 md:space-y-8 slide-in">
           <div className="float">
-            <div className="inline-flex items-center gap-3 mb-6">
-              <div className="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center">
-                <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
-              </div>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+            <div className="flex items-center gap-0 mb-6 group cursor-pointer transition-all duration-300" onClick={() => window.location.href = "/"}>
+              <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-20 w-20 md:h-24 md:w-24 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
+              <div className="flex flex-col justify-center leading-tight">
+                <h1 className="text-3xl md:text-4xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
                   NextGen
                 </h1>
-                <p className="text-muted-foreground text-xs md:text-sm font-medium">Your Path to Success</p>
+                <p className="text-xs md:text-sm text-muted-foreground font-bold uppercase tracking-widest mt-0.5 opacity-80">
+                  AI-Driven
+                </p>
               </div>
             </div>
           </div>
@@ -119,16 +119,19 @@ export default function LoginPage() {
         </div>
 
         {/* Right side - Login Form */}
-        <Card className="shadow-2xl border border-border bg-card/80 backdrop-blur-xl slide-in overflow-hidden" style={{ animationDelay: '0.2s' }}>
+        <Card className="shadow-xl border border-border bg-white dark:bg-slate-900 rounded-2xl slide-in overflow-hidden" style={{ animationDelay: '0.2s' }}>
           <CardContent className="p-8 md:p-10">
             {/* Mobile Logo */}
-            <div className="md:hidden text-center mb-8">
-              <div className="w-24 h-24 flex items-center justify-center mx-auto mb-4">
-                <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
+            <div className="md:hidden text-center mb-8 flex flex-col items-center">
+              <div className="flex items-center gap-0 justify-center mb-4">
+                <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-16 w-16 object-contain flex-shrink-0" />
+                <div className="flex flex-col items-start">
+                  <h1 className="text-2xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
+                    NextGen
+                  </h1>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">AI-Driven</p>
+                </div>
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                NextGen
-              </h1>
             </div>
 
             <div className="mb-8">
@@ -255,7 +258,6 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </div>
-
       {/* Bottom Info */}
       <div className="absolute bottom-4 left-0 right-0 text-center text-sm text-muted-foreground font-medium">
         <p>© {new Date().getFullYear()} NextGen Platform. All rights reserved.</p>
