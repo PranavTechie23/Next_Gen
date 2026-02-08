@@ -74,7 +74,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 
 export default function StudentWebinar(props: any) {
   const isDashboard = props?.isDashboard || false;
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState("upcoming");
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [bookmarkedWebinars, setBookmarkedWebinars] = useState<number[]>([]);
@@ -82,12 +82,12 @@ export default function StudentWebinar(props: any) {
   const [showFilters, setShowFilters] = useState(false);
 
   // Theme-aware styles
-  const cardBgClass = 'bg-card border-border';
+  const cardBgClass = 'bg-white/5 dark:bg-slate-900/40 border-white/10 backdrop-blur-3xl premium-card-glow transition-all duration-500 hover:border-primary/50';
   const textPrimaryClass = 'text-foreground';
   const textSecondaryClass = 'text-muted-foreground';
   const textMutedClass = 'text-muted-foreground/70';
-  const inputBgClass = 'bg-background border-border text-foreground';
-  const hoverBgClass = 'hover:bg-muted';
+  const inputBgClass = 'bg-white/5 dark:bg-slate-900/40 border-white/10 text-foreground';
+  const hoverBgClass = 'hover:bg-white/10 dark:hover:bg-slate-800/60 transition-colors duration-300';
   const { theme } = useTheme();
   const darkMode = theme === "dark";
 
@@ -157,220 +157,340 @@ export default function StudentWebinar(props: any) {
   const upcomingWebinars = [
     {
       id: 1,
-      title: "Advanced Python for Data Science",
-      description: "Master advanced Python concepts including decorators, generators, and async programming for data science applications.",
+      title: "SQL One Shot - Complete Database Course",
+      description: "Learn databases, queries, and more in one session by Shraddha Khapra. Perfect for beginners.",
       speaker: {
-        name: "Dr. Amit Sharma",
-        role: "Senior Data Scientist, Google",
-        image: "AS",
+        name: "Shraddha Khapra",
+        role: "Co-founder, Apna College",
+        image: "SK",
         rating: 4.9,
-        students: "15K+"
+        students: "5M+"
       },
-      date: "Jan 28, 2026",
-      time: "6:00 PM - 8:00 PM IST",
-      duration: "2 hours",
+      date: "Feb 10, 2026",
+      time: "6:00 PM IST",
+      duration: "3.5 hours",
       category: "Technical Skills",
-      level: "Advanced",
-      seats: "245 / 500",
+      level: "Beginner",
+      seats: "unlimited",
       price: "Free",
-      tags: ["Python", "Data Science", "ML"],
-      thumbnail: "gradient-1",
-      liveNow: false,
+      tags: ["SQL", "Database"],
+      thumbnail: "https://img.youtube.com/vi/HXV3zeQKqGY/hqdefault.jpg",
+      url: "https://www.youtube.com/watch?v=HXV3zeQKqGY",
+      liveNow: true,
       registered: 1245,
-      rating: 4.8,
-      languages: ["English", "Hindi"],
-      certificateOffered: true,
-      recordingAvailable: true,
+      rating: 4.9,
     },
     {
-      id: 2,
-      title: "Cracking FAANG Interviews",
-      description: "Learn proven strategies and techniques to ace technical interviews at top tech companies like Google, Amazon, and Microsoft.",
+      id: 13,
+      title: "SDE Sheet - Complete Placement Guide",
+      description: "The ultimate guide to crack top tech interviews. Master DSA with the famous Striver's SDE Sheet.",
       speaker: {
-        name: "Priya Gupta",
-        role: "Engineering Manager, Amazon",
-        image: "PG",
-        rating: 4.9,
-        students: "20K+"
+        name: "Striver",
+        role: "Founder, takeUforward",
+        image: "RV",
+        rating: 5.0,
+        students: "2M+"
       },
-      date: "Jan 30, 2026",
-      time: "7:00 PM - 9:00 PM IST",
-      duration: "2 hours",
+      date: "Feb 12, 2026",
+      time: "8:00 PM IST",
+      duration: "1 hour",
       category: "Interview Prep",
-      level: "Intermediate",
-      seats: "180 / 400",
-      price: "₹299",
-      tags: ["Interviews", "DSA", "System Design"],
-      thumbnail: "gradient-2",
+      level: "Advanced",
+      seats: "unlimited",
+      price: "Free",
+      tags: ["DSA", "Placement"],
+      thumbnail: "https://img.youtube.com/vi/WNtzUR_MwUQ/hqdefault.jpg",
+      url: "https://www.youtube.com/watch?v=WNtzUR_MwUQ",
       liveNow: false,
-      registered: 985,
+      registered: 4500,
+      rating: 5.0,
+    },
+    {
+      id: 17,
+      title: "Full Stack Web3 Development Cohort",
+      description: "Learn Blockchains, Smart Contracts, and DApps from scratch by Harkirat Singh.",
+      speaker: {
+        name: "Harkirat Singh",
+        role: "Founder, 100xDevs",
+        image: "HS",
+        rating: 4.9,
+        students: "500K+"
+      },
+      date: "Feb 15, 2026",
+      time: "9:00 PM IST",
+      duration: "3 hours",
+      category: "Technical Skills",
+      level: "Advanced",
+      seats: "limited",
+      price: "Free",
+      tags: ["Web3", "Blockchain"],
+      thumbnail: "https://i.ytimg.com/vi/M576WGiDBdQ/hqdefault.jpg",
+      url: "https://www.youtube.com/watch?v=M576WGiDBdQ",
+      liveNow: true,
+      registered: 8900,
       rating: 4.9,
-      languages: ["English"],
-      certificateOffered: true,
-      recordingAvailable: true,
+    },
+    {
+      id: 14,
+      title: "Java Full Course for Beginners",
+      description: "Master Java programming from scratch in one go by Bro Code.",
+      speaker: {
+        name: "Bro Code",
+        role: "Tech Educator",
+        image: "BC",
+        rating: 4.9,
+        students: "3M+"
+      },
+      date: "Feb 18, 2026",
+      time: "10:00 PM IST",
+      duration: "12 hours",
+      category: "Technical Skills",
+      level: "Beginner",
+      seats: "unlimited",
+      price: "Free",
+      tags: ["Java", "Programming"],
+      thumbnail: "https://i.ytimg.com/vi/xk4_1vDrzzo/hqdefault.jpg",
+      url: "https://www.youtube.com/watch?v=xk4_1vDrzzo",
+      liveNow: false,
+      registered: 3200,
+      rating: 4.9,
     },
     {
       id: 3,
-      title: "React & Next.js Masterclass",
-      description: "Build modern, scalable web applications with React 19 and Next.js 15. Covers server components, streaming, and more.",
+      title: "JavaScript Mastery - Chai aur Code",
+      description: "Deep dive into JavaScript core concepts with Hitesh Choudhary.",
       speaker: {
-        name: "Rahul Verma",
-        role: "Lead Frontend Engineer, Microsoft",
-        image: "RV",
+        name: "Hitesh Choudhary",
+        role: "Founder, Chai aur Code",
+        image: "HC",
         rating: 4.8,
-        students: "12K+"
+        students: "1M+"
       },
-      date: "Feb 1, 2026",
-      time: "5:00 PM - 7:30 PM IST",
-      duration: "2.5 hours",
+      date: "Feb 20, 2026",
+      time: "5:00 PM IST",
+      duration: "20 hours",
       category: "Technical Skills",
       level: "Intermediate",
-      seats: "320 / 600",
+      seats: "unlimited",
       price: "Free",
-      tags: ["React", "Next.js", "Frontend"],
-      thumbnail: "gradient-3",
-      liveNow: true,
+      tags: ["JavaScript", "Web Dev"],
+      thumbnail: "https://i.ytimg.com/vi/Hr5iLG7sUa0/hqdefault.jpg",
+      url: "https://www.youtube.com/watch?v=Hr5iLG7sUa0",
+      liveNow: false,
       registered: 1567,
-      rating: 4.7,
-      languages: ["English", "Hindi"],
-      certificateOffered: true,
-      recordingAvailable: true,
+      rating: 4.8,
     },
     {
       id: 4,
-      title: "AI & Machine Learning Career Path",
-      description: "Explore career opportunities in AI/ML, required skills, and how to transition into this exciting field in 2026.",
+      title: "Complete DSA Roadmap 2026",
+      description: "Master Data Structures and Algorithms with Love Babbar.",
       speaker: {
-        name: "Dr. Sneha Patel",
-        role: "AI Research Lead, Meta",
-        image: "SP",
+        name: "Love Babbar",
+        role: "Founder, CodeHelp",
+        image: "LB",
         rating: 5.0,
-        students: "25K+"
+        students: "2M+"
       },
-      date: "Feb 3, 2026",
-      time: "6:30 PM - 8:30 PM IST",
-      duration: "2 hours",
-      category: "Career Development",
+      date: "Feb 22, 2026",
+      time: "7:00 PM IST",
+      duration: "10 hours",
+      category: "Interview Prep",
       level: "Beginner",
-      seats: "150 / 450",
+      seats: "unlimited",
       price: "Free",
-      tags: ["AI", "ML", "Career"],
-      thumbnail: "gradient-4",
+      tags: ["DSA", "Placement"],
+      thumbnail: "https://img.youtube.com/vi/WQoB2z67hvY/hqdefault.jpg",
+      url: "https://www.youtube.com/watch?v=WQoB2z67hvY",
       liveNow: false,
       registered: 2134,
-      rating: 4.9,
-      languages: ["English"],
-      certificateOffered: true,
-      recordingAvailable: true,
+      rating: 5.0,
     },
     {
       id: 5,
-      title: "Building Scalable Backend Systems",
-      description: "Design and implement highly scalable backend architectures using microservices, Docker, and Kubernetes.",
+      title: "React.js Complete Course 2026",
+      description: "Build modern web apps with React 19 by CodeWithHarry.",
       speaker: {
-        name: "Vikram Singh",
-        role: "Principal Engineer, Netflix",
-        image: "VS",
+        name: "Harry",
+        role: "Founder, CodeWithHarry",
+        image: "CH",
         rating: 4.9,
-        students: "18K+"
+        students: "4M+"
       },
-      date: "Feb 5, 2026",
-      time: "7:00 PM - 9:30 PM IST",
-      duration: "2.5 hours",
+      date: "Feb 25, 2026",
+      time: "7:00 PM IST",
+      duration: "5 hours",
       category: "Technical Skills",
-      level: "Advanced",
-      seats: "95 / 300",
-      price: "₹499",
-      tags: ["Backend", "Microservices", "DevOps"],
-      thumbnail: "gradient-5",
+      level: "Intermediate",
+      seats: "unlimited",
+      price: "Free",
+      tags: ["React", "Frontend"],
+      thumbnail: "https://img.youtube.com/vi/6l8RWV8D-Yo/hqdefault.jpg",
+      url: "https://www.youtube.com/watch?v=6l8RWV8D-Yo",
       liveNow: false,
-      registered: 756,
-      rating: 4.8,
-      languages: ["English"],
-      certificateOffered: true,
-      recordingAvailable: true,
+      registered: 1200,
+      rating: 4.9,
     },
     {
       id: 6,
-      title: "Personal Branding for Engineers",
-      description: "Learn how to build your personal brand on LinkedIn, create impactful content, and attract recruiters.",
+      title: "Next.js 14 Ultimate Guide",
+      description: "Learn Next.js 14/15 with JS Mastery.",
       speaker: {
-        name: "Ananya Krishnan",
-        role: "Tech Influencer & Career Coach",
-        image: "AK",
-        rating: 4.7,
-        students: "30K+"
+        name: "Adrian Hajdin",
+        role: "Founder, JS Mastery",
+        image: "AH",
+        rating: 4.9,
+        students: "800K+"
       },
-      date: "Feb 7, 2026",
-      time: "6:00 PM - 7:30 PM IST",
-      duration: "1.5 hours",
-      category: "Career Development",
-      level: "Beginner",
-      seats: "420 / 800",
+      date: "Feb 27, 2026",
+      time: "6:00 PM IST",
+      duration: "6 hours",
+      category: "Technical Skills",
+      level: "Advanced",
+      seats: "unlimited",
       price: "Free",
-      tags: ["LinkedIn", "Branding", "Career"],
-      thumbnail: "gradient-6",
+      tags: ["Next.js", "Fullstack"],
+      thumbnail: "https://img.youtube.com/vi/wm5gMKuwSYk/hqdefault.jpg",
+      url: "https://www.youtube.com/watch?v=wm5gMKuwSYk",
       liveNow: false,
       registered: 1890,
-      rating: 4.6,
-      languages: ["English", "Hindi"],
-      certificateOffered: false,
-      recordingAvailable: true,
-    },
+      rating: 4.9,
+    }
   ];
 
   const pastWebinars = [
     {
       id: 7,
-      title: "Introduction to Cloud Computing",
-      description: "Comprehensive overview of AWS, Azure, and GCP cloud platforms and their core services.",
+      title: "Python for Beginners - Full Course",
+      description: "Learn Python from the ground up by Telusko. Perfect for absolute beginners.",
       speaker: {
-        name: "Rajesh Kumar",
-        role: "Cloud Architect, Amazon",
-        image: "RK",
+        name: "Navin Reddy",
+        role: "Founder, Telusko",
+        image: "NR",
+        rating: 4.9,
+      },
+      date: "Jan 25, 2026",
+      duration: "6 hours",
+      category: "Technical Skills",
+      views: "1.8M",
+      rating: 4.9,
+      thumbnail: "https://img.youtube.com/vi/hxB_e7K1c50/hqdefault.jpg",
+      url: "https://www.youtube.com/watch?v=hxB_e7K1c50",
+      recordingAvailable: true,
+    },
+    {
+      id: 15,
+      title: "C Full Course for Beginners",
+      description: "Master C programming with Bro Code. The best starting point for every coder.",
+      speaker: {
+        name: "Bro Code",
+        role: "Tech Educator",
+        image: "BC",
+        rating: 4.9,
+      },
+      date: "Jan 22, 2026",
+      duration: "4 hours",
+      category: "Technical Skills",
+      views: "1.5M",
+      rating: 4.9,
+      thumbnail: "https://img.youtube.com/vi/87SH2Cn0s9A/hqdefault.jpg",
+      url: "https://www.youtube.com/watch?v=87SH2Cn0s9A",
+      recordingAvailable: true,
+    },
+    {
+      id: 18,
+      title: "System Design for Beginners",
+      description: "Learn how to design scalable systems like WhatsApp and Instagram by Sanket Singh.",
+      speaker: {
+        name: "Sanket Singh",
+        role: "Software Engineer, Google",
+        image: "SS",
         rating: 4.8,
       },
-      date: "Jan 20, 2026",
+      date: "Jan 18, 2026",
       duration: "2 hours",
       category: "Technical Skills",
-      views: "3.2K",
-      rating: 4.7,
+      views: "450K",
+      rating: 4.8,
+      thumbnail: "https://img.youtube.com/vi/rCg0J9I6p5w/hqdefault.jpg",
+      url: "https://www.youtube.com/watch?v=rCg0J9I6p5w",
+      recordingAvailable: true,
+    },
+    {
+      id: 16,
+      title: "Git & GitHub Tutorial",
+      description: "Learn version control from scratch by Kunal Kushwaha. Essential for developer life.",
+      speaker: {
+        name: "Kunal Kushwaha",
+        role: "Founder, WeMakeDevs",
+        image: "KK",
+        rating: 5.0,
+      },
+      date: "Jan 15, 2026",
+      duration: "2 hours",
+      category: "Technical Skills",
+      views: "800K",
+      rating: 5.0,
+      thumbnail: "https://img.youtube.com/vi/apGV9Kg7ics/hqdefault.jpg",
+      url: "https://www.youtube.com/watch?v=apGV9Kg7ics",
       recordingAvailable: true,
     },
     {
       id: 8,
-      title: "Resume Writing Workshop",
-      description: "Create ATS-friendly resumes that get you interviews at top companies.",
+      title: "MongoDB Tutorial for Beginners",
+      description: "Complete MongoDB course in Hindi. Learn NoSQL databases with local setup and cloud atlas.",
       speaker: {
-        name: "Meera Shah",
-        role: "HR Director, Microsoft",
-        image: "MS",
+        name: "Harry",
+        role: "Founder, CodeWithHarry",
+        image: "CH",
         rating: 4.9,
       },
       date: "Jan 18, 2026",
-      duration: "1.5 hours",
-      category: "Career Development",
-      views: "5.1K",
-      rating: 4.8,
+      duration: "3 hours",
+      category: "Technical Skills",
+      views: "1.2M",
+      rating: 4.9,
+      thumbnail: "https://img.youtube.com/vi/oSIv-E60NiU/hqdefault.jpg",
+      url: "https://www.youtube.com/watch?v=oSIv-E60NiU",
       recordingAvailable: true,
     },
     {
       id: 9,
-      title: "Blockchain & Web3 Fundamentals",
-      description: "Understand blockchain technology, cryptocurrencies, and decentralized applications.",
+      title: "Complete CSS Tutorial for Beginners",
+      description: "Learn CSS from basic to advanced including Flexbox and Grid in one shot by Apna College.",
       speaker: {
-        name: "Arjun Malhotra",
-        role: "Blockchain Developer, Polygon",
-        image: "AM",
-        rating: 4.6,
+        name: "Shraddha Khapra",
+        role: "Co-founder, Apna College",
+        image: "SK",
+        rating: 4.9,
       },
       date: "Jan 15, 2026",
-      duration: "2.5 hours",
+      duration: "9 hours",
       category: "Technical Skills",
-      views: "2.8K",
-      rating: 4.5,
+      views: "3.5M",
+      rating: 4.9,
+      thumbnail: "https://img.youtube.com/vi/ESnrn1kAD4E/hqdefault.jpg",
+      url: "https://www.youtube.com/watch?v=ESnrn1kAD4E",
       recordingAvailable: true,
     },
+    {
+      id: 12,
+      title: "HTML Full Course for Beginners",
+      description: "Learn HTML5 from scratch in this one-shot course by Apna College. Every tag explained.",
+      speaker: {
+        name: "Shraddha Khapra",
+        role: "Co-founder, Apna College",
+        image: "SK",
+        rating: 4.9,
+      },
+      date: "Jan 12, 2026",
+      duration: "2 hours",
+      category: "Technical Skills",
+      views: "4M",
+      rating: 4.9,
+      thumbnail: "https://img.youtube.com/vi/HcOc7P5BMi4/hqdefault.jpg",
+      url: "https://www.youtube.com/watch?v=HcOc7P5BMi4",
+      recordingAvailable: true,
+    }
   ];
 
   const featuredSpeakers = [
@@ -430,7 +550,15 @@ export default function StudentWebinar(props: any) {
   ];
 
   return (
-    <div className={`${!isDashboard ? "min-h-screen bg-background" : "bg-transparent"} transition-colors duration-300`}>
+    <div className={`${!isDashboard ? "min-h-screen bg-transparent relative overflow-hidden" : "bg-transparent"} transition-colors duration-300`}>
+      {/* Premium Background Glows */}
+      {!isDashboard && (
+        <div className="premium-glow-bg">
+          <div className="premium-glow-1" />
+          <div className="premium-glow-2" />
+          <div className="premium-glow-3" />
+        </div>
+      )}
       {!isDashboard && (
         <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border shadow-sm transition-colors duration-300">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -440,12 +568,12 @@ export default function StudentWebinar(props: any) {
                   <ArrowLeft className="w-4 h-4" />
                 </Button>
                 <div className="h-6 w-px bg-border"></div>
-                <div className="w-14 h-14 flex items-center justify-center">
-                  <img src={darkMode ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
-                </div>
-                <div>
-                  <span className="font-bold text-lg bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">Webinars</span>
-                  <p className="text-xs text-muted-foreground">Live Learning Sessions</p>
+                <div className="flex items-center gap-0">
+                  <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-12 w-12 object-contain flex-shrink-0" />
+                  <div>
+                    <span className="font-bold text-lg bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">Webinars</span>
+                    <p className="text-xs text-muted-foreground">Live Learning Sessions</p>
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -518,11 +646,11 @@ export default function StudentWebinar(props: any) {
           </div>
 
           {/* Live Indicator */}
-          <div className={`flex items-center gap-2 p-4 ${darkMode ? 'bg-red-500/10 border-red-500/20' : 'bg-red-50 border-red-200'} border rounded-xl mb-6`}>
+          <div className={`flex items-center gap-2 p-4 ${darkMode ? 'bg-red-500/10 border-red-500/90' : 'bg-red-50 border-red-200'} border rounded-xl mb-6`}>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
               <Radio className="w-5 h-5 text-red-600" />
-              <span className={`font-semibold ${darkMode ? 'text-red-400' : 'text-red-700'}`}>1 webinar is LIVE now!</span>
+              <span className={`font-semibold ${darkMode ? 'text-red-500' : 'text-red-700'}`}>1 webinar is LIVE now!</span>
             </div>
             <ChevronRight className={`w-5 h-5 ${darkMode ? 'text-red-400' : 'text-red-600'}`} />
           </div>
@@ -642,461 +770,287 @@ export default function StudentWebinar(props: any) {
           </button>
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left Column - Webinar List */}
-          <div className="lg:col-span-2 space-y-6">
-            {activeTab === 'upcoming' && (
-              <>
-                {upcomingWebinars.map((webinar) => (
-                  <Card key={webinar.id} className={`${cardBgClass} hover:shadow-2xl transition-all duration-300 overflow-hidden group`}>
-                    <div className="relative">
-                      {/* Thumbnail */}
-                      <div className={`h-48 bg-gradient-to-br ${webinar.thumbnail === 'gradient-1' ? 'from-blue-500 to-cyan-500' :
-                        webinar.thumbnail === 'gradient-2' ? 'from-purple-500 to-pink-500' :
-                          webinar.thumbnail === 'gradient-3' ? 'from-green-500 to-emerald-500' :
-                            webinar.thumbnail === 'gradient-4' ? 'from-orange-500 to-red-500' :
-                              webinar.thumbnail === 'gradient-5' ? 'from-indigo-500 to-purple-500' :
-                                'from-pink-500 to-rose-500'
-                        } flex items-center justify-center relative overflow-hidden`}>
-                        <PlayCircle className="w-16 h-16 text-white opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all" />
-
-                        {/* Live Badge */}
-                        {webinar.liveNow && (
-                          <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-600 text-white px-3 py-1.5 rounded-lg shadow-lg">
-                            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                            <span className="text-sm font-semibold">LIVE NOW</span>
-                          </div>
-                        )}
-
-                        {/* Level Badge */}
-                        <div className={`absolute top-4 right-4 ${webinar.level === 'Beginner' ? 'bg-green-600' :
-                          webinar.level === 'Intermediate' ? 'bg-yellow-600' :
-                            'bg-red-600'
-                          } text-white px-3 py-1 rounded-lg text-sm font-semibold`}>
-                          {webinar.level}
+        {/* Main Content Grid - Side by side layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-12">
+          {activeTab === 'upcoming' && (
+            <>
+              {upcomingWebinars.map((webinar) => (
+                <Card
+                  key={webinar.id}
+                  className={`${cardBgClass} hover:shadow-2xl transition-all duration-300 overflow-hidden group border-2 border-transparent hover:border-blue-500/30 cursor-pointer flex flex-col h-full`}
+                  onClick={() => (webinar as any).url && window.open((webinar as any).url, '_blank')}
+                >
+                  <div className="relative">
+                    {/* Thumbnail */}
+                    <div className="h-56 relative overflow-hidden">
+                      <img
+                        src={webinar.thumbnail}
+                        alt={webinar.title}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80";
+                        }}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                        <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center transform group-hover:scale-110 transition-all border border-white/30">
+                          <Play className="w-8 h-8 text-white fill-current" />
                         </div>
+                      </div>
 
-                        {/* Bookmark */}
-                        <button
-                          onClick={() => toggleBookmark(webinar.id)}
-                          className="absolute bottom-4 right-4 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white/30 transition-all"
-                        >
-                          <Bookmark className={`w-5 h-5 ${bookmarkedWebinars.includes(webinar.id) ? 'fill-white text-white' : 'text-white'}`} />
-                        </button>
+                      {/* Live Badge */}
+                      {webinar.liveNow && (
+                        <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-600 text-white px-3 py-1.5 rounded-lg shadow-lg">
+                          <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                          <span className="text-sm font-semibold">LIVE NOW</span>
+                        </div>
+                      )}
+
+                      {/* Level Badge */}
+                      <div className={`absolute top-4 right-4 ${webinar.level === 'Beginner' ? 'bg-green-600' :
+                        webinar.level === 'Intermediate' ? 'bg-yellow-600' :
+                          'bg-red-600'
+                        } text-white px-3 py-1 rounded-lg text-sm font-semibold shadow-md`}>
+                        {webinar.level}
+                      </div>
+                    </div>
+                  </div>
+
+                  <CardContent className="p-6 flex-1 flex flex-col">
+                    {/* Category & Price */}
+                    <div className="flex items-center justify-between mb-4">
+                      <span className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider ${darkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-700'
+                        }`}>
+                        {webinar.category}
+                      </span>
+                      <span className="text-sm font-black text-blue-500">FREE</span>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className={`text-xl font-black ${textPrimaryClass} mb-3 leading-tight group-hover:text-blue-500 transition-colors`}>
+                      {webinar.title}
+                    </h3>
+
+                    {/* Description */}
+                    <p className={`${textSecondaryClass} text-sm mb-6 line-clamp-2`}>
+                      {webinar.description}
+                    </p>
+
+                    {/* Speaker Info */}
+                    <div className="flex items-center gap-4 mb-6 pt-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black shadow-lg">
+                        {webinar.speaker.image}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className={`font-bold ${textPrimaryClass} text-sm truncate`}>{webinar.speaker.name}</p>
+                          <svg className="w-4 h-4 text-blue-500 fill-current" viewBox="0 0 24 24">
+                            <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zM10 17l-5-5 1.4-1.4 3.6 3.6 7.6-7.6L19 8l-9 9z" />
+                          </svg>
+                        </div>
+                        <p className={`text-xs ${textMutedClass} font-medium truncate`}>{webinar.speaker.role}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-500/10 rounded-lg flex-shrink-0">
+                        <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                        <span className={`text-sm font-black ${textPrimaryClass}`}>{webinar.speaker.rating}</span>
                       </div>
                     </div>
 
-                    <CardContent className="p-6">
-                      {/* Category & Price */}
-                      <div className="flex items-center justify-between mb-3">
-                        <span className={`text-xs px-3 py-1 rounded-full font-semibold ${darkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-700'
-                          }`}>
-                          {webinar.category}
-                        </span>
-                        <span className={`text-lg font-bold ${webinar.price === 'Free'
-                          ? darkMode ? 'text-green-400' : 'text-green-600'
-                          : darkMode ? 'text-orange-400' : 'text-orange-600'
-                          }`}>
-                          {webinar.price}
-                        </span>
+                    {/* Meta Info Grid */}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-3 mb-6">
+                      <div className="flex items-center gap-2.5">
+                        <Calendar className={`w-4 h-4 ${textMutedClass}`} />
+                        <span className={`text-xs font-bold ${textSecondaryClass}`}>{webinar.date}</span>
                       </div>
-
-                      {/* Title */}
-                      <h3 className={`text-xl font-bold ${textPrimaryClass} mb-2 group-hover:text-blue-600 transition-colors`}>
-                        {webinar.title}
-                      </h3>
-
-                      {/* Description */}
-                      <p className={`${textSecondaryClass} text-sm mb-4 line-clamp-2`}>
-                        {webinar.description}
-                      </p>
-
-                      {/* Speaker Info */}
-                      <div className="flex items-center gap-3 mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg">
-                          {webinar.speaker.image}
-                        </div>
-                        <div className="flex-1">
-                          <p className={`font-semibold ${textPrimaryClass} text-sm`}>{webinar.speaker.name}</p>
-                          <p className={`text-xs ${textMutedClass}`}>{webinar.speaker.role}</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                          <span className={`text-sm font-semibold ${textPrimaryClass}`}>{webinar.speaker.rating}</span>
-                        </div>
+                      <div className="flex items-center gap-2.5">
+                        <Clock className={`w-4 h-4 ${textMutedClass}`} />
+                        <span className={`text-xs font-bold ${textSecondaryClass}`}>{webinar.duration}</span>
                       </div>
-
-                      {/* Meta Info */}
-                      <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div className="flex items-center gap-2">
-                          <Calendar className={`w-4 h-4 ${textMutedClass}`} />
-                          <span className={`text-sm ${textSecondaryClass}`}>{webinar.date}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className={`w-4 h-4 ${textMutedClass}`} />
-                          <span className={`text-sm ${textSecondaryClass}`}>{webinar.time}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Users className={`w-4 h-4 ${textMutedClass}`} />
-                          <span className={`text-sm ${textSecondaryClass}`}>{webinar.seats} seats</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Globe className={`w-4 h-4 ${textMutedClass}`} />
-                          <span className={`text-sm ${textSecondaryClass}`}>{webinar.languages.join(', ')}</span>
-                        </div>
+                      <div className="flex items-center gap-2.5">
+                        <Users className={`w-4 h-4 ${textMutedClass}`} />
+                        <span className={`text-xs font-bold ${textSecondaryClass}`}>{webinar.speaker.students} Students</span>
                       </div>
-
-                      {/* Tags */}
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {webinar.tags.map((tag, idx) => (
-                          <span key={idx} className={`text-xs px-2 py-1 rounded-lg ${darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-700'
-                            }`}>
-                            #{tag}
-                          </span>
-                        ))}
+                      <div className="flex items-center gap-2.5">
+                        <Globe className={`w-4 h-4 ${textMutedClass}`} />
+                        <span className={`text-xs font-bold ${textSecondaryClass}`}>YouTube Live</span>
                       </div>
+                    </div>
 
-                      {/* Features */}
-                      <div className="flex items-center gap-4 mb-4 text-xs">
-                        {webinar.certificateOffered && (
-                          <div className="flex items-center gap-1 text-green-600">
-                            <Award className="w-4 h-4" />
-                            <span>Certificate</span>
-                          </div>
-                        )}
-                        {webinar.recordingAvailable && (
-                          <div className="flex items-center gap-1 text-blue-600">
-                            <Video className="w-4 h-4" />
-                            <span>Recording</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex gap-3">
-                        <Button
-                          onClick={() => toggleRegistration(webinar.id)}
-                          className={`flex-1 ${registeredWebinars.includes(webinar.id)
-                            ? 'bg-green-600 hover:bg-green-700'
-                            : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
-                            } text-white`}
-                        >
-                          {registeredWebinars.includes(webinar.id) ? (
-                            <>
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Registered
-                            </>
-                          ) : (
-                            <>
-                              <Calendar className="w-4 h-4 mr-2" />
-                              Register Now
-                            </>
-                          )}
-                        </Button>
-                        <Button variant="outline" className={`${darkMode ? 'border-slate-600' : 'border-slate-300'}`}>
-                          <Share2 className="w-4 h-4" />
-                        </Button>
-                        <Button variant="outline" className={`${darkMode ? 'border-slate-600' : 'border-slate-300'}`}>
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </>
-            )}
-
-            {activeTab === 'past' && (
-              <>
-                {pastWebinars.map((webinar) => (
-                  <Card key={webinar.id} className={`${cardBgClass} hover:shadow-xl transition-all duration-300`}>
-                    <CardContent className="p-6">
-                      <div className="flex gap-4">
-                        <div className="w-32 h-32 rounded-xl bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center flex-shrink-0">
-                          <Play className="w-12 h-12 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className={`text-xs px-2 py-1 rounded-full ${darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
-                              {webinar.category}
-                            </span>
-                            <span className={`text-xs px-2 py-1 rounded-full ${darkMode ? 'bg-green-500/20 text-green-400' : 'bg-green-100 text-green-700'}`}>
-                              Recording Available
-                            </span>
-                          </div>
-                          <h3 className={`text-lg font-bold ${textPrimaryClass} mb-2`}>{webinar.title}</h3>
-                          <p className={`text-sm ${textSecondaryClass} mb-3 line-clamp-2`}>{webinar.description}</p>
-
-                          <div className="flex items-center gap-4 mb-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold">
-                                {webinar.speaker.image}
-                              </div>
-                              <span className={`text-sm ${textSecondaryClass}`}>{webinar.speaker.name}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                              <span className={`text-sm ${textSecondaryClass}`}>{webinar.rating}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Eye className={`w-4 h-4 ${textMutedClass}`} />
-                              <span className={`text-sm ${textSecondaryClass}`}>{webinar.views} views</span>
-                            </div>
-                          </div>
-
-                          <div className="flex gap-3">
-                            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
-                              <Play className="w-4 h-4 mr-2" />
-                              Watch Recording
-                            </Button>
-                            <Button variant="outline" className={`${darkMode ? 'border-slate-600' : 'border-slate-300'}`}>
-                              <Download className="w-4 h-4 mr-2" />
-                              Resources
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </>
-            )}
-
-            {activeTab === 'registered' && (
-              <>
-                {upcomingWebinars.filter(w => registeredWebinars.includes(w.id)).map((webinar) => (
-                  <Card key={webinar.id} className={`${cardBgClass} hover:shadow-xl transition-all duration-300 border-2 border-green-500`}>
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-2 mb-4">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <span className="text-sm font-semibold text-green-600">You're Registered!</span>
-                      </div>
-
-                      <h3 className={`text-xl font-bold ${textPrimaryClass} mb-3`}>{webinar.title}</h3>
-
-                      <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div className="flex items-center gap-2">
-                          <Calendar className={`w-4 h-4 ${textMutedClass}`} />
-                          <span className={`text-sm ${textSecondaryClass}`}>{webinar.date}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className={`w-4 h-4 ${textMutedClass}`} />
-                          <span className={`text-sm ${textSecondaryClass}`}>{webinar.time}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-3">
-                        <Button className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          Add to Calendar
-                        </Button>
-                        <Button variant="outline" className={`${darkMode ? 'border-slate-600' : 'border-slate-300'}`}>
-                          <Mail className="w-4 h-4 mr-2" />
-                          Reminder
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-                {registeredWebinars.length === 0 && (
-                  <Card className={`${cardBgClass}`}>
-                    <CardContent className="p-12 text-center">
-                      <Calendar className={`w-16 h-16 ${textMutedClass} mx-auto mb-4`} />
-                      <h3 className={`text-xl font-bold ${textPrimaryClass} mb-2`}>No Registrations Yet</h3>
-                      <p className={`${textSecondaryClass} mb-6`}>Browse upcoming webinars and register to start learning!</p>
-                      <Button onClick={() => setActiveTab('upcoming')} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
-                        Browse Webinars
+                    {/* Actions */}
+                    <div className="flex gap-3">
+                      <Button
+                        asChild
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black tracking-wide h-12 rounded-xl shadow-lg shadow-blue-500/20"
+                      >
+                        <a href={webinar.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
+                          <PlayCircle className="w-5 h-5 mr-2" />
+                          Watch on YouTube
+                        </a>
                       </Button>
-                    </CardContent>
-                  </Card>
-                )}
-              </>
-            )}
-          </div>
+                      <Button variant="outline" className={`w-12 h-12 p-0 rounded-xl ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+                        <Share2 className="w-5 h-5" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </>
+          )}
 
-          {/* Right Column - Sidebar */}
-          <div className="space-y-6">
-            {/* Featured Speakers */}
-            <Card className={`${cardBgClass} shadow-lg`}>
-              <CardHeader>
-                <CardTitle className={`text-lg ${textPrimaryClass} flex items-center gap-2`}>
-                  <Award className="w-5 h-5 text-blue-600" />
-                  Featured Speakers
-                </CardTitle>
-                <CardDescription className={textSecondaryClass}>Learn from the best in the industry</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {featuredSpeakers.map((speaker) => (
-                    <div key={speaker.id} className={`p-3 rounded-xl ${hoverBgClass} transition-colors cursor-pointer`}>
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg">
-                          {speaker.image}
-                        </div>
-                        <div className="flex-1">
-                          <p className={`font-semibold ${textPrimaryClass} text-sm`}>{speaker.name}</p>
-                          <p className={`text-xs ${textMutedClass}`}>{speaker.company}</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                          <span className={`text-xs ${textSecondaryClass}`}>{speaker.rating}</span>
+          {activeTab === 'past' && (
+            <>
+              {pastWebinars.map((webinar) => (
+                <Card
+                  key={webinar.id}
+                  className={`${cardBgClass} hover:shadow-2xl transition-all duration-300 overflow-hidden group border-2 border-transparent hover:border-blue-500/30 cursor-pointer flex flex-col`}
+                  onClick={() => (webinar as any).url && window.open((webinar as any).url, '_blank')}
+                >
+                  <div className="relative">
+                    {/* Thumbnail */}
+                    <div className="h-56 relative overflow-hidden">
+                      <img
+                        src={webinar.thumbnail}
+                        alt={webinar.title}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80";
+                        }}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                        <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center transform group-hover:scale-110 transition-all border border-white/30">
+                          <Play className="w-8 h-8 text-white fill-current" />
                         </div>
                       </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className={textMutedClass}>{speaker.webinars} webinars</span>
-                        <span className={textMutedClass}>{speaker.students} students</span>
+
+                      {/* Category Badge */}
+                      <div className="absolute top-4 left-4 flex items-center gap-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg shadow-lg">
+                        <span className="text-sm font-semibold uppercase">{webinar.category}</span>
+                      </div>
+
+                      {/* Views Badge */}
+                      <div className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-lg">
+                        <Eye className="w-4 h-4" />
+                        <span className="text-xs font-bold">{webinar.views} views</span>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </div>
 
-            {/* Trending Topics */}
-            <Card className={`${cardBgClass} shadow-lg`}>
-              <CardHeader>
-                <CardTitle className={`text-lg ${textPrimaryClass} flex items-center gap-2`}>
-                  <TrendingUp className="w-5 h-5 text-green-600" />
-                  Trending Topics
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {trendingTopics.map((topic, idx) => (
-                    <div key={idx} className={`flex items-center justify-between p-2 rounded-lg ${hoverBgClass} transition-colors cursor-pointer`}>
-                      <div className="flex items-center gap-2">
-                        {topic.trending && <Zap className="w-4 h-4 text-orange-500" />}
-                        <span className={`text-sm font-medium ${textPrimaryClass}`}>{topic.name}</span>
-                      </div>
-                      <span className={`text-xs px-2 py-1 rounded-full ${darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
-                        {topic.count}
+                  <CardContent className="p-6 flex-1 flex flex-col">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider ${darkMode ? 'bg-green-500/20 text-green-400' : 'bg-green-100 text-green-700'
+                        }`}>
+                        Recorded Session
                       </span>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* Quick Actions */}
-            <Card className={`${cardBgClass} shadow-lg`}>
-              <CardHeader>
-                <CardTitle className={`text-lg ${textPrimaryClass} flex items-center gap-2`}>
-                  <Rocket className="w-5 h-5 text-purple-600" />
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <button className={`w-full text-left p-3 rounded-xl ${hoverBgClass} transition-all flex items-center gap-3`}>
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                      <Calendar className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <p className={`text-sm font-semibold ${textPrimaryClass}`}>My Schedule</p>
-                      <p className={`text-xs ${textMutedClass}`}>View all upcoming sessions</p>
-                    </div>
-                    <ChevronRight className={`w-4 h-4 ${textMutedClass}`} />
-                  </button>
+                    <h3 className={`text-xl font-black ${textPrimaryClass} mb-3 leading-tight group-hover:text-blue-500 transition-colors`}>
+                      {webinar.title}
+                    </h3>
 
-                  <button className={`w-full text-left p-3 rounded-xl ${hoverBgClass} transition-all flex items-center gap-3`}>
-                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                      <Award className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <p className={`text-sm font-semibold ${textPrimaryClass}`}>My Certificates</p>
-                      <p className={`text-xs ${textMutedClass}`}>8 certificates earned</p>
-                    </div>
-                    <ChevronRight className={`w-4 h-4 ${textMutedClass}`} />
-                  </button>
+                    <p className={`${textSecondaryClass} text-sm mb-6 line-clamp-2`}>
+                      {webinar.description}
+                    </p>
 
-                  <button className={`w-full text-left p-3 rounded-xl ${hoverBgClass} transition-all flex items-center gap-3`}>
-                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                      <Bookmark className="w-5 h-5 text-white" />
+                    <div className="flex items-center gap-4 mb-6 pt-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black shadow-lg">
+                        {webinar.speaker.image}
+                      </div>
+                      <div className="flex-1">
+                        <p className={`font-bold ${textPrimaryClass} text-sm`}>{webinar.speaker.name}</p>
+                        <p className={`text-xs ${textMutedClass} font-medium`}>{webinar.speaker.role}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-500/10 rounded-lg">
+                        <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                        <span className={`text-sm font-black ${textPrimaryClass}`}>{webinar.rating}</span>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className={`text-sm font-semibold ${textPrimaryClass}`}>Bookmarks</p>
-                      <p className={`text-xs ${textMutedClass}`}>{bookmarkedWebinars.length} saved webinars</p>
-                    </div>
-                    <ChevronRight className={`w-4 h-4 ${textMutedClass}`} />
-                  </button>
 
-                  <button className={`w-full text-left p-3 rounded-xl ${hoverBgClass} transition-all flex items-center gap-3`}>
-                    <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
-                      <Download className="w-5 h-5 text-white" />
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-3 mb-6">
+                      <div className="flex items-center gap-2.5">
+                        <Calendar className={`w-4 h-4 ${textMutedClass}`} />
+                        <span className={`text-xs font-bold ${textSecondaryClass}`}>{webinar.date}</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <Clock className={`w-4 h-4 ${textMutedClass}`} />
+                        <span className={`text-xs font-bold ${textSecondaryClass}`}>{webinar.duration}</span>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className={`text-sm font-semibold ${textPrimaryClass}`}>Downloads</p>
-                      <p className={`text-xs ${textMutedClass}`}>Resources & materials</p>
-                    </div>
-                    <ChevronRight className={`w-4 h-4 ${textMutedClass}`} />
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* Community Stats */}
-            <Card className={`${cardBgClass} shadow-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white`}>
-              <CardContent className="pt-6">
-                <Globe className="w-12 h-12 mb-4 opacity-80" />
-                <h3 className="text-2xl font-bold mb-2">Join 28K+ Students</h3>
-                <p className="text-blue-100 text-sm mb-4">Learning from industry experts every week</p>
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
-                    <p className="text-2xl font-bold">245+</p>
-                    <p className="text-xs text-blue-100">Live Sessions</p>
-                  </div>
-                  <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
-                    <p className="text-2xl font-bold">4.8★</p>
-                    <p className="text-xs text-blue-100">Avg Rating</p>
-                  </div>
-                </div>
-                <Button className="w-full bg-white text-blue-600 hover:bg-blue-50">
-                  Invite Friends
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Upcoming This Week */}
-            <Card className={`${cardBgClass} shadow-lg`}>
-              <CardHeader>
-                <CardTitle className={`text-lg ${textPrimaryClass} flex items-center gap-2`}>
-                  <Clock className="w-5 h-5 text-blue-600" />
-                  This Week's Highlights
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className={`p-3 rounded-xl border-2 border-blue-500 ${darkMode ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-xs font-semibold text-blue-600">Tomorrow</span>
+                    <div className="flex gap-3">
+                      <Button
+                        asChild
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black tracking-wide h-12 rounded-xl shadow-lg shadow-blue-500/20"
+                      >
+                        <a href={webinar.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
+                          <PlayCircle className="w-5 h-5 mr-2" />
+                          Watch Recording
+                        </a>
+                      </Button>
+                      <Button variant="outline" className={`w-12 h-12 p-0 rounded-xl ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+                        <Share2 className="w-5 h-5" />
+                      </Button>
                     </div>
-                    <p className={`text-sm font-semibold ${textPrimaryClass} mb-1`}>Advanced Python</p>
-                    <p className={`text-xs ${textMutedClass}`}>6:00 PM - Dr. Amit Sharma</p>
-                  </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </>
+          )}
 
-                  <div className={`p-3 rounded-xl border ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Calendar className={`w-3 h-3 ${textMutedClass}`} />
-                      <span className={`text-xs ${textMutedClass}`}>Jan 30</span>
+          {activeTab === 'registered' && (
+            <>
+              {upcomingWebinars.filter(w => registeredWebinars.includes(w.id)).map((webinar) => (
+                <Card
+                  key={webinar.id}
+                  className={`${cardBgClass} hover:shadow-xl transition-all duration-300 border-2 border-green-500 cursor-pointer`}
+                  onClick={() => webinar.url && window.open(webinar.url, '_blank')}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <span className="text-sm font-semibold text-green-600">You're Registered!</span>
                     </div>
-                    <p className={`text-sm font-semibold ${textPrimaryClass} mb-1`}>FAANG Interviews</p>
-                    <p className={`text-xs ${textMutedClass}`}>7:00 PM - Priya Gupta</p>
-                  </div>
 
-                  <div className={`p-3 rounded-xl border ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Calendar className={`w-3 h-3 ${textMutedClass}`} />
-                      <span className={`text-xs ${textMutedClass}`}>Feb 1</span>
+                    <h3 className={`text-xl font-bold ${textPrimaryClass} mb-3`}>{webinar.title}</h3>
+
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="flex items-center gap-2">
+                        <Calendar className={`w-4 h-4 ${textMutedClass}`} />
+                        <span className={`text-sm ${textSecondaryClass}`}>{webinar.date}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className={`w-4 h-4 ${textMutedClass}`} />
+                        <span className={`text-sm ${textSecondaryClass}`}>{webinar.time}</span>
+                      </div>
                     </div>
-                    <p className={`text-sm font-semibold ${textPrimaryClass} mb-1`}>React Masterclass</p>
-                    <p className={`text-xs ${textMutedClass}`}>5:00 PM - Rahul Verma</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+
+                    <div className="flex gap-3">
+                      <Button className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        Add to Calendar
+                      </Button>
+                      <Button variant="outline" className={`${darkMode ? 'border-slate-600' : 'border-slate-300'}`}>
+                        <Mail className="w-4 h-4 mr-2" />
+                        Reminder
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {registeredWebinars.length === 0 && (
+                <Card className={`${cardBgClass}`}>
+                  <CardContent className="p-12 text-center">
+                    <Calendar className={`w-16 h-16 ${textMutedClass} mx-auto mb-4`} />
+                    <h3 className={`text-xl font-bold ${textPrimaryClass} mb-2`}>No Registrations Yet</h3>
+                    <p className={`${textSecondaryClass} mb-6`}>Browse upcoming webinars and register to start learning!</p>
+                    <Button onClick={() => setActiveTab('upcoming')} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
+                      Browse Webinars
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
         </div>
 
         {/* Newsletter Signup */}
@@ -1126,67 +1080,7 @@ export default function StudentWebinar(props: any) {
             </div>
           </CardContent>
         </Card>
-      </main >
-
-      {/* Footer */}
-      < footer className={`${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} border-t mt-16 py-8 transition-colors duration-300`
-      }>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-12 h-12 flex items-center justify-center">
-                  <img src={darkMode ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
-                </div>
-                <span className={`font-bold text-lg ${textPrimaryClass}`}>NextGen</span>
-              </div>
-              <p className={`text-sm ${textSecondaryClass}`}>
-                Empowering students through live learning and expert guidance
-              </p>
-            </div>
-            <div>
-              <h3 className={`font-semibold ${textPrimaryClass} mb-4`}>Quick Links</h3>
-              <ul className={`space-y-2 text-sm ${textSecondaryClass}`}>
-                <li><a href="#" className={`${hoverBgClass} transition-colors`}>Browse Webinars</a></li>
-                <li><a href="#" className={`${hoverBgClass} transition-colors`}>Become a Speaker</a></li>
-                <li><a href="#" className={`${hoverBgClass} transition-colors`}>Certificates</a></li>
-                <li><a href="#" className={`${hoverBgClass} transition-colors`}>Help Center</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className={`font-semibold ${textPrimaryClass} mb-4`}>Resources</h3>
-              <ul className={`space-y-2 text-sm ${textSecondaryClass}`}>
-                <li><a href="#" className={`${hoverBgClass} transition-colors`}>Blog</a></li>
-                <li><a href="#" className={`${hoverBgClass} transition-colors`}>FAQs</a></li>
-                <li><a href="#" className={`${hoverBgClass} transition-colors`}>Community</a></li>
-                <li><a href="#" className={`${hoverBgClass} transition-colors`}>Support</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className={`font-semibold ${textPrimaryClass} mb-4`}>Connect</h3>
-              <div className="flex gap-3 mb-4">
-                <a href="#" className={`w-10 h-10 ${darkMode ? 'bg-slate-700' : 'bg-slate-100'} rounded-lg flex items-center justify-center ${hoverBgClass} transition-colors`}>
-                  <Linkedin className="w-5 h-5" />
-                </a>
-                <a href="#" className={`w-10 h-10 ${darkMode ? 'bg-slate-700' : 'bg-slate-100'} rounded-lg flex items-center justify-center ${hoverBgClass} transition-colors`}>
-                  <Twitter className="w-5 h-5" />
-                </a>
-                <a href="#" className={`w-10 h-10 ${darkMode ? 'bg-slate-700' : 'bg-slate-100'} rounded-lg flex items-center justify-center ${hoverBgClass} transition-colors`}>
-                  <Mail className="w-5 h-5" />
-                </a>
-              </div>
-              <p className={`text-sm ${textSecondaryClass}`}>
-                support@campuscareer.com
-              </p>
-            </div>
-          </div>
-          <div className={`border-t ${darkMode ? 'border-slate-700' : 'border-slate-200'} pt-6 text-center`}>
-            <p className={`text-sm ${textMutedClass}`}>
-              &copy; 2026 NextGen. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer >
-    </div >
+      </main>
+    </div>
   );
 }
