@@ -1,335 +1,77 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   Search,
   Calendar,
-  User,
   Clock,
-  ChevronRight,
-  BookOpen,
-  TrendingUp,
-  Filter,
   Eye,
   Heart,
-  Share2,
   MessageCircle,
   Bookmark,
-  Tag,
-  ArrowRight,
+  TrendingUp,
+  Filter,
+  ArrowLeft,
+  Sparkles,
+  Flame,
+  Zap,
   Star,
-  Award,
-  GraduationCap,
-  Briefcase,
-  Building,
+  BookMarked,
   Users,
-  TrendingDown,
-  Target,
-  ArrowLeft
+  Globe,
+  ExternalLink,
+  ChevronRight,
+  RefreshCw,
+  Loader2,
+  Hash,
+  Award,
+  BookOpen
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
-import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Mock data for blog posts
-const BLOG_POSTS = [
-  {
-    id: 1,
-    title: "The Future of AI in Career Development: 2024 Trends",
-    excerpt: "Discover how artificial intelligence is revolutionizing career guidance and job searching for students and recent graduates.",
-    content: "Artificial intelligence is no longer just a buzzword in the tech industry—it's actively transforming how students approach career development...",
-    author: {
-      name: "Dr. Sarah Johnson",
-      role: "Career AI Researcher",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
-      verified: true
-    },
-    date: "2024-03-15",
-    readTime: "8 min read",
-    category: "AI & Technology",
-    tags: ["AI", "Career Tech", "Future Trends", "Machine Learning"],
-    views: 12458,
-    likes: 892,
-    comments: 142,
-    featured: true,
-    difficulty: "Intermediate",
-    coverImage: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=800",
-    bookmarked: true
-  },
-  {
-    id: 2,
-    title: "How to Build a Standout Resume in 2024",
-    excerpt: "Essential tips and modern strategies to create a resume that gets noticed by recruiters and ATS systems.",
-    content: "In today's competitive job market, your resume needs to pass through multiple layers of screening...",
-    author: {
-      name: "Michael Chen",
-      role: "Recruitment Director",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Michael",
-      verified: true
-    },
-    date: "2024-03-10",
-    readTime: "6 min read",
-    category: "Career Tips",
-    tags: ["Resume", "Job Search", "ATS", "Recruitment"],
-    views: 8923,
-    likes: 654,
-    comments: 89,
-    featured: true,
-    difficulty: "Beginner",
-    coverImage: "https://images.unsplash.com/photo-1586282391129-76a6df230234?auto=format&fit=crop&w=800",
-    bookmarked: false
-  },
-  {
-    id: 3,
-    title: "Mastering Behavioral Interviews: A Complete Guide",
-    excerpt: "Learn how to effectively prepare for and ace behavioral interviews with our comprehensive guide.",
-    content: "Behavioral interviews can be challenging, but with the right preparation, you can turn them into opportunities...",
-    author: {
-      name: "Jessica Williams",
-      role: "HR Consultant",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jessica",
-      verified: true
-    },
-    date: "2024-03-05",
-    readTime: "10 min read",
-    category: "Interview Skills",
-    tags: ["Interview", "Soft Skills", "Preparation", "HR"],
-    views: 15623,
-    likes: 1023,
-    comments: 156,
-    featured: false,
-    difficulty: "Intermediate",
-    coverImage: "https://images.unsplash.com/photo-1551836026-d5c2c5af78e4?auto=format&fit=crop&w=800",
-    bookmarked: true
-  },
-  {
-    id: 4,
-    title: "The Rise of Remote Internships: What You Need to Know",
-    excerpt: "Exploring the benefits and challenges of remote internships in the post-pandemic world.",
-    content: "Remote internships have become increasingly common, offering new opportunities and challenges...",
-    author: {
-      name: "David Rodriguez",
-      role: "Internship Coordinator",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=David",
-      verified: false
-    },
-    date: "2024-02-28",
-    readTime: "7 min read",
-    category: "Internships",
-    tags: ["Remote Work", "Internships", "Digital Nomad", "Flexibility"],
-    views: 7234,
-    likes: 512,
-    comments: 67,
-    featured: false,
-    difficulty: "Beginner",
-    coverImage: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800",
-    bookmarked: false
-  },
-  {
-    id: 5,
-    title: "Building Your Personal Brand as a Student",
-    excerpt: "Strategies to develop and leverage your personal brand for career success while still in school.",
-    content: "Your personal brand is more than just a LinkedIn profile—it's your professional identity...",
-    author: {
-      name: "Emma Thompson",
-      role: "Brand Strategist",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Emma",
-      verified: true
-    },
-    date: "2024-02-25",
-    readTime: "9 min read",
-    category: "Personal Development",
-    tags: ["Personal Brand", "Networking", "LinkedIn", "Social Media"],
-    views: 9456,
-    likes: 723,
-    comments: 94,
-    featured: true,
-    difficulty: "Intermediate",
-    coverImage: "https://images.unsplash.com/photo-1611224923853-80b023f02d71?auto=format&fit=crop&w=800",
-    bookmarked: true
-  },
-  {
-    id: 6,
-    title: "Navigating Career Changes: From Student to Professional",
-    excerpt: "A roadmap for successfully transitioning from academic life to the professional world.",
-    content: "The transition from student to professional can be daunting, but with proper planning...",
-    author: {
-      name: "Robert Kim",
-      role: "Career Transition Coach",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Robert",
-      verified: true
-    },
-    date: "2024-02-20",
-    readTime: "11 min read",
-    category: "Career Transition",
-    tags: ["Career Change", "Transition", "Professional Life", "First Job"],
-    views: 11234,
-    likes: 845,
-    comments: 123,
-    featured: false,
-    difficulty: "Advanced",
-    coverImage: "https://images.unsplash.com/photo-1553877522-43269d4ea984?auto=format&fit=crop&w=800",
-    bookmarked: false
-  },
-  {
-    id: 7,
-    title: "The Importance of Networking in the Digital Age",
-    excerpt: "How to build meaningful professional relationships in an increasingly digital world.",
-    content: "Networking has evolved significantly with the rise of digital platforms...",
-    author: {
-      name: "Lisa Wang",
-      role: "Network Specialist",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lisa",
-      verified: true
-    },
-    date: "2024-02-15",
-    readTime: "8 min read",
-    category: "Networking",
-    tags: ["Networking", "Digital", "Connections", "Professional"],
-    views: 8765,
-    likes: 612,
-    comments: 78,
-    featured: true,
-    difficulty: "Intermediate",
-    coverImage: "https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&w=800",
-    bookmarked: true
-  },
-  {
-    id: 8,
-    title: "Salary Negotiation Strategies for New Graduates",
-    excerpt: "Confidently negotiate your first job offer with these proven strategies and techniques.",
-    content: "Salary negotiation can be intimidating, especially for new graduates...",
-    author: {
-      name: "Thomas Anderson",
-      role: "Compensation Analyst",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Thomas",
-      verified: true
-    },
-    date: "2024-02-10",
-    readTime: "12 min read",
-    category: "Salary",
-    tags: ["Negotiation", "Salary", "Compensation", "Job Offer"],
-    views: 13456,
-    likes: 956,
-    comments: 145,
-    featured: false,
-    difficulty: "Advanced",
-    coverImage: "https://images.unsplash.com/photo-1580894894513-541e068a3e2b?auto=format&fit=crop&w=800",
-    bookmarked: false
-  }
-];
-
-// Mock data for categories
-const CATEGORIES = [
-  { id: 'all', label: 'All Articles', count: 48, icon: BookOpen },
-  { id: 'ai-tech', label: 'AI & Technology', count: 12, icon: TrendingUp },
-  { id: 'career-tips', label: 'Career Tips', count: 18, icon: Briefcase },
-  { id: 'interview', label: 'Interview Skills', count: 9, icon: Target },
-  { id: 'internships', label: 'Internships', count: 6, icon: Building },
-  { id: 'personal-dev', label: 'Personal Development', count: 15, icon: Users },
-  { id: 'networking', label: 'Networking', count: 8, icon: GraduationCap },
-  { id: 'salary', label: 'Salary & Benefits', count: 7, icon: Award }
-];
-
-// Mock data for trending tags
-const TRENDING_TAGS = [
-  { name: 'AI', count: 24, trending: true },
-  { name: 'Remote Work', count: 18, trending: true },
-  { name: 'Resume Tips', count: 15, trending: false },
-  { name: 'Interview Prep', count: 22, trending: true },
-  { name: 'Career Growth', count: 16, trending: false },
-  { name: 'Networking', count: 13, trending: false },
-  { name: 'Soft Skills', count: 19, trending: true },
-  { name: 'Job Search', count: 21, trending: true }
-];
-
-// Mock data for popular authors
-const POPULAR_AUTHORS = [
-  {
-    id: 1,
-    name: 'Dr. Sarah Johnson',
-    role: 'AI Career Specialist',
-    articles: 24,
-    followers: 12450,
-    verified: true,
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah'
-  },
-  {
-    id: 2,
-    name: 'Michael Chen',
-    role: 'Recruitment Expert',
-    articles: 18,
-    followers: 8920,
-    verified: true,
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Michael'
-  },
-  {
-    id: 3,
-    name: 'Jessica Williams',
-    role: 'HR Consultant',
-    articles: 15,
-    followers: 7560,
-    verified: true,
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jessica'
-  },
-  {
-    id: 4,
-    name: 'Emma Thompson',
-    role: 'Brand Strategist',
-    articles: 12,
-    followers: 6420,
-    verified: true,
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma'
-  }
-];
-
-// Mock data for reading lists
-const READING_LISTS = [
-  {
-    id: 1,
-    title: 'AI Career Revolution',
-    description: 'Essential reads about AI in career development',
-    articles: 5,
-    progress: 60,
-    icon: TrendingUp
-  },
-  {
-    id: 2,
-    title: 'Interview Mastery',
-    description: 'Master every type of job interview',
-    articles: 8,
-    progress: 25,
-    icon: Target
-  },
-  {
-    id: 3,
-    title: 'First Job Success',
-    description: 'Guide for new graduates',
-    articles: 6,
-    progress: 80,
-    icon: GraduationCap
-  }
-];
+// Types for Dev.to API
+interface Article {
+  id: number;
+  title: string;
+  description: string;
+  url: string;
+  published_at: string;
+  tag_list: string[];
+  reading_time_minutes: number;
+  public_reactions_count: number;
+  comments_count: number;
+  cover_image: string | null;
+  social_image: string;
+  user: {
+    name: string;
+    username: string;
+    profile_image: string;
+    profile_image_90: string;
+  };
+  organization?: {
+    name: string;
+    username: string;
+    profile_image: string;
+  };
+}
 
 interface BlogPostProps {
-  post: typeof BLOG_POSTS[0];
+  article: Article;
   variant?: 'default' | 'compact' | 'featured';
 }
 
-const BlogPost: React.FC<BlogPostProps> = ({ post, variant = 'default' }) => {
-  const [isBookmarked, setIsBookmarked] = useState(post.bookmarked);
-  const [likes, setLikes] = useState(post.likes);
+const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default' }) => {
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [likes, setLikes] = useState(article.public_reactions_count);
   const [isLiked, setIsLiked] = useState(false);
 
-  const handleBookmark = () => {
-    setIsBookmarked(!isBookmarked);
-  };
-
+  const handleBookmark = () => setIsBookmarked(!isBookmarked);
+  
   const handleLike = () => {
     if (isLiked) {
       setLikes(likes - 1);
@@ -339,53 +81,75 @@ const BlogPost: React.FC<BlogPostProps> = ({ post, variant = 'default' }) => {
     setIsLiked(!isLiked);
   };
 
+  const getTimeAgo = (date: string) => {
+    const now = new Date();
+    const published = new Date(date);
+    const diffInHours = Math.floor((now.getTime() - published.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
+    return published.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const coverImage = article.cover_image || article.social_image || `https://picsum.photos/seed/${article.id}/800/400`;
+
   if (variant === 'compact') {
     return (
-      <Card className="group hover:shadow-2xl transition-all duration-500 bg-white/5 dark:bg-slate-900/40 border-white/10 backdrop-blur-3xl overflow-hidden premium-card-glow hover:-translate-y-1">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
+      <Card className="group hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white/80 to-white/40 dark:from-slate-900/80 dark:to-slate-900/40 border-white/20 dark:border-slate-700/50 backdrop-blur-xl overflow-hidden hover:-translate-y-0.5">
+        <CardContent className="p-5">
+          <div className="flex gap-4">
+            {article.cover_image && (
+              <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0">
+                <img
+                  src={coverImage}
+                  alt={article.title}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2">
-                <Badge variant="secondary" className="text-xs">
-                  {post.category}
-                </Badge>
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {post.readTime}
-                </span>
+                {article.tag_list.slice(0, 2).map((tag) => (
+                  <Badge 
+                    key={tag} 
+                    variant="secondary" 
+                    className="text-xs bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/20 text-purple-700 dark:text-purple-300"
+                  >
+                    #{tag}
+                  </Badge>
+                ))}
               </div>
-              <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-2">
-                {post.title}
+              <h3 className="font-bold text-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-2 mb-2 text-lg">
+                {article.title}
               </h3>
-              <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                {post.excerpt}
-              </p>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground mb-3">
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5" />
+                  {article.reading_time_minutes} min
+                </span>
+                <span>•</span>
+                <span>{getTimeAgo(article.published_at)}</span>
+              </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Avatar className="w-6 h-6">
-                    <AvatarImage src={post.author.avatar} />
-                    <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+                  <Avatar className="w-7 h-7 border-2 border-white dark:border-slate-800">
+                    <AvatarImage src={article.user.profile_image_90} />
+                    <AvatarFallback>{article.user.name[0]}</AvatarFallback>
                   </Avatar>
-                  <span className="text-xs text-muted-foreground">{post.author.name}</span>
-                  {post.author.verified && (
-                    <Badge variant="outline" className="text-xs px-1 py-0 text-primary border-primary/20 bg-primary/5">
-                      ✓
-                    </Badge>
-                  )}
+                  <span className="text-sm font-medium text-foreground">{article.user.name}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handleLike}
                     className={`flex items-center gap-1 text-xs transition-colors ${isLiked ? 'text-red-500' : 'text-muted-foreground hover:text-red-400'}`}
                   >
-                    <Heart className={`w-3 h-3 ${isLiked ? 'fill-current' : ''}`} />
+                    <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
                     {likes}
                   </button>
-                  <button
-                    onClick={handleBookmark}
-                    className={`transition-colors ${isBookmarked ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
-                  >
-                    <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
+                  <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-purple-600">
+                    <MessageCircle className="w-4 h-4" />
+                    {article.comments_count}
                   </button>
                 </div>
               </div>
@@ -398,146 +162,125 @@ const BlogPost: React.FC<BlogPostProps> = ({ post, variant = 'default' }) => {
 
   if (variant === 'featured') {
     return (
-      <Card className="group hover:shadow-2xl transition-all duration-500 bg-white/5 dark:bg-slate-900/40 border-white/10 backdrop-blur-3xl overflow-hidden premium-card-glow hover:-translate-y-1">
-        <div className="relative h-64 overflow-hidden">
+      <Card className="group hover:shadow-2xl transition-all duration-500 bg-gradient-to-br from-white/90 to-white/60 dark:from-slate-900/90 dark:to-slate-900/60 border-white/30 dark:border-slate-700/50 backdrop-blur-2xl overflow-hidden hover:-translate-y-1">
+        <div className="relative h-80 overflow-hidden">
           <img
-            src={post.coverImage}
-            alt={post.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            src={coverImage}
+            alt={article.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
-          <div className="absolute top-4 left-4">
-            <Badge className="bg-primary hover:bg-primary/90 text-white border-0">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+          <div className="absolute top-4 left-4 flex gap-2">
+            <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-lg">
+              <Flame className="w-3 h-3 mr-1" />
               Featured
+            </Badge>
+            <Badge className="bg-black/40 backdrop-blur-md text-white border-white/20">
+              <Clock className="w-3 h-3 mr-1" />
+              {article.reading_time_minutes} min
             </Badge>
           </div>
           <div className="absolute top-4 right-4">
             <button
               onClick={handleBookmark}
-              className="bg-background/80 backdrop-blur-md p-2 rounded-full hover:bg-background transition-colors border border-border"
+              className="bg-black/40 backdrop-blur-md p-2.5 rounded-full hover:bg-black/60 transition-all border border-white/20 shadow-lg"
             >
-              <Bookmark className={`w-4 h-4 ${isBookmarked ? 'text-primary fill-current' : 'text-foreground'}`} />
+              <Bookmark className={`w-5 h-5 ${isBookmarked ? 'text-yellow-400 fill-current' : 'text-white'}`} />
             </button>
           </div>
-        </div >
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4 mb-3">
-            <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
-              {post.category}
-            </Badge>
-            <span className="text-sm text-muted-foreground flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              {post.readTime}
-            </span>
-            <span className="text-sm text-muted-foreground flex items-center gap-1">
-              <Eye className="w-3 h-3" />
-              {post.views.toLocaleString()}
-            </span>
-          </div>
-          <h3 className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors mb-3">
-            {post.title}
-          </h3>
-          <p className="text-muted-foreground mb-4 line-clamp-2">
-            {post.excerpt}
-          </p>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Avatar>
-                <AvatarImage src={post.author.avatar} />
-                <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-foreground">{post.author.name}</span>
-                  {post.author.verified && (
-                    <Badge variant="outline" className="text-xs text-primary border-primary/20 bg-primary/5">
-                      Verified
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">{post.author.role}</p>
-              </div>
+          <div className="absolute bottom-0 left-0 right-0 p-6">
+            <div className="flex flex-wrap gap-2 mb-3">
+              {article.tag_list.slice(0, 3).map((tag) => (
+                <Badge 
+                  key={tag} 
+                  className="bg-white/20 backdrop-blur-md text-white border-white/30 hover:bg-white/30"
+                >
+                  #{tag}
+                </Badge>
+              ))}
             </div>
-            <Button variant="ghost" size="sm" className="group/btn text-primary hover:text-primary hover:bg-primary/10">
-              Read More
-              <ChevronRight className="w-4 h-4 ml-1 group-hover/btn:translate-x-1 transition-transform" />
-            </Button>
+            <h3 className="text-2xl md:text-3xl font-bold text-white mb-3 line-clamp-2">
+              {article.title}
+            </h3>
+            <p className="text-white/90 mb-4 line-clamp-2">
+              {article.description}
+            </p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Avatar className="w-10 h-10 border-2 border-white">
+                  <AvatarImage src={article.user.profile_image} />
+                  <AvatarFallback>{article.user.name[0]}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold text-white">{article.user.name}</p>
+                  <p className="text-sm text-white/70">{getTimeAgo(article.published_at)}</p>
+                </div>
+              </div>
+              <a 
+                href={article.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-white hover:bg-white/30 transition-all border border-white/30"
+              >
+                Read More
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
           </div>
-        </CardContent>
-      </Card >
+        </div>
+      </Card>
     );
   }
 
   return (
-    <Card className="group hover:shadow-2xl transition-all duration-500 bg-white/5 dark:bg-slate-900/40 border-white/10 backdrop-blur-3xl overflow-hidden premium-card-glow hover:-translate-y-1">
-      <div className="relative h-48 overflow-hidden">
+    <Card className="group hover:shadow-xl transition-all duration-500 bg-gradient-to-br from-white/90 to-white/60 dark:from-slate-900/90 dark:to-slate-900/60 border-white/30 dark:border-slate-700/50 backdrop-blur-2xl overflow-hidden hover:-translate-y-1">
+      <div className="relative h-52 overflow-hidden">
         <img
-          src={post.coverImage}
-          alt={post.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          src={coverImage}
+          alt={article.title}
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
         />
-        <div className="absolute top-3 left-3">
-          <Badge className="bg-background/80 backdrop-blur-md text-foreground border-border hover:bg-background">
-            {post.category}
-          </Badge>
-        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         <div className="absolute top-3 right-3">
           <button
             onClick={handleBookmark}
-            className="bg-background/80 backdrop-blur-md p-2 rounded-full hover:bg-background transition-colors border border-border"
+            className="bg-black/40 backdrop-blur-md p-2 rounded-full hover:bg-black/60 transition-all border border-white/20"
           >
-            <Bookmark className={`w-4 h-4 ${isBookmarked ? 'text-primary fill-current' : 'text-foreground'}`} />
+            <Bookmark className={`w-4 h-4 ${isBookmarked ? 'text-yellow-400 fill-current' : 'text-white'}`} />
           </button>
         </div>
-      </div >
+      </div>
       <CardContent className="p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-sm text-muted-foreground flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-          </span>
-          <span className="text-sm text-muted-foreground">•</span>
-          <span className="text-sm text-muted-foreground flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            {post.readTime}
-          </span>
-          <span className="text-sm text-muted-foreground">•</span>
-          <Badge variant="outline" className="text-xs border-primary/20 bg-primary/5 text-primary">
-            {post.difficulty}
-          </Badge>
-        </div>
-        <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors mb-3 line-clamp-2">
-          {post.title}
-        </h3>
-        <p className="text-muted-foreground mb-4 line-clamp-3 italic">
-          {post.excerpt}
-        </p>
-        <div className="flex flex-wrap gap-2 mb-4">
-          {post.tags.slice(0, 2).map((tag) => (
-            <Badge key={tag} variant="secondary" className="text-xs">
-              {tag}
+        <div className="flex flex-wrap gap-2 mb-3">
+          {article.tag_list.slice(0, 3).map((tag) => (
+            <Badge 
+              key={tag} 
+              variant="secondary"
+              className="text-xs bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/20 text-purple-700 dark:text-purple-300 hover:from-purple-500/20 hover:to-pink-500/20"
+            >
+              #{tag}
             </Badge>
           ))}
-          {post.tags.length > 2 && (
-            <Badge variant="outline" className="text-xs">
-              +{post.tags.length - 2}
-            </Badge>
-          )}
         </div>
-        <div className="flex items-center justify-between">
+        <h3 className="font-bold text-lg text-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors mb-2 line-clamp-2 leading-snug">
+          {article.title}
+        </h3>
+        <p className="text-muted-foreground mb-4 line-clamp-2 text-sm leading-relaxed">
+          {article.description}
+        </p>
+        <div className="flex items-center justify-between pt-4 border-t border-border/50">
           <div className="flex items-center gap-3">
-            <Avatar className="w-8 h-8">
-              <AvatarImage src={post.author.avatar} />
-              <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+            <Avatar className="w-9 h-9 border-2 border-white dark:border-slate-800">
+              <AvatarImage src={article.user.profile_image_90} />
+              <AvatarFallback>{article.user.name[0]}</AvatarFallback>
             </Avatar>
             <div>
-              <div className="flex items-center gap-1">
-                <span className="text-sm font-medium text-foreground">{post.author.name}</span>
-                {post.author.verified && (
-                  <span className="text-primary text-xs">✓</span>
-                )}
+              <p className="text-sm font-semibold text-foreground">{article.user.name}</p>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>{getTimeAgo(article.published_at)}</span>
+                <span>•</span>
+                <span>{article.reading_time_minutes} min read</span>
               </div>
-              <p className="text-xs text-muted-foreground">{post.author.role}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -546,74 +289,12 @@ const BlogPost: React.FC<BlogPostProps> = ({ post, variant = 'default' }) => {
               className={`flex items-center gap-1 text-sm transition-colors ${isLiked ? 'text-red-500' : 'text-muted-foreground hover:text-red-400'}`}
             >
               <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-              {likes}
+              <span className="font-medium">{likes}</span>
             </button>
-            <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors">
+            <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-purple-600 transition-colors">
               <MessageCircle className="w-4 h-4" />
-              {post.comments}
+              <span className="font-medium">{article.comments_count}</span>
             </button>
-          </div>
-        </div>
-      </CardContent>
-    </Card >
-  );
-};
-
-const AuthorCard: React.FC<{ author: typeof POPULAR_AUTHORS[0] }> = ({ author }) => {
-  return (
-    <Card className="group hover:shadow-2xl transition-all duration-500 bg-white/5 dark:bg-slate-900/40 border-white/10 backdrop-blur-3xl overflow-hidden premium-card-glow hover:-translate-y-1">
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
-          <Avatar className="w-12 h-12">
-            <AvatarImage src={author.avatar} />
-            <AvatarFallback>{author.name.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h4 className="font-semibold text-foreground truncate">{author.name}</h4>
-              {author.verified && (
-                <span className="text-primary">✓</span>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground truncate">{author.role}</p>
-            <div className="flex items-center gap-3 mt-2">
-              <span className="text-xs text-muted-foreground">
-                {author.articles} articles
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {author.followers.toLocaleString()} followers
-              </span>
-            </div>
-          </div>
-          <Button size="sm" variant="outline">
-            Follow
-          </Button>
-        </div>
-      </CardContent >
-    </Card >
-  );
-};
-
-const ReadingListCard: React.FC<{ list: typeof READING_LISTS[0] }> = ({ list }) => {
-  const Icon = list.icon;
-
-  return (
-    <Card className="hover:shadow-md transition-shadow bg-card border-border">
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <Icon className="w-5 h-5 text-primary" />
-          </div>
-          <div className="flex-1">
-            <h4 className="font-semibold text-foreground mb-1">{list.title}</h4>
-            <p className="text-sm text-muted-foreground mb-3">{list.description}</p>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{list.articles} articles</span>
-                <span>{list.progress}% complete</span>
-              </div>
-              <Progress value={list.progress} className="h-2" />
-            </div>
           </div>
         </div>
       </CardContent>
@@ -621,105 +302,142 @@ const ReadingListCard: React.FC<{ list: typeof READING_LISTS[0] }> = ({ list }) 
   );
 };
 
+const LoadingSkeleton = () => (
+  <div className="space-y-6">
+    {[1, 2, 3].map((i) => (
+      <Card key={i} className="overflow-hidden">
+        <Skeleton className="h-52 w-full" />
+        <CardContent className="p-5 space-y-3">
+          <div className="flex gap-2">
+            <Skeleton className="h-6 w-16" />
+            <Skeleton className="h-6 w-16" />
+          </div>
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
+          <div className="flex items-center gap-3 pt-3">
+            <Skeleton className="h-9 w-9 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+);
+
 const BlogPage: React.FC<any> = (props: any) => {
   const isDashboard = props?.isDashboard || false;
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'trending'>('recent');
+  const [selectedTag, setSelectedTag] = useState<string>('');
+  const [sortBy, setSortBy] = useState<'recent' | 'popular'>('recent');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  const handleBack = () => {
-    window.history.back();
-  };
+  const popularTags = [
+    { name: 'webdev', icon: Globe, color: 'from-blue-500 to-cyan-500' },
+    { name: 'javascript', icon: Zap, color: 'from-yellow-500 to-orange-500' },
+    { name: 'react', icon: Sparkles, color: 'from-cyan-500 to-blue-500' },
+    { name: 'python', icon: TrendingUp, color: 'from-green-500 to-emerald-500' },
+    { name: 'ai', icon: Flame, color: 'from-purple-500 to-pink-500' },
+    { name: 'career', icon: Award, color: 'from-indigo-500 to-purple-500' },
+  ];
 
-  // Filter and search logic
-  const filteredPosts = useMemo(() => {
-    return BLOG_POSTS.filter(post => {
-      // Search filter
-      const matchesSearch = searchQuery === '' ||
-        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+  useEffect(() => {
+    fetchArticles();
+  }, [selectedTag, sortBy]);
 
-      // Category filter
-      const matchesCategory = selectedCategory === 'all' ||
-        post.category.toLowerCase().includes(selectedCategory.toLowerCase());
-
-      // Tags filter
-      const matchesTags = selectedTags.length === 0 ||
-        selectedTags.every(tag => post.tags.includes(tag));
-
-      return matchesSearch && matchesCategory && matchesTags;
-    }).sort((a, b) => {
-      switch (sortBy) {
-        case 'popular':
-          return b.views - a.views;
-        case 'trending':
-          return b.likes - a.likes;
-        case 'recent':
-        default:
-          return new Date(b.date).getTime() - new Date(a.date).getTime();
+  const fetchArticles = async () => {
+    setLoading(true);
+    try {
+      let url = 'https://dev.to/api/articles?per_page=30';
+      
+      if (selectedTag) {
+        url += `&tag=${selectedTag}`;
       }
-    });
-  }, [searchQuery, selectedCategory, selectedTags, sortBy]);
+      
+      if (sortBy === 'popular') {
+        url += '&top=30';
+      }
 
-  const featuredPosts = filteredPosts.filter(post => post.featured);
-  const regularPosts = filteredPosts.filter(post => !post.featured);
-
-  const handleTagClick = (tag: string) => {
-    setSelectedTags(prev =>
-      prev.includes(tag)
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
-    );
+      const response = await fetch(url);
+      const data = await response.json();
+      setArticles(data);
+    } catch (error) {
+      console.error('Error fetching articles:', error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const filteredArticles = useMemo(() => {
+    return articles.filter(article => {
+      const matchesSearch = searchQuery === '' ||
+        article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        article.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        article.tag_list.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+
+      return matchesSearch;
+    });
+  }, [articles, searchQuery]);
+
+  const featuredArticles = filteredArticles.slice(0, 2);
+  const regularArticles = filteredArticles.slice(2);
+
+  const handleBack = () => window.history.back();
+
+  const totalReactions = articles.reduce((sum, article) => sum + article.public_reactions_count, 0);
+  const totalComments = articles.reduce((sum, article) => sum + article.comments_count, 0);
 
   return (
-    <div className={`${!isDashboard ? "min-h-screen bg-transparent relative overflow-hidden" : "bg-transparent"} transition-colors duration-300`}>
-      {/* Premium Background Glows */}
+    <div className={`${!isDashboard ? "min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 relative overflow-hidden" : "bg-transparent"} transition-colors duration-300`}>
+      {/* Animated Background */}
       {!isDashboard && (
-        <div className="premium-glow-bg">
-          <div className="premium-glow-1" />
-          <div className="premium-glow-2" />
-          <div className="premium-glow-3" />
-        </div>
+        <>
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-purple-400/20 to-transparent dark:from-purple-600/10 rounded-full blur-3xl animate-pulse" />
+            <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-pink-400/20 to-transparent dark:from-pink-600/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+            <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-gradient-to-br from-blue-400/10 to-transparent dark:from-blue-600/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+          </div>
+        </>
       )}
-      {/* Hero Section - Hide if in dashboard */}
+
+      {/* Hero Section */}
       {!isDashboard && (
-        <div className="bg-gradient-to-br from-primary via-primary/90 to-accent text-white overflow-hidden relative">
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 relative">
+        <div className="relative bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white overflow-hidden">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxIDEuNzktNCA0LTRzNCAxLjc5IDQgNC0xLjc5IDQtNCA0LTQtMS43OS00LTR6bTAtMjBjMC0yLjIxIDEuNzktNCA0LTRzNCAxLjc5IDQgNC0xLjc5IDQtNCA0LTQtMS43OS00LTR6TTE2IDM0YzAtMi4yMSAxLjc5LTQgNC00czQgMS43OSA0IDQtMS43OSA0LTQgNC00LTEuNzktNC00em0wLTIwYzAtMi4yMSAxLjc5LTQgNC00czQgMS43OSA0IDQtMS43OSA0LTQgNC00LTEuNzktNC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-20" />
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
             <div className="flex items-center justify-between mb-8">
               <Button
                 variant="ghost"
                 onClick={handleBack}
-                className="text-white hover:bg-white/20 backdrop-blur-sm"
+                className="text-white hover:bg-white/20 backdrop-blur-sm border border-white/20"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back
               </Button>
               <ThemeToggle />
             </div>
-            <div className="max-w-3xl">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-white/20 backdrop-blur-md rounded-lg">
-                  <BookOpen className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-sm font-semibold tracking-wider uppercase text-white/80">Career Insights Blog</span>
+            <div className="max-w-4xl mx-auto text-center">
+              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full mb-6 border border-white/30">
+                <Sparkles className="w-4 h-4 text-yellow-300" />
+                <span className="text-sm font-semibold">Powered by Dev.to Community</span>
               </div>
-              <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-                Master Your <span className="text-white underline decoration-white/30 underline-offset-8">Career Journey</span>
+              <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/80">
+                Discover Amazing<br />Developer Stories
               </h1>
-              <p className="text-xl text-white/90 mb-10 max-w-2xl leading-relaxed">
-                Expert advice, industry insights, and practical tips to accelerate your professional growth from those who have been there.
+              <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-3xl mx-auto leading-relaxed font-light">
+                Read, learn, and grow with the latest insights from developers around the world
               </p>
-              <div className="relative max-w-2xl group">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/60 w-5 h-5 group-focus-within:text-white transition-colors" />
+              <div className="relative max-w-2xl mx-auto group">
+                <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-white/60 w-6 h-6 group-focus-within:text-white transition-colors" />
                 <Input
                   type="search"
-                  placeholder="Search articles, topics, or authors..."
-                  className="pl-12 py-7 text-lg rounded-2xl border-white/20 bg-white/10 backdrop-blur-md text-white placeholder:text-white/60 focus:bg-white/20 transition-all shadow-2xl"
+                  placeholder="Search articles, topics, or tags..."
+                  className="pl-14 pr-6 py-8 text-lg rounded-2xl border-2 border-white/30 bg-white/10 backdrop-blur-xl text-white placeholder:text-white/60 focus:bg-white/20 focus:border-white/50 transition-all shadow-2xl"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -729,295 +447,227 @@ const BlogPage: React.FC<any> = (props: any) => {
         </div>
       )}
 
-      <div className={`${!isDashboard ? "container mx-auto px-4 sm:px-6 lg:px-8 py-12" : "py-0"}`}>
+      <div className={`${!isDashboard ? "container mx-auto px-4 sm:px-6 lg:px-8 py-12" : "py-0"} relative z-10`}>
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Categories */}
-            <Card className="bg-card border-border shadow-sm">
-              <CardHeader className="pb-3">
+            {/* Stats Card */}
+            <Card className="bg-gradient-to-br from-white/90 to-white/60 dark:from-slate-900/90 dark:to-slate-900/60 border-white/30 dark:border-slate-700/50 backdrop-blur-xl shadow-xl">
+              <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Filter className="w-5 h-5 text-primary" />
-                  Categories
+                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                  Community Stats
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-xl border border-purple-500/20">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-500/20 rounded-lg">
+                      <BookOpen className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Articles</p>
+                      <p className="text-2xl font-bold text-foreground">{articles.length}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-red-500/10 to-pink-500/10 rounded-xl border border-red-500/20">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-500/20 rounded-lg">
+                      <Heart className="w-5 h-5 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Reactions</p>
+                      <p className="text-2xl font-bold text-foreground">{totalReactions.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-xl border border-blue-500/20">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500/20 rounded-lg">
+                      <MessageCircle className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Comments</p>
+                      <p className="text-2xl font-bold text-foreground">{totalComments.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Popular Tags */}
+            <Card className="bg-gradient-to-br from-white/90 to-white/60 dark:from-slate-900/90 dark:to-slate-900/60 border-white/30 dark:border-slate-700/50 backdrop-blur-xl shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Hash className="w-5 h-5 text-purple-600" />
+                  Popular Topics
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-1">
-                  {CATEGORIES.map((category) => {
-                    const Icon = category.icon;
+                <div className="space-y-2">
+                  {popularTags.map((tag) => {
+                    const Icon = tag.icon;
                     return (
                       <button
-                        key={category.id}
-                        onClick={() => setSelectedCategory(category.id)}
-                        className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 group ${selectedCategory === category.id ? 'bg-primary text-white shadow-md' : 'hover:bg-muted text-muted-foreground hover:text-foreground'}`}
+                        key={tag.name}
+                        onClick={() => setSelectedTag(selectedTag === tag.name ? '' : tag.name)}
+                        className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-300 group ${
+                          selectedTag === tag.name
+                            ? `bg-gradient-to-r ${tag.color} text-white shadow-lg scale-105`
+                            : 'hover:bg-gradient-to-r hover:from-purple-500/10 hover:to-pink-500/10 text-foreground border border-transparent hover:border-purple-500/20'
+                        }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <Icon className={`w-4 h-4 ${selectedCategory === category.id ? 'text-white' : 'text-primary group-hover:scale-110 transition-transform'}`} />
-                          <span className="font-medium text-sm">{category.label}</span>
+                        <div className={`p-2 rounded-lg ${selectedTag === tag.name ? 'bg-white/20' : 'bg-gradient-to-r ' + tag.color + ' bg-opacity-10'}`}>
+                          <Icon className={`w-4 h-4 ${selectedTag === tag.name ? 'text-white' : ''}`} />
                         </div>
-                        <Badge variant={selectedCategory === category.id ? "outline" : "secondary"} className={selectedCategory === category.id ? "text-white border-white/30" : ""}>
-                          {category.count}
-                        </Badge>
+                        <span className="font-semibold text-sm">#{tag.name}</span>
+                        <ChevronRight className={`w-4 h-4 ml-auto transition-transform ${selectedTag === tag.name ? 'rotate-90' : ''}`} />
                       </button>
                     );
                   })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Trending Tags */}
-            <Card className="bg-card border-border shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <TrendingUp className="w-5 h-5 text-primary" />
-                  Trending Topics
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {TRENDING_TAGS.map((tag) => (
-                    <Badge
-                      key={tag.name}
-                      variant={selectedTags.includes(tag.name) ? "default" : "outline"}
-                      className={`cursor-pointer transition-all duration-200 py-1.5 px-3 rounded-lg ${selectedTags.includes(tag.name) ? 'bg-primary text-white' : 'hover:bg-primary/10 hover:border-primary/30'} `}
-                      onClick={() => handleTagClick(tag.name)}
+                  {selectedTag && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full mt-2"
+                      onClick={() => setSelectedTag('')}
                     >
-                      {tag.trending && <TrendingUp className="w-3 h-3 mr-1" />}
-                      {tag.name}
-                      <span className="text-xs ml-1 opacity-75">({tag.count})</span>
-                    </Badge>
-                  ))}
+                      Clear filter
+                    </Button>
+                  )}
                 </div>
-                {selectedTags.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mt-4 w-full"
-                    onClick={() => setSelectedTags([])}
-                  >
-                    Clear filters
-                  </Button>
-                )}
               </CardContent>
             </Card>
 
-            {/* Popular Authors */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Star className="w-5 h-5" />
-                  Top Authors
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {POPULAR_AUTHORS.map((author) => (
-                  <AuthorCard key={author.id} author={author} />
-                ))}
-              </CardContent>
-            </Card>
-
-            {/* Reading Lists */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bookmark className="w-5 h-5" />
-                  Your Reading Lists
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {READING_LISTS.map((list) => (
-                  <ReadingListCard key={list.id} list={list} />
-                ))}
-                <Button variant="outline" className="w-full" size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create New List
-                </Button>
-              </CardContent>
-            </Card>
+            {/* Refresh Button */}
+            <Button 
+              onClick={fetchArticles}
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-xl"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh Articles
+                </>
+              )}
+            </Button>
           </div>
 
           {/* Main Content */}
           <div className="lg:col-span-3">
-            {/* Stats Bar */}
-            <Card className="mb-6">
-              <CardContent className="p-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-slate-900">{BLOG_POSTS.length}</div>
-                    <div className="text-sm text-slate-600">Total Articles</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-slate-900">
-                      {BLOG_POSTS.reduce((sum, post) => sum + post.views, 0).toLocaleString()}
-                    </div>
-                    <div className="text-sm text-slate-600">Total Views</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-slate-900">
-                      {BLOG_POSTS.reduce((sum, post) => sum + post.likes, 0).toLocaleString()}
-                    </div>
-                    <div className="text-sm text-slate-600">Total Likes</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-slate-900">
-                      {BLOG_POSTS.reduce((sum, post) => sum + post.comments, 0).toLocaleString()}
-                    </div>
-                    <div className="text-sm text-slate-600">Total Comments</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Controls */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+              <div className="flex items-center gap-3">
                 <Button
                   variant={viewMode === 'grid' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setViewMode('grid')}
+                  className={viewMode === 'grid' ? 'bg-gradient-to-r from-purple-600 to-pink-600' : ''}
                 >
-                  Grid
+                  Grid View
                 </Button>
                 <Button
                   variant={viewMode === 'list' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setViewMode('list')}
+                  className={viewMode === 'list' ? 'bg-gradient-to-r from-purple-600 to-pink-600' : ''}
                 >
-                  List
+                  List View
                 </Button>
               </div>
-              <div className="flex items-center gap-4">
-                <Tabs value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
-                  <TabsList>
-                    <TabsTrigger value="recent">Recent</TabsTrigger>
-                    <TabsTrigger value="popular">Popular</TabsTrigger>
-                    <TabsTrigger value="trending">Trending</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-                <Button variant="outline" size="sm">
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share
-                </Button>
-              </div>
+              <Tabs value={sortBy} onValueChange={(v) => setSortBy(v as any)} className="w-auto">
+                <TabsList className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl">
+                  <TabsTrigger value="recent" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white">
+                    <Clock className="w-4 h-4 mr-2" />
+                    Recent
+                  </TabsTrigger>
+                  <TabsTrigger value="popular" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white">
+                    <Flame className="w-4 h-4 mr-2" />
+                    Popular
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
 
-            {/* Featured Posts */}
-            {featuredPosts.length > 0 && (
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                  <Star className="w-5 h-5 text-yellow-500" />
-                  Featured Articles
-                </h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                  {featuredPosts.slice(0, 2).map((post) => (
-                    <BlogPost key={post.id} post={post} variant="featured" />
-                  ))}
+            {loading ? (
+              <LoadingSkeleton />
+            ) : filteredArticles.length === 0 ? (
+              <Card className="p-12 text-center bg-gradient-to-br from-white/90 to-white/60 dark:from-slate-900/90 dark:to-slate-900/60 border-white/30 dark:border-slate-700/50 backdrop-blur-xl">
+                <div className="text-purple-400 mb-4">
+                  <Search className="w-16 h-16 mx-auto" />
                 </div>
-              </div>
-            )}
-
-            {/* All Articles */}
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-slate-900">
-                  Latest Articles
-                  <span className="text-sm font-normal text-slate-600 ml-2">
-                    ({filteredPosts.length} articles)
-                  </span>
-                </h2>
-                {filteredPosts.length > 0 && (
-                  <Button variant="ghost" size="sm">
-                    View All
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                )}
-              </div>
-
-              {filteredPosts.length === 0 ? (
-                <Card className="p-12 text-center">
-                  <div className="text-slate-400 mb-4">
-                    <Search className="w-12 h-12 mx-auto" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">No articles found</h3>
-                  <p className="text-slate-600 mb-4">
-                    Try adjusting your search or filter to find what you're looking for.
-                  </p>
-                  <Button onClick={() => {
+                <h3 className="text-xl font-bold text-foreground mb-2">No articles found</h3>
+                <p className="text-muted-foreground mb-6">
+                  Try adjusting your search or filters
+                </p>
+                <Button 
+                  onClick={() => {
                     setSearchQuery('');
-                    setSelectedCategory('all');
-                    setSelectedTags([]);
-                  }}>
-                    Clear Filters
-                  </Button>
-                </Card>
-              ) : viewMode === 'grid' ? (
-                <div className="grid md:grid-cols-2 gap-6">
-                  {regularPosts.map((post) => (
-                    <BlogPost key={post.id} post={post} />
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {regularPosts.map((post) => (
-                    <BlogPost key={post.id} post={post} variant="compact" />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Newsletter CTA */}
-            <Card className="mt-12 bg-gradient-to-r from-blue-50 to-indigo-50 border-0">
-              <CardContent className="p-8 text-center">
-                <div className="max-w-2xl mx-auto">
-                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                    <MessageCircle className="w-8 h-8 text-blue-600" />
+                    setSelectedTag('');
+                  }}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                >
+                  Clear Filters
+                </Button>
+              </Card>
+            ) : (
+              <>
+                {/* Featured Articles */}
+                {featuredArticles.length > 0 && (
+                  <div className="mb-10">
+                    <div className="flex items-center gap-3 mb-6">
+                      <Star className="w-6 h-6 text-yellow-500" />
+                      <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
+                        Featured Stories
+                      </h2>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-6 mb-10">
+                      {featuredArticles.map((article) => (
+                        <BlogPost key={article.id} article={article} variant="featured" />
+                      ))}
+                    </div>
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-3">
-                    Never Miss an Update
-                  </h3>
-                  <p className="text-slate-600 mb-6">
-                    Join 10,000+ students who receive weekly career tips, industry insights, and exclusive content.
-                  </p>
-                  <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-                    <Input
-                      type="email"
-                      placeholder="Enter your email"
-                      className="flex-1 bg-white"
-                    />
-                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                      Subscribe
-                    </Button>
-                  </form>
-                  <p className="text-sm text-slate-500 mt-4">
-                    No spam. Unsubscribe anytime.
-                  </p>
+                )}
+
+                {/* Regular Articles */}
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-foreground">
+                      Latest Articles
+                      <span className="text-sm font-normal text-muted-foreground ml-3">
+                        ({filteredArticles.length} articles)
+                      </span>
+                    </h2>
+                  </div>
+
+                  {viewMode === 'grid' ? (
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {regularArticles.map((article) => (
+                        <BlogPost key={article.id} article={article} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {regularArticles.map((article) => (
+                        <BlogPost key={article.id} article={article} variant="compact" />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
+              </>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 };
-
-// Utility component for the plus icon (missing from lucide-react imports)
-const Plus: React.FC<{ className?: string }> = ({ className }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M5 12h14" />
-    <path d="M12 5v14" />
-  </svg>
-);
 
 export default BlogPage;
