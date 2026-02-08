@@ -1,4 +1,4 @@
-import { useState, Fragment, useRef } from "react";
+import { useState, Fragment, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,13 +55,39 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function StudentDashboard() {
   const [, navigate] = useLocation();
   const { theme } = useTheme();
-  const [activeTab, setActiveTab] = useState("overview");
+  // Initialize tab from URL search secondary fallback to localStorage
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlTab = params.get("tab");
+    if (urlTab) return urlTab;
+    return localStorage.getItem("student-active-tab") || "overview";
+  });
+
+  // Sync tab state to URL and localStorage
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tab") !== activeTab) {
+      params.set("tab", activeTab);
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState({ ...window.history.state }, "", newUrl);
+    }
+    localStorage.setItem("student-active-tab", activeTab);
+  }, [activeTab]);
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState(null);
   const [viewMode, setViewMode] = useState("radar");
   const [showProfileChecklist, setShowProfileChecklist] = useState(true);
   const isDark = theme === "dark";
+  const mainContentRef = useRef<HTMLElement>(null);
+
+  // Scroll to top when activeTab changes
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTo(0, 0);
+    }
+  }, [activeTab]);
 
   // Student Profile Data
   const studentProfile = {
@@ -82,7 +108,11 @@ export default function StudentDashboard() {
   const handleResumeClick = () => {
     resumeInputRef.current?.click();
   };
-
+  interface UserProfile {
+    skills: string[];
+    interests: string[];
+    learningGoals: string[];
+  }
   const onResumeFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -94,7 +124,11 @@ export default function StudentDashboard() {
       // Here you would typically handle the actual file upload to a server
     }
   };
-
+  const MOCK_USER: UserProfile = {
+    skills: ['React', 'TypeScript', 'Node.js', 'Python', 'JavaScript'],
+    interests: ['Web Development', 'AI/ML', 'Cloud', 'DevOps'],
+    learningGoals: ['Next.js', 'Docker', 'AWS']
+  };
   const profileChecklist = [
     {
       label: "Setup your profile",
@@ -151,7 +185,7 @@ export default function StudentDashboard() {
       trend: "up",
       icon: Award,
       color: "bg-gradient-to-br from-green-500 to-emerald-600",
-      description: "Core Competencies (12/18)"
+      description: "Core Competencies"
     },
     {
       label: "Placement Probability",
@@ -721,22 +755,34 @@ export default function StudentDashboard() {
   ];
 
   return (
-    <div className={`flex h-screen ${isDark ? "bg-black" : "bg-background"} text-foreground font-manrope selection:bg-blue-500/30 overflow-hidden`}>
+    <div className={`flex h-screen ${isDark ? "bg-black" : "bg-background"} text-foreground font-manrope selection:bg-blue-500/30 overflow-hidden relative`}>
+      {/* Premium Background Glows */}
+      {isDark && (
+        <div className="premium-glow-bg">
+          <div className="premium-glow-1" />
+          <div className="premium-glow-2" />
+          <div className="premium-glow-3" />
+        </div>
+      )}
       {/* Mobile sidebar (drawer) */}
       <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
         <SheetContent side="left" className={`${isDark ? "bg-[#0c0c14]" : "bg-white"} p-0 w-72 [&>button]:hidden`}>
           <div className="h-full flex flex-col">
             {/* Brand */}
             <div className={`px-5 py-5 border-b ${isDark ? "border-white/10" : "border-slate-200"} flex items-center justify-between`}>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-0 group cursor-pointer" onClick={() => navigate("/")}>
                 <img
-                  src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"}
+                  src="/NG/NextGen_light.png"
                   alt="NextGen Logo"
-                  className="w-10 h-10 object-contain"
+                  className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110"
                 />
-                <div className="min-w-0">
-                  <div className={`font-extrabold text-sm ${isDark ? "text-white" : "text-slate-900"} leading-tight truncate`}>NextGen</div>
-                  <div className={`text-[10px] font-semibold uppercase tracking-widest ${isDark ? "text-slate-400" : "text-slate-500"}`}>Career Hub</div>
+                <div className="min-w-0 flex flex-col justify-center">
+                  <div className="font-black text-base bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
+                    NextGen
+                  </div>
+                  <p className={`text-[9px] font-bold uppercase tracking-widest mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                    AI-Driven
+                  </p>
                 </div>
               </div>
               <button
@@ -770,6 +816,7 @@ export default function StudentDashboard() {
                           onClick={() => {
                             setActiveTab(link.id);
                             setIsMobileSidebarOpen(false);
+                            navigate(`/student/dashboard?tab=${link.id}`);
                           }}
                           className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${isActive
                             ? isDark
@@ -812,23 +859,28 @@ export default function StudentDashboard() {
           <div className={`absolute inset-0 bg-gradient-to-b ${isDark ? "from-blue-500/5" : "from-blue-500/5"} via-transparent ${isDark ? "to-purple-500/5" : "to-purple-500/5"} opacity-50 pointer-events-none`}></div>
 
           {/* Header: brand logo & name */}
-          <div className={`flex items-center relative z-10 transition-all flex-shrink-0 ${isSidebarOpen ? "px-5 pt-6 pb-4" : "p-3 py-6 justify-center"}`}>
+          <div className={`flex items-center gap-0 relative z-10 transition-all flex-shrink-0 ${isSidebarOpen ? "px-5 pt-6 pb-4" : "p-3 py-6 justify-center"}`}>
             <div
-              className={`flex items-center justify-center flex-shrink-0 transition-all duration-500 ${isSidebarOpen ? "w-10 h-10" : "w-10 h-10"}`}
-              title="NextGen Career Hub"
+              className="group cursor-pointer flex items-center gap-0"
+              onClick={() => navigate("/")}
+              title="NextGen AI-Driven Career Hub"
             >
               <img
-                src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"}
+                src="/NG/NextGen_light.png"
                 alt="NextGen Logo"
-                className="w-full h-full object-contain"
+                className={`${isSidebarOpen ? "h-14 w-14" : "h-12 w-12"} object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110`}
               />
+              {isSidebarOpen && (
+                <div className="min-w-0 animate-fadeIn overflow-hidden flex flex-col justify-center">
+                  <div className="font-black text-2xl tracking-tighter leading-none bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    NextGen
+                  </div>
+                  <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"} opacity-80 whitespace-nowrap`}>
+                    AI-Driven
+                  </p>
+                </div>
+              )}
             </div>
-            {isSidebarOpen && (
-              <div className="ml-3 min-w-0 animate-fadeIn overflow-hidden">
-                <div className={`font-black text-xl tracking-tighter leading-none bg-gradient-to-r ${isDark ? "from-white to-slate-400" : "from-slate-900 to-slate-600"} bg-clip-text text-transparent uppercase`}>NextGen</div>
-                <div className={`text-[10px] font-black uppercase tracking-[0.4em] mt-1.5 ${isDark ? "text-blue-500/80" : "text-blue-600/80"}`}>Career Hub</div>
-              </div>
-            )}
           </div>
 
           <nav className={`flex-1 min-w-0 flex flex-col overflow-y-auto sidebar-scrollbar pt-1 ${isSidebarOpen ? "px-3 pr-2" : "px-1.5"}`}>
@@ -851,7 +903,10 @@ export default function StudentDashboard() {
                     return (
                       <button
                         key={link.id}
-                        onClick={() => setActiveTab(link.id)}
+                        onClick={() => {
+                          setActiveTab(link.id);
+                          navigate(`/student/dashboard?tab=${link.id}`);
+                        }}
                         title={link.label}
                         className={`w-full flex items-center gap-3 sm:gap-4 rounded-xl transition-all duration-200 relative flex-shrink-0 ${!isSidebarOpen ? "justify-center p-3" : "px-3 py-3"} ${isActive
                           ? isDark
@@ -891,7 +946,11 @@ export default function StudentDashboard() {
         </button>
       </aside>
 
-      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto overflow-x-hidden custom-scrollbar relative bg-transparent">
+      <main
+        ref={mainContentRef}
+        data-scroll-container
+        className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto overflow-x-hidden custom-scrollbar relative bg-transparent"
+      >
         <div className="max-w-[1400px] mx-auto space-y-6 sm:space-y-8 lg:space-y-10 pb-16 sm:pb-20">
 
           <header className={`flex items-center justify-between gap-4 sm:gap-6 mb-6 sm:mb-8`}>
@@ -923,7 +982,7 @@ export default function StudentDashboard() {
                         activeTab === "progress" ? "Progress & Milestones" :
                           activeTab === "careers" ? "Career Opportunities & Resources" :
                             activeTab === "webinars" ? "Live Learning Sessions" :
-                              activeTab === "blog" ? "Career Insights & Articles" :
+                              activeTab === "blog" ? "Personalized content" :
                                 activeTab === "features" ? "Platform Features & Capabilities" :
                                   activeTab === "caseStudies" ? "Success Stories & Case Studies" :
                                     activeTab === "corporateNews" ? "Industry News & Updates" :
@@ -2154,7 +2213,7 @@ export default function StudentDashboard() {
           {/* Careers Tab */}
           {activeTab === "careers" && (
             <div className="space-y-10">
-              <Careers isDashboard={true} />
+              <Careers />
             </div>
           )}
 
