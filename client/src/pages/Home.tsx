@@ -43,13 +43,16 @@ function Footer({ role }: { role?: string }) {
       <div className="container mx-auto max-w-7xl">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
           <div className="col-span-2 lg:col-span-2">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-16 h-16 flex items-center justify-center transition-transform hover:scale-110">
-                <img src={theme === 'dark' ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain" />
+            <div className="flex items-center gap-0 mb-6 group cursor-pointer" onClick={() => window.location.href = "/"}>
+              <img
+                src="/NG/NextGen_light.png"
+                alt="NextGen Logo"
+                className="h-24 w-24 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110"
+              />
+              <div className="flex flex-col justify-center leading-tight">
+                <span className="text-2xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">NextGen</span>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mt-0.5">AI-Driven</p>
               </div>
-              <span className="text-xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                NextGen
-              </span>
             </div>
             <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-sm font-medium">
               Empowering the next generation of tech leaders with AI-driven insights and personalized career roadmaps.
@@ -64,8 +67,8 @@ function Footer({ role }: { role?: string }) {
           </div>
 
           <div>
-            <h4 className="font-bold text-slate-900 dark:text-white mb-6">Platform</h4>
-            <ul className="space-y-4">
+            <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Platform</h4>
+            <ul className="space-y-2.5 text-base">
               {["Features", "Pricing", "Success Stories", "For Colleges", "For Students"].map((item) => (
                 <li key={item}>
                   <a href={item === "Features" ? "/features" : item === "Pricing" ? "/pricing" : item === "Success Stories" ? "/SuccessStories" : item === "For Colleges" ? "/college/college_info" : item === "For Students" ? "/student/student_info" : ""} className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{item}</a>
@@ -75,8 +78,8 @@ function Footer({ role }: { role?: string }) {
           </div>
 
           <div>
-            <h4 className="font-bold text-slate-900 dark:text-white mb-6">Resources</h4>
-            <ul className="space-y-4">
+            <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Resources</h4>
+            <ul className="space-y-2.5 text-base">
               {["Blog", "Career Guide", "Resume Builder", "Interview Prep", "Help Center"].map((item) => (
                 <li key={item}>
                   <a href={item === "Blog" ? "/blog" : item === "Career Guide" ? "/careers" : item === "Resume Builder" ? "/resume_builder" : item === "Interview Prep" ? "/interview_prep" : item === "Help Center" ? "/HelpCenter" : ""} className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{item}</a>
@@ -86,8 +89,8 @@ function Footer({ role }: { role?: string }) {
           </div>
 
           <div>
-            <h4 className="font-bold text-slate-900 dark:text-white mb-6">Legal</h4>
-            <ul className="space-y-4">
+            <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Legal</h4>
+            <ul className="space-y-2.5 text-base">
               {["Privacy Policy", "Terms of Service", "Cookie Policy", "Security", "Contact"].map((item) => (
                 <li key={item}>
                   <a href={item === "Privacy Policy" ? "/PrivacyPage" : item === "Terms of Service" ? "/TermsAndCondition" : item === "Cookie Policy" ? "/Cookie" : item === "Security" ? "/Security" : item === "Contact" ? "/ContactUs" : ""} className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{item}</a>
@@ -175,7 +178,7 @@ export default function PremiumLandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
   const [comparisonView, setComparisonView] = useState("after");
   const [audience, setAudience] = useState<"colleges" | "placements" | "students">("colleges");
   const [activeFeatureTab, setActiveFeatureTab] = useState(0);
@@ -197,8 +200,15 @@ export default function PremiumLandingPage() {
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
+
+    let rafId: number;
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
+      rafId = requestAnimationFrame(() => {
+        if (containerRef.current) {
+          containerRef.current.style.setProperty('--mouse-x', `${e.clientX}px`);
+          containerRef.current.style.setProperty('--mouse-y', `${e.clientY}px`);
+        }
+      });
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -207,6 +217,7 @@ export default function PremiumLandingPage() {
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("mousemove", handleMouseMove);
+      cancelAnimationFrame(rafId);
     };
   }, []);
 
@@ -418,14 +429,14 @@ export default function PremiumLandingPage() {
   const pathDefinition = "M 300 0 C 300 150 550 350 550 600 C 550 850 50 850 50 1100 C 50 1350 550 1350 550 1600 C 550 1850 50 1850 50 2100 C 50 2350 300 2450 300 2600 L 300 3100";
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white overflow-x-hidden transition-colors duration-500 grainy-bg">
+    <div ref={containerRef} className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white overflow-x-hidden transition-colors duration-200 grainy-bg">
       {/* Animated Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div
           className="absolute w-[800px] h-[800px] bg-blue-600/5 dark:bg-blue-600/10 rounded-full blur-3xl animate-pulse"
           style={{
-            top: `${mousePosition.y / 20}px`,
-            left: `${mousePosition.x / 20}px`,
+            top: 'calc(var(--mouse-y, 0px) / 20)',
+            left: 'calc(var(--mouse-x, 0px) / 20)',
             transform: 'translate(-50%, -50%)'
           }}
         />
@@ -434,26 +445,25 @@ export default function PremiumLandingPage() {
       </div>
 
       {/* Navigation */}
-      <nav className={`fixed top-4 left-1/2 -translate-x-1/2 w-[95%] max-w-7xl z-50 transition-all duration-500 ${scrolled
-        ? 'bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.1)] rounded-[2rem] py-2'
+      <nav className={`fixed top-4 left-1/2 -translate-x-1/2 w-[95%] max-w-7xl z-50 transition-all duration-300 ${scrolled
+        ? 'bg-white/80 dark:bg-slate-950/80 backdrop-blur-3xl border border-slate-200/50 dark:border-white/10 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] rounded-3xl py-2'
         : 'bg-transparent py-4'
         }`}>
         <div className="container mx-auto px-4 sm:px-6">
           <div className="flex items-center h-20">
             {/* Logo Section */}
             <div className="flex-1 flex justify-start">
-              <div className="flex items-center gap-4 group cursor-pointer" onClick={() => navigate("/")}>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur-lg opacity-30 dark:opacity-50 group-hover:opacity-100 transition-opacity" />
-                  <div className="relative w-20 h-20 flex items-center justify-center">
-                    <img src={theme === 'dark' ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
-                  </div>
-                </div>
-                <div>
-                  <h1 className="text-2xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <div className="flex items-center gap-0 group cursor-pointer" onClick={() => navigate("/")}>
+                <img
+                  src="/NG/NextGen_light.png"
+                  alt="NextGen Logo"
+                  className="h-24 w-24 flex-shrink-0 transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="flex flex-col justify-center">
+                  <h1 className="text-4xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
                     NextGen
                   </h1>
-                  <p className="text-sm text-slate-500 font-bold uppercase tracking-widest">AI-Driven</p>
+                  <p className="text-sm text-slate-500 font-bold uppercase tracking-widest mt-0.5">AI-Driven</p>
                 </div>
               </div>
             </div>
@@ -1152,7 +1162,7 @@ export default function PremiumLandingPage() {
                   <img
                     src={src}
                     alt="Company Logo"
-                    className="h-34 w-auto object-contain transition-all"
+                    className="h-12 w-auto object-contain transition-all"
                   />
                 </div>
               );

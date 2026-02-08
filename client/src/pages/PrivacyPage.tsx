@@ -45,16 +45,11 @@ export default function PrivacyPage() {
                 Back
               </button>
               <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
-              <div className="flex items-center gap-6">
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-blue-600 rounded-2xl blur-xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                  <div className="relative w-12 h-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center shadow-xl border border-slate-200 dark:border-white/10 group-hover:scale-110 transition-transform duration-500">
-                    <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-8 h-8 object-contain" />
-                  </div>
-                </div>
-                <div className="flex flex-col -gap-1">
-                  <span className="font-black text-2xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-tighter">NextGen</span>
-                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Legal Portal</span>
+              <div className="flex items-center gap-0 group cursor-pointer" onClick={() => window.location.href = "/"}>
+                <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
+                <div className="flex flex-col">
+                  <span className="font-black text-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent tracking-tighter leading-none">NextGen</span>
+                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Legal Portal</span>
                 </div>
               </div>
             </div>
@@ -336,13 +331,11 @@ export default function PrivacyPage() {
               <Card className="shadow-xl border border-border overflow-hidden hover:shadow-2xl transition-shadow glass-card">
                 <div className="bg-gradient-to-r from-rose-500 to-pink-500 h-2"></div>
                 <CardHeader className="pb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-rose-100 rounded-xl flex items-center justify-center shadow-sm">
-                      <Heart className="w-7 h-7 text-rose-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-2xl">Our Ethical Guidelines</CardTitle>
-                      <CardDescription className="text-base">The values that guide everything we do</CardDescription>
+                  <div className="flex items-center gap-0 group cursor-pointer" onClick={() => window.location.href = "/"}>
+                    <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
+                    <div className="hidden sm:block">
+                      <h1 className="text-foreground font-black text-xl tracking-tight leading-none bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">NextGen</h1>
+                      <span className="text-muted-foreground text-[10px] font-black uppercase tracking-widest mt-1 opacity-80">Legal Portal</span>
                     </div>
                   </div>
                 </CardHeader>
@@ -452,10 +445,8 @@ export default function PrivacyPage() {
       <footer className="bg-background border-t border-border py-8 mt-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <div className="w-12 h-12 flex items-center justify-center">
-                <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
-              </div>
+            <div className="flex items-center gap-0 justify-center mb-4">
+              <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-12 w-12 object-contain" />
               <span className="font-bold text-foreground">NextGen Platform</span>
             </div>
             <p className="text-sm text-muted-foreground mb-3">© 2025 NextGen Platform. All rights reserved.</p>

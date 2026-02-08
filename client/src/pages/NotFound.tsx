@@ -158,7 +158,7 @@ export default function NotFound() {
         }
       `}</style>
 
-      <Card className={`w-full max-w-2xl mx-4 shadow-2xl border border-border bg-card/80 backdrop-blur-xl overflow-hidden ${isShaking ? 'bounce-shake' : ''}`}>
+      <Card className={`w-full max-w-2xl mx-4 shadow-xl border border-border bg-white dark:bg-slate-900 rounded-2xl overflow-hidden ${isShaking ? 'bounce-shake' : ''}`}>
         <div className={`h-3 bg-gradient-to-r ${currentMemeData.color}`} />
 
         <CardContent className="pt-12 pb-12 text-center relative">
