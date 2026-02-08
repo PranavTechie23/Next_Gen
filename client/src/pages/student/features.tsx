@@ -330,7 +330,7 @@ const FeatureCard: React.FC<{
   category: string;
 }> = ({ feature, category }) => {
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 hover:border-blue-300">
+    <Card className="group hover:shadow-2xl transition-all duration-500 bg-white/5 dark:bg-slate-900/40 border-white/10 backdrop-blur-3xl overflow-hidden premium-card-glow hover:-translate-y-1">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -396,7 +396,7 @@ const FeatureCard: React.FC<{
 
 const TestimonialCard: React.FC<{ testimonial: typeof STUDENT_TESTIMONIALS[0] }> = ({ testimonial }) => {
   return (
-    <Card className="h-full">
+    <Card className="group hover:shadow-2xl transition-all duration-500 bg-white/5 dark:bg-slate-900/40 border-white/10 backdrop-blur-3xl overflow-hidden premium-card-glow hover:-translate-y-1">
       <CardContent className="p-6">
         <div className="flex items-center gap-3 mb-4">
           <Avatar className="w-12 h-12">
@@ -444,7 +444,7 @@ const TestimonialCard: React.FC<{ testimonial: typeof STUDENT_TESTIMONIALS[0] }>
 
 const PlanCard: React.FC<{ plan: typeof STUDENT_PLANS[0] }> = ({ plan }) => {
   return (
-    <Card className={`h-full border-2 ${plan.color} ${plan.popular ? 'relative shadow-lg' : ''}`}>
+    <Card className={`h-full border border-white/10 bg-white/5 dark:bg-slate-900/40 backdrop-blur-3xl overflow-hidden premium-card-glow hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 ${plan.popular ? 'ring-2 ring-primary' : ''}`}>
       {plan.popular && (
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
           <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-1">
@@ -503,7 +503,15 @@ const FeaturesPage: React.FC<any> = (props: any) => {
   };
 
   return (
-    <div className={`${!isDashboard ? "min-h-screen bg-background" : "bg-transparent"} dark:bg-black transition-colors duration-300`}>
+    <div className={`${!isDashboard ? "min-h-screen bg-transparent relative overflow-hidden" : "bg-transparent"} transition-colors duration-300`}>
+      {/* Premium Background Glows */}
+      {!isDashboard && (
+        <div className="premium-glow-bg">
+          <div className="premium-glow-1" />
+          <div className="premium-glow-2" />
+          <div className="premium-glow-3" />
+        </div>
+      )}
       {/* Hero Section - Hide if dashboard */}
       {!isDashboard && (
         <div className="relative overflow-hidden">

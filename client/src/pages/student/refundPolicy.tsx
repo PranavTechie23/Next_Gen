@@ -402,10 +402,8 @@ export default function RefundPolicy(props: any) {
                                     Back
                                 </Button>
                                 <div className={`h-6 w-px ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`}></div>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-14 h-14 flex items-center justify-center">
-                                        <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
-                                    </div>
+                                <div className="flex items-center gap-0">
+                                    <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-12 w-12 object-contain flex-shrink-0" />
                                     <div>
                                         <span className="font-bold text-lg bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Refund Policy</span>
                                         <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Clear & Transparent</p>

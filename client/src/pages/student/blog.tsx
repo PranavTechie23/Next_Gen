@@ -341,7 +341,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ post, variant = 'default' }) => {
 
   if (variant === 'compact') {
     return (
-      <Card className="group hover:shadow-lg transition-all duration-300 bg-card border-border overflow-hidden">
+      <Card className="group hover:shadow-2xl transition-all duration-500 bg-white/5 dark:bg-slate-900/40 border-white/10 backdrop-blur-3xl overflow-hidden premium-card-glow hover:-translate-y-1">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
             <div className="flex-1 min-w-0">
@@ -398,7 +398,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ post, variant = 'default' }) => {
 
   if (variant === 'featured') {
     return (
-      <Card className="group hover:shadow-xl transition-all duration-300 overflow-hidden border-border bg-card shadow-lg">
+      <Card className="group hover:shadow-2xl transition-all duration-500 bg-white/5 dark:bg-slate-900/40 border-white/10 backdrop-blur-3xl overflow-hidden premium-card-glow hover:-translate-y-1">
         <div className="relative h-64 overflow-hidden">
           <img
             src={post.coverImage}
@@ -419,7 +419,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ post, variant = 'default' }) => {
               <Bookmark className={`w-4 h-4 ${isBookmarked ? 'text-primary fill-current' : 'text-foreground'}`} />
             </button>
           </div>
-        </div>
+        </div >
         <CardContent className="p-6">
           <div className="flex items-center gap-4 mb-3">
             <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
@@ -464,12 +464,12 @@ const BlogPost: React.FC<BlogPostProps> = ({ post, variant = 'default' }) => {
             </Button>
           </div>
         </CardContent>
-      </Card>
+      </Card >
     );
   }
 
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 h-full bg-card border-border overflow-hidden">
+    <Card className="group hover:shadow-2xl transition-all duration-500 bg-white/5 dark:bg-slate-900/40 border-white/10 backdrop-blur-3xl overflow-hidden premium-card-glow hover:-translate-y-1">
       <div className="relative h-48 overflow-hidden">
         <img
           src={post.coverImage}
@@ -489,7 +489,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ post, variant = 'default' }) => {
             <Bookmark className={`w-4 h-4 ${isBookmarked ? 'text-primary fill-current' : 'text-foreground'}`} />
           </button>
         </div>
-      </div>
+      </div >
       <CardContent className="p-5">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-sm text-muted-foreground flex items-center gap-1">
@@ -555,13 +555,13 @@ const BlogPost: React.FC<BlogPostProps> = ({ post, variant = 'default' }) => {
           </div>
         </div>
       </CardContent>
-    </Card>
+    </Card >
   );
 };
 
 const AuthorCard: React.FC<{ author: typeof POPULAR_AUTHORS[0] }> = ({ author }) => {
   return (
-    <Card className="hover:shadow-md transition-shadow bg-card border-border">
+    <Card className="group hover:shadow-2xl transition-all duration-500 bg-white/5 dark:bg-slate-900/40 border-white/10 backdrop-blur-3xl overflow-hidden premium-card-glow hover:-translate-y-1">
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
           <Avatar className="w-12 h-12">
@@ -589,8 +589,8 @@ const AuthorCard: React.FC<{ author: typeof POPULAR_AUTHORS[0] }> = ({ author })
             Follow
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </CardContent >
+    </Card >
   );
 };
 
@@ -676,7 +676,15 @@ const BlogPage: React.FC<any> = (props: any) => {
   };
 
   return (
-    <div className={`${!isDashboard ? "min-h-screen bg-background" : "bg-transparent"} dark:bg-black transition-colors duration-300`}>
+    <div className={`${!isDashboard ? "min-h-screen bg-transparent relative overflow-hidden" : "bg-transparent"} transition-colors duration-300`}>
+      {/* Premium Background Glows */}
+      {!isDashboard && (
+        <div className="premium-glow-bg">
+          <div className="premium-glow-1" />
+          <div className="premium-glow-2" />
+          <div className="premium-glow-3" />
+        </div>
+      )}
       {/* Hero Section - Hide if in dashboard */}
       {!isDashboard && (
         <div className="bg-gradient-to-br from-primary via-primary/90 to-accent text-white overflow-hidden relative">
