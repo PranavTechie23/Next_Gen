@@ -42,7 +42,7 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 // Import page components
 import InstitutionsPage from "./Institutions";
@@ -108,6 +108,7 @@ export default function EnterpriseAdminDashboard() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [, navigate] = useLocation();
+  const mainContentRef = useRef<HTMLElement>(null);
 
   // ==================== STATE MANAGEMENT ====================
   const [selectedPeriod, setSelectedPeriod] = useState("month");
@@ -116,6 +117,13 @@ export default function EnterpriseAdminDashboard() {
     if (typeof window === "undefined") return "overview";
     return window.localStorage.getItem("adminActiveTab") || "overview";
   });
+
+  // Scroll to top when activeTab changes
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTo(0, 0);
+    }
+  }, [activeTab]);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState("all");
@@ -1350,8 +1358,10 @@ export default function EnterpriseAdminDashboard() {
 
       {/* ==================== MAIN CONTENT ==================== */}
       <main
+        ref={mainContentRef}
+        data-scroll-container
         className={`flex-1 transition-all duration-300 ${isMobile ? 'ml-0' : (isSidebarOpen ? 'ml-[280px]' : 'ml-[88px]')
-          } relative w-full overflow-x-hidden`}
+          } relative w-full overflow-y-auto overflow-x-hidden custom-scrollbar`}
       >
         {/* ==================== ENHANCED HEADER ==================== */}
         {activeTab === "overview" && (

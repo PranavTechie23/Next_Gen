@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { ArrowLeft, Check, X, Sparkles, GraduationCap, Users, Zap, Shield, BookOpen, Award, Star, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Check, X, Sparkles, GraduationCap, Users, Zap, Shield, BookOpen, Award, Star, HelpCircle, ChevronDown } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 export default function StudentPricing(props: any) {
   const isDashboard = props?.isDashboard || false;
@@ -97,32 +98,11 @@ export default function StudentPricing(props: any) {
     },
     {
       question: 'Can I get a refund?',
-      answer: 'Yes, we offer a 30-day money-back guarantee for all paid plans. No questions asked.'
+      answer: 'No, we do not offer refunds for any reason. All payments are final and non-refundable.'
     }
   ];
 
-  const features = [
-    {
-      icon: Shield,
-      title: 'Secure & Private',
-      description: 'Your data is encrypted and protected with enterprise-grade security'
-    },
-    {
-      icon: Zap,
-      title: 'Lightning Fast',
-      description: 'Optimized performance ensures smooth collaboration in real-time'
-    },
-    {
-      icon: Award,
-      title: 'Award Winning',
-      description: 'Trusted by over 500,000 students at top universities worldwide'
-    },
-    {
-      icon: Star,
-      title: '24/7 Support',
-      description: 'Get help whenever you need it from our dedicated support team'
-    }
-  ];
+
 
   const formatPrice = (plan: typeof plans[0]) => {
     if (billingPeriod === 'monthly' && plan.price.monthly === 0) return 'Free';
@@ -275,26 +255,15 @@ export default function StudentPricing(props: any) {
           })}
         </div>
 
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          {features.map((feature, index) => {
-            const Icon = feature.icon;
-            return (
-              <Card key={index} className="text-center rounded-3xl bg-white/80 dark:bg-slate-900/50 border-slate-100 dark:border-white/5 shadow-[0_8px_30px_rgba(0,0,0,0.02)] hover:border-blue-300 dark:hover:border-blue-700 transition-all backdrop-blur-3xl">
-                <CardContent className="pt-8">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
-                    <Icon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <h3 className="font-black text-slate-900 dark:text-white text-lg mb-2 tracking-tight">{feature.title}</h3>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{feature.description}</p>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
 
-        {/* Trust Badges */}
-        <Card className="mb-16 bg-gradient-to-r from-blue-600 to-indigo-600 border-0 text-white">
+
+        {/* Trust Badges */}<Card className="
+  bg-gradient-to-r from-blue-600 to-indigo-200 
+  dark:bg-gradient-to-r dark:from-black dark:to-gray-900
+  border-0 dark:border-2 dark:border-gray-500
+  text-white
+">
+
           <CardContent className="py-12 text-center">
             <Sparkles className="h-12 w-12 mx-auto mb-4" />
             <h2 className="text-3xl font-bold mb-4">Trusted by Students Worldwide</h2>
@@ -316,29 +285,36 @@ export default function StudentPricing(props: any) {
         </Card>
 
         {/* FAQ Section */}
-        <div className="max-w-4xl mx-auto mb-16">
-          <h2 className="text-3xl font-bold text-center mb-8">Frequently Asked Questions</h2>
-          <div className="space-y-4">
+        <div className="max-w-6xl mx-auto mb-16 px-4">
+          <h2 className="text-3xl font-black text-center mb-12 tracking-tight">Frequently Asked Questions</h2>
+          <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
             {faqs.map((faq, index) => (
-              <Card key={index} className="border-2 hover:border-blue-300 dark:hover:border-blue-700 transition-all">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-start gap-3">
-                    <HelpCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-1" />
-                    {faq.question}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-slate-600 dark:text-slate-300 ml-8">
-                    {faq.answer}
-                  </p>
-                </CardContent>
-              </Card>
+              <Accordion type="single" collapsible key={index} className="w-full">
+                <AccordionItem value={`item-${index}`} className="border-2 rounded-[1.5rem] px-6 py-1 hover:border-blue-300 dark:hover:border-blue-700 transition-all bg-white/50 dark:bg-slate-900/30">
+                  <AccordionTrigger className="hover:no-underline py-4">
+                    <div className="flex items-center gap-3 text-left">
+                      <HelpCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                      <span className="text-base font-bold tracking-tight">{faq.question}</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-6">
+                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed pl-8">
+                      {faq.answer}
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             ))}
           </div>
         </div>
 
-        {/* CTA Section */}
-        <Card className="bg-gradient-to-r from-purple-600 to-pink-600 border-0 text-white">
+        {/* CTA Section */}<Card className="
+  bg-gradient-to-r from-purple-600 to-pink-600 
+  dark:bg-gradient-to-r dark:from-black dark:to-gray-900
+  border-0 dark:border-2 dark:border-gray-500
+  text-white
+">
+
           <CardContent className="py-12 text-center">
             <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
             <p className="text-lg mb-6 text-purple-100 max-w-2xl mx-auto">
