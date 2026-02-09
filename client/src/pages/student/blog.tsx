@@ -71,7 +71,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default' }) => 
   const [isLiked, setIsLiked] = useState(false);
 
   const handleBookmark = () => setIsBookmarked(!isBookmarked);
-  
+
   const handleLike = () => {
     if (isLiked) {
       setLikes(likes - 1);
@@ -85,7 +85,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default' }) => 
     const now = new Date();
     const published = new Date(date);
     const diffInHours = Math.floor((now.getTime() - published.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) return 'Just now';
     if (diffInHours < 24) return `${diffInHours}h ago`;
     if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
@@ -100,29 +100,41 @@ const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default' }) => 
         <CardContent className="p-5">
           <div className="flex gap-4">
             {article.cover_image && (
-              <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0">
+              <a
+                href={article.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 block"
+              >
                 <img
                   src={coverImage}
                   alt={article.title}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                 />
-              </div>
+              </a>
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2">
                 {article.tag_list.slice(0, 2).map((tag) => (
-                  <Badge 
-                    key={tag} 
-                    variant="secondary" 
+                  <Badge
+                    key={tag}
+                    variant="secondary"
                     className="text-xs bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/20 text-purple-700 dark:text-purple-300"
                   >
                     #{tag}
                   </Badge>
                 ))}
               </div>
-              <h3 className="font-bold text-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-2 mb-2 text-lg">
-                {article.title}
-              </h3>
+              <a
+                href={article.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block group/title"
+              >
+                <h3 className="font-bold text-foreground group-hover/title:text-purple-600 dark:group-hover/title:text-purple-400 transition-colors line-clamp-2 mb-2 text-lg">
+                  {article.title}
+                </h3>
+              </a>
               <div className="flex items-center gap-3 text-sm text-muted-foreground mb-3">
                 <span className="flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" />
@@ -142,15 +154,20 @@ const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default' }) => 
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handleLike}
-                    className={`flex items-center gap-1 text-xs transition-colors ${isLiked ? 'text-red-500' : 'text-muted-foreground hover:text-red-400'}`}
+                    className={`flex items-center gap-1 text-sm transition-colors ${isLiked ? 'text-red-500' : 'text-muted-foreground hover:text-red-400'}`}
                   >
                     <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-                    {likes}
+                    <span className="text-xs font-semibold">{likes}</span>
                   </button>
-                  <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-purple-600">
-                    <MessageCircle className="w-4 h-4" />
-                    {article.comments_count}
-                  </button>
+                  <a
+                    href={article.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors font-bold ml-1"
+                  >
+                    Read
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
                 </div>
               </div>
             </div>
@@ -191,8 +208,8 @@ const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default' }) => 
           <div className="absolute bottom-0 left-0 right-0 p-6">
             <div className="flex flex-wrap gap-2 mb-3">
               {article.tag_list.slice(0, 3).map((tag) => (
-                <Badge 
-                  key={tag} 
+                <Badge
+                  key={tag}
                   className="bg-white/20 backdrop-blur-md text-white border-white/30 hover:bg-white/30"
                 >
                   #{tag}
@@ -216,9 +233,9 @@ const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default' }) => 
                   <p className="text-sm text-white/70">{getTimeAgo(article.published_at)}</p>
                 </div>
               </div>
-              <a 
-                href={article.url} 
-                target="_blank" 
+              <a
+                href={article.url}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-white hover:bg-white/30 transition-all border border-white/30"
               >
@@ -235,12 +252,19 @@ const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default' }) => 
   return (
     <Card className="group hover:shadow-xl transition-all duration-500 bg-gradient-to-br from-white/90 to-white/60 dark:from-slate-900/90 dark:to-slate-900/60 border-white/30 dark:border-slate-700/50 backdrop-blur-2xl overflow-hidden hover:-translate-y-1">
       <div className="relative h-52 overflow-hidden">
-        <img
-          src={coverImage}
-          alt={article.title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        <a
+          href={article.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full h-full"
+        >
+          <img
+            src={coverImage}
+            alt={article.title}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+          />
+        </a>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
         <div className="absolute top-3 right-3">
           <button
             onClick={handleBookmark}
@@ -253,8 +277,8 @@ const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default' }) => 
       <CardContent className="p-5">
         <div className="flex flex-wrap gap-2 mb-3">
           {article.tag_list.slice(0, 3).map((tag) => (
-            <Badge 
-              key={tag} 
+            <Badge
+              key={tag}
               variant="secondary"
               className="text-xs bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/20 text-purple-700 dark:text-purple-300 hover:from-purple-500/20 hover:to-pink-500/20"
             >
@@ -262,9 +286,16 @@ const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default' }) => 
             </Badge>
           ))}
         </div>
-        <h3 className="font-bold text-lg text-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors mb-2 line-clamp-2 leading-snug">
-          {article.title}
-        </h3>
+        <a
+          href={article.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block group/title"
+        >
+          <h3 className="font-bold text-lg text-foreground group-hover/title:text-purple-600 dark:group-hover/title:text-purple-400 transition-colors mb-2 line-clamp-2 leading-snug">
+            {article.title}
+          </h3>
+        </a>
         <p className="text-muted-foreground mb-4 line-clamp-2 text-sm leading-relaxed">
           {article.description}
         </p>
@@ -291,10 +322,15 @@ const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default' }) => 
               <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
               <span className="font-medium">{likes}</span>
             </button>
-            <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-purple-600 transition-colors">
-              <MessageCircle className="w-4 h-4" />
-              <span className="font-medium">{article.comments_count}</span>
-            </button>
+            <a
+              href={article.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors font-bold ml-2"
+            >
+              Read
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
           </div>
         </div>
       </CardContent>
@@ -354,11 +390,11 @@ const BlogPage: React.FC<any> = (props: any) => {
     setLoading(true);
     try {
       let url = 'https://dev.to/api/articles?per_page=30';
-      
+
       if (selectedTag) {
         url += `&tag=${selectedTag}`;
       }
-      
+
       if (sortBy === 'popular') {
         url += '&top=30';
       }
@@ -512,11 +548,10 @@ const BlogPage: React.FC<any> = (props: any) => {
                       <button
                         key={tag.name}
                         onClick={() => setSelectedTag(selectedTag === tag.name ? '' : tag.name)}
-                        className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-300 group ${
-                          selectedTag === tag.name
-                            ? `bg-gradient-to-r ${tag.color} text-white shadow-lg scale-105`
-                            : 'hover:bg-gradient-to-r hover:from-purple-500/10 hover:to-pink-500/10 text-foreground border border-transparent hover:border-purple-500/20'
-                        }`}
+                        className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-300 group ${selectedTag === tag.name
+                          ? `bg-gradient-to-r ${tag.color} text-white shadow-lg scale-105`
+                          : 'hover:bg-gradient-to-r hover:from-purple-500/10 hover:to-pink-500/10 text-foreground border border-transparent hover:border-purple-500/20'
+                          }`}
                       >
                         <div className={`p-2 rounded-lg ${selectedTag === tag.name ? 'bg-white/20' : 'bg-gradient-to-r ' + tag.color + ' bg-opacity-10'}`}>
                           <Icon className={`w-4 h-4 ${selectedTag === tag.name ? 'text-white' : ''}`} />
@@ -541,7 +576,7 @@ const BlogPage: React.FC<any> = (props: any) => {
             </Card>
 
             {/* Refresh Button */}
-            <Button 
+            <Button
               onClick={fetchArticles}
               disabled={loading}
               className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-xl"
@@ -607,7 +642,7 @@ const BlogPage: React.FC<any> = (props: any) => {
                 <p className="text-muted-foreground mb-6">
                   Try adjusting your search or filters
                 </p>
-                <Button 
+                <Button
                   onClick={() => {
                     setSearchQuery('');
                     setSelectedTag('');
