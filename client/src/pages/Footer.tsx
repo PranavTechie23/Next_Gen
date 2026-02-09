@@ -108,13 +108,13 @@ const footerConfig = {
         { label: "Jobs & Opportunities", href: "/student/dashboard" },
         { label: "Learning Paths", href: "/student/dashboard" },
         { label: "Webinars", href: "/webinars" },
-        { label: "Wellbeing", href: "/wellbeing" },
+
       ],
       resources: [
         { label: "Feedback", href: "/student/feedbackForm" },
         { label: "Settings", href: "/student/setting" },
-        { label: "Case Studies", href: "/case_studies" },
-        { label: "Pricing", href: "/pricing" },
+
+
       ],
     },
     college: {

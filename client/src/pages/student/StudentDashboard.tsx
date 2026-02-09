@@ -11,12 +11,12 @@ import { useTheme } from "@/contexts/ThemeContext";
 import Careers from "@/pages/student/careers";
 import StudentWebinar from "@/pages/student/webinars";
 import BlogPage from "@/pages/student/blog";
-import FeaturesPage from "@/pages/student/features";
-import CaseStudiesPage from "@/pages/student/caseStudies";
+
+
 import CorporateNewsPage from "@/pages/student/CorporateNews";
-import WellbeingHub from "@/pages/student/wellBeing";
-import StudentPricing from "@/pages/student/pricing";
-import RefundPolicy from "@/pages/student/refundPolicy";
+
+
+
 import StudentFeedbackForm from "@/pages/student/feedbackForm";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -635,12 +635,12 @@ export default function StudentDashboard() {
     { id: "careers", label: "Careers", icon: Briefcase },
     { id: "webinars", label: "Webinars", icon: Play },
     { id: "blog", label: "Blog", icon: BookOpen },
-    { id: "features", label: "Features", icon: Sparkles },
-    { id: "caseStudies", label: "Case Studies", icon: FileText },
+
+
     { id: "corporateNews", label: "Corporate News", icon: Newspaper },
-    { id: "wellbeing", label: "Wellbeing", icon: Heart },
-    { id: "pricing", label: "Pricing", icon: DollarSign },
-    { id: "refundPolicy", label: "Refund Policy", icon: FileCheck },
+
+
+
     { id: "feedback", label: "Feedback", icon: MessageSquare },
   ];
 
@@ -740,14 +740,14 @@ export default function StudentDashboard() {
                           activeTab === "careers" ? "Career Opportunities & Resources" :
                             activeTab === "webinars" ? "Live Learning Sessions" :
                               activeTab === "blog" ? "Career Insights & Articles" :
-                                activeTab === "features" ? "Platform Features & Capabilities" :
-                                  activeTab === "caseStudies" ? "Success Stories & Case Studies" :
-                                    activeTab === "corporateNews" ? "Industry News & Updates" :
-                                      activeTab === "wellbeing" ? "Student Wellbeing Hub" :
-                                        activeTab === "pricing" ? "Pricing Plans & Packages" :
-                                          activeTab === "refundPolicy" ? "Refund Policy & Terms" :
-                                            activeTab === "feedback" ? "Share Your Feedback" :
-                                              "Student Portal"}
+
+
+                                activeTab === "corporateNews" ? "Industry News & Updates" :
+
+
+
+                                  activeTab === "feedback" ? "Share Your Feedback" :
+                                    "Student Portal"}
               </p>
             </div>
           </header>
@@ -1859,19 +1859,9 @@ export default function StudentDashboard() {
             </div>
           )}
 
-          {/* Features Tab */}
-          {activeTab === "features" && (
-            <div className="space-y-10">
-              <FeaturesPage isDashboard={true} />
-            </div>
-          )}
 
-          {/* Case Studies Tab */}
-          {activeTab === "caseStudies" && (
-            <div className="space-y-10">
-              <CaseStudiesPage isDashboard={true} />
-            </div>
-          )}
+
+
 
           {/* Corporate News Tab */}
           {activeTab === "corporateNews" && (
@@ -1880,26 +1870,14 @@ export default function StudentDashboard() {
             </div>
           )}
 
-          {/* Wellbeing Tab */}
-          {activeTab === "wellbeing" && (
-            <div className="space-y-10">
-              <WellbeingHub isDashboard={true} />
-            </div>
-          )}
+
+
 
           {/* Pricing Tab */}
-          {activeTab === "pricing" && (
-            <div className="space-y-10">
-              <StudentPricing isDashboard={true} />
-            </div>
-          )}
+
 
           {/* Refund Policy Tab */}
-          {activeTab === "refundPolicy" && (
-            <div className="space-y-10">
-              <RefundPolicy isDashboard={true} />
-            </div>
-          )}
+
 
           {/* Feedback Tab */}
           {activeTab === "feedback" && (

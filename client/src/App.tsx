@@ -13,13 +13,13 @@ import StudentSetting from "./pages/student/Setting";
 import Careers from "./pages/student/careers";
 import AboutUs from "./pages/AboutUs";
 import CorporateNews from "./pages/student/CorporateNews";
-import StudentFeatures from "./pages/student/features";
+
 import StudentBlog from "./pages/student/blog";
-import CaseStudies from "./pages/student/caseStudies";
-import RefundPolicy from "./pages/student/refundPolicy";
+
+
 import Webinar from "./pages/student/webinars";
-import Pricing from "./pages/student/pricing";
-import Wellbeing from "./pages/student/wellBeing";
+
+
 import StudentFeedback from "./pages/student/feedbackForm";
 import StudentInfo from "./pages/student/student_info";
 
@@ -64,15 +64,15 @@ function Router() {
       <Route path="/Footer" component={() => <Footer role="public" />} />
 
       <Route path="/corporate_news" component={CorporateNews} />
-      <Route path="/case_studies" component={CaseStudies} />
+
       <Route path="/contact" component={ContactUs} />
 
-      <Route path="/refund_policy" component={RefundPolicy} />
+
       <Route path="/blog" component={StudentBlog} />
-      <Route path="/features" component={StudentFeatures} />
+
       <Route path="/webinars" component={Webinar} />
-      <Route path="/pricing" component={Pricing} />
-      <Route path="/wellbeing" component={Wellbeing} />
+
+
 
       <Route path="/privacy" component={PrivacyPage} />
 

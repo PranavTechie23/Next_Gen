@@ -170,11 +170,7 @@ const FAQS = [
     answer: 'Our AI Career Coach analyzes your academic background, skills, interests, and career goals to create a personalized career roadmap. It provides real-time guidance, skill gap analysis, and actionable recommendations to help you achieve your career objectives.',
     category: 'Technology'
   },
-  {
-    question: 'Is NextGen free for students?',
-    answer: 'We offer a free tier with essential features including basic resume building, job search, and career assessment. For advanced features like AI Career Coach, unlimited mock interviews, and personalized coaching, we offer premium plans starting at $9/month for students.',
-    category: 'Pricing'
-  },
+
   {
     question: 'How do I schedule a consultation with your team?',
     answer: 'You can schedule a consultation directly through our platform. Navigate to the "Book Consultation" section, choose your preferred time slot, select the team member you\'d like to speak with, and we\'ll confirm your appointment via email.',

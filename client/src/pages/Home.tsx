@@ -66,9 +66,9 @@ function Footer({ role }: { role?: string }) {
           <div>
             <h4 className="font-bold text-slate-900 dark:text-white mb-6">Platform</h4>
             <ul className="space-y-4">
-              {["Features", "Pricing", "Success Stories", "For Colleges", "For Students"].map((item) => (
+              {["Success Stories", "For Colleges", "For Students"].map((item) => (
                 <li key={item}>
-                  <a href={item === "Features" ? "/features" : item === "Pricing" ? "/pricing" : item === "Success Stories" ? "/SuccessStories" : item === "For Colleges" ? "/college/college_info" : item === "For Students" ? "/student/student_info" : ""} className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{item}</a>
+                  <a href={item === "Success Stories" ? "/SuccessStories" : item === "For Colleges" ? "/college/college_info" : item === "For Students" ? "/student/student_info" : ""} className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{item}</a>
                 </li>
               ))}
             </ul>
@@ -329,60 +329,7 @@ export default function PremiumLandingPage() {
     },
   ];
 
-  const pricingPlans = [
-    {
-      name: "Student Free",
-      price: "₹0",
-      period: "forever",
-      description: "Perfect for individual students starting their journey",
-      features: [
-        "Basic skill assessment",
-        "Industry benchmarking",
-        "Learning roadmap",
-        "Job recommendations",
-        "Community access"
-      ],
-      gradient: "from-gray-500 to-gray-700",
-      popular: false,
-      cta: "Start Free"
-    },
-    {
-      name: "College Pro",
-      price: "₹99",
-      period: "per student/year",
-      description: "Comprehensive solution for forward-thinking institutions",
-      features: [
-        "Everything in Free",
-        "Advanced AI analytics",
-        "Predictive placement scores",
-        "Real-time dashboards",
-        "Priority support",
-        "Custom integrations",
-        "Dedicated success manager"
-      ],
-      gradient: "from-blue-600 via-purple-600 to-pink-600",
-      popular: true,
-      cta: "Request Demo"
-    },
-    {
-      name: "Enterprise",
-      price: "Custom",
-      period: "contact sales",
-      description: "Tailored for multi-campus universities",
-      features: [
-        "Everything in Pro",
-        "Unlimited students",
-        "White-label platform",
-        "Custom AI models",
-        "API access",
-        "Advanced security",
-        "On-premise deployment"
-      ],
-      gradient: "from-green-600 to-emerald-600",
-      popular: false,
-      cta: "Contact Sales"
-    },
-  ];
+
 
   const faqs = [
     {
@@ -463,7 +410,7 @@ export default function PremiumLandingPage() {
               <a href="#features" className="text-lg font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-all hover:scale-110">Features</a>
               <a href="#how-it-works" className="text-lg font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-all hover:scale-110">How It Works</a>
               <a href="#testimonials" className="text-lg font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-all hover:scale-110">Students</a>
-              <a href="#pricing" className="text-lg font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-all hover:scale-110">Pricing</a>
+
             </div>
 
             {/* Right Side Actions */}
@@ -489,7 +436,7 @@ export default function PremiumLandingPage() {
               <a href="#features" className="block text-sm font-bold text-slate-600 dark:text-slate-300 py-2">Features</a>
               <a href="#how-it-works" className="block text-sm font-bold text-slate-600 dark:text-slate-300 py-2">How It Works</a>
               <a href="#testimonials" className="block text-sm font-bold text-slate-600 dark:text-slate-300 py-2">Success Stories</a>
-              <a href="#pricing" className="block text-sm font-bold text-slate-600 dark:text-slate-300 py-2">Pricing</a>
+
               <Button variant="ghost" className="w-full text-slate-700 dark:text-white" onClick={() => navigate("/login")}>Login</Button>
               <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600" onClick={() => navigate("/login")}>Get Started free</Button>
             </div>
@@ -1161,41 +1108,7 @@ export default function PremiumLandingPage() {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section className="py-24 px-4 sm:px-6 relative" id="pricing">
-        <div className="container mx-auto max-w-7xl">
-          <div className="text-center mb-20 text-center">
-            <Badge className="px-4 py-2 bg-green-600/10 text-green-600 dark:bg-green-600/20 dark:text-green-300 font-bold mb-6">Plans & Pricing</Badge>
-            <h2 className="text-4xl sm:text-6xl font-black mb-6 text-slate-900 dark:text-white">Scale Your Success</h2>
-            <p className="text-xl text-slate-600 dark:text-slate-400">Flexible options tailored for growth.</p>
-          </div>
 
-          <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {pricingPlans.map((plan, i) => (
-              <Card key={i} className={`p-12 bg-white dark:bg-slate-900/50 border-2 transition-all hover:scale-105 shadow-xl ${plan.popular ? 'border-blue-500/50 dark:border-blue-500/50 shadow-blue-500/10 ring-2 ring-blue-500/10' : 'border-slate-200 dark:border-white/10'}`}>
-                {plan.popular && <Badge className="mb-6 bg-blue-600 text-white border-0 font-black px-4 py-1">MOST POPULAR</Badge>}
-                <h3 className="text-3xl font-black mb-2 text-slate-900 dark:text-white">{plan.name}</h3>
-                <p className="text-slate-500 dark:text-slate-400 mb-8 font-medium">{plan.description}</p>
-                <div className="mb-10">
-                  <p className="text-6xl font-black tracking-tighter mb-2 text-slate-900 dark:text-white">{plan.price}</p>
-                  <p className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-xs">{plan.period}</p>
-                </div>
-                <ul className="space-y-4 mb-10">
-                  {plan.features.map((f, fi) => (
-                    <li key={fi} className="flex items-center gap-3">
-                      <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                      <span className="text-slate-600 dark:text-slate-300 font-bold">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button className={`w-full py-8 text-lg font-black tracking-widest hover:scale-[1.02] transition-transform ${plan.popular ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'}`} onClick={() => navigate("/login")}>
-                  {plan.cta}
-                </Button>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* FAQ */}
       <section className="py-24 px-4 sm:px-6">
