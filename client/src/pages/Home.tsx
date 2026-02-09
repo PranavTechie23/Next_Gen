@@ -340,60 +340,60 @@ export default function PremiumLandingPage() {
     },
   ];
 
-  const pricingPlans = [
-    {
-      name: "Student Free",
-      price: "₹0",
-      period: "forever",
-      description: "Perfect for individual students starting their journey",
-      features: [
-        "Basic skill assessment",
-        "Industry benchmarking",
-        "Learning roadmap",
-        "Job recommendations",
-        "Community access"
-      ],
-      gradient: "from-gray-500 to-gray-700",
-      popular: false,
-      cta: "Start Free"
-    },
-    {
-      name: "College Pro",
-      price: "₹99",
-      period: "per student/year",
-      description: "Comprehensive solution for forward-thinking institutions",
-      features: [
-        "Everything in Free",
-        "Advanced AI analytics",
-        "Predictive placement scores",
-        "Real-time dashboards",
-        "Priority support",
-        "Custom integrations",
-        "Dedicated success manager"
-      ],
-      gradient: "from-blue-600 via-purple-600 to-pink-600",
-      popular: true,
-      cta: "Request Demo"
-    },
-    {
-      name: "Enterprise",
-      price: "Custom",
-      period: "contact sales",
-      description: "Tailored for multi-campus universities",
-      features: [
-        "Everything in Pro",
-        "Unlimited students",
-        "White-label platform",
-        "Custom AI models",
-        "API access",
-        "Advanced security",
-        "On-premise deployment"
-      ],
-      gradient: "from-green-600 to-emerald-600",
-      popular: false,
-      cta: "Contact Sales"
-    },
-  ];
+  // const pricingPlans = [
+  //   {
+  //     name: "Student Free",
+  //     price: "₹0",
+  //     period: "forever",
+  //     description: "Perfect for individual students starting their journey",
+  //     features: [
+  //       "Basic skill assessment",
+  //       "Industry benchmarking",
+  //       "Learning roadmap",
+  //       "Job recommendations",
+  //       "Community access"
+  //     ],
+  //     gradient: "from-gray-500 to-gray-700",
+  //     popular: false,
+  //     cta: "Start Free"
+  //   },
+  //   {
+  //     name: "College Pro",
+  //     price: "₹99",
+  //     period: "per student/year",
+  //     description: "Comprehensive solution for forward-thinking institutions",
+  //     features: [
+  //       "Everything in Free",
+  //       "Advanced AI analytics",
+  //       "Predictive placement scores",
+  //       "Real-time dashboards",
+  //       "Priority support",
+  //       "Custom integrations",
+  //       "Dedicated success manager"
+  //     ],
+  //     gradient: "from-blue-600 via-purple-600 to-pink-600",
+  //     popular: true,
+  //     cta: "Request Demo"
+  //   },
+  //   {
+  //     name: "Enterprise",
+  //     price: "Custom",
+  //     period: "contact sales",
+  //     description: "Tailored for multi-campus universities",
+  //     features: [
+  //       "Everything in Pro",
+  //       "Unlimited students",
+  //       "White-label platform",
+  //       "Custom AI models",
+  //       "API access",
+  //       "Advanced security",
+  //       "On-premise deployment"
+  //     ],
+  //     gradient: "from-green-600 to-emerald-600",
+  //     popular: false,
+  //     cta: "Contact Sales"
+  //   },
+  // ];
 
   const faqs = [
     {
@@ -473,7 +473,7 @@ export default function PremiumLandingPage() {
               <a href="#features" className="text-lg font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-all hover:scale-110">Features</a>
               <a href="#how-it-works" className="text-lg font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-all hover:scale-110">How It Works</a>
               <a href="#testimonials" className="text-lg font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-all hover:scale-110">Students</a>
-              <a href="#pricing" className="text-lg font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-all hover:scale-110">Pricing</a>
+              {/*<a href="#pricing" className="text-lg font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-all hover:scale-110">Pricing</a>*/}
             </div>
 
             {/* Right Side Actions */}
@@ -499,7 +499,7 @@ export default function PremiumLandingPage() {
               <a href="#features" className="block text-sm font-bold text-slate-600 dark:text-slate-300 py-2">Features</a>
               <a href="#how-it-works" className="block text-sm font-bold text-slate-600 dark:text-slate-300 py-2">How It Works</a>
               <a href="#testimonials" className="block text-sm font-bold text-slate-600 dark:text-slate-300 py-2">Success Stories</a>
-              <a href="#pricing" className="block text-sm font-bold text-slate-600 dark:text-slate-300 py-2">Pricing</a>
+              {/*<a href="#pricing" className="block text-sm font-bold text-slate-600 dark:text-slate-300 py-2">Pricing</a>*/}
               <Button variant="ghost" className="w-full text-slate-700 dark:text-white" onClick={() => navigate("/login")}>Login</Button>
               <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600" onClick={() => navigate("/login")}>Get Started free</Button>
             </div>
@@ -1171,7 +1171,7 @@ export default function PremiumLandingPage() {
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* Pricing
       <section className="py-24 px-4 sm:px-6 relative" id="pricing">
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-20 text-center">
@@ -1205,7 +1205,7 @@ export default function PremiumLandingPage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* FAQ */}
       <section className="py-24 px-4 sm:px-6">
