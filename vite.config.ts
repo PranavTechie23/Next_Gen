@@ -5,7 +5,12 @@ import path from "path";
 import { defineConfig } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
-const plugins = [react(), tailwindcss(), vitePluginManusRuntime()];
+const plugins = [
+  react(),
+  tailwindcss(),
+  // Dev-only plugins
+  ...(process.env.NODE_ENV !== "production" ? [jsxLocPlugin(), vitePluginManusRuntime()] : []),
+];
 
 export default defineConfig({
   plugins,
@@ -22,7 +27,7 @@ export default defineConfig({
     exclude: ["langium"],
   },
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,
   },
   server: {

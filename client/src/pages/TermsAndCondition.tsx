@@ -190,13 +190,11 @@ export default function TermsAndConditions() {
               Back
             </button>
             <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg transform group-hover:rotate-6 transition-transform">
-                <FileText className="w-7 h-7 text-white" />
-              </div>
+            <div className="flex items-center gap-0 group cursor-pointer" onClick={() => window.location.href = "/"}>
+              <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
               <div className="hidden sm:block">
-                <h1 className="text-foreground font-black text-xl tracking-tight leading-none">Terms & Conditions</h1>
-                <span className="text-purple-600 dark:text-purple-400 text-xs font-black uppercase tracking-widest opacity-80">Legal Agreement v2.1</span>
+                <h1 className="text-foreground font-black text-xl tracking-tight leading-none bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">NextGen</h1>
+                <span className="text-muted-foreground text-[10px] font-black uppercase tracking-widest mt-1 opacity-80">Terms & Conditions</span>
               </div>
             </div>
           </div>

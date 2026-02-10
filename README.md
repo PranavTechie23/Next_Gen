@@ -203,12 +203,26 @@ The platform follows **"Academic Minimalism with Institutional Trust"** design p
 
 ## 📦 Installation
 
+### Required versions (use these to avoid setup errors)
+
+To prevent errors on different machines, **match these versions**:
+
+| Tool / runtime | Version | Notes |
+|----------------|---------|--------|
+| **Node.js** | **20.x LTS** (or 22.x) | Required. v18 may work but 20+ is recommended. [Download](https://nodejs.org/) |
+| **pnpm** | **10.4.x** (or 10.x) | Recommended; lockfile is for pnpm. [Install](https://pnpm.io/installation): `npm install -g pnpm@10` |
+| **Git** | Any recent | [Download](https://git-scm.com/) |
+
+- **Do not delete `pnpm-lock.yaml`** — it locks exact dependency versions so everyone gets the same install.
+- If you use **nvm**, run `nvm use` in the project root (see `.nvmrc`) to switch to Node 20.
+- If you use **npm** instead of pnpm, run `npm install`; versions may differ slightly and cause build/runtime errors. Prefer pnpm for consistency.
+
 ### Prerequisites
 
 Before you begin, ensure you have the following installed:
 
-- **Node.js** (v18 or higher) - [Download](https://nodejs.org/)
-- **pnpm** (recommended) or npm/yarn - [Install pnpm](https://pnpm.io/installation)
+- **Node.js** (v20 or higher recommended) - [Download](https://nodejs.org/)
+- **pnpm** 10.x (recommended) or npm/yarn - [Install pnpm](https://pnpm.io/installation)
 - **Git** - [Download](https://git-scm.com/)
 
 ### Step 1: Clone the Repository

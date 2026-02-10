@@ -28,6 +28,7 @@ import {
   CheckCheck, ChevronDownCircle, CircleDashed, Clipboard,
   UserPlus
 } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -208,6 +209,10 @@ const generateSampleData = () => {
 // ===================================================================
 
 export default function AnalyticsPage() {
+  // THEME
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   // STATE
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | '1y' | 'all'>('30d');
   const [selectedCategory, setSelectedCategory] = useState<'overview' | 'students' | 'revenue' | 'placement' | 'institutions' | 'system' | 'engagement'>('overview');
@@ -243,26 +248,38 @@ export default function AnalyticsPage() {
     const isPositive = change >= 0;
     
     return (
-      <div className="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl rounded-2xl p-6 border border-white/10 hover:border-white/20 transition-all group">
+      <div className={`bg-gradient-to-br backdrop-blur-xl rounded-2xl p-6 border transition-all group ${
+        isDark 
+          ? 'from-white/5 to-white/[0.02] border-white/10 hover:border-white/20' 
+          : 'from-white to-slate-50 border-slate-200 hover:border-slate-300 shadow-lg'
+      }`}>
         <div className="flex items-center justify-between mb-4">
           <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-lg`}>
             {icon}
           </div>
           <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
-            isPositive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+            isPositive 
+              ? isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
+              : isDark ? 'bg-red-500/20 text-red-400' : 'bg-red-50 text-red-600'
           }`}>
             {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
             {formatPercent(changePercent)}
           </div>
         </div>
-        <h3 className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-2">{title}</h3>
+        <h3 className={`text-xs uppercase tracking-wider font-semibold mb-2 ${
+          isDark ? 'text-gray-400' : 'text-gray-600'
+        }`}>{title}</h3>
         <div className="flex items-baseline gap-2 mb-1">
-          <p className="text-3xl font-bold text-white">{value}</p>
-          <span className={`text-sm font-semibold ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
+          <p className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{value}</p>
+          <span className={`text-sm font-semibold ${
+            isPositive 
+              ? isDark ? 'text-emerald-400' : 'text-emerald-600'
+              : isDark ? 'text-red-400' : 'text-red-600'
+          }`}>
             {change >= 0 ? '+' : ''}{change}
           </span>
         </div>
-        <p className="text-sm text-gray-500">vs previous period</p>
+        <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>vs previous period</p>
       </div>
     );
   };
@@ -279,15 +296,17 @@ export default function AnalyticsPage() {
     return (
       <div className="group">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-gray-400 font-medium">{label}</span>
+          <span className={`text-sm font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{label}</span>
           <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-white">{formatNumber(value)}</span>
+            <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{formatNumber(value)}</span>
             {showPercentage && (
-              <span className="text-xs text-gray-500 min-w-[45px] text-right">{percentage.toFixed(1)}%</span>
+              <span className={`text-xs min-w-[45px] text-right ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{percentage.toFixed(1)}%</span>
             )}
           </div>
         </div>
-        <div className="h-2.5 bg-white/5 rounded-full overflow-hidden">
+        <div className={`h-2.5 rounded-full overflow-hidden ${
+          isDark ? 'bg-white/5' : 'bg-slate-200'
+        }`}>
           <div 
             className={`h-full bg-gradient-to-r ${color} rounded-full transition-all duration-1000`}
             style={{ width: `${percentage}%` }}
@@ -304,14 +323,20 @@ export default function AnalyticsPage() {
     change?: string;
     color: string;
   }> = ({ icon, value, label, change, color }) => (
-    <div className="text-center p-6 bg-white/5 rounded-xl border border-white/10 hover:border-white/20 transition-all group">
+    <div className={`text-center p-6 rounded-xl border transition-all group ${
+      isDark 
+        ? 'bg-white/5 border-white/10 hover:border-white/20' 
+        : 'bg-white border-slate-200 hover:border-slate-300 shadow-lg'
+    }`}>
       <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${color} flex items-center justify-center mx-auto mb-4`}>
         {icon}
       </div>
-      <p className="text-3xl font-bold text-white mb-2">{value}</p>
-      <p className="text-sm text-gray-400 mb-2">{label}</p>
+      <p className={`text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>{value}</p>
+      <p className={`text-sm mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{label}</p>
       {change && (
-        <div className="flex items-center justify-center gap-1 text-emerald-400 text-sm">
+        <div className={`flex items-center justify-center gap-1 text-sm ${
+          isDark ? 'text-emerald-400' : 'text-emerald-600'
+        }`}>
           <TrendingUp className="w-4 h-4" />
           <span>{change}</span>
         </div>
@@ -329,17 +354,27 @@ export default function AnalyticsPage() {
     const maxValue = Math.max(...data.map(d => d.value));
     
     return (
-      <div className="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+      <div className={`bg-gradient-to-br backdrop-blur-xl rounded-2xl p-6 border ${
+        isDark 
+          ? 'from-white/5 to-white/[0.02] border-white/10' 
+          : 'from-white to-slate-50 border-slate-200 shadow-lg'
+      }`}>
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
+            <h3 className={`text-lg font-bold mb-1 flex items-center gap-2 ${
+              isDark ? 'text-white' : 'text-gray-900'
+            }`}>
               {icon}
               {title}
             </h3>
-            <p className="text-sm text-gray-400">{subtitle}</p>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{subtitle}</p>
           </div>
-          <button className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-all">
-            <MoreVertical className="w-4 h-4" />
+          <button className={`p-2 rounded-lg transition-all ${
+            isDark 
+              ? 'bg-white/5 hover:bg-white/10' 
+              : 'bg-slate-100 hover:bg-slate-200'
+          }`}>
+            <MoreVertical className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />
           </button>
         </div>
         
@@ -351,10 +386,12 @@ export default function AnalyticsPage() {
             return (
               <div key={index}>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs text-gray-400 font-medium">{month}</span>
-                  <span className="text-sm font-semibold text-white">{formatNumber(point.value)}</span>
+                  <span className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{month}</span>
+                  <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{formatNumber(point.value)}</span>
                 </div>
-                <div className="h-3 bg-white/5 rounded-full overflow-hidden">
+                <div className={`h-3 rounded-full overflow-hidden ${
+                  isDark ? 'bg-white/5' : 'bg-slate-200'
+                }`}>
                   <div 
                     className={`h-full bg-gradient-to-r ${color} rounded-full transition-all duration-1000`}
                     style={{ width: `${width}%` }}
@@ -377,31 +414,49 @@ export default function AnalyticsPage() {
     labelKey: string;
     color: string;
   }> = ({ title, subtitle, items, icon, valueKey, labelKey, color }) => (
-    <div className="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+    <div className={`bg-gradient-to-br backdrop-blur-xl rounded-2xl p-6 border ${
+      isDark 
+        ? 'from-white/5 to-white/[0.02] border-white/10' 
+        : 'from-white to-slate-50 border-slate-200 shadow-lg'
+    }`}>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
+          <h3 className={`text-lg font-bold mb-1 flex items-center gap-2 ${
+            isDark ? 'text-white' : 'text-gray-900'
+          }`}>
             {icon}
             {title}
           </h3>
-          <p className="text-sm text-gray-400">{subtitle}</p>
+          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{subtitle}</p>
         </div>
       </div>
 
       <div className="space-y-4">
         {items.map((item, index) => (
-          <div key={index} className="flex items-center gap-3 p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all group cursor-pointer">
+          <div key={index} className={`flex items-center gap-3 p-4 rounded-xl transition-all group cursor-pointer ${
+            isDark 
+              ? 'bg-white/5 hover:bg-white/10' 
+              : 'bg-slate-50 hover:bg-slate-100 border border-slate-200'
+          }`}>
             <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center text-sm font-bold shadow-lg`}>
               #{index + 1}
             </div>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-white group-hover:text-blue-400 transition-colors">
+              <p className={`text-sm font-semibold transition-colors ${
+                isDark 
+                  ? 'text-white group-hover:text-blue-400' 
+                  : 'text-gray-900 group-hover:text-blue-600'
+              }`}>
                 {item[labelKey]}
               </p>
-              <p className="text-xs text-gray-400">{formatNumber(item[valueKey])} • {item.rating && `${item.rating} ★`}</p>
+              <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{formatNumber(item[valueKey])} • {item.rating && `${item.rating} ★`}</p>
             </div>
-            <button className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100">
-              <Eye className="w-4 h-4" />
+            <button className={`p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 ${
+              isDark 
+                ? 'bg-white/5 hover:bg-white/10' 
+                : 'bg-slate-200 hover:bg-slate-300'
+            }`}>
+              <Eye className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />
             </button>
           </div>
         ))}
@@ -414,34 +469,46 @@ export default function AnalyticsPage() {
   // ===================================================================
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white p-8">
+    <div className={`min-h-screen p-8 transition-colors duration-500 ${
+      isDark ? 'bg-[#0a0a0f] text-white' : 'bg-slate-50 text-gray-900'
+    }`}>
       {/* Animated Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse" 
-             style={{ animationDuration: '8s' }} />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse" 
-             style={{ animationDuration: '12s', animationDelay: '2s' }} />
-        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-cyan-500/3 rounded-full blur-3xl animate-pulse" 
-             style={{ animationDuration: '15s', animationDelay: '5s' }} />
-      </div>
+      {isDark && (
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse" 
+               style={{ animationDuration: '8s' }} />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse" 
+               style={{ animationDuration: '12s', animationDelay: '2s' }} />
+          <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-cyan-500/3 rounded-full blur-3xl animate-pulse" 
+               style={{ animationDuration: '15s', animationDelay: '5s' }} />
+        </div>
+      )}
 
       <div className="relative max-w-[1800px] mx-auto space-y-6">
         {/* ========== HEADER ========== */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-cyan-200 bg-clip-text text-transparent mb-2"
+            <h1 className={`text-4xl font-bold mb-2 ${
+              isDark 
+                ? 'bg-gradient-to-r from-white via-blue-100 to-cyan-200 bg-clip-text text-transparent'
+                : 'bg-gradient-to-r from-gray-900 via-blue-600 to-cyan-600 bg-clip-text text-transparent'
+            }`}
                 style={{ fontFamily: "'Sora', sans-serif", letterSpacing: '-0.03em' }}>
               Analytics Dashboard
             </h1>
-            <p className="text-gray-400 flex items-center gap-2">
+            <p className={`flex items-center gap-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
               <Activity className="w-4 h-4" />
               Comprehensive insights and performance metrics
             </p>
             <div className="flex items-center gap-3 mt-2">
-              <span className="text-xs text-gray-500">Last updated: {lastRefresh.toLocaleTimeString()}</span>
+              <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Last updated: {lastRefresh.toLocaleTimeString()}</span>
               {autoRefresh && (
-                <span className="flex items-center gap-1 text-xs text-emerald-400">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className={`flex items-center gap-1 text-xs ${
+                  isDark ? 'text-emerald-400' : 'text-emerald-600'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full animate-pulse ${
+                    isDark ? 'bg-emerald-400' : 'bg-emerald-600'
+                  }`} />
                   Auto-refresh enabled
                 </span>
               )}
@@ -452,33 +519,49 @@ export default function AnalyticsPage() {
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setShowFilters(!showFilters)}
-              className="px-4 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 flex items-center gap-2"
+              className={`px-4 py-2.5 rounded-xl transition-all border flex items-center gap-2 ${
+                isDark 
+                  ? 'bg-white/5 hover:bg-white/10 border-white/10' 
+                  : 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm'
+              }`}
             >
-              <Filter className="w-4 h-4" />
+              <Filter className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />
               Filters
             </button>
             <button 
               onClick={() => setCompareMode(!compareMode)}
               className={`px-4 py-2.5 rounded-xl transition-all border flex items-center gap-2 ${
                 compareMode 
-                  ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' 
-                  : 'bg-white/5 hover:bg-white/10 border-white/10'
+                  ? isDark
+                    ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                    : 'bg-blue-50 text-blue-600 border-blue-200'
+                  : isDark
+                    ? 'bg-white/5 hover:bg-white/10 border-white/10'
+                    : 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm'
               }`}
             >
               <BarChart3 className="w-4 h-4" />
               Compare
             </button>
-            <button className="px-4 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 flex items-center gap-2">
-              <Download className="w-4 h-4" />
+            <button className={`px-4 py-2.5 rounded-xl transition-all border flex items-center gap-2 ${
+              isDark 
+                ? 'bg-white/5 hover:bg-white/10 border-white/10' 
+                : 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm'
+            }`}>
+              <Download className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />
               Export
             </button>
-            <button className="px-4 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 flex items-center gap-2">
-              <Share2 className="w-4 h-4" />
+            <button className={`px-4 py-2.5 rounded-xl transition-all border flex items-center gap-2 ${
+              isDark 
+                ? 'bg-white/5 hover:bg-white/10 border-white/10' 
+                : 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm'
+            }`}>
+              <Share2 className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />
               Share
             </button>
             <button 
               onClick={() => setLastRefresh(new Date())}
-              className="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 rounded-xl transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2"
+              className="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 rounded-xl transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2 text-white"
             >
               <RefreshCw className="w-4 h-4" />
               Refresh
@@ -487,12 +570,20 @@ export default function AnalyticsPage() {
         </div>
 
         {/* ========== PERIOD SELECTOR ========== */}
-        <div className="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+        <div className={`bg-gradient-to-br backdrop-blur-xl rounded-2xl p-6 border ${
+          isDark 
+            ? 'from-white/5 to-white/[0.02] border-white/10' 
+            : 'from-white to-slate-50 border-slate-200 shadow-lg'
+        }`}>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-400" />
-              <span className="text-sm font-semibold text-gray-400">Time Period:</span>
-              <div className="flex gap-2 bg-white/5 border border-white/10 rounded-xl p-1">
+              <Calendar className={`w-5 h-5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+              <span className={`text-sm font-semibold ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Time Period:</span>
+              <div className={`flex gap-2 border rounded-xl p-1 ${
+                isDark 
+                  ? 'bg-white/5 border-white/10' 
+                  : 'bg-slate-100 border-slate-200'
+              }`}>
                 {[
                   { value: '7d', label: 'Last 7 Days' },
                   { value: '30d', label: 'Last 30 Days' },
@@ -505,8 +596,12 @@ export default function AnalyticsPage() {
                     onClick={() => setSelectedPeriod(period.value as any)}
                     className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                       selectedPeriod === period.value
-                        ? 'bg-blue-500/20 text-blue-400'
-                        : 'text-gray-400 hover:text-white'
+                        ? isDark
+                          ? 'bg-blue-500/20 text-blue-400'
+                          : 'bg-blue-600 text-white'
+                        : isDark
+                          ? 'text-gray-400 hover:text-white'
+                          : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
                     {period.label}
@@ -521,15 +616,23 @@ export default function AnalyticsPage() {
                   type="checkbox"
                   checked={autoRefresh}
                   onChange={(e) => setAutoRefresh(e.target.checked)}
-                  className="w-4 h-4 rounded border-white/20 bg-white/5"
+                  className={`w-4 h-4 rounded ${
+                    isDark 
+                      ? 'border-white/20 bg-white/5' 
+                      : 'border-slate-300 bg-white'
+                  }`}
                 />
-                <span className="text-sm text-gray-400">Auto-refresh</span>
+                <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Auto-refresh</span>
               </label>
               {autoRefresh && (
                 <select
                   value={refreshInterval}
                   onChange={(e) => setRefreshInterval(Number(e.target.value))}
-                  className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white cursor-pointer"
+                  className={`px-3 py-1.5 border rounded-lg text-sm cursor-pointer ${
+                    isDark 
+                      ? 'bg-white/5 border-white/10 text-white' 
+                      : 'bg-white border-slate-200 text-gray-900'
+                  }`}
                 >
                   <option value={10}>10s</option>
                   <option value={30}>30s</option>
@@ -542,7 +645,11 @@ export default function AnalyticsPage() {
         </div>
 
         {/* ========== CATEGORY TABS ========== */}
-        <div className="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl rounded-2xl p-2 border border-white/10">
+        <div className={`bg-gradient-to-br backdrop-blur-xl rounded-2xl p-2 border ${
+          isDark 
+            ? 'from-white/5 to-white/[0.02] border-white/10' 
+            : 'from-white to-slate-50 border-slate-200 shadow-lg'
+        }`}>
           <div className="flex gap-2 overflow-x-auto">
             {[
               { value: 'overview', label: 'Overview', icon: <Grid className="w-4 h-4" /> },
@@ -559,7 +666,9 @@ export default function AnalyticsPage() {
                 className={`flex-1 min-w-[130px] px-6 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
                   selectedCategory === category.value
                     ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/20'
-                    : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+                    : isDark
+                      ? 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+                      : 'bg-slate-100 text-gray-600 hover:bg-slate-200 hover:text-gray-900'
                 }`}
               >
                 {category.icon}
@@ -634,14 +743,20 @@ export default function AnalyticsPage() {
                 icon={<TrendingUp className="w-5 h-5 text-emerald-400" />}
               />
 
-              <div className="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+              <div className={`bg-gradient-to-br backdrop-blur-xl rounded-2xl p-6 border ${
+                isDark 
+                  ? 'from-white/5 to-white/[0.02] border-white/10' 
+                  : 'from-white to-slate-50 border-slate-200 shadow-lg'
+              }`}>
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-                      <PieChart className="w-5 h-5 text-blue-400" />
+                    <h3 className={`text-lg font-bold mb-1 flex items-center gap-2 ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      <PieChart className={`w-5 h-5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
                       Student Distribution
                     </h3>
-                    <p className="text-sm text-gray-400">By department</p>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>By department</p>
                   </div>
                 </div>
 
@@ -713,17 +828,29 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Real-time Activity Feed */}
-            <div className="bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+            <div className={`bg-gradient-to-br backdrop-blur-xl rounded-2xl p-6 border ${
+              isDark 
+                ? 'from-white/5 to-white/[0.02] border-white/10' 
+                : 'from-white to-slate-50 border-slate-200 shadow-lg'
+            }`}>
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-blue-400" />
+                  <h3 className={`text-lg font-bold mb-1 flex items-center gap-2 ${
+                    isDark ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    <Activity className={`w-5 h-5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
                     Real-time Activity
                   </h3>
-                  <p className="text-sm text-gray-400">Live system events and updates</p>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Live system events and updates</p>
                 </div>
-                <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-semibold">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
+                  isDark 
+                    ? 'bg-emerald-500/20 text-emerald-400' 
+                    : 'bg-emerald-50 text-emerald-600'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full animate-pulse ${
+                    isDark ? 'bg-emerald-400' : 'bg-emerald-600'
+                  }`} />
                   Live
                 </div>
               </div>
@@ -738,20 +865,30 @@ export default function AnalyticsPage() {
                 ].map((activity, index) => (
                   <div 
                     key={index}
-                    className="flex items-center gap-4 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all group cursor-pointer"
+                    className={`flex items-center gap-4 p-3 rounded-lg transition-all group cursor-pointer ${
+                      isDark 
+                        ? 'bg-white/5 hover:bg-white/10' 
+                        : 'bg-slate-50 hover:bg-slate-100 border border-slate-200'
+                    }`}
                   >
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                      activity.type === 'success' ? 'bg-emerald-500/20 text-emerald-400' :
-                      activity.type === 'warning' ? 'bg-amber-500/20 text-amber-400' :
-                      'bg-blue-500/20 text-blue-400'
+                      activity.type === 'success' 
+                        ? isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
+                        : activity.type === 'warning' 
+                          ? isDark ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-50 text-amber-600'
+                          : isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600'
                     }`}>
                       {activity.icon}
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-white group-hover:text-blue-400 transition-colors">
+                      <p className={`text-sm transition-colors ${
+                        isDark 
+                          ? 'text-white group-hover:text-blue-400' 
+                          : 'text-gray-900 group-hover:text-blue-600'
+                      }`}>
                         {activity.message}
                       </p>
-                      <p className="text-xs text-gray-500">{activity.time}</p>
+                      <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{activity.time}</p>
                     </div>
                   </div>
                 ))}
@@ -760,37 +897,55 @@ export default function AnalyticsPage() {
 
             {/* Performance Indicators */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 backdrop-blur-xl rounded-2xl p-6 border border-emerald-500/20">
+              <div className={`bg-gradient-to-br backdrop-blur-xl rounded-2xl p-6 border ${
+                isDark 
+                  ? 'from-emerald-500/10 to-teal-500/10 border-emerald-500/20' 
+                  : 'from-emerald-50 to-teal-50 border-emerald-200 shadow-lg'
+              }`}>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                    <TrendingUp className="w-5 h-5 text-emerald-400" />
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    isDark ? 'bg-emerald-500/20' : 'bg-emerald-100'
+                  }`}>
+                    <TrendingUp className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
                   </div>
-                  <span className="text-xs text-emerald-400 font-semibold">Excellent</span>
+                  <span className={`text-xs font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Excellent</span>
                 </div>
-                <p className="text-2xl font-bold text-white mb-1">+18.5%</p>
-                <p className="text-sm text-gray-400">Revenue Growth YoY</p>
+                <p className={`text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>+18.5%</p>
+                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Revenue Growth YoY</p>
               </div>
 
-              <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-2xl p-6 border border-blue-500/20">
+              <div className={`bg-gradient-to-br backdrop-blur-xl rounded-2xl p-6 border ${
+                isDark 
+                  ? 'from-blue-500/10 to-cyan-500/10 border-blue-500/20' 
+                  : 'from-blue-50 to-cyan-50 border-blue-200 shadow-lg'
+              }`}>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                    <Users className="w-5 h-5 text-blue-400" />
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    isDark ? 'bg-blue-500/20' : 'bg-blue-100'
+                  }`}>
+                    <Users className={`w-5 h-5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
                   </div>
-                  <span className="text-xs text-blue-400 font-semibold">Growing</span>
+                  <span className={`text-xs font-semibold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>Growing</span>
                 </div>
-                <p className="text-2xl font-bold text-white mb-1">+5.2%</p>
-                <p className="text-sm text-gray-400">Student Growth</p>
+                <p className={`text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>+5.2%</p>
+                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Student Growth</p>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-2xl p-6 border border-purple-500/20">
+              <div className={`bg-gradient-to-br backdrop-blur-xl rounded-2xl p-6 border ${
+                isDark 
+                  ? 'from-purple-500/10 to-pink-500/10 border-purple-500/20' 
+                  : 'from-purple-50 to-pink-50 border-purple-200 shadow-lg'
+              }`}>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                    <Award className="w-5 h-5 text-purple-400" />
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    isDark ? 'bg-purple-500/20' : 'bg-purple-100'
+                  }`}>
+                    <Award className={`w-5 h-5 ${isDark ? 'text-purple-400' : 'text-purple-600'}`} />
                   </div>
-                  <span className="text-xs text-purple-400 font-semibold">Improving</span>
+                  <span className={`text-xs font-semibold ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>Improving</span>
                 </div>
-                <p className="text-2xl font-bold text-white mb-1">+3.6%</p>
-                <p className="text-sm text-gray-400">Placement Rate</p>
+                <p className={`text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>+3.6%</p>
+                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Placement Rate</p>
               </div>
             </div>
           </div>

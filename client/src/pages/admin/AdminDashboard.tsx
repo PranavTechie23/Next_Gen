@@ -1,6 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLocation } from "wouter";
+import { toast } from "sonner";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, RadarChart, Radar,
@@ -32,12 +38,19 @@ import {
   MoreHorizontal, X, Check, Minus, SlidersHorizontal, ListFilter, CalendarDays,
   Timer, Hourglass, Waves, Wind, Droplets, CloudRain, Snowflake, Umbrella,
   Battery, BatteryCharging, Signal, SignalHigh, SignalLow, SignalMedium, Rss,
-  Newspaper, BookMarked, Library, Users2, UserPlus, UserMinus
+  Newspaper, BookMarked, Library, Users2, UserPlus, UserMinus, Menu
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+// Import page components
+import InstitutionsPage from "./Institutions";
+import AnalyticsPage from "./Analytics";
+import AssessmentsPage from "./Assessments";
+import AdminStudents from "./Students";
+import AdminReports from "./Reports";
+import AdminIntegrations from "./Integration";
 
 // ==================== TYPE DEFINITIONS ====================
 interface College {
@@ -95,10 +108,22 @@ export default function EnterpriseAdminDashboard() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [, navigate] = useLocation();
+  const mainContentRef = useRef<HTMLElement>(null);
 
   // ==================== STATE MANAGEMENT ====================
   const [selectedPeriod, setSelectedPeriod] = useState("month");
-  const [activeTab, setActiveTab] = useState("overview");
+  // Persist which admin tab was last open (overview, students, etc.) so refresh keeps you there
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window === "undefined") return "overview";
+    return window.localStorage.getItem("adminActiveTab") || "overview";
+  });
+
+  // Scroll to top when activeTab changes
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTo(0, 0);
+    }
+  }, [activeTab]);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState("all");
@@ -116,6 +141,8 @@ export default function EnterpriseAdminDashboard() {
   const [apiCalls, setApiCalls] = useState(15420);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [selectedInstitution, setSelectedInstitution] = useState<College | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -123,6 +150,46 @@ export default function EnterpriseAdminDashboard() {
   const [comparisonMode, setComparisonMode] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [performanceView, setPerformanceView] = useState<"overview" | "detailed">("overview");
+  const [showAddInstitution, setShowAddInstitution] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [commandSearch, setCommandSearch] = useState("");
+  const [institutionForm, setInstitutionForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
+    type: "",
+    established: "",
+    plan: "Standard" as "Premium" | "Standard" | "Basic"
+  });
+
+  // Persist active admin tab so refresh keeps the user on the same section
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("adminActiveTab", activeTab);
+    }
+  }, [activeTab]);
+
+  // ==================== RESPONSIVENESS ====================
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (mobile) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Close mobile menu on tab change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [activeTab]);
 
   // ==================== REAL-TIME UPDATES ====================
   useEffect(() => {
@@ -835,12 +902,12 @@ export default function EnterpriseAdminDashboard() {
   ];
 
   const quickActions = [
-    { icon: Plus, label: "Add Institution", color: "blue", action: () => console.log("Add") },
-    { icon: Upload, label: "Import Data", color: "emerald", action: () => console.log("Import") },
-    { icon: Download, label: "Export Report", color: "indigo", action: () => console.log("Export") },
+    { icon: Plus, label: "Add Institution", color: "blue", action: () => setShowAddInstitution(true) },
+    { icon: Upload, label: "Import Data", color: "emerald", action: () => setShowImportDialog(true) },
+    { icon: Download, label: "Export Report", color: "indigo", action: () => handleExport() },
     { icon: RefreshCw, label: "Sync Data", color: "amber", action: () => handleRefresh() },
-    { icon: Bell, label: "Send Alert", color: "rose", action: () => console.log("Alert") },
-    { icon: Settings, label: "Configure", color: "violet", action: () => console.log("Config") },
+    { icon: Bell, label: "Send Alert", color: "rose", action: () => toast.info("Alert sent to all institutions") },
+    { icon: Settings, label: "Configure", color: "violet", action: () => handleSettings() },
   ];
 
   const revenueByPlan = [
@@ -924,7 +991,90 @@ export default function EnterpriseAdminDashboard() {
 
   const handleExport = useCallback(() => {
     setIsExporting(true);
-    setTimeout(() => setIsExporting(false), 1500);
+    toast.loading("Exporting report...", { id: "export" });
+
+    // Simulate export process
+    setTimeout(() => {
+      setIsExporting(false);
+      toast.success("Report exported successfully!", { id: "export" });
+
+      // Create CSV content
+      const csvContent = [
+        ["Institution", "Students", "Placement %", "Status", "Plan", "Revenue"],
+        ...collegeList.map(college => [
+          college.name,
+          college.students.toString(),
+          college.placement.toString(),
+          college.status,
+          college.plan,
+          college.revenue
+        ])
+      ].map(row => row.join(",")).join("\n");
+
+      // Download CSV
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `admin-report-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }, 1500);
+  }, [collegeList]);
+
+  const handleImportData = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    toast.loading("Importing data...", { id: "import" });
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        // Simulate processing
+        setTimeout(() => {
+          toast.success(`Successfully imported ${file.name}`, { id: "import" });
+          setShowImportDialog(false);
+        }, 2000);
+      } catch (error) {
+        toast.error("Failed to import file. Please check the format.", { id: "import" });
+      }
+    };
+    reader.readAsText(file);
+  }, []);
+
+  const handleAddInstitution = useCallback(() => {
+    if (!institutionForm.name || !institutionForm.email || !institutionForm.location) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    toast.loading("Adding institution...", { id: "add-institution" });
+
+    // Simulate API call
+    setTimeout(() => {
+      toast.success(`${institutionForm.name} has been added successfully!`, { id: "add-institution" });
+      setShowAddInstitution(false);
+      setInstitutionForm({
+        name: "",
+        email: "",
+        phone: "",
+        location: "",
+        type: "",
+        established: "",
+        plan: "Standard"
+      });
+    }, 1500);
+  }, [institutionForm]);
+
+  const handleDeleteInstitution = useCallback((id: number, name: string) => {
+    toast.loading("Deleting institution...", { id: `delete-${id}` });
+    setTimeout(() => {
+      toast.success(`${name} has been removed`, { id: `delete-${id}` });
+    }, 1000);
   }, []);
 
   const handleCollegeClick = useCallback((college: College) => {
@@ -932,35 +1082,140 @@ export default function EnterpriseAdminDashboard() {
   }, []);
 
   const handleLogout = useCallback(() => {
-    // Clear any stored authentication data if needed
-    // localStorage.removeItem('authToken');
-    // sessionStorage.clear();
-    navigate("/");
+    toast.loading("Logging out...", { id: "logout" });
+    setTimeout(() => {
+      // Clear any stored authentication data if needed
+      // localStorage.removeItem('authToken');
+      // sessionStorage.clear();
+      toast.success("Logged out successfully", { id: "logout" });
+      navigate("/");
+    }, 500);
   }, [navigate]);
 
   const handleSettings = useCallback(() => {
     navigate("/admin/setting");
   }, [navigate]);
 
+  // Command palette commands
+  const commands = useMemo(() => [
+    {
+      category: "Navigation",
+      items: [
+        { id: "dashboard", label: "Go to Dashboard", icon: LayoutDashboard, action: () => { setActiveTab("overview"); setShowCommandPalette(false); } },
+        { id: "institutions", label: "View Institutions", icon: Building2, action: () => { setActiveTab("institutions"); setShowCommandPalette(false); } },
+        { id: "analytics", label: "Open Analytics", icon: BarChart3, action: () => { setActiveTab("analytics"); setShowCommandPalette(false); } },
+        { id: "settings", label: "Open Settings", icon: Settings, action: () => { handleSettings(); setShowCommandPalette(false); } },
+      ]
+    },
+    {
+      category: "Actions",
+      items: [
+        { id: "add-institution", label: "Add Institution", icon: Plus, action: () => { setShowAddInstitution(true); setShowCommandPalette(false); } },
+        { id: "import-data", label: "Import Data", icon: Upload, action: () => { setShowImportDialog(true); setShowCommandPalette(false); } },
+        { id: "export-report", label: "Export Report", icon: Download, action: () => { handleExport(); setShowCommandPalette(false); } },
+        { id: "refresh", label: "Refresh Data", icon: RefreshCw, action: () => { handleRefresh(); setShowCommandPalette(false); } },
+      ]
+    },
+    {
+      category: "System",
+      items: [
+        { id: "logout", label: "Logout", icon: LogOut, action: () => { handleLogout(); setShowCommandPalette(false); } },
+        { id: "fullscreen", label: "Toggle Fullscreen", icon: isFullscreen ? Minimize2 : Maximize2, action: () => { setIsFullscreen(!isFullscreen); setShowCommandPalette(false); } },
+      ]
+    }
+  ], [handleSettings, handleExport, handleRefresh, handleLogout, isFullscreen]);
+
+  const filteredCommands = useMemo(() => {
+    if (!commandSearch) return commands;
+    const searchLower = commandSearch.toLowerCase();
+    return commands.map(category => ({
+      ...category,
+      items: category.items.filter(item =>
+        item.label.toLowerCase().includes(searchLower) ||
+        item.id.toLowerCase().includes(searchLower)
+      )
+    })).filter(category => category.items.length > 0);
+  }, [commandSearch, commands]);
+
+  // Enhanced sorting
+  const sortedColleges = useMemo(() => {
+    const filtered = filteredColleges;
+    return [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "students":
+          return b.students - a.students;
+        case "placement":
+          return b.placement - a.placement;
+        case "revenue":
+          const aRev = parseFloat(a.revenue.replace('₹', '').replace('L', ''));
+          const bRev = parseFloat(b.revenue.replace('₹', '').replace('L', ''));
+          return bRev - aRev;
+        default:
+          return 0;
+      }
+    });
+  }, [filteredColleges, sortBy]);
+
   // ==================== RENDER ====================
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-[#0a0b0e]' : 'bg-slate-50'} transition-colors duration-500 flex overflow-hidden`}>
+    <div className={`min-h-screen bg-background transition-colors duration-500 flex flex-col lg:flex-row overflow-hidden relative`}>
+      {/* Premium Background Glows */}
+      {isDark && (
+        <div className="premium-glow-bg">
+          <div className="premium-glow-1" />
+          <div className="premium-glow-2" />
+          <div className="premium-glow-3" />
+        </div>
+      )}
+
+      {/* Mobile Header */}
+      <div className={`lg:hidden flex items-center justify-between p-4 border-b z-[60] sticky top-0 backdrop-blur-xl ${isDark ? 'bg-black/60 border-white/5' : 'bg-white/95 border-slate-200'}`}>
+        <div className="flex items-center gap-0 group cursor-pointer" onClick={() => navigate("/")}>
+          <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
+          <span className="font-black text-xl bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 bg-clip-text text-transparent">NextGen</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="rounded-xl"
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </Button>
+        </div>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[50] lg:hidden"
+          />
+        )}
+      </AnimatePresence>
 
       {/* ==================== ENHANCED SIDEBAR ==================== */}
       <motion.aside
         initial={false}
-        animate={{ width: isSidebarOpen ? 280 : 88 }}
-        className={`fixed left-0 top-0 h-screen z-50 border-r ${isDark ? 'border-white/5 bg-black/60' : 'border-slate-200 bg-white/95'
-          } backdrop-blur-2xl flex flex-col shadow-2xl`}
+        animate={{
+          width: isMobile ? (isMobileMenuOpen ? '85%' : 0) : (isSidebarOpen ? 280 : 88),
+          x: isMobile ? (isMobileMenuOpen ? 0 : -280) : 0
+        }}
+        className={`fixed left-0 top-0 h-screen z-[55] lg:z-50 border-r ${isDark ? 'border-white/5 bg-black/80' : 'border-slate-200 bg-white/95'
+          } backdrop-blur-2xl flex flex-col shadow-2xl transition-all duration-300`}
       >
         {/* Logo Section */}
-        <div className="p-6 flex items-center gap-4 mb-4 border-b border-white/5">
-          <motion.div
-            whileHover={{ rotate: 360, scale: 1.1 }}
-            transition={{ duration: 0.6 }}
-            className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-2xl shadow-blue-500/30 cursor-pointer"
-          >
-            <Zap className="w-7 h-7 text-white drop-shadow-lg" />
+        <div className="p-6 flex items-center gap-0 mb-4 border-b border-white/5 group cursor-pointer" onClick={() => navigate("/")}>
+          <motion.div whileHover={{ scale: 1.1 }} transition={{ duration: 0.2 }} className="flex-shrink-0">
+            <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-14 w-14 object-contain" />
           </motion.div>
           <AnimatePresence>
             {isSidebarOpen && (
@@ -968,12 +1223,12 @@ export default function EnterpriseAdminDashboard() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="overflow-hidden"
+                className="overflow-hidden flex flex-col justify-center"
               >
-                <span className="font-black text-2xl tracking-tight bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 bg-clip-text text-transparent">
+                <span className="font-black text-2xl tracking-tight bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 bg-clip-text text-transparent leading-none">
                   NextGen
                 </span>
-                <p className="text-[9px] uppercase font-black text-muted-foreground tracking-widest mt-0.5">
+                <p className="text-[9px] uppercase font-black text-muted-foreground tracking-widest mt-0.5 opacity-80">
                   Enterprise Command
                 </p>
               </motion.div>
@@ -1079,1294 +1334,1395 @@ export default function EnterpriseAdminDashboard() {
           )}
         </AnimatePresence>
 
-        {/* Collapse Toggle */}
-        <div className="p-3 border-t border-white/5">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setSidebarOpen(!isSidebarOpen)}
-            className={`w-full flex items-center justify-center gap-3 p-3 rounded-xl transition-all ${isDark ? 'hover:bg-white/5' : 'hover:bg-slate-100'
-              }`}
-          >
-            <motion.div
-              animate={{ rotate: isSidebarOpen ? 180 : 0 }}
-              transition={{ duration: 0.3 }}
+        {/* Collapse Toggle - Hidden on Mobile */}
+        {!isMobile && (
+          <div className="p-3 border-t border-white/5">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setSidebarOpen(!isSidebarOpen)}
+              className={`w-full flex items-center justify-center gap-3 p-3 rounded-xl transition-all ${isDark ? 'hover:bg-white/5' : 'hover:bg-slate-100'
+                }`}
             >
-              <ChevronRight className="w-5 h-5" />
-            </motion.div>
-            {isSidebarOpen && <span className="font-bold text-sm">Collapse</span>}
-          </motion.button>
-        </div>
+              <motion.div
+                animate={{ rotate: isSidebarOpen ? 180 : 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </motion.div>
+              {isSidebarOpen && <span className="font-bold text-sm">Collapse</span>}
+            </motion.button>
+          </div>
+        )}
       </motion.aside>
 
       {/* ==================== MAIN CONTENT ==================== */}
       <main
-        className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-[280px]' : 'ml-[88px]'
-          } relative`}
+        ref={mainContentRef}
+        data-scroll-container
+        className={`flex-1 transition-all duration-300 ${isMobile ? 'ml-0' : (isSidebarOpen ? 'ml-[280px]' : 'ml-[88px]')
+          } relative w-full overflow-y-auto overflow-x-hidden custom-scrollbar`}
       >
         {/* ==================== ENHANCED HEADER ==================== */}
-        <header className={`sticky top-0 z-40 backdrop-blur-xl border-b ${isDark ? 'bg-black/60 border-white/5' : 'bg-white/60 border-slate-200'
-          } shadow-lg`}>
-          <div className="px-8 py-4">
-            <div className="flex items-center justify-between">
-              {/* Left Section */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-4">
-                  <h1 className="text-2xl font-black tracking-tight flex items-center gap-3">
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-violet-500">
-                      Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}
-                    </span>
-                    <motion.span
-                      animate={{
-                        rotate: [0, 14, -8, 14, 0],
-                        scale: [1, 1.1, 1]
-                      }}
-                      transition={{
-                        duration: 0.5,
-                        repeat: Infinity,
-                        repeatDelay: 3
-                      }}
-                      className="text-3xl"
-                    >
-                      👋
-                    </motion.span>
-                  </h1>
-                  <div className="flex items-center gap-2">
-                    <div className={`px-3 py-1 rounded-lg text-xs font-black uppercase flex items-center gap-1.5 ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
-                      }`}>
-                      <motion.div
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        className="w-1.5 h-1.5 rounded-full bg-emerald-500"
-                      />
-                      All Systems Operational
+        {activeTab === "overview" && (
+          <header className={`sticky top-0 z-40 backdrop-blur-xl border-b ${isDark ? 'bg-black/60 border-white/5' : 'bg-white/60 border-slate-200'
+            } shadow-lg`}>
+            <div className="px-4 lg:px-8 py-4">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                {/* Left Section */}
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h1 className="text-xl lg:text-2xl font-black tracking-tight flex items-center gap-3">
+                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-violet-500">
+                        Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}
+                      </span>
+                      <motion.span
+                        animate={{
+                          rotate: [0, 14, -8, 14, 0],
+                          scale: [1, 1.1, 1]
+                        }}
+                        transition={{
+                          duration: 0.5,
+                          repeat: Infinity,
+                          repeatDelay: 3
+                        }}
+                        className="text-2xl lg:text-3xl"
+                      >
+                        👋
+                      </motion.span>
+                    </h1>
+                    <div className="hidden sm:flex items-center gap-2">
+                      <div className={`px-3 py-1 rounded-lg text-xs font-black uppercase flex items-center gap-1.5 ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
+                        }`}>
+                        <motion.div
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                          className="w-1.5 h-1.5 rounded-full bg-emerald-500"
+                        />
+                        <span className="hidden xs:inline">All Systems Operational</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <p className="text-sm text-muted-foreground font-medium flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5" />
-                  {currentTime.toLocaleString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                  <span className="mx-2">•</span>
-                  <Users className="w-3.5 h-3.5" />
-                  {activeUsers.toLocaleString()} active users
-                </p>
-              </div>
-
-              {/* Right Section */}
-              <div className="flex items-center gap-3">
-                {/* Enhanced Search */}
-                <div className="relative group">
-                  <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isDark ? 'text-slate-500 group-focus-within:text-blue-400' : 'text-slate-400 group-focus-within:text-blue-500'
-                    }`} />
-                  <input
-                    type="text"
-                    placeholder="Search anything... (⌘K)"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onFocus={() => setShowCommandPalette(true)}
-                    className={`pl-10 pr-16 py-2.5 rounded-xl text-sm border-2 focus:outline-none transition-all w-80 font-medium ${isDark
-                      ? 'bg-white/5 border-white/10 focus:border-blue-500/50 focus:bg-white/10'
-                      : 'bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white'
-                      }`}
-                  />
-                  <kbd className={`absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 rounded text-[10px] font-bold ${isDark ? 'bg-white/10 text-slate-400' : 'bg-slate-200 text-slate-500'
-                    }`}>
-                    ⌘K
-                  </kbd>
+                  <p className="text-xs lg:text-sm text-muted-foreground font-medium flex flex-wrap items-center gap-x-4 gap-y-1">
+                    <span className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      {currentTime.toLocaleString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                    <span className="hidden sm:inline opacity-30">•</span>
+                    <span className="flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5" />
+                      {activeUsers.toLocaleString()} online
+                    </span>
+                  </p>
                 </div>
 
-                {/* Action Buttons */}
-                <div className={`flex items-center gap-2 p-1.5 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'
-                  } shadow-lg`}>
-                  <ThemeToggle />
-                  <div className={`w-px h-5 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
+                {/* Right Section */}
+                <div className="flex items-center gap-2 lg:gap-3">
+                  {/* Enhanced Search - Hidden on tiny screens, icon only on small, full on large */}
+                  <div className="relative group flex-1 lg:flex-none">
+                    <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isDark ? 'text-slate-500 group-focus-within:text-blue-400' : 'text-slate-400 group-focus-within:text-blue-500'
+                      }`} />
+                    <input
+                      type="text"
+                      placeholder="Search... (⌘K)"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onFocus={() => setShowCommandPalette(true)}
+                      className={`pl-10 pr-4 lg:pr-16 py-2 rounded-xl text-sm border-2 focus:outline-none transition-all w-full lg:w-64 xl:w-80 font-medium ${isDark
+                        ? 'bg-white/5 border-white/10 focus:border-blue-500/50 focus:bg-white/10'
+                        : 'bg-slate-50 border-slate-200 focus:border-blue-500 focus:bg-white'
+                        }`}
+                    />
+                    <kbd className={`hidden lg:block absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 rounded text-[10px] font-bold ${isDark ? 'bg-white/10 text-slate-400' : 'bg-slate-200 text-slate-500'
+                      }`}>
+                      ⌘K
+                    </kbd>
+                  </div>
 
-                  {/* Notifications */}
-                  <div className="relative">
+                  {/* Action Buttons */}
+                  <div className={`flex items-center gap-1.5 lg:gap-2 p-1 lg:p-1.5 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'
+                    } shadow-lg`}>
+                    <div className="hidden sm:block">
+                      <ThemeToggle />
+                    </div>
+                    <div className={`hidden sm:block w-px h-5 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
+
+                    {/* Notifications */}
+                    <div className="relative">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowNotifications(!showNotifications)}
+                        className="relative rounded-lg h-9 w-9"
+                      >
+                        <Bell className="w-4 h-4" />
+                        {notifications > 0 && (
+                          <motion.span
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="absolute top-1 right-1 w-4 h-4 bg-rose-500 rounded-full text-[9px] font-black text-white flex items-center justify-center border-2 border-background"
+                          >
+                            {notifications}
+                          </motion.span>
+                        )}
+                      </Button>
+
+                      {/* Notifications Dropdown */}
+                      <AnimatePresence>
+                        {showNotifications && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            className={`absolute right-0 mt-2 w-80 rounded-2xl border shadow-2xl overflow-hidden ${isDark ? 'bg-slate-900 border-white/10' : 'bg-white border-slate-200'
+                              }`}
+                          >
+                            <div className="p-4 border-b border-white/5">
+                              <h3 className="font-black text-sm">Notifications</h3>
+                              <p className="text-xs text-muted-foreground">You have {notifications} unread messages</p>
+                            </div>
+                            <div className="max-h-96 overflow-y-auto">
+                              {notificationsList.map((notif) => (
+                                <motion.div
+                                  key={notif.id}
+                                  whileHover={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }}
+                                  className={`p-4 border-b border-white/5 cursor-pointer ${!notif.read ? 'bg-blue-500/5' : ''}`}
+                                >
+                                  <div className="flex items-start gap-3">
+                                    <div className={`p-2 rounded-lg ${notif.color === 'blue' ? 'bg-blue-500/10 text-blue-500' :
+                                      notif.color === 'amber' ? 'bg-amber-500/10 text-amber-500' :
+                                        notif.color === 'emerald' ? 'bg-emerald-500/10 text-emerald-500' :
+                                          'bg-violet-500/10 text-violet-500'
+                                      }`}>
+                                      <notif.icon className="w-4 h-4" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="font-bold text-sm">{notif.title}</p>
+                                      <p className="text-xs text-muted-foreground mt-0.5">{notif.time}</p>
+                                    </div>
+                                    {!notif.read && (
+                                      <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                    )}
+                                  </div>
+                                </motion.div>
+                              ))}
+                            </div>
+                            <div className="p-3 border-t border-white/5">
+                              <Button variant="ghost" size="sm" className="w-full text-xs font-bold">
+                                View All Notifications
+                              </Button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    <Button variant="ghost" size="icon" className="rounded-lg h-9 w-9">
+                      <Mail className="w-4 h-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => setShowNotifications(!showNotifications)}
-                      className="relative rounded-lg h-9 w-9"
+                      onClick={() => setIsFullscreen(!isFullscreen)}
+                      className="rounded-lg h-9 w-9"
                     >
-                      <Bell className="w-4 h-4" />
-                      {notifications > 0 && (
-                        <motion.span
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="absolute top-1 right-1 w-4 h-4 bg-rose-500 rounded-full text-[9px] font-black text-white flex items-center justify-center border-2 border-background"
-                        >
-                          {notifications}
-                        </motion.span>
-                      )}
+                      {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                     </Button>
+                  </div>
 
-                    {/* Notifications Dropdown */}
+                  {/* User Avatar */}
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="cursor-pointer relative"
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 border-2 border-white/20 shadow-xl overflow-hidden">
+                      <img
+                        src="https://ui-avatars.com/api/?name=Admin+User&background=8b5cf6&color=fff&bold=true"
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    {/* User Menu Dropdown */}
                     <AnimatePresence>
-                      {showNotifications && (
+                      {showUserMenu && (
                         <motion.div
                           initial={{ opacity: 0, y: 10, scale: 0.95 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                          className={`absolute right-0 mt-2 w-80 rounded-2xl border shadow-2xl overflow-hidden ${isDark ? 'bg-slate-900 border-white/10' : 'bg-white border-slate-200'
+                          className={`absolute right-0 mt-2 w-64 rounded-2xl border shadow-2xl overflow-hidden ${isDark ? 'bg-slate-900 border-white/10' : 'bg-white border-slate-200'
                             }`}
                         >
                           <div className="p-4 border-b border-white/5">
-                            <h3 className="font-black text-sm">Notifications</h3>
-                            <p className="text-xs text-muted-foreground">You have {notifications} unread messages</p>
+                            <p className="font-black text-sm">Admin User</p>
+                            <p className="text-xs text-muted-foreground">admin@nextgen.com</p>
                           </div>
-                          <div className="max-h-96 overflow-y-auto">
-                            {notificationsList.map((notif) => (
-                              <motion.div
-                                key={notif.id}
-                                whileHover={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }}
-                                className={`p-4 border-b border-white/5 cursor-pointer ${!notif.read ? 'bg-blue-500/5' : ''}`}
+                          <div className="p-2">
+                            {[
+                              { icon: Users2, label: "Profile", action: () => { } },
+                              { icon: Settings, label: "Settings", action: handleSettings },
+                              { icon: HelpCircle, label: "Help & Support", action: () => { navigate('/HelpCenter'); } },
+                            ].map((item, idx) => (
+                              <Button
+                                key={idx}
+                                variant="ghost"
+                                className="w-full justify-start text-sm font-bold rounded-lg"
+                                onClick={item.action}
                               >
-                                <div className="flex items-start gap-3">
-                                  <div className={`p-2 rounded-lg ${notif.color === 'blue' ? 'bg-blue-500/10 text-blue-500' :
-                                    notif.color === 'amber' ? 'bg-amber-500/10 text-amber-500' :
-                                      notif.color === 'emerald' ? 'bg-emerald-500/10 text-emerald-500' :
-                                        'bg-violet-500/10 text-violet-500'
-                                    }`}>
-                                    <notif.icon className="w-4 h-4" />
-                                  </div>
-                                  <div className="flex-1">
-                                    <p className="font-bold text-sm">{notif.title}</p>
-                                    <p className="text-xs text-muted-foreground mt-0.5">{notif.time}</p>
-                                  </div>
-                                  {!notif.read && (
-                                    <div className="w-2 h-2 rounded-full bg-blue-500" />
-                                  )}
-                                </div>
-                              </motion.div>
+                                <item.icon className="w-4 h-4 mr-2" />
+                                {item.label}
+                              </Button>
                             ))}
                           </div>
-                          <div className="p-3 border-t border-white/5">
-                            <Button variant="ghost" size="sm" className="w-full text-xs font-bold">
-                              View All Notifications
+                          <div className="p-2 border-t border-white/5">
+                            <Button
+                              variant="ghost"
+                              className="w-full justify-start text-sm font-bold rounded-lg text-rose-500 hover:text-rose-600"
+                              onClick={handleLogout || navigate('/Home')}
+                            >
+                              <LogOut className="w-4 h-4 mr-2" />
+                              Logout
                             </Button>
                           </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
-                  </div>
-
-                  <Button variant="ghost" size="icon" className="rounded-lg h-9 w-9">
-                    <Mail className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsFullscreen(!isFullscreen)}
-                    className="rounded-lg h-9 w-9"
-                  >
-                    {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                  </Button>
+                  </motion.div>
                 </div>
+              </div>
+            </div>
 
-                {/* User Avatar */}
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="cursor-pointer relative"
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                >
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 border-2 border-white/20 shadow-xl overflow-hidden">
-                    <img
-                      src="https://ui-avatars.com/api/?name=Admin+User&background=8b5cf6&color=fff&bold=true"
-                      alt="Avatar"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+            <div className={`px-4 lg:px-8 py-3 border-t ${isDark ? 'border-white/5 bg-black/20' : 'border-slate-200 bg-slate-50/50'
+              }`}>
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 lg:gap-6">
+                  {[
+                    { icon: Server, label: "Load", value: `${systemLoad.toFixed(1)}%`, color: "blue" },
+                    { icon: Activity, label: "API", value: apiCalls.toLocaleString(), color: "emerald" },
+                    { icon: Database, label: "Storage", value: "2.4 TB", color: "violet" },
+                    { icon: Zap, label: "Uptime", value: "99.9%", color: "amber" },
+                  ].map((stat, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <stat.icon className={`w-3.5 h-3.5 ${stat.color === 'blue' ? 'text-blue-500' :
+                        stat.color === 'emerald' ? 'text-emerald-500' :
+                          stat.color === 'violet' ? 'text-violet-500' :
+                            'text-amber-500'
+                        }`} />
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black uppercase text-muted-foreground leading-tight">{stat.label}</span>
+                        <span className="text-xs font-black leading-tight tracking-tight">{stat.value}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="hidden md:flex items-center gap-2">
+                  {[
+                    { label: "Sync", icon: RefreshCw },
+                    { label: "Logs", icon: FileText },
+                  ].map((action, i) => (
+                    <Button
+                      key={i}
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-3 text-xs font-bold rounded-lg"
+                    >
+                      <action.icon className="w-3 h-3 mr-1.5" />
+                      {action.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </header>
+        )}
 
-                  {/* User Menu Dropdown */}
-                  <AnimatePresence>
-                    {showUserMenu && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className={`absolute right-0 mt-2 w-64 rounded-2xl border shadow-2xl overflow-hidden ${isDark ? 'bg-slate-900 border-white/10' : 'bg-white border-slate-200'
-                          }`}
+        {/* ==================== SCROLLABLE CONTENT ==================== */}
+        <div className={`flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-500/20 scrollbar-track-transparent ${activeTab === 'overview' ? 'h-[calc(100vh-170px)]' : 'h-[calc(100vh-80px)]'}`}>
+          <AnimatePresence mode="wait">
+            {activeTab === "overview" && (
+              <motion.div
+                key="overview"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                className="px-4 lg:px-8 py-4 lg:py-8 space-y-4 lg:space-y-8"
+              >
+                {/* ==================== KEY METRICS GRID ==================== */}
+                <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {collegeStats.map((stat, idx) => (
+                    <motion.div key={idx} variants={itemVariants}>
+                      <Card
+                        className={`group relative overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl border-none cursor-pointer premium-card-glow ${isDark ? 'bg-zinc-900/40 hover:bg-zinc-800/60 premium-card-accent-blue' : 'bg-white hover:shadow-blue-500/10'
+                          } backdrop-blur-xl`}
                       >
-                        <div className="p-4 border-b border-white/5">
-                          <p className="font-black text-sm">Admin User</p>
-                          <p className="text-xs text-muted-foreground">admin@nextgen.com</p>
-                        </div>
-                        <div className="p-2">
-                          {[
-                            { icon: Users2, label: "Profile", action: () => {} },
-                            { icon: Settings, label: "Settings", action: handleSettings },
-                            { icon: HelpCircle, label: "Help & Support", action: () => {} },
-                          ].map((item, idx) => (
-                            <Button
-                              key={idx}
-                              variant="ghost"
-                              className="w-full justify-start text-sm font-bold rounded-lg"
-                              onClick={item.action}
+                        {/* Animated Background */}
+                        <div
+                          className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${stat.gradient} blur-3xl`}
+                          style={{ transform: 'scale(0.8)' }}
+                        />
+
+                        <CardHeader className="flex flex-row items-start justify-between pb-2 space-y-0 relative z-10">
+                          <div className="space-y-3 flex-1">
+                            <motion.div
+                              whileHover={{ scale: 1.1, rotate: 5 }}
+                              className={`${stat.bgColor} p-3 rounded-2xl inline-flex shadow-lg`}
                             >
-                              <item.icon className="w-4 h-4 mr-2" />
-                              {item.label}
+                              <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                            </motion.div>
+                            <div className="space-y-1">
+                              <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+                                {stat.label}
+                              </p>
+                              <div className="flex items-baseline gap-2">
+                                <p className="text-3xl font-black tracking-tighter">{stat.value}</p>
+                                <span
+                                  className={`text-xs font-black px-2 py-1 rounded-lg flex items-center gap-1 ${stat.trend === 'up'
+                                    ? 'bg-emerald-500/10 text-emerald-500'
+                                    : 'bg-rose-500/10 text-rose-500'
+                                    }`}
+                                >
+                                  {stat.trend === 'up' ? (
+                                    <ArrowUpRight className="w-3 h-3" />
+                                  ) : (
+                                    <ArrowDownRight className="w-3 h-3" />
+                                  )}
+                                  {stat.change}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardHeader>
+
+                        <CardContent className="relative z-10">
+                          <div className="space-y-3">
+                            <p className="text-xs text-muted-foreground font-medium">
+                              {stat.description}
+                            </p>
+
+                            {/* Progress Bar */}
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-[10px] font-bold text-muted-foreground">
+                                <span>Progress</span>
+                                <span>{((stat.current / stat.target) * 100).toFixed(0)}%</span>
+                              </div>
+                              <div className={`h-2 w-full rounded-full overflow-hidden ${isDark ? 'bg-white/5' : 'bg-slate-100'
+                                }`}>
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${(stat.current / stat.target) * 100}%` }}
+                                  transition={{ duration: 1, delay: idx * 0.1 }}
+                                  className={`h-full bg-gradient-to-r ${stat.gradient} shadow-lg`}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Mini Trend */}
+                            <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase">
+                                This Month
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <TrendingUp className={`w-3 h-3 ${stat.color}`} />
+                                <span className={`text-[10px] font-black ${stat.color}`}>
+                                  +{stat.percentage}%
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </section>
+
+                {/* ==================== GEOGRAPHIC & TREND ANALYSIS ==================== */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
+                  {/* Revenue & Growth Chart */}
+                  <motion.div variants={itemVariants} className="lg:col-span-2">
+                    <Card
+                      className={`h-[600px] border-none shadow-2xl relative overflow-hidden premium-card-glow ${isDark ? 'bg-zinc-900/40 premium-card-accent-blue' : 'bg-white'
+                        } backdrop-blur-xl`}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-violet-500/5 to-transparent pointer-events-none" />
+
+                      <CardHeader className="flex flex-row items-center justify-between relative z-10">
+                        <div className="space-y-1">
+                          <CardTitle className="text-2xl font-black tracking-tight flex items-center gap-3">
+                            Revenue Analytics
+                            <span className={`text-xs font-black px-3 py-1 rounded-lg flex items-center gap-1 ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
+                              }`}>
+                              <TrendingUp className="w-3 h-3" />
+                              +12.5%
+                            </span>
+                          </CardTitle>
+                          <CardDescription className="font-semibold">
+                            Growth trends across all institutions
+                          </CardDescription>
+                        </div>
+
+                        <div className="flex gap-2">
+                          {['week', 'month', 'quarter', 'year'].map((period) => (
+                            <Button
+                              key={period}
+                              variant={selectedPeriod === period ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => setSelectedPeriod(period)}
+                              className="rounded-xl border-none shadow-sm capitalize font-bold h-9 px-4 text-xs"
+                            >
+                              {period}
                             </Button>
                           ))}
                         </div>
-                        <div className="p-2 border-t border-white/5">
-                          <Button
-                            variant="ghost"
-                            className="w-full justify-start text-sm font-bold rounded-lg text-rose-500 hover:text-rose-600"
-                            onClick={handleLogout}
+                      </CardHeader>
+
+                      <CardContent className="h-[480px] relative z-10">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <ComposedChart
+                            data={usageMetrics}
+                            margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
                           >
-                            <LogOut className="w-4 h-4 mr-2" />
-                            Logout
+                            <defs>
+                              <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                              </linearGradient>
+                              <linearGradient id="colorGrowth" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              vertical={false}
+                              stroke={isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}
+                            />
+                            <XAxis
+                              dataKey="month"
+                              stroke={isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'}
+                              fontSize={12}
+                              fontWeight={700}
+                              tickLine={false}
+                              axisLine={false}
+                            />
+                            <YAxis
+                              yAxisId="left"
+                              stroke={isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'}
+                              fontSize={12}
+                              fontWeight={700}
+                              tickLine={false}
+                              axisLine={false}
+                            />
+                            <YAxis
+                              yAxisId="right"
+                              orientation="right"
+                              stroke={isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'}
+                              fontSize={12}
+                              fontWeight={700}
+                              tickLine={false}
+                              axisLine={false}
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                background: isDark ? 'rgba(15,17,21,0.95)' : 'rgba(255,255,255,0.95)',
+                                backdropFilter: 'blur(12px)',
+                                border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                                borderRadius: '16px',
+                                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+                                padding: '12px'
+                              }}
+                              labelStyle={{ fontWeight: 'bold', marginBottom: '8px' }}
+                            />
+                            <Legend
+                              wrapperStyle={{ paddingTop: '20px' }}
+                              iconType="circle"
+                            />
+                            <Area
+                              yAxisId="left"
+                              type="monotone"
+                              dataKey="revenue"
+                              stroke="#3b82f6"
+                              strokeWidth={3}
+                              fill="url(#colorRevenue)"
+                              name="Revenue (Lakhs)"
+                            />
+                            <Bar
+                              yAxisId="right"
+                              dataKey="colleges"
+                              fill="#8b5cf6"
+                              radius={[8, 8, 0, 0]}
+                              name="Institutions"
+                            />
+                            <Line
+                              yAxisId="right"
+                              type="monotone"
+                              dataKey="growth"
+                              stroke="#f59e0b"
+                              strokeWidth={3}
+                              dot={{ r: 6, fill: '#f59e0b' }}
+                              name="Growth %"
+                            />
+                          </ComposedChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+
+                  {/* Right Column - Quick Stats */}
+                  <motion.div variants={itemVariants} className="space-y-6">
+                    {/* Security Overview */}
+                    <Card
+                      className={`border-none shadow-xl overflow-hidden relative ${isDark ? 'bg-gradient-to-br from-emerald-500/10 to-teal-500/10' : 'bg-gradient-to-br from-emerald-50 to-teal-50'
+                        } backdrop-blur-xl`}
+                    >
+                      <div className="absolute top-0 right-0 w-40 h-40 -mr-16 -mt-16 rounded-full bg-emerald-500/20 blur-3xl" />
+
+                      <CardHeader className="relative z-10">
+                        <CardTitle className="text-lg font-black uppercase flex items-center gap-2">
+                          <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                          Security Status
+                        </CardTitle>
+                      </CardHeader>
+
+                      <CardContent className="space-y-6 relative z-10">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <p className="text-4xl font-black">99.8%</p>
+                            <p className="text-xs font-bold text-muted-foreground uppercase">
+                              Threat Isolation
+                            </p>
+                          </div>
+                          <div className="relative">
+                            <div className="w-20 h-20 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin" />
+                            <CheckCircle className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 text-emerald-500" />
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          {securityEvents.map((event, idx) => (
+                            <motion.div
+                              key={idx}
+                              whileHover={{ scale: 1.02 }}
+                              className={`p-3 rounded-xl ${isDark ? 'bg-black/20' : 'bg-white/50'
+                                } border border-white/10`}
+                            >
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs font-bold">{event.type}</span>
+                                <span className={`text-xs font-black ${event.color}`}>
+                                  {event.count}
+                                </span>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Geographic Distribution */}
+                    <Card
+                      className={`border-none shadow-xl ${isDark ? 'bg-white/[0.02]' : 'bg-white'
+                        } backdrop-blur-xl`}
+                    >
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center justify-between">
+                          Geographic Spread
+                          <Globe className="w-4 h-4" />
+                        </CardTitle>
+                      </CardHeader>
+
+                      <CardContent className="flex items-center justify-center py-4">
+                        <div className="relative w-48 h-48">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={revenueByPlan}
+                                innerRadius={65}
+                                outerRadius={90}
+                                paddingAngle={4}
+                                dataKey="value"
+                                stroke="none"
+                              >
+                                {revenueByPlan.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                              </Pie>
+                            </PieChart>
+                          </ResponsiveContainer>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="text-3xl font-black">100%</span>
+                            <span className="text-[8px] uppercase font-black text-muted-foreground">
+                              Coverage
+                            </span>
+                          </div>
+                        </div>
+                      </CardContent>
+
+                      <CardContent className="pt-0">
+                        <div className="space-y-2">
+                          {revenueByPlan.map((plan, idx) => (
+                            <div key={idx} className="flex items-center justify-between text-xs">
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-3 h-3 rounded-full"
+                                  style={{ backgroundColor: plan.color }}
+                                />
+                                <span className="font-bold">{plan.plan}</span>
+                              </div>
+                              <span className="font-black">{plan.value}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                </div>
+
+                {/* ==================== MAIN CHARTS SECTION ==================== */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8">
+                  {/* Main Analytics Chart */}
+                  <motion.div
+                    variants={itemVariants}
+                    className="lg:col-span-8 flex flex-col gap-4 lg:gap-8"
+                  >    <Card className={`border-none shadow-xl h-full ${isDark ? 'bg-white/[0.02]' : 'bg-white'
+                    } backdrop-blur-xl`}>
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                          <CardTitle className="text-lg font-black uppercase">Infrastructure Pulse</CardTitle>
+                          <CardDescription className="text-xs font-bold">Live feedback from global clusters</CardDescription>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleRefresh}
+                          className="group"
+                        >
+                          <motion.div
+                            animate={{ rotate: isRefreshing ? 360 : 0 }}
+                            transition={{ duration: 1, ease: "linear", repeat: isRefreshing ? Infinity : 0 }}
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                          </motion.div>
+                        </Button>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {systemHealth.map((sys, i) => (
+                          <motion.div
+                            key={i}
+                            whileHover={{ scale: 1.02, x: 4 }}
+                            className={`p-4 rounded-2xl flex items-center justify-between border border-white/5 transition-all group ${isDark ? 'bg-black/20 hover:bg-white/5' : 'bg-slate-50 hover:bg-slate-100'
+                              }`}
+                          >
+                            <div className="flex items-center gap-4">
+                              <motion.div
+                                animate={{
+                                  scale: [1, 1.2, 1],
+                                  opacity: sys.status === 'Operational' ? [1, 0.5, 1] : 1
+                                }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                                className={`w-3 h-3 rounded-full ${sys.status === 'Operational' ? 'bg-emerald-500' : 'bg-amber-500'
+                                  }`}
+                              />
+                              <div>
+                                <p className="font-bold text-sm tracking-tight">{sys.component}</p>
+                                <p className="text-[10px] text-muted-foreground uppercase font-black">
+                                  {sys.uptime} Up-time • {sys.latency} Latency
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right space-y-1">
+                              <p className="text-xs font-black text-blue-500">{sys.load} Load</p>
+                              <div className="h-1 w-20 bg-muted/40 rounded-full overflow-hidden">
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: sys.load }}
+                                  className="h-full bg-blue-500"
+                                />
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+
+                  {/* AI Model Insight */}
+                  <motion.div variants={itemVariants} className="lg:col-span-2">
+                    <Card className={`border-none ${isDark ? 'bg-black/20 text-white' : 'bg-white text-slate-900 border border-slate-200'} shadow-2xl h-full overflow-hidden relative group`}>
+                      <div className={`absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 ${isDark ? 'bg-white/10' : 'bg-indigo-500/10'} rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700`} />
+                      <CardHeader className="relative z-10">
+                        <CardTitle className="text-lg font-black uppercase flex items-center gap-2">
+                          <Zap className={`w-5 h-5 fill-current ${!isDark && 'text-indigo-600'}`} />
+                          Intelligence Engine
+                        </CardTitle>
+                        <CardDescription className={`${isDark ? 'text-white/70' : 'text-slate-500'} font-bold`}>Model V4.2 Real-time Metrics</CardDescription>
+                      </CardHeader>
+                      <CardContent className="grid grid-cols-2 gap-4 relative z-10">
+                        {modelPerformance.map((m, i) => (
+                          <motion.div
+                            key={i}
+                            whileHover={{ scale: 1.05 }}
+                            className={`p-4 rounded-3xl border flex flex-col items-center justify-center text-center space-y-1 transition-colors ${isDark
+                              ? 'bg-white/10 border-white/10 text-white'
+                              : 'bg-slate-50 border-slate-200 text-slate-900 hover:bg-slate-100'
+                              }`}
+                          >
+                            <p className={`text-[10px] font-black uppercase leading-tight ${isDark ? 'opacity-60' : 'text-slate-400'}`}>{m.metric}</p>
+                            <p className="text-3xl font-black">{m.value}%</p>
+                            <div className={`h-1 w-full mt-2 rounded-full overflow-hidden ${isDark ? 'bg-white/10' : 'bg-slate-200'}`}>
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${m.value}%` }}
+                                className={`h-full ${isDark ? 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]' : 'bg-indigo-600'}`}
+                              />
+                            </div>
+                          </motion.div>
+                        ))}
+                      </CardContent>
+                      <div className={`p-6 mt-2 flex items-center justify-between border-t relative z-10 ${isDark ? 'bg-black/20 border-white/5' : 'bg-slate-50 border-slate-200'
+                        }`}>
+                        <div className="flex items-center gap-2">
+                          <motion.div
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                            className={`w-2 h-2 rounded-full ${isDark ? 'bg-emerald-400' : 'bg-emerald-500'}`}
+                          />
+                          <span className={`text-[10px] font-black uppercase ${isDark ? 'opacity-80 text-white' : 'text-slate-500'}`}>Sync Status: Optimal</span>
+                        </div>
+                        <Button variant="link" size="sm" className={`font-black text-[10px] uppercase p-0 h-auto ${isDark ? 'text-white/80 hover:text-white' : 'text-indigo-600 hover:text-indigo-700'
+                          }`}>
+                          View Detailed Logs <ChevronRight className="w-3 h-3 ml-1" />
+                        </Button>
+                      </div>
+                    </Card>
+                  </motion.div>
+                </div>
+
+                {/* ==================== PERFORMANCE & RESOURCE METRICS ==================== */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8">
+                  {/* Model Performance */}
+                  <motion.div
+                    variants={itemVariants}
+                    className="lg:col-span-7"
+                  >      <Card className={`border-none shadow-xl ${isDark ? 'bg-white/[0.02]' : 'bg-white'
+                    } backdrop-blur-xl`}>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-lg font-black uppercase">Activity Feed</CardTitle>
+                            <CardDescription className="text-xs font-bold">Real-time system events</CardDescription>
+                          </div>
+                          <Button variant="ghost" size="sm" className="text-xs font-bold">
+                            View All
                           </Button>
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Stats Bar */}
-          <div className={`px-8 py-3 border-t ${isDark ? 'border-white/5 bg-black/20' : 'border-slate-200 bg-slate-50/50'
-            }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                {[
-                  { icon: Server, label: "Load", value: `${systemLoad.toFixed(1)}%`, color: "blue" },
-                  { icon: Activity, label: "API", value: apiCalls.toLocaleString(), color: "emerald" },
-                  { icon: Database, label: "Storage", value: "2.4 TB", color: "violet" },
-                  { icon: Zap, label: "Uptime", value: "99.9%", color: "amber" },
-                ].map((stat, idx) => (
-                  <motion.div
-                    key={idx}
-                    whileHover={{ scale: 1.05 }}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <stat.icon className={`w-4 h-4 text-${stat.color}-500`} />
-                    <span className="text-xs font-bold text-muted-foreground">{stat.label}:</span>
-                    <span className="text-xs font-black">{stat.value}</span>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {recentActivity.slice(0, 6).map((activity) => (
+                          <motion.div
+                            key={activity.id}
+                            whileHover={{ x: 4, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}
+                            className={`p-4 rounded-xl border border-white/5 transition-all cursor-pointer`}
+                          >
+                            <div className="flex items-start gap-4">
+                              <div className={`p-2 rounded-lg ${activity.type === 'success' ? 'bg-emerald-500/10 text-emerald-500' :
+                                activity.type === 'warning' ? 'bg-amber-500/10 text-amber-500' :
+                                  activity.type === 'error' ? 'bg-rose-500/10 text-rose-500' :
+                                    'bg-blue-500/10 text-blue-500'
+                                }`}>
+                                <activity.icon className="w-4 h-4" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-start justify-between">
+                                  <div>
+                                    <p className="font-bold text-sm">{activity.title}</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">{activity.description}</p>
+                                  </div>
+                                  <span className="text-[10px] text-muted-foreground font-bold">{activity.time}</span>
+                                </div>
+                                <div className="mt-2 flex items-center gap-2">
+                                  <span className="text-[10px] font-black px-2 py-0.5 rounded bg-muted/50">
+                                    {activity.user}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </CardContent>
+                    </Card>
                   </motion.div>
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
-                {quickActions.slice(0, 4).map((action, idx) => (
-                  <Button
-                    key={idx}
-                    variant="ghost"
-                    size="sm"
-                    onClick={action.action}
-                    className="h-7 px-3 text-xs font-bold rounded-lg"
-                  >
-                    <action.icon className="w-3 h-3 mr-1.5" />
-                    {action.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </header>
 
-        {/* ==================== SCROLLABLE CONTENT ==================== */}
-        <div className="p-8 space-y-8 overflow-y-auto h-[calc(100vh-170px)] scrollbar-thin scrollbar-thumb-blue-500/20 scrollbar-track-transparent">
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="space-y-8"
-          >
-            {/* ==================== KEY METRICS GRID ==================== */}
-            <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {collegeStats.map((stat, idx) => (
-                <motion.div key={idx} variants={itemVariants}>
-                  <Card
-                    className={`group relative overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl border-none cursor-pointer ${isDark ? 'bg-white/[0.02] hover:bg-white/[0.05]' : 'bg-white hover:shadow-blue-500/10'
-                      } backdrop-blur-xl`}
-                  >
-                    {/* Animated Background */}
-                    <div
-                      className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${stat.gradient} blur-3xl`}
-                      style={{ transform: 'scale(0.8)' }}
-                    />
+                  {/* Top Performers */}
+                  <motion.div variants={itemVariants}>
+                    <Card className={`border-none shadow-xl ${isDark ? 'bg-white/[0.02]' : 'bg-white'
+                      } backdrop-blur-xl`}>
+                      <CardHeader>
+                        <CardTitle className="text-lg font-black uppercase flex items-center gap-2">
+                          <Star className="w-5 h-5 text-amber-500" />
+                          Top Performers
+                        </CardTitle>
+                        <CardDescription className="text-xs font-bold">Highest rated institutions</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {topPerformers.map((performer, idx) => (
+                          <motion.div
+                            key={idx}
+                            whileHover={{ scale: 1.02 }}
+                            className="relative"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center font-black text-white text-sm shadow-lg">
+                                {idx + 1}
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-bold text-sm">{performer.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {performer.students} students • +{performer.growth}%
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-lg font-black">{performer.score}%</p>
+                                <div className="flex items-center gap-0.5">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`w-2.5 h-2.5 ${i < Math.floor(performer.score / 20)
+                                        ? 'fill-amber-500 text-amber-500'
+                                        : 'text-muted-foreground/30'
+                                        }`}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="mt-2">
+                              <div className={`h-1.5 w-full rounded-full overflow-hidden ${isDark ? 'bg-white/5' : 'bg-slate-100'
+                                }`}>
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${performer.score}%` }}
+                                  transition={{ duration: 1, delay: idx * 0.1 }}
+                                  className="h-full rounded-full"
+                                  style={{ backgroundColor: performer.color }}
+                                />
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                </div>
 
-                    <CardHeader className="flex flex-row items-start justify-between pb-2 space-y-0 relative z-10">
-                      <div className="space-y-3 flex-1">
-                        <motion.div
-                          whileHover={{ scale: 1.1, rotate: 5 }}
-                          className={`${stat.bgColor} p-3 rounded-2xl inline-flex shadow-lg`}
+                {/* ==================== INSTITUTION MANAGEMENT TABLE ==================== */}
+                <motion.div variants={itemVariants}>
+                  <Card className={`border-none shadow-xl overflow-hidden ${isDark ? 'bg-white/[0.02]' : 'bg-white'
+                    } backdrop-blur-xl`}>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg font-black uppercase">Institution Management</CardTitle>
+                        <CardDescription className="text-xs font-bold">
+                          Manage all partner institutions
+                        </CardDescription>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className={`px-4 py-2 rounded-xl border ${isDark ? 'bg-black/20 border-white/10' : 'bg-white border-slate-200'}`}>
+                          <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            className={`bg-transparent text-sm font-bold focus:outline-none w-full ${isDark ? 'text-white' : 'text-slate-900'}`}
+                          >
+                            <option value="name">Sort by Name</option>
+                            <option value="students">Sort by Students</option>
+                            <option value="placement">Sort by Placement</option>
+                            <option value="revenue">Sort by Revenue</option>
+                          </select>
+                        </div>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="font-bold rounded-xl shadow-lg bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                          onClick={() => console.log('Add Institution')}
                         >
-                          <stat.icon className={`w-6 h-6 ${stat.color}`} />
-                        </motion.div>
-                        <div className="space-y-1">
-                          <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
-                            {stat.label}
-                          </p>
-                          <div className="flex items-baseline gap-2">
-                            <p className="text-3xl font-black tracking-tighter">{stat.value}</p>
-                            <span
-                              className={`text-xs font-black px-2 py-1 rounded-lg flex items-center gap-1 ${stat.trend === 'up'
-                                ? 'bg-emerald-500/10 text-emerald-500'
-                                : 'bg-rose-500/10 text-rose-500'
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Institution
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {/* Filters */}
+                      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 rounded-xl border border-white/5">
+                        <div className="flex flex-wrap items-center gap-3">
+                          {['all', 'Active', 'Warning', 'Inactive'].map((status) => (
+                            <Button
+                              key={status}
+                              variant={filterStatus === status.toLowerCase() ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => setFilterStatus(status.toLowerCase())}
+                              className={`rounded-xl font-bold ${filterStatus === status.toLowerCase()
+                                ? 'shadow-lg'
+                                : 'border-opacity-30'
                                 }`}
                             >
-                              {stat.trend === 'up' ? (
-                                <ArrowUpRight className="w-3 h-3" />
-                              ) : (
-                                <ArrowDownRight className="w-3 h-3" />
-                              )}
-                              {stat.change}
-                            </span>
+                              {status}
+                            </Button>
+                          ))}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-xl font-bold border-opacity-30"
+                          >
+                            <Filter className="w-3.5 h-3.5 mr-2" />
+                            More Filters
+                          </Button>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleExport}
+                            disabled={isExporting}
+                            className="rounded-xl font-bold border-opacity-30"
+                          >
+                            {isExporting ? (
+                              <RefreshCw className="w-3.5 h-3.5 mr-2 animate-spin" />
+                            ) : (
+                              <Download className="w-3.5 h-3.5 mr-2" />
+                            )}
+                            {isExporting ? 'Exporting...' : 'Export'}
+                          </Button>
+                          <div className="flex items-center border rounded-xl overflow-hidden">
+                            <Button
+                              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                              size="sm"
+                              onClick={() => setViewMode('grid')}
+                              className="rounded-none h-9 px-3"
+                            >
+                              <Grid className="w-4 h-4" />
+                            </Button>
+                            <div className={`w-px h-4 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
+                            <Button
+                              variant={viewMode === 'list' ? 'default' : 'ghost'}
+                              size="sm"
+                              onClick={() => setViewMode('list')}
+                              className="rounded-none h-9 px-3"
+                            >
+                              <List className="w-4 h-4" />
+                            </Button>
                           </div>
                         </div>
                       </div>
-                    </CardHeader>
 
-                    <CardContent className="relative z-10">
-                      <div className="space-y-3">
-                        <p className="text-xs text-muted-foreground font-medium">
-                          {stat.description}
-                        </p>
+                      {/* Table */}
+                      <div className="overflow-x-auto rounded-2xl border border-white/5">
+                        <table className="w-full">
+                          <thead>
+                            <tr className={`
+                        border-b border-white/5
+                        ${isDark ? 'bg-white/[0.02]' : 'bg-slate-50'}
+                      `}>
+                              {['Institution', 'Students', 'Placement', 'Status', 'Plan', 'Revenue', 'Actions'].map((header) => (
+                                <th
+                                  key={header}
+                                  className="text-left p-4 text-xs font-black uppercase tracking-wider text-muted-foreground"
+                                >
+                                  {header}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sortedColleges.map((college) => (
+                              <motion.tr
+                                key={college.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                whileHover={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' }}
+                                className={`border-b border-white/5 transition-colors ${selectedCollege === college.id ? (isDark ? 'bg-blue-500/10' : 'bg-blue-50') : ''
+                                  }`}
+                                onClick={() => setSelectedCollege(college.id)}
+                              >
+                                <td className="p-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-black text-white">
+                                      {college.name.charAt(0)}
+                                    </div>
+                                    <div>
+                                      <p className="font-bold text-sm">{college.name}</p>
+                                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                        <MapPin className="w-3 h-3" />
+                                        {college.location}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="p-4">
+                                  <div>
+                                    <p className="font-bold">{college.students.toLocaleString()}</p>
+                                    <p className="text-xs text-muted-foreground">Students</p>
+                                  </div>
+                                </td>
+                                <td className="p-4">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-16 h-2 rounded-full overflow-hidden ${isDark ? 'bg-white/5' : 'bg-slate-100'
+                                      }`}>
+                                      <div
+                                        className="h-full bg-gradient-to-r from-green-500 to-emerald-600"
+                                        style={{ width: `${college.placement}%` }}
+                                      />
+                                    </div>
+                                    <span className="font-bold text-sm">{college.placement}%</span>
+                                  </div>
+                                </td>
+                                <td className="p-4">
+                                  <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold ${college.status === 'Active'
+                                    ? 'bg-emerald-500/10 text-emerald-500'
+                                    : college.status === 'Warning'
+                                      ? 'bg-amber-500/10 text-amber-500'
+                                      : 'bg-rose-500/10 text-rose-500'
+                                    }`}>
+                                    <div className={`w-1.5 h-1.5 rounded-full mr-2 ${college.status === 'Active' ? 'bg-emerald-500' :
+                                      college.status === 'Warning' ? 'bg-amber-500' : 'bg-rose-500'
+                                      }`} />
+                                    {college.status}
+                                  </span>
+                                </td>
+                                <td className="p-4">
+                                  <span className={`px-3 py-1 rounded-lg text-xs font-bold ${college.plan === 'Premium'
+                                    ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-indigo-500'
+                                    : college.plan === 'Standard'
+                                      ? 'bg-blue-500/10 text-blue-500'
+                                      : 'bg-slate-500/10 text-slate-500'
+                                    }`}>
+                                    {college.plan}
+                                  </span>
+                                </td>
+                                <td className="p-4">
+                                  <p className="font-bold text-lg">{college.revenue}</p>
+                                  <p className="text-xs text-muted-foreground">MTD</p>
+                                </td>
+                                <td className="p-4">
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleCollegeClick(college);
+                                      }}
+                                      className="h-8 w-8 rounded-lg"
+                                    >
+                                      <Eye className="w-3.5 h-3.5" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        console.log('Edit', college.id);
+                                      }}
+                                      className="h-8 w-8 rounded-lg"
+                                    >
+                                      <Edit className="w-3.5 h-3.5" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteInstitution(college.id, college.name);
+                                      }}
+                                      className="h-8 w-8 rounded-lg text-rose-500 hover:text-rose-600"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </motion.tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
 
-                        {/* Progress Bar */}
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-[10px] font-bold text-muted-foreground">
-                            <span>Progress</span>
-                            <span>{((stat.current / stat.target) * 100).toFixed(0)}%</span>
-                          </div>
-                          <div className={`h-2 w-full rounded-full overflow-hidden ${isDark ? 'bg-white/5' : 'bg-slate-100'
-                            }`}>
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${(stat.current / stat.target) * 100}%` }}
-                              transition={{ duration: 1, delay: idx * 0.1 }}
-                              className={`h-full bg-gradient-to-r ${stat.gradient} shadow-lg`}
-                            />
-                          </div>
+                      {/* Pagination */}
+                      <div className="flex items-center justify-between mt-6">
+                        <div className="text-sm text-muted-foreground font-bold">
+                          Showing {sortedColleges.length} of {collegeList.length} institutions
                         </div>
-
-                        {/* Mini Trend */}
-                        <div className="pt-2 border-t border-white/5 flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase">
-                            This Month
-                          </span>
-                          <div className="flex items-center gap-1">
-                            <TrendingUp className={`w-3 h-3 ${stat.color}`} />
-                            <span className={`text-[10px] font-black ${stat.color}`}>
-                              +{stat.percentage}%
-                            </span>
-                          </div>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" className="rounded-xl font-bold">
+                            Previous
+                          </Button>
+                          {[1, 2, 3].map((num) => (
+                            <Button
+                              key={num}
+                              variant="outline"
+                              size="sm"
+                              className={`rounded-xl font-bold ${num === 1 ? 'bg-blue-500 text-white border-blue-500' : ''
+                                }`}
+                            >
+                              {num}
+                            </Button>
+                          ))}
+                          <Button variant="outline" size="sm" className="rounded-xl font-bold">
+                            Next
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                 </motion.div>
-              ))}
-            </section>
 
-            {/* ==================== MAIN ANALYTICS DASHBOARD ==================== */}
-            <div className="grid lg:grid-cols-3 gap-8">
-              {/* Revenue & Growth Chart */}
-              <motion.div variants={itemVariants} className="lg:col-span-2">
-                <Card
-                  className={`h-[600px] border-none shadow-2xl relative overflow-hidden ${isDark ? 'bg-white/[0.02]' : 'bg-white'
-                    } backdrop-blur-xl`}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-violet-500/5 to-transparent pointer-events-none" />
-
-                  <CardHeader className="flex flex-row items-center justify-between relative z-10">
-                    <div className="space-y-1">
-                      <CardTitle className="text-2xl font-black tracking-tight flex items-center gap-3">
-                        Revenue Analytics
-                        <span className={`text-xs font-black px-3 py-1 rounded-lg flex items-center gap-1 ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
-                          }`}>
-                          <TrendingUp className="w-3 h-3" />
-                          +12.5%
-                        </span>
-                      </CardTitle>
-                      <CardDescription className="font-semibold">
-                        Growth trends across all institutions
-                      </CardDescription>
-                    </div>
-
-                    <div className="flex gap-2">
-                      {['week', 'month', 'quarter', 'year'].map((period) => (
-                        <Button
-                          key={period}
-                          variant={selectedPeriod === period ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setSelectedPeriod(period)}
-                          className="rounded-xl border-none shadow-sm capitalize font-bold h-9 px-4 text-xs"
-                        >
-                          {period}
-                        </Button>
-                      ))}
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="h-[480px] relative z-10">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart
-                        data={usageMetrics}
-                        margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
-                      >
-                        <defs>
-                          <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                          </linearGradient>
-                          <linearGradient id="colorGrowth" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          vertical={false}
-                          stroke={isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}
-                        />
-                        <XAxis
-                          dataKey="month"
-                          stroke={isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'}
-                          fontSize={12}
-                          fontWeight={700}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <YAxis
-                          yAxisId="left"
-                          stroke={isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'}
-                          fontSize={12}
-                          fontWeight={700}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <YAxis
-                          yAxisId="right"
-                          orientation="right"
-                          stroke={isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'}
-                          fontSize={12}
-                          fontWeight={700}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            background: isDark ? 'rgba(15,17,21,0.95)' : 'rgba(255,255,255,0.95)',
-                            backdropFilter: 'blur(12px)',
-                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                            borderRadius: '16px',
-                            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-                            padding: '12px'
-                          }}
-                          labelStyle={{ fontWeight: 'bold', marginBottom: '8px' }}
-                        />
-                        <Legend
-                          wrapperStyle={{ paddingTop: '20px' }}
-                          iconType="circle"
-                        />
-                        <Area
-                          yAxisId="left"
-                          type="monotone"
-                          dataKey="revenue"
-                          stroke="#3b82f6"
-                          strokeWidth={3}
-                          fill="url(#colorRevenue)"
-                          name="Revenue (Lakhs)"
-                        />
-                        <Bar
-                          yAxisId="right"
-                          dataKey="colleges"
-                          fill="#8b5cf6"
-                          radius={[8, 8, 0, 0]}
-                          name="Institutions"
-                        />
-                        <Line
-                          yAxisId="right"
-                          type="monotone"
-                          dataKey="growth"
-                          stroke="#f59e0b"
-                          strokeWidth={3}
-                          dot={{ r: 6, fill: '#f59e0b' }}
-                          name="Growth %"
-                        />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* Right Column - Quick Stats */}
-              <motion.div variants={itemVariants} className="space-y-6">
-                {/* Security Overview */}
-                <Card
-                  className={`border-none shadow-xl overflow-hidden relative ${isDark ? 'bg-gradient-to-br from-emerald-500/10 to-teal-500/10' : 'bg-gradient-to-br from-emerald-50 to-teal-50'
-                    } backdrop-blur-xl`}
-                >
-                  <div className="absolute top-0 right-0 w-40 h-40 -mr-16 -mt-16 rounded-full bg-emerald-500/20 blur-3xl" />
-
-                  <CardHeader className="relative z-10">
-                    <CardTitle className="text-lg font-black uppercase flex items-center gap-2">
-                      <ShieldCheck className="w-5 h-5 text-emerald-500" />
-                      Security Status
-                    </CardTitle>
-                  </CardHeader>
-
-                  <CardContent className="space-y-6 relative z-10">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="text-4xl font-black">99.8%</p>
-                        <p className="text-xs font-bold text-muted-foreground uppercase">
-                          Threat Isolation
-                        </p>
-                      </div>
-                      <div className="relative">
-                        <div className="w-20 h-20 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin" />
-                        <CheckCircle className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 text-emerald-500" />
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      {securityEvents.map((event, idx) => (
-                        <motion.div
-                          key={idx}
-                          whileHover={{ scale: 1.02 }}
-                          className={`p-3 rounded-xl ${isDark ? 'bg-black/20' : 'bg-white/50'
-                            } border border-white/10`}
-                        >
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs font-bold">{event.type}</span>
-                            <span className={`text-xs font-black ${event.color}`}>
-                              {event.count}
-                            </span>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Geographic Distribution */}
-                <Card
-                  className={`border-none shadow-xl ${isDark ? 'bg-white/[0.02]' : 'bg-white'
-                    } backdrop-blur-xl`}
-                >
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center justify-between">
-                      Geographic Spread
-                      <Globe className="w-4 h-4" />
-                    </CardTitle>
-                  </CardHeader>
-
-                  <CardContent className="flex items-center justify-center py-4">
-                    <div className="relative w-48 h-48">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={revenueByPlan}
-                            innerRadius={65}
-                            outerRadius={90}
-                            paddingAngle={4}
-                            dataKey="value"
-                            stroke="none"
-                          >
-                            {revenueByPlan.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-3xl font-black">100%</span>
-                        <span className="text-[8px] uppercase font-black text-muted-foreground">
-                          Coverage
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-
-                  <CardContent className="pt-0">
-                    <div className="space-y-2">
-                      {revenueByPlan.map((plan, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: plan.color }}
-                            />
-                            <span className="font-bold">{plan.plan}</span>
-                          </div>
-                          <span className="font-black">{plan.value}%</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </div>
-
-            {/* ==================== BENTO GRID SECTION ==================== */}
-            <div className="grid lg:grid-cols-4 gap-6">
-              {/* System Health Monitor */}
-              <motion.div variants={itemVariants} className="lg:col-span-2">
-                <Card className={`border-none shadow-xl h-full ${isDark ? 'bg-white/[0.02]' : 'bg-white'
-                  } backdrop-blur-xl`}>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle className="text-lg font-black uppercase">Infrastructure Pulse</CardTitle>
-                      <CardDescription className="text-xs font-bold">Live feedback from global clusters</CardDescription>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleRefresh}
-                      className="group"
-                    >
-                      <motion.div
-                        animate={{ rotate: isRefreshing ? 360 : 0 }}
-                        transition={{ duration: 1, ease: "linear", repeat: isRefreshing ? Infinity : 0 }}
-                      >
-                        <RefreshCw className="w-4 h-4" />
-                      </motion.div>
-                    </Button>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {systemHealth.map((sys, i) => (
-                      <motion.div
-                        key={i}
-                        whileHover={{ scale: 1.02, x: 4 }}
-                        className={`p-4 rounded-2xl flex items-center justify-between border border-white/5 transition-all group ${isDark ? 'bg-black/20 hover:bg-white/5' : 'bg-slate-50 hover:bg-slate-100'
-                          }`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <motion.div
-                            animate={{
-                              scale: [1, 1.2, 1],
-                              opacity: sys.status === 'Operational' ? [1, 0.5, 1] : 1
-                            }}
-                            transition={{ duration: 2, repeat: Infinity }}
-                            className={`w-3 h-3 rounded-full ${sys.status === 'Operational' ? 'bg-emerald-500' : 'bg-amber-500'
-                              }`}
-                          />
-                          <div>
-                            <p className="font-bold text-sm tracking-tight">{sys.component}</p>
-                            <p className="text-[10px] text-muted-foreground uppercase font-black">
-                              {sys.uptime} Up-time • {sys.latency} Latency
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right space-y-1">
-                          <p className="text-xs font-black text-blue-500">{sys.load} Load</p>
-                          <div className="h-1 w-20 bg-muted/40 rounded-full overflow-hidden">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: sys.load }}
-                              className="h-full bg-blue-500"
-                            />
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* AI Model Insight */}
-              <motion.div variants={itemVariants} className="lg:col-span-2">
-                <Card className={`border-none bg-gradient-to-br from-indigo-600 to-blue-700 text-white shadow-2xl h-full overflow-hidden relative group`}>
-                  <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700" />
-                  <CardHeader className="relative z-10">
-                    <CardTitle className="text-lg font-black uppercase flex items-center gap-2">
-                      <Zap className="w-5 h-5 fill-current" />
-                      Intelligence Engine
-                    </CardTitle>
-                    <CardDescription className="text-white/70 font-bold">Model V4.2 Real-time Metrics</CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-2 gap-4 relative z-10">
-                    {modelPerformance.map((m, i) => (
-                      <motion.div
-                        key={i}
-                        whileHover={{ scale: 1.05 }}
-                        className="p-4 rounded-3xl bg-white/10 border border-white/10 flex flex-col items-center justify-center text-center space-y-1"
-                      >
-                        <p className="text-[10px] font-black uppercase opacity-60 leading-tight">{m.metric}</p>
-                        <p className="text-3xl font-black">{m.value}%</p>
-                        <div className="h-1 w-full mt-2 bg-white/10 rounded-full overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${m.value}%` }}
-                            className="h-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"
-                          />
-                        </div>
-                      </motion.div>
-                    ))}
-                  </CardContent>
-                  <div className="p-6 bg-black/20 mt-2 flex items-center justify-between border-t border-white/5 relative z-10">
-                    <div className="flex items-center gap-2">
-                      <motion.div
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        className="w-2 h-2 rounded-full bg-emerald-400"
-                      />
-                      <span className="text-[10px] font-black uppercase opacity-80">Sync Status: Optimal</span>
-                    </div>
-                    <Button variant="link" size="sm" className="text-white/80 font-black text-[10px] uppercase p-0 h-auto hover:text-white">
-                      View Detailed Logs <ChevronRight className="w-3 h-3 ml-1" />
-                    </Button>
-                  </div>
-                </Card>
-              </motion.div>
-            </div>
-
-            {/* ==================== ACTIVITY FEED & TOP PERFORMERS ==================== */}
-            <div className="grid lg:grid-cols-3 gap-8">
-              {/* Recent Activity */}
-              <motion.div variants={itemVariants} className="lg:col-span-2">
-                <Card className={`border-none shadow-xl ${isDark ? 'bg-white/[0.02]' : 'bg-white'
-                  } backdrop-blur-xl`}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-lg font-black uppercase">Activity Feed</CardTitle>
-                        <CardDescription className="text-xs font-bold">Real-time system events</CardDescription>
-                      </div>
-                      <Button variant="ghost" size="sm" className="text-xs font-bold">
-                        View All
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {recentActivity.slice(0, 6).map((activity) => (
-                      <motion.div
-                        key={activity.id}
-                        whileHover={{ x: 4, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}
-                        className={`p-4 rounded-xl border border-white/5 transition-all cursor-pointer`}
-                      >
-                        <div className="flex items-start gap-4">
-                          <div className={`p-2 rounded-lg ${activity.type === 'success' ? 'bg-emerald-500/10 text-emerald-500' :
-                            activity.type === 'warning' ? 'bg-amber-500/10 text-amber-500' :
-                              activity.type === 'error' ? 'bg-rose-500/10 text-rose-500' :
-                                'bg-blue-500/10 text-blue-500'
-                            }`}>
-                            <activity.icon className="w-4 h-4" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <p className="font-bold text-sm">{activity.title}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5">{activity.description}</p>
-                              </div>
-                              <span className="text-[10px] text-muted-foreground font-bold">{activity.time}</span>
-                            </div>
-                            <div className="mt-2 flex items-center gap-2">
-                              <span className="text-[10px] font-black px-2 py-0.5 rounded bg-muted/50">
-                                {activity.user}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* Top Performers */}
-              <motion.div variants={itemVariants}>
-                <Card className={`border-none shadow-xl ${isDark ? 'bg-white/[0.02]' : 'bg-white'
-                  } backdrop-blur-xl`}>
-                  <CardHeader>
-                    <CardTitle className="text-lg font-black uppercase flex items-center gap-2">
-                      <Star className="w-5 h-5 text-amber-500" />
-                      Top Performers
-                    </CardTitle>
-                    <CardDescription className="text-xs font-bold">Highest rated institutions</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {topPerformers.map((performer, idx) => (
-                      <motion.div
-                        key={idx}
-                        whileHover={{ scale: 1.02 }}
-                        className="relative"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center font-black text-white text-sm shadow-lg">
-                            {idx + 1}
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-bold text-sm">{performer.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {performer.students} students • +{performer.growth}%
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-lg font-black">{performer.score}%</p>
-                            <div className="flex items-center gap-0.5">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`w-2.5 h-2.5 ${i < Math.floor(performer.score / 20)
-                                    ? 'fill-amber-500 text-amber-500'
-                                    : 'text-muted-foreground/30'
-                                    }`}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="mt-2">
-                          <div className={`h-1.5 w-full rounded-full overflow-hidden ${isDark ? 'bg-white/5' : 'bg-slate-100'
-                            }`}>
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${performer.score}%` }}
-                              transition={{ duration: 1, delay: idx * 0.1 }}
-                              className="h-full rounded-full"
-                              style={{ backgroundColor: performer.color }}
-                            />
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </div>
-
-            {/* ==================== INSTITUTION MANAGEMENT TABLE ==================== */}
-            <motion.div variants={itemVariants}>
-              <Card className={`border-none shadow-xl overflow-hidden ${isDark ? 'bg-white/[0.02]' : 'bg-white'
-                } backdrop-blur-xl`}>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg font-black uppercase">Institution Management</CardTitle>
-                    <CardDescription className="text-xs font-bold">
-                      Manage all partner institutions
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className={`px-4 py-2 rounded-xl border ${isDark ? 'bg-black/20 border-white/10' : 'bg-white border-slate-200'}`}>
-                      <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        className={`bg-transparent text-sm font-bold focus:outline-none w-full ${isDark ? 'text-white' : 'text-slate-900'}`}
-                      >
-                        <option value="name">Sort by Name</option>
-                        <option value="students">Sort by Students</option>
-                        <option value="placement">Sort by Placement</option>
-                        <option value="revenue">Sort by Revenue</option>
-                      </select>
-                    </div>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="font-bold rounded-xl shadow-lg bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-                      onClick={() => console.log('Add Institution')}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Institution
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {/* Filters */}
-                  <div className="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 rounded-xl border border-white/5">
-                    <div className="flex flex-wrap items-center gap-3">
-                      {['all', 'Active', 'Warning', 'Inactive'].map((status) => (
-                        <Button
-                          key={status}
-                          variant={filterStatus === status.toLowerCase() ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setFilterStatus(status.toLowerCase())}
-                          className={`rounded-xl font-bold ${filterStatus === status.toLowerCase()
-                            ? 'shadow-lg'
-                            : 'border-opacity-30'
-                            }`}
-                        >
-                          {status}
-                        </Button>
-                      ))}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="rounded-xl font-bold border-opacity-30"
-                      >
-                        <Filter className="w-3.5 h-3.5 mr-2" />
-                        More Filters
-                      </Button>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleExport}
-                        disabled={isExporting}
-                        className="rounded-xl font-bold border-opacity-30"
-                      >
-                        {isExporting ? (
-                          <RefreshCw className="w-3.5 h-3.5 mr-2 animate-spin" />
-                        ) : (
-                          <Download className="w-3.5 h-3.5 mr-2" />
-                        )}
-                        {isExporting ? 'Exporting...' : 'Export'}
-                      </Button>
-                      <div className="flex items-center border rounded-xl overflow-hidden">
-                        <Button
-                          variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                          size="sm"
-                          onClick={() => setViewMode('grid')}
-                          className="rounded-none h-9 px-3"
-                        >
-                          <Grid className="w-4 h-4" />
-                        </Button>
-                        <div className={`w-px h-4 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
-                        <Button
-                          variant={viewMode === 'list' ? 'default' : 'ghost'}
-                          size="sm"
-                          onClick={() => setViewMode('list')}
-                          className="rounded-none h-9 px-3"
-                        >
-                          <List className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Table */}
-                  <div className="overflow-x-auto rounded-2xl border border-white/5">
-                    <table className="w-full">
-                      <thead>
-                        <tr className={`
-                        border-b border-white/5
-                        ${isDark ? 'bg-white/[0.02]' : 'bg-slate-50'}
-                      `}>
-                          {['Institution', 'Students', 'Placement', 'Status', 'Plan', 'Revenue', 'Actions'].map((header) => (
-                            <th
-                              key={header}
-                              className="text-left p-4 text-xs font-black uppercase tracking-wider text-muted-foreground"
-                            >
-                              {header}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredColleges.map((college) => (
-                          <motion.tr
-                            key={college.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            whileHover={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' }}
-                            className={`border-b border-white/5 transition-colors ${selectedCollege === college.id ? (isDark ? 'bg-blue-500/10' : 'bg-blue-50') : ''
-                              }`}
-                            onClick={() => setSelectedCollege(college.id)}
-                          >
-                            <td className="p-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-black text-white">
-                                  {college.name.charAt(0)}
-                                </div>
-                                <div>
-                                  <p className="font-bold text-sm">{college.name}</p>
-                                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <MapPin className="w-3 h-3" />
-                                    {college.location}
-                                  </p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <div>
-                                <p className="font-bold">{college.students.toLocaleString()}</p>
-                                <p className="text-xs text-muted-foreground">Students</p>
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <div className="flex items-center gap-2">
-                                <div className={`w-16 h-2 rounded-full overflow-hidden ${isDark ? 'bg-white/5' : 'bg-slate-100'
-                                  }`}>
-                                  <div
-                                    className="h-full bg-gradient-to-r from-green-500 to-emerald-600"
-                                    style={{ width: `${college.placement}%` }}
+                {/* ==================== BOTTOM STATS ROW ==================== */}
+                <div className="grid lg:grid-cols-3 gap-6">
+                  {/* Device Breakdown */}
+                  <motion.div variants={itemVariants}>
+                    <Card className={`border-none shadow-xl ${isDark ? 'bg-white/[0.02]' : 'bg-white'
+                      } backdrop-blur-xl`}>
+                      <CardHeader>
+                        <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">
+                          Device Usage
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="flex items-center justify-center">
+                        <div className="w-48 h-48">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={deviceBreakdown}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={40}
+                                outerRadius={70}
+                                paddingAngle={2}
+                                dataKey="value"
+                              >
+                                {deviceBreakdown.map((entry, index) => (
+                                  <Cell
+                                    key={`cell-${index}`}
+                                    fill={[
+                                      '#3b82f6',
+                                      '#10b981',
+                                      '#8b5cf6'
+                                    ][index]}
                                   />
-                                </div>
-                                <span className="font-bold text-sm">{college.placement}%</span>
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold ${college.status === 'Active'
-                                ? 'bg-emerald-500/10 text-emerald-500'
-                                : college.status === 'Warning'
-                                  ? 'bg-amber-500/10 text-amber-500'
-                                  : 'bg-rose-500/10 text-rose-500'
-                                }`}>
-                                <div className={`w-1.5 h-1.5 rounded-full mr-2 ${college.status === 'Active' ? 'bg-emerald-500' :
-                                  college.status === 'Warning' ? 'bg-amber-500' : 'bg-rose-500'
-                                  }`} />
-                                {college.status}
-                              </span>
-                            </td>
-                            <td className="p-4">
-                              <span className={`px-3 py-1 rounded-lg text-xs font-bold ${college.plan === 'Premium'
-                                ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-indigo-500'
-                                : college.plan === 'Standard'
-                                  ? 'bg-blue-500/10 text-blue-500'
-                                  : 'bg-slate-500/10 text-slate-500'
-                                }`}>
-                                {college.plan}
-                              </span>
-                            </td>
-                            <td className="p-4">
-                              <p className="font-bold text-lg">{college.revenue}</p>
-                              <p className="text-xs text-muted-foreground">MTD</p>
-                            </td>
-                            <td className="p-4">
+                                ))}
+                              </Pie>
+                              <Tooltip />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                      <CardContent className="pt-0">
+                        <div className="space-y-2">
+                          {deviceBreakdown.map((device, idx) => (
+                            <div key={idx} className="flex items-center justify-between text-sm">
                               <div className="flex items-center gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleCollegeClick(college);
-                                  }}
-                                  className="h-8 w-8 rounded-lg"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    console.log('Edit', college.id);
-                                  }}
-                                  className="h-8 w-8 rounded-lg"
-                                >
-                                  <Edit className="w-3.5 h-3.5" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    console.log('Delete', college.id);
-                                  }}
-                                  className="h-8 w-8 rounded-lg text-rose-500 hover:text-rose-600"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </Button>
+                                <device.icon className="w-4 h-4 text-muted-foreground" />
+                                <span className="font-bold">{device.name}</span>
                               </div>
-                            </td>
-                          </motion.tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                              <span className="font-black">{device.value}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
 
-                  {/* Pagination */}
-                  <div className="flex items-center justify-between mt-6">
-                    <div className="text-sm text-muted-foreground font-bold">
-                      Showing {filteredColleges.length} of {collegeList.length} institutions
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" className="rounded-xl font-bold">
-                        Previous
-                      </Button>
-                      {[1, 2, 3].map((num) => (
-                        <Button
-                          key={num}
-                          variant="outline"
-                          size="sm"
-                          className={`rounded-xl font-bold ${num === 1 ? 'bg-blue-500 text-white border-blue-500' : ''
-                            }`}
-                        >
-                          {num}
-                        </Button>
-                      ))}
-                      <Button variant="outline" size="sm" className="rounded-xl font-bold">
-                        Next
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* ==================== BOTTOM STATS ROW ==================== */}
-            <div className="grid lg:grid-cols-3 gap-6">
-              {/* Device Breakdown */}
-              <motion.div variants={itemVariants}>
-                <Card className={`border-none shadow-xl ${isDark ? 'bg-white/[0.02]' : 'bg-white'
-                  } backdrop-blur-xl`}>
-                  <CardHeader>
-                    <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">
-                      Device Usage
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex items-center justify-center">
-                    <div className="w-48 h-48">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={deviceBreakdown}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={40}
-                            outerRadius={70}
-                            paddingAngle={2}
-                            dataKey="value"
-                          >
-                            {deviceBreakdown.map((entry, index) => (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={[
-                                  '#3b82f6',
-                                  '#10b981',
-                                  '#8b5cf6'
-                                ][index]}
+                  {/* Traffic Sources */}
+                  <motion.div variants={itemVariants}>
+                    <Card className={`border-none shadow-xl ${isDark ? 'bg-white/[0.02]' : 'bg-white'
+                      } backdrop-blur-xl`}>
+                      <CardHeader>
+                        <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">
+                          Traffic Sources
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {trafficSources.map((source, idx) => (
+                          <div key={idx} className="space-y-1.5">
+                            <div className="flex items-center justify-between text-sm">
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-3 h-3 rounded-full"
+                                  style={{ backgroundColor: source.color }}
+                                />
+                                <span className="font-bold">{source.source}</span>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold">{source.visits.toLocaleString()}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {source.conversion}% conversion
+                                </p>
+                              </div>
+                            </div>
+                            <div className="h-2 w-full rounded-full overflow-hidden bg-muted/20">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${(source.visits / 45000) * 100}%` }}
+                                transition={{ duration: 1, delay: idx * 0.1 }}
+                                className="h-full rounded-full"
+                                style={{ backgroundColor: source.color }}
                               />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                  <CardContent className="pt-0">
-                    <div className="space-y-2">
-                      {deviceBreakdown.map((device, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-2">
-                            <device.icon className="w-4 h-4 text-muted-foreground" />
-                            <span className="font-bold">{device.name}</span>
+                            </div>
                           </div>
-                          <span className="font-black">{device.value}%</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
 
-              {/* Traffic Sources */}
-              <motion.div variants={itemVariants}>
-                <Card className={`border-none shadow-xl ${isDark ? 'bg-white/[0.02]' : 'bg-white'
-                  } backdrop-blur-xl`}>
-                  <CardHeader>
-                    <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">
-                      Traffic Sources
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {trafficSources.map((source, idx) => (
-                      <div key={idx} className="space-y-1.5">
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: source.color }}
-                            />
-                            <span className="font-bold">{source.source}</span>
+                  {/* Completion Rates */}
+                  <motion.div variants={itemVariants}>
+                    <Card className={`border-none shadow-xl ${isDark ? 'bg-white/[0.02]' : 'bg-white'
+                      } backdrop-blur-xl`}>
+                      <CardHeader>
+                        <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">
+                          Completion Rates
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {completionRates.map((item, idx) => (
+                          <div key={idx} className="space-y-1.5">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="font-bold">{item.category}</span>
+                              <div className="text-right">
+                                <p className="font-black">{item.rate}%</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {item.completed.toLocaleString()}/{item.total.toLocaleString()}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="space-y-0.5">
+                              <div className="flex justify-between text-[10px] font-bold text-muted-foreground">
+                                <span>Current</span>
+                                <span>Target: {item.target}%</span>
+                              </div>
+                              <div className="h-2 w-full rounded-full overflow-hidden bg-muted/20">
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${item.rate}%` }}
+                                  transition={{ duration: 1, delay: idx * 0.2 }}
+                                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-600"
+                                />
+                              </div>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-bold">{source.visits.toLocaleString()}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {source.conversion}% conversion
-                            </p>
-                          </div>
-                        </div>
-                        <div className="h-2 w-full rounded-full overflow-hidden bg-muted/20">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${(source.visits / 45000) * 100}%` }}
-                            transition={{ duration: 1, delay: idx * 0.1 }}
-                            className="h-full rounded-full"
-                            style={{ backgroundColor: source.color }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* Completion Rates */}
-              <motion.div variants={itemVariants}>
-                <Card className={`border-none shadow-xl ${isDark ? 'bg-white/[0.02]' : 'bg-white'
-                  } backdrop-blur-xl`}>
-                  <CardHeader>
-                    <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">
-                      Completion Rates
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {completionRates.map((item, idx) => (
-                      <div key={idx} className="space-y-1.5">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-bold">{item.category}</span>
-                          <div className="text-right">
-                            <p className="font-black">{item.rate}%</p>
-                            <p className="text-xs text-muted-foreground">
-                              {item.completed.toLocaleString()}/{item.total.toLocaleString()}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="space-y-0.5">
-                          <div className="flex justify-between text-[10px] font-bold text-muted-foreground">
-                            <span>Current</span>
-                            <span>Target: {item.target}%</span>
-                          </div>
-                          <div className="h-2 w-full rounded-full overflow-hidden bg-muted/20">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${item.rate}%` }}
-                              transition={{ duration: 1, delay: idx * 0.2 }}
-                              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-600"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </div>
-          </motion.div>
-
-
-          {/* ==================== FOOTER ==================== */}
-          <footer className={`py-6 border-t ${isDark ? 'border-white/5' : 'border-slate-200'
-            }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <p className="text-sm text-muted-foreground font-bold">
-                  © {new Date().getFullYear()} NextGen Enterprise. All rights reserved.
-                </p>
-                <div className="flex items-center gap-4">
-                  {['Privacy', 'Terms', 'Security', 'Status'].map((item) => ( <a href={item === "Privacy" ? "/PrivacyPage" : item === "Terms" ? "/TermsAndCondition" : item === "Security" ? "/Security" : item === "Feedback" ? "/Feedback" : ""} className="text-xs font-bold text-muted-foreground p-0 h-auto">{item}</a>
-                  ))}
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
-                  <Twitter className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
-                  <Linkedin className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
-                  <Github className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </footer>
+
+                {/* ==================== FOOTER ==================== */}
+                <footer className={`py-6 border-t ${isDark ? 'border-white/5' : 'border-slate-200'
+                  }`}>
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="flex flex-col md:flex-row items-center gap-4 lg:gap-6 text-center md:text-left">
+                      <p className="text-sm text-muted-foreground font-bold">
+                        © {new Date().getFullYear()} NextGen Enterprise.
+                      </p>
+                      <div className="flex flex-wrap justify-center items-center gap-4">
+                        {['Privacy', 'Terms', 'Security', 'Status'].map((item) => (<a key={item} href={item === "Privacy" ? "/PrivacyPage" : item === "Terms" ? "/TermsAndCondition" : item === "Security" ? "/Security" : item === "Feedback" ? "/Feedback" : ""} className="text-xs font-bold text-muted-foreground p-0 h-auto">{item}</a>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                        <Twitter className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                        <Linkedin className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                        <Github className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </footer>
+              </motion.div>
+            )}
+
+            {/* ==================== TAB RENDERING ==================== */}
+            {activeTab === "institutions" && (
+              <motion.div
+                key="institutions"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="w-full"
+              >
+                <InstitutionsPage />
+              </motion.div>
+            )}
+
+            {activeTab === "analytics" && (
+              <motion.div
+                key="analytics"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <AnalyticsPage />
+              </motion.div>
+            )}
+
+            {activeTab === "students" && (
+              <motion.div
+                key="students"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <AdminStudents />
+              </motion.div>
+            )}
+
+            {activeTab === "assessments" && (
+              <motion.div
+                key="assessments"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <AssessmentsPage />
+              </motion.div>
+            )}
+
+            {activeTab === "reports" && (
+              <motion.div
+                key="reports"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <AdminReports />
+              </motion.div>
+            )}
+
+            {activeTab === "integrations" && (
+              <motion.div
+                key="integrations"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <AdminIntegrations />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* ==================== COMMAND PALETTE ==================== */}
@@ -2394,6 +2750,8 @@ export default function EnterpriseAdminDashboard() {
                     <input
                       type="text"
                       placeholder="Type a command or search..."
+                      value={commandSearch}
+                      onChange={(e) => setCommandSearch(e.target.value)}
                       className="flex-1 bg-transparent focus:outline-none text-lg font-bold"
                       autoFocus
                     />
@@ -2403,27 +2761,36 @@ export default function EnterpriseAdminDashboard() {
                   </div>
                 </div>
                 <div className="max-h-96 overflow-y-auto p-2">
-                  {[
-                    { category: 'Navigation', commands: ['Dashboard', 'Institutions', 'Analytics'] },
-                    { category: 'Actions', commands: ['Add Institution', 'Export Data', 'Generate Report'] },
-                    { category: 'Settings', commands: ['User Settings', 'System Settings', 'Billing'] },
-                  ].map((group, idx) => (
+                  {filteredCommands.map((group, idx) => (
                     <div key={idx} className="mb-4">
                       <p className="text-xs font-bold uppercase text-muted-foreground px-3 py-2">
                         {group.category}
                       </p>
-                      {group.commands.map((cmd, cmdIdx) => (
-                        <motion.button
-                          key={cmdIdx}
-                          whileHover={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
-                          className="w-full text-left px-3 py-2.5 rounded-lg flex items-center justify-between"
-                        >
-                          <span className="font-bold">{cmd}</span>
-                          <span className="text-xs text-muted-foreground">↲ Enter</span>
-                        </motion.button>
-                      ))}
+                      {group.items.map((cmd) => {
+                        const Icon = cmd.icon;
+                        return (
+                          <motion.button
+                            key={cmd.id}
+                            whileHover={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
+                            onClick={cmd.action}
+                            className="w-full text-left px-3 py-2.5 rounded-lg flex items-center justify-between group"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Icon className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
+                              <span className="font-bold">{cmd.label}</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">↲ Enter</span>
+                          </motion.button>
+                        );
+                      })}
                     </div>
                   ))}
+                  {filteredCommands.every(c => c.items.length === 0) && (
+                    <div className="p-8 text-center text-muted-foreground">
+                      <p className="font-bold">No commands found</p>
+                      <p className="text-xs mt-1">Try a different search term</p>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </motion.div>
@@ -2451,14 +2818,14 @@ export default function EnterpriseAdminDashboard() {
                 <CardHeader className="flex flex-row items-center justify-between border-b border-white/5">
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-black text-white text-xl">
-                      {selectedInstitution.name.charAt(0)}
+                      {selectedInstitution?.name.charAt(0)}
                     </div>
                     <div>
                       <CardTitle className="text-2xl font-black">
-                        {selectedInstitution.name}
+                        {selectedInstitution?.name}
                       </CardTitle>
                       <CardDescription className="font-bold">
-                        {selectedInstitution.location} • Est. {selectedInstitution.established}
+                        {selectedInstitution?.location} • Est. {selectedInstitution?.established}
                       </CardDescription>
                     </div>
                   </div>
@@ -2475,7 +2842,7 @@ export default function EnterpriseAdminDashboard() {
                   <div className="grid grid-cols-3 gap-6">
                     <div className="col-span-2 space-y-6">
                       <div className="grid grid-cols-3 gap-4">
-                        {[
+                        {selectedInstitution && [
                           { label: 'Rating', value: selectedInstitution.rating, icon: Star, color: 'amber' },
                           { label: 'Growth', value: `${selectedInstitution.growth}%`, icon: TrendingUp, color: 'emerald' },
                           { label: 'Courses', value: selectedInstitution.courses, icon: BookOpen, color: 'blue' },
@@ -2509,7 +2876,7 @@ export default function EnterpriseAdminDashboard() {
                         }`}>
                         <h4 className="font-bold text-lg mb-4">Performance Overview</h4>
                         <div className="space-y-4">
-                          {[
+                          {selectedInstitution && [
                             { label: 'Engagement Rate', value: selectedInstitution.engagement, color: 'blue' },
                             { label: 'Retention Rate', value: selectedInstitution.retention, color: 'emerald' },
                             { label: 'Satisfaction Score', value: selectedInstitution.satisfaction, color: 'amber' },
@@ -2539,18 +2906,22 @@ export default function EnterpriseAdminDashboard() {
                       <div>
                         <h4 className="font-bold mb-3">Contact Information</h4>
                         <div className="space-y-3">
-                          <div className="flex items-center gap-2 text-sm">
-                            <Mail className="w-4 h-4 text-muted-foreground" />
-                            <span>{selectedInstitution.email}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <Phone className="w-4 h-4 text-muted-foreground" />
-                            <span>{selectedInstitution.phone}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <MapPin className="w-4 h-4 text-muted-foreground" />
-                            <span>{selectedInstitution.location}</span>
-                          </div>
+                          {selectedInstitution && (
+                            <>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Mail className="w-4 h-4 text-muted-foreground" />
+                                <span>{selectedInstitution.email}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Phone className="w-4 h-4 text-muted-foreground" />
+                                <span>{selectedInstitution.phone}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <MapPin className="w-4 h-4 text-muted-foreground" />
+                                <span>{selectedInstitution.location}</span>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
                       <div className={`p-4 rounded-2xl ${isDark ? 'bg-white/5' : 'bg-slate-50'
@@ -2607,6 +2978,199 @@ export default function EnterpriseAdminDashboard() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* ==================== ADD INSTITUTION MODAL ==================== */}
+        <Dialog open={showAddInstitution} onOpenChange={setShowAddInstitution}>
+          <DialogContent className={`max-w-2xl ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black flex items-center gap-2">
+                <Plus className="w-6 h-6 text-blue-500" />
+                Add New Institution
+              </DialogTitle>
+              <DialogDescription>
+                Fill in the details to add a new institution to the platform
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="font-bold">Institution Name *</Label>
+                  <Input
+                    id="name"
+                    placeholder="e.g., IIT Delhi"
+                    value={institutionForm.name}
+                    onChange={(e) => setInstitutionForm({ ...institutionForm, name: e.target.value })}
+                    className="font-medium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="font-bold">Email Address *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="admin@institution.edu"
+                    value={institutionForm.email}
+                    onChange={(e) => setInstitutionForm({ ...institutionForm, email: e.target.value })}
+                    className="font-medium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="font-bold">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+91 11 2659 1000"
+                    value={institutionForm.phone}
+                    onChange={(e) => setInstitutionForm({ ...institutionForm, phone: e.target.value })}
+                    className="font-medium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="location" className="font-bold">Location *</Label>
+                  <Input
+                    id="location"
+                    placeholder="City, State"
+                    value={institutionForm.location}
+                    onChange={(e) => setInstitutionForm({ ...institutionForm, location: e.target.value })}
+                    className="font-medium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="type" className="font-bold">Institution Type</Label>
+                  <Input
+                    id="type"
+                    placeholder="Engineering, Medical, etc."
+                    value={institutionForm.type}
+                    onChange={(e) => setInstitutionForm({ ...institutionForm, type: e.target.value })}
+                    className="font-medium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="established" className="font-bold">Established Year</Label>
+                  <Input
+                    id="established"
+                    type="number"
+                    placeholder="1961"
+                    value={institutionForm.established}
+                    onChange={(e) => setInstitutionForm({ ...institutionForm, established: e.target.value })}
+                    className="font-medium"
+                  />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="plan" className="font-bold">Subscription Plan</Label>
+                  <Select
+                    value={institutionForm.plan}
+                    onValueChange={(value: "Premium" | "Standard" | "Basic") =>
+                      setInstitutionForm({ ...institutionForm, plan: value })
+                    }
+                  >
+                    <SelectTrigger className="font-medium">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Premium">Premium</SelectItem>
+                      <SelectItem value="Standard">Standard</SelectItem>
+                      <SelectItem value="Basic">Basic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowAddInstitution(false);
+                  setInstitutionForm({
+                    name: "",
+                    email: "",
+                    phone: "",
+                    location: "",
+                    type: "",
+                    established: "",
+                    plan: "Standard"
+                  });
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAddInstitution}
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 font-bold"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Institution
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* ==================== IMPORT DATA MODAL ==================== */}
+        <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+          <DialogContent className={`max-w-lg ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black flex items-center gap-2">
+                <Upload className="w-6 h-6 text-emerald-500" />
+                Import Data
+              </DialogTitle>
+              <DialogDescription>
+                Upload a CSV or Excel file to import institution data
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className={`border-2 border-dashed rounded-xl p-8 text-center ${isDark ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-slate-50'
+                }`}>
+                <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <Label htmlFor="file-upload" className="cursor-pointer">
+                  <span className="font-bold text-foreground">Click to upload</span>
+                  <span className="text-muted-foreground"> or drag and drop</span>
+                </Label>
+                <Input
+                  id="file-upload"
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  onChange={handleImportData}
+                  className="hidden"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  CSV, XLSX up to 10MB
+                </p>
+              </div>
+              <div className={`p-4 rounded-lg ${isDark ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-blue-50 border border-blue-200'
+                }`}>
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-blue-500 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-bold text-foreground mb-1">File Format Requirements</p>
+                    <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                      <li>First row should contain column headers</li>
+                      <li>Required columns: Name, Email, Location</li>
+                      <li>Optional columns: Phone, Type, Established</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowImportDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  const input = document.getElementById('file-upload') as HTMLInputElement;
+                  input?.click();
+                }}
+                className="bg-gradient-to-r from-emerald-500 to-teal-600 font-bold"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Choose File
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main >
     </div >
   );

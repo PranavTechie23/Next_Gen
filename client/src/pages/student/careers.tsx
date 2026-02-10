@@ -1,980 +1,1720 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ThemeToggle } from '@/components/ThemeToggle';
+import { Progress } from '@/components/ui/progress';
 import {
-  ArrowLeft,
-  Briefcase,
-  MapPin,
-  Clock,
-  Users,
-  TrendingUp,
-  Heart,
-  Zap,
-  DollarSign,
-  Globe,
-  Code,
-  Palette,
-  Settings,
-  TrendingDown,
-  Award,
-  Coffee,
-  Laptop,
-  Calendar,
   Target,
   Rocket,
+  TrendingUp,
+  Code,
+  Database,
+  Smartphone,
+  Brain,
   Shield,
+  Palette,
+  Package,
+  TestTube,
+  Blocks,
+  Gamepad2,
   Star,
   CheckCircle,
+  Lock,
+  Clock,
+  DollarSign,
+  Briefcase,
+  MapPin,
   ArrowRight,
-  Building,
-  GraduationCap,
-  BookOpen,
-  MessageSquare,
+  ChevronRight,
   ChevronDown,
+  Zap,
+  Award,
+  Users,
+  TrendingDown,
+  Flame,
+  Trophy,
+  BookOpen,
+  Video,
+  FileText,
+  ExternalLink,
+  Play,
+  Sparkles,
+  BarChart3,
+  PieChart,
+  Activity,
+  Lightbulb,
+  Github,
+  Globe,
+  Building,
+  Calendar,
+  Filter,
   Search,
-  Filter
+  X,
+  RefreshCw,
+  Settings,
+  Info,
+  AlertCircle,
+  Heart,
+  Bookmark,
+  Share2,
+  MessageSquare,
+  ThumbsUp,
+  Eye,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
+  Plus,
+  Maximize2,
+  Minimize2,
+  LayoutGrid,
+  LayoutList,
+  SlidersHorizontal,
+  UserCheck,
+  GraduationCap,
+  Laptop,
+  Coffee,
+  Home,
+  CloudRain
 } from 'lucide-react';
+
+
+interface Skill {
+  id: string;
+  name: string;
+  status: 'completed' | 'in-progress' | 'locked';
+  progress?: number;
+  estimatedWeeks: number;
+  category: string;
+}
+
+interface CareerLevel {
+  level: number;
+  title: string;
+  duration: string;
+  skills: Skill[];
+}
+
+interface Project {
+  id: string;
+  title: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  skillsUsed: string[];
+  estimatedHours: number;
+  status: 'completed' | 'in-progress' | 'not-started';
+  description: string;
+}
+
+interface CareerPath {
+  id: string;
+  name: string;
+  icon: any;
+  color: string;
+  description: string;
+  matchScore: number;
+  avgSalary: {
+    fresher: string;
+    junior: string;
+    mid: string;
+    senior: string;
+  };
+  jobOpenings: number;
+  timeToJobReady: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  demandTrend: 'up' | 'down' | 'stable';
+  remotePercentage: number;
+  levels: CareerLevel[];
+  projects: Project[];
+  learningResources: LearningResource[];
+  topCompanies: string[];
+  relatedPaths: string[];
+}
+
+interface LearningResource {
+  id: string;
+  title: string;
+  type: 'video' | 'article' | 'course' | 'documentation' | 'practice';
+  platform: string;
+  isFree: boolean;
+  url: string;
+  duration: string;
+  rating: number;
+}
+
+interface SuccessStory {
+  name: string;
+  avatar: string;
+  role: string;
+  company: string;
+  package: string;
+  timeline: string;
+  path: string;
+  quote: string;
+  skills: string[];
+}
+
+interface UserProfile {
+  name: string;
+  currentSkills: string[];
+  interests: string[];
+  preferredPath?: string;
+  hoursPerWeek: number;
+  targetRole: string;
+  timeline: string;
+}
+
+const careerPaths: CareerPath[] = [
+  {
+    id: 'frontend',
+    name: 'Frontend Developer',
+    icon: Code,
+    color: 'from-blue-500 to-cyan-500',
+    description: 'Build beautiful, responsive user interfaces and create amazing web experiences',
+    matchScore: 92,
+    avgSalary: {
+      fresher: '₹3-6 LPA',
+      junior: '₹6-12 LPA',
+      mid: '₹12-20 LPA',
+      senior: '₹20-40 LPA'
+    },
+    jobOpenings: 1247,
+    timeToJobReady: '12-14 months',
+    difficulty: 'Medium',
+    demandTrend: 'up',
+    remotePercentage: 65,
+    levels: [
+      {
+        level: 1,
+        title: 'Beginner',
+        duration: '0-3 months',
+        skills: [
+          { id: 's1', name: 'HTML5', status: 'completed', progress: 100, estimatedWeeks: 2, category: 'Core' },
+          { id: 's2', name: 'CSS3', status: 'completed', progress: 100, estimatedWeeks: 2, category: 'Core' },
+          { id: 's3', name: 'JavaScript Basics', status: 'in-progress', progress: 60, estimatedWeeks: 4, category: 'Core' },
+          { id: 's4', name: 'Git & GitHub', status: 'locked', estimatedWeeks: 1, category: 'Tools' },
+          { id: 's5', name: 'Responsive Design', status: 'locked', estimatedWeeks: 2, category: 'Design' }
+        ]
+      },
+      {
+        level: 2,
+        title: 'Intermediate',
+        duration: '3-6 months',
+        skills: [
+          { id: 's6', name: 'JavaScript ES6+', status: 'locked', estimatedWeeks: 3, category: 'Core' },
+          { id: 's7', name: 'React.js', status: 'locked', estimatedWeeks: 6, category: 'Framework' },
+          { id: 's8', name: 'State Management (Redux)', status: 'locked', estimatedWeeks: 2, category: 'Framework' },
+          { id: 's9', name: 'RESTful APIs', status: 'locked', estimatedWeeks: 2, category: 'Backend' },
+          { id: 's10', name: 'Tailwind CSS', status: 'locked', estimatedWeeks: 1, category: 'Styling' }
+        ]
+      },
+      {
+        level: 3,
+        title: 'Advanced',
+        duration: '6-12 months',
+        skills: [
+          { id: 's11', name: 'Next.js', status: 'locked', estimatedWeeks: 4, category: 'Framework' },
+          { id: 's12', name: 'TypeScript', status: 'locked', estimatedWeeks: 3, category: 'Language' },
+          { id: 's13', name: 'Testing (Jest, RTL)', status: 'locked', estimatedWeeks: 2, category: 'Testing' },
+          { id: 's14', name: 'Performance Optimization', status: 'locked', estimatedWeeks: 2, category: 'Optimization' },
+          { id: 's15', name: 'Build Tools (Webpack, Vite)', status: 'locked', estimatedWeeks: 1, category: 'Tools' }
+        ]
+      },
+      {
+        level: 4,
+        title: 'Expert',
+        duration: '12-18 months',
+        skills: [
+          { id: 's16', name: 'Design Patterns', status: 'locked', estimatedWeeks: 3, category: 'Architecture' },
+          { id: 's17', name: 'Micro Frontends', status: 'locked', estimatedWeeks: 2, category: 'Architecture' },
+          { id: 's18', name: 'Advanced State Management', status: 'locked', estimatedWeeks: 2, category: 'Framework' },
+          { id: 's19', name: 'CI/CD for Frontend', status: 'locked', estimatedWeeks: 1, category: 'DevOps' },
+          { id: 's20', name: 'System Design', status: 'locked', estimatedWeeks: 4, category: 'Architecture' }
+        ]
+      }
+    ],
+    projects: [
+      {
+        id: 'p1',
+        title: 'Personal Portfolio Website',
+        difficulty: 'beginner',
+        skillsUsed: ['HTML5', 'CSS3', 'JavaScript Basics'],
+        estimatedHours: 15,
+        status: 'completed',
+        description: 'Create a responsive portfolio showcasing your projects and skills'
+      },
+      {
+        id: 'p2',
+        title: 'Todo App with React',
+        difficulty: 'intermediate',
+        skillsUsed: ['React.js', 'JavaScript ES6+', 'CSS3'],
+        estimatedHours: 20,
+        status: 'in-progress',
+        description: 'Build a full-featured todo application with CRUD operations'
+      },
+      {
+        id: 'p3',
+        title: 'E-commerce Product Dashboard',
+        difficulty: 'advanced',
+        skillsUsed: ['Next.js', 'TypeScript', 'Tailwind CSS', 'RESTful APIs'],
+        estimatedHours: 40,
+        status: 'not-started',
+        description: 'Create a complete admin dashboard for managing products'
+      }
+    ],
+    learningResources: [
+      {
+        id: 'lr1',
+        title: 'The Complete Web Developer Bootcamp',
+        type: 'course',
+        platform: 'Udemy',
+        isFree: false,
+        url: '#',
+        duration: '65 hours',
+        rating: 4.7
+      },
+      {
+        id: 'lr2',
+        title: 'MDN Web Docs',
+        type: 'documentation',
+        platform: 'Mozilla',
+        isFree: true,
+        url: '#',
+        duration: 'Self-paced',
+        rating: 4.9
+      },
+      {
+        id: 'lr3',
+        title: 'freeCodeCamp Frontend',
+        type: 'practice',
+        platform: 'freeCodeCamp',
+        isFree: true,
+        url: '#',
+        duration: '300 hours',
+        rating: 4.8
+      }
+    ],
+    topCompanies: ['Google', 'Microsoft', 'Amazon', 'Meta', 'Netflix', 'Airbnb'],
+    relatedPaths: ['Full Stack Developer', 'UI/UX Designer', 'Mobile Developer']
+  },
+  {
+    id: 'backend',
+    name: 'Backend Developer',
+    icon: Database,
+    color: 'from-green-500 to-emerald-500',
+    description: 'Build robust server-side applications and APIs that power modern applications',
+    matchScore: 78,
+    avgSalary: {
+      fresher: '₹4-7 LPA',
+      junior: '₹7-14 LPA',
+      mid: '₹14-24 LPA',
+      senior: '₹24-45 LPA'
+    },
+    jobOpenings: 986,
+    timeToJobReady: '10-12 months',
+    difficulty: 'Medium',
+    demandTrend: 'up',
+    remotePercentage: 70,
+    levels: [
+      {
+        level: 1,
+        title: 'Beginner',
+        duration: '0-3 months',
+        skills: [
+          { id: 'b1', name: 'Python/Node.js Basics', status: 'locked', estimatedWeeks: 4, category: 'Language' },
+          { id: 'b2', name: 'SQL Fundamentals', status: 'locked', estimatedWeeks: 3, category: 'Database' },
+          { id: 'b3', name: 'Git & GitHub', status: 'locked', estimatedWeeks: 1, category: 'Tools' },
+          { id: 'b4', name: 'REST API Concepts', status: 'locked', estimatedWeeks: 2, category: 'API' },
+          { id: 'b5', name: 'HTTP & Networking', status: 'locked', estimatedWeeks: 2, category: 'Networking' }
+        ]
+      },
+      {
+        level: 2,
+        title: 'Intermediate',
+        duration: '3-6 months',
+        skills: [
+          { id: 'b6', name: 'Express.js/FastAPI', status: 'locked', estimatedWeeks: 4, category: 'Framework' },
+          { id: 'b7', name: 'Database Design', status: 'locked', estimatedWeeks: 3, category: 'Database' },
+          { id: 'b8', name: 'Authentication & Authorization', status: 'locked', estimatedWeeks: 2, category: 'Security' },
+          { id: 'b9', name: 'MongoDB/PostgreSQL', status: 'locked', estimatedWeeks: 3, category: 'Database' },
+          { id: 'b10', name: 'API Development', status: 'locked', estimatedWeeks: 4, category: 'API' }
+        ]
+      }
+    ],
+    projects: [],
+    learningResources: [],
+    topCompanies: ['Amazon', 'Google', 'Microsoft', 'Netflix', 'Uber', 'Stripe'],
+    relatedPaths: ['Full Stack Developer', 'DevOps Engineer', 'Cloud Architect']
+  },
+  {
+    id: 'fullstack',
+    name: 'Full Stack Developer',
+    icon: Rocket,
+    color: 'from-purple-500 to-pink-500',
+    description: 'Master both frontend and backend to build complete web applications end-to-end',
+    matchScore: 85,
+    avgSalary: {
+      fresher: '₹5-8 LPA',
+      junior: '₹8-16 LPA',
+      mid: '₹16-28 LPA',
+      senior: '₹28-50 LPA'
+    },
+    jobOpenings: 542,
+    timeToJobReady: '15-18 months',
+    difficulty: 'Hard',
+    demandTrend: 'up',
+    remotePercentage: 60,
+    levels: [],
+    projects: [],
+    learningResources: [],
+    topCompanies: ['Shopify', 'Atlassian', 'Spotify', 'Slack', 'GitHub', 'Notion'],
+    relatedPaths: ['Frontend Developer', 'Backend Developer', 'DevOps Engineer']
+  },
+  {
+    id: 'data-science',
+    name: 'Data Scientist',
+    icon: Brain,
+    color: 'from-orange-500 to-red-500',
+    description: 'Analyze data, build ML models, and derive insights to drive business decisions',
+    matchScore: 65,
+    avgSalary: {
+      fresher: '₹6-10 LPA',
+      junior: '₹10-18 LPA',
+      mid: '₹18-30 LPA',
+      senior: '₹30-60 LPA'
+    },
+    jobOpenings: 723,
+    timeToJobReady: '12-15 months',
+    difficulty: 'Hard',
+    demandTrend: 'up',
+    remotePercentage: 55,
+    levels: [],
+    projects: [],
+    learningResources: [],
+    topCompanies: ['Google', 'Amazon', 'Microsoft', 'Meta', 'Netflix', 'Uber'],
+    relatedPaths: ['Machine Learning Engineer', 'AI Engineer', 'Data Analyst']
+  },
+  {
+    id: 'mobile',
+    name: 'Mobile Developer',
+    icon: Smartphone,
+    color: 'from-cyan-500 to-blue-500',
+    description: 'Create native and cross-platform mobile apps for iOS and Android',
+    matchScore: 70,
+    avgSalary: {
+      fresher: '₹4-7 LPA',
+      junior: '₹7-14 LPA',
+      mid: '₹14-25 LPA',
+      senior: '₹25-45 LPA'
+    },
+    jobOpenings: 456,
+    timeToJobReady: '12-14 months',
+    difficulty: 'Medium',
+    demandTrend: 'stable',
+    remotePercentage: 50,
+    levels: [],
+    projects: [],
+    learningResources: [],
+    topCompanies: ['Google', 'Meta', 'Uber', 'Swiggy', 'Zomato', 'PayTM'],
+    relatedPaths: ['Frontend Developer', 'Full Stack Developer', 'UI/UX Designer']
+  },
+  {
+    id: 'devops',
+    name: 'DevOps Engineer',
+    icon: Settings,
+    color: 'from-indigo-500 to-purple-500',
+    description: 'Build and maintain infrastructure, automate deployments, and ensure reliability',
+    matchScore: 58,
+    avgSalary: {
+      fresher: '₹5-8 LPA',
+      junior: '₹8-16 LPA',
+      mid: '₹16-28 LPA',
+      senior: '₹28-50 LPA'
+    },
+    jobOpenings: 634,
+    timeToJobReady: '14-16 months',
+    difficulty: 'Hard',
+    demandTrend: 'up',
+    remotePercentage: 75,
+    levels: [],
+    projects: [],
+    learningResources: [],
+    topCompanies: ['Amazon', 'Google', 'Microsoft', 'Netflix', 'Atlassian', 'HashiCorp'],
+    relatedPaths: ['Backend Developer', 'Cloud Architect', 'Site Reliability Engineer']
+  },
+  {
+    id: 'uiux',
+    name: 'UI/UX Designer',
+    icon: Palette,
+    color: 'from-pink-500 to-rose-500',
+    description: 'Design beautiful, intuitive interfaces and create delightful user experiences',
+    matchScore: 72,
+    avgSalary: {
+      fresher: '₹3-6 LPA',
+      junior: '₹6-12 LPA',
+      mid: '₹12-22 LPA',
+      senior: '₹22-40 LPA'
+    },
+    jobOpenings: 389,
+    timeToJobReady: '10-12 months',
+    difficulty: 'Medium',
+    demandTrend: 'up',
+    remotePercentage: 60,
+    levels: [],
+    projects: [],
+    learningResources: [],
+    topCompanies: ['Apple', 'Google', 'Airbnb', 'Adobe', 'Figma', 'Spotify'],
+    relatedPaths: ['Frontend Developer', 'Product Designer', 'Graphic Designer']
+  },
+  {
+    id: 'cybersecurity',
+    name: 'Cybersecurity Specialist',
+    icon: Shield,
+    color: 'from-red-500 to-orange-500',
+    description: 'Protect systems, networks, and data from cyber threats and vulnerabilities',
+    matchScore: 55,
+    avgSalary: {
+      fresher: '₹4-7 LPA',
+      junior: '₹7-15 LPA',
+      mid: '₹15-28 LPA',
+      senior: '₹28-55 LPA'
+    },
+    jobOpenings: 445,
+    timeToJobReady: '12-15 months',
+    difficulty: 'Hard',
+    demandTrend: 'up',
+    remotePercentage: 45,
+    levels: [],
+    projects: [],
+    learningResources: [],
+    topCompanies: ['Google', 'Microsoft', 'Amazon', 'Cisco', 'Palo Alto', 'CrowdStrike'],
+    relatedPaths: ['Network Engineer', 'Ethical Hacker', 'Security Analyst']
+  }
+];
+
+const successStories: SuccessStory[] = [
+  {
+    name: 'Rahul Sharma',
+    avatar: 'RS',
+    role: 'Frontend Developer',
+    company: 'Amazon',
+    package: '₹18 LPA',
+    timeline: '14 months',
+    path: 'Frontend Developer',
+    quote: 'The structured roadmap helped me stay focused. I went from HTML basics to landing my dream job at Amazon in just over a year!',
+    skills: ['React', 'TypeScript', 'Next.js', 'Tailwind CSS']
+  },
+  {
+    name: 'Priya Mehta',
+    avatar: 'PM',
+    role: 'Full Stack Developer',
+    company: 'Flipkart',
+    package: '₹22 LPA',
+    timeline: '16 months',
+    path: 'Full Stack Developer',
+    quote: 'Building real projects and following the career path made all the difference. Now I work on features used by millions!',
+    skills: ['React', 'Node.js', 'MongoDB', 'AWS']
+  },
+  {
+    name: 'Arjun Kumar',
+    avatar: 'AK',
+    role: 'Data Scientist',
+    company: 'Microsoft',
+    package: '₹28 LPA',
+    timeline: '18 months',
+    path: 'Data Scientist',
+    quote: 'The personalized learning path and project suggestions were incredible. Went from zero to DS role at Microsoft!',
+    skills: ['Python', 'ML', 'TensorFlow', 'SQL']
+  }
+];
 
 export default function Careers(props: any) {
   const isDashboard = props?.isDashboard || false;
-  const [selectedDepartment, setSelectedDepartment] = useState('all');
-  const [selectedLocation, setSelectedLocation] = useState('all');
-  const [selectedType, setSelectedType] = useState('all');
+  // State Management
+  const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [expandedLevel, setExpandedLevel] = useState<number | null>(0);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showComparison, setShowComparison] = useState(false);
+  const [comparisonPaths, setComparisonPaths] = useState<string[]>([]);
+  const [filterDifficulty, setFilterDifficulty] = useState<string>('all');
+  const [filterTrend, setFilterTrend] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
-
-  const handleBack = () => {
-    window.history.back();
-  };
-
-  const departments = [
-    { id: 'all', name: 'All Positions', icon: Briefcase },
-    { id: 'engineering', name: 'Engineering', icon: Code },
-    { id: 'design', name: 'Design', icon: Palette },
-    { id: 'operations', name: 'Operations', icon: Settings },
-    { id: 'sales', name: 'Sales & Marketing', icon: TrendingUp }
-  ];
-
-  const locations = [
-    { id: 'all', name: 'All Locations' },
-    { id: 'remote', name: 'Remote' },
-    { id: 'hybrid', name: 'Hybrid' },
-    { id: 'san-francisco', name: 'San Francisco' },
-    { id: 'new-york', name: 'New York' },
-    { id: 'austin', name: 'Austin' }
-  ];
-
-  const jobTypes = [
-    { id: 'all', name: 'All Types' },
-    { id: 'full-time', name: 'Full-time' },
-    { id: 'part-time', name: 'Part-time' },
-    { id: 'contract', name: 'Contract' },
-    { id: 'internship', name: 'Internship' }
-  ];
-
-  const jobs = [
-    {
-      id: 1,
-      title: 'Senior Full Stack Engineer',
-      department: 'engineering',
-      location: 'remote',
-      locationName: 'Remote / Hybrid',
-      type: 'full-time',
-      salary: '$120k - $180k',
-      description: 'Build scalable solutions that bridge communities and create meaningful connections. Lead architectural decisions and mentor junior developers.',
-      skills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL', 'AWS', 'Docker'],
-      requirements: [
-        '5+ years of full-stack development experience',
-        'Expert knowledge of React and Node.js',
-        'Experience with microservices architecture',
-        'Strong problem-solving and communication skills'
-      ],
-      responsibilities: [
-        'Design and implement scalable web applications',
-        'Lead code reviews and architectural discussions',
-        'Mentor junior and mid-level engineers',
-        'Collaborate with product and design teams'
-      ],
-      featured: true
-    },
-    {
-      id: 2,
-      title: 'Product Designer',
-      department: 'design',
-      location: 'san-francisco',
-      locationName: 'San Francisco, CA',
-      type: 'full-time',
-      salary: '$100k - $150k',
-      description: 'Design intuitive experiences that help people connect and collaborate seamlessly. Own the design process from research to delivery.',
-      skills: ['Figma', 'User Research', 'Prototyping', 'Design Systems', 'UI/UX'],
-      requirements: [
-        '4+ years of product design experience',
-        'Portfolio showcasing user-centered design',
-        'Experience with design systems',
-        'Strong collaboration skills'
-      ],
-      responsibilities: [
-        'Lead design projects from concept to launch',
-        'Conduct user research and usability testing',
-        'Create and maintain design system',
-        'Present designs to stakeholders'
-      ],
-      featured: false
-    },
-    {
-      id: 3,
-      title: 'Customer Success Manager',
-      department: 'operations',
-      location: 'new-york',
-      locationName: 'New York, NY',
-      type: 'full-time',
-      salary: '$70k - $100k',
-      description: 'Be the bridge between our users and our mission to create impactful connections. Drive customer satisfaction and retention.',
-      skills: ['Communication', 'Problem Solving', 'CRM', 'Analytics', 'Salesforce'],
-      requirements: [
-        '3+ years in customer success or account management',
-        'Experience with SaaS products',
-        'Data-driven decision making',
-        'Excellent communication skills'
-      ],
-      responsibilities: [
-        'Manage key customer relationships',
-        'Drive product adoption and engagement',
-        'Identify upsell opportunities',
-        'Analyze customer health metrics'
-      ],
-      featured: false
-    },
-    {
-      id: 4,
-      title: 'Marketing Lead',
-      department: 'sales',
-      location: 'remote',
-      locationName: 'Remote',
-      type: 'full-time',
-      salary: '$90k - $130k',
-      description: 'Tell our story and build bridges with communities around the world. Lead marketing strategy and execution.',
-      skills: ['Content Strategy', 'SEO', 'Social Media', 'Analytics', 'Marketing Automation'],
-      requirements: [
-        '5+ years marketing experience',
-        'Proven track record in B2B marketing',
-        'Strong analytical and creative skills',
-        'Experience managing marketing budgets'
-      ],
-      responsibilities: [
-        'Develop and execute marketing strategy',
-        'Lead content creation and campaigns',
-        'Manage marketing team and budget',
-        'Track and optimize marketing ROI'
-      ],
-      featured: true
-    },
-    {
-      id: 5,
-      title: 'DevOps Engineer',
-      department: 'engineering',
-      location: 'remote',
-      locationName: 'Remote',
-      type: 'full-time',
-      salary: '$110k - $160k',
-      description: 'Maintain the infrastructure that keeps our bridges strong and reliable. Ensure 99.9% uptime and optimal performance.',
-      skills: ['AWS', 'Docker', 'Kubernetes', 'CI/CD', 'Terraform', 'Monitoring'],
-      requirements: [
-        '4+ years DevOps experience',
-        'Strong knowledge of AWS services',
-        'Experience with container orchestration',
-        'Automation and scripting expertise'
-      ],
-      responsibilities: [
-        'Manage cloud infrastructure and deployments',
-        'Implement CI/CD pipelines',
-        'Monitor system performance and reliability',
-        'Respond to incidents and outages'
-      ],
-      featured: false
-    },
-    {
-      id: 6,
-      title: 'UX Researcher',
-      department: 'design',
-      location: 'austin',
-      locationName: 'Austin, TX',
-      type: 'contract',
-      salary: '$80k - $120k',
-      description: 'Uncover insights that help us build better connections for our users. Conduct comprehensive user research studies.',
-      skills: ['User Testing', 'Data Analysis', 'Qualitative Research', 'Surveys', 'Statistics'],
-      requirements: [
-        '3+ years UX research experience',
-        'Mixed methods research expertise',
-        'Strong analytical skills',
-        'Experience presenting to stakeholders'
-      ],
-      responsibilities: [
-        'Plan and conduct user research studies',
-        'Analyze and synthesize research findings',
-        'Present insights to product teams',
-        'Build research repository and guidelines'
-      ],
-      featured: false
-    },
-    {
-      id: 7,
-      title: 'Frontend Engineer',
-      department: 'engineering',
-      location: 'hybrid',
-      locationName: 'San Francisco / Remote',
-      type: 'full-time',
-      salary: '$100k - $150k',
-      description: 'Create beautiful, performant user interfaces that delight our users. Work with cutting-edge frontend technologies.',
-      skills: ['React', 'TypeScript', 'CSS', 'Testing', 'Performance'],
-      requirements: [
-        '3+ years frontend development',
-        'Deep React expertise',
-        'Understanding of web performance',
-        'Eye for design and UX'
-      ],
-      responsibilities: [
-        'Build responsive web applications',
-        'Optimize frontend performance',
-        'Collaborate with designers',
-        'Write maintainable, tested code'
-      ],
-      featured: false
-    },
-    {
-      id: 8,
-      title: 'Product Manager',
-      department: 'operations',
-      location: 'san-francisco',
-      locationName: 'San Francisco, CA',
-      type: 'full-time',
-      salary: '$130k - $180k',
-      description: 'Drive product vision and strategy. Work cross-functionally to deliver products that users love.',
-      skills: ['Product Strategy', 'Roadmapping', 'Analytics', 'Agile', 'Stakeholder Management'],
-      requirements: [
-        '5+ years product management',
-        'Technical background preferred',
-        'Strong analytical skills',
-        'Excellent communication'
-      ],
-      responsibilities: [
-        'Define product roadmap and priorities',
-        'Work with engineering and design teams',
-        'Analyze metrics and user feedback',
-        'Present to executives and stakeholders'
-      ],
-      featured: true
-    },
-    {
-      id: 9,
-      title: 'Data Scientist',
-      department: 'engineering',
-      location: 'remote',
-      locationName: 'Remote',
-      type: 'full-time',
-      salary: '$120k - $170k',
-      description: 'Use data to drive insights and build ML models. Help us make data-driven decisions across the company.',
-      skills: ['Python', 'Machine Learning', 'Statistics', 'SQL', 'Data Visualization'],
-      requirements: [
-        '4+ years data science experience',
-        'Strong ML and statistical skills',
-        'Experience with large datasets',
-        'Business acumen'
-      ],
-      responsibilities: [
-        'Build predictive models and algorithms',
-        'Analyze complex datasets',
-        'Create data visualizations',
-        'Partner with product teams'
-      ],
-      featured: false
-    },
-    {
-      id: 10,
-      title: 'Software Engineering Intern',
-      department: 'engineering',
-      location: 'hybrid',
-      locationName: 'San Francisco / Remote',
-      type: 'internship',
-      salary: '$40/hr - $50/hr',
-      description: 'Learn from experienced engineers while contributing to real projects. Perfect for students seeking hands-on experience.',
-      skills: ['Programming', 'Computer Science', 'Problem Solving'],
-      requirements: [
-        'Currently pursuing CS or related degree',
-        'Knowledge of at least one programming language',
-        'Strong problem-solving skills',
-        'Passion for learning'
-      ],
-      responsibilities: [
-        'Work on real product features',
-        'Participate in code reviews',
-        'Learn from mentors',
-        'Contribute to team goals'
-      ],
-      featured: false
-    }
-  ];
-
-  const benefits = [
-    {
-      icon: Heart,
-      title: 'Health & Wellness',
-      description: 'Comprehensive medical, dental, and vision coverage for you and your family',
-      details: ['Premium health insurance', 'Mental health support', 'Gym membership', 'Wellness stipend']
-    },
-    {
-      icon: TrendingUp,
-      title: 'Growth & Development',
-      description: 'Professional development budget and learning opportunities to advance your career',
-      details: ['$2,000 annual learning budget', 'Conference attendance', 'Mentorship programs', 'Career coaching']
-    },
-    {
-      icon: Users,
-      title: 'Community & Culture',
-      description: 'Collaborative culture with diverse, talented teammates and regular team events',
-      details: ['Team offsites', 'ERG groups', 'Social events', 'Inclusive environment']
-    },
-    {
-      icon: Zap,
-      title: 'Work-Life Balance',
-      description: 'Remote-first with flexible working hours and unlimited PTO',
-      details: ['Unlimited PTO', 'Flexible hours', 'Work from anywhere', 'Paid parental leave']
-    },
-    {
-      icon: DollarSign,
-      title: 'Competitive Compensation',
-      description: 'Market-leading salaries with equity and performance bonuses',
-      details: ['Competitive base salary', 'Equity packages', 'Annual bonuses', '401k matching']
-    },
-    {
-      icon: Coffee,
-      title: 'Perks & Benefits',
-      description: 'Office perks, equipment stipend, and more to make your work enjoyable',
-      details: ['Home office setup', 'Free snacks & meals', 'Team lunches', 'Company swag']
-    },
-    {
-      icon: Laptop,
-      title: 'Latest Equipment',
-      description: 'Top-tier hardware and software tools to help you do your best work',
-      details: ['MacBook Pro', 'Multiple monitors', 'Ergonomic setup', 'Premium software']
-    },
-    {
-      icon: Globe,
-      title: 'Remote First',
-      description: 'Work from anywhere in the world with async-friendly processes',
-      details: ['Global team', 'Async communication', 'Flexible timezone', 'Co-working stipend']
-    }
-  ];
-
-  const companyValues = [
-    {
-      icon: Target,
-      title: 'Mission Driven',
-      description: 'We are passionate about connecting people and creating meaningful relationships.'
-    },
-    {
-      icon: Rocket,
-      title: 'Innovation',
-      description: 'We push boundaries and embrace new ideas to solve complex problems.'
-    },
-    {
-      icon: Shield,
-      title: 'Integrity',
-      description: 'We operate with transparency, honesty, and accountability in everything we do.'
-    },
-    {
-      icon: Star,
-      title: 'Excellence',
-      description: 'We strive for excellence and continuous improvement in our work and growth.'
-    }
-  ];
-
-  const hiringProcess = [
-    {
-      step: 1,
-      title: 'Application Review',
-      description: 'Submit your application and our team will review it within 3-5 business days.',
-      duration: '3-5 days'
-    },
-    {
-      step: 2,
-      title: 'Initial Screening',
-      description: 'A brief 30-minute call with our recruiting team to discuss your background and the role.',
-      duration: '30 min'
-    },
-    {
-      step: 3,
-      title: 'Technical/Skills Assessment',
-      description: 'Depending on the role, complete a take-home assignment or technical interview.',
-      duration: '1-2 hours'
-    },
-    {
-      step: 4,
-      title: 'Team Interviews',
-      description: 'Meet with team members and hiring managers to discuss your experience and fit.',
-      duration: '2-3 hours'
-    },
-    {
-      step: 5,
-      title: 'Final Interview',
-      description: 'Final conversation with leadership to align on expectations and vision.',
-      duration: '45 min'
-    },
-    {
-      step: 6,
-      title: 'Offer & Onboarding',
-      description: 'Receive your offer and get ready to join our amazing team!',
-      duration: '1-2 days'
-    }
-  ];
-
-  const testimonials = [
-    {
-      name: 'Sarah Chen',
-      role: 'Senior Engineer',
-      avatar: 'SC',
-      quote: 'The culture here is incredible. I have learned more in one year than my previous three years combined.',
-      rating: 5
-    },
-    {
-      name: 'Marcus Johnson',
-      role: 'Product Designer',
-      avatar: 'MJ',
-      quote: 'The team truly values creativity and gives us the freedom to explore innovative solutions.',
-      rating: 5
-    },
-    {
-      name: 'Emily Rodriguez',
-      role: 'Marketing Manager',
-      avatar: 'ER',
-      quote: 'Work-life balance is not just a buzzword here. The flexibility has been life-changing.',
-      rating: 5
-    }
-  ];
-
-  const faqs = [
-    {
-      question: 'What is the interview process like?',
-      answer: 'Our interview process typically includes an initial screening call, technical/skills assessment, team interviews, and a final conversation with leadership. The entire process usually takes 2-3 weeks from application to offer.'
-    },
-    {
-      question: 'Do you offer remote work options?',
-      answer: 'Yes! We are a remote-first company with team members across the globe. Many positions are fully remote, and some offer hybrid options for those near our office locations.'
-    },
-    {
-      question: 'What benefits do you offer?',
-      answer: 'We offer comprehensive health insurance, unlimited PTO, equity packages, 401k matching, professional development budget, home office stipend, and much more. Check out our benefits section above for full details.'
-    },
-    {
-      question: 'Do you sponsor work visas?',
-      answer: 'Yes, we sponsor H-1B visas and other work authorization for qualified candidates. Our team will work with you throughout the process.'
-    },
-    {
-      question: 'What is the salary range for positions?',
-      answer: 'We believe in transparent compensation. Each job listing includes a salary range based on market data and experience level. We are committed to paying competitive, fair salaries.'
-    },
-    {
-      question: 'Do you hire interns or new graduates?',
-      answer: 'Absolutely! We have dedicated internship programs and actively hire new graduates. We believe in investing in emerging talent and providing mentorship opportunities.'
-    }
-  ];
-
-  const stats = [
-    { label: 'Team Members', value: '200+', icon: Users },
-    { label: 'Countries', value: '15+', icon: Globe },
-    { label: 'Open Positions', value: '25+', icon: Briefcase },
-    { label: 'Avg Rating', value: '4.9/5', icon: Star }
-  ];
-
-  // Filter jobs
-  let filteredJobs = jobs.filter(job => {
-    const matchesDepartment = selectedDepartment === 'all' || job.department === selectedDepartment;
-    const matchesLocation = selectedLocation === 'all' || job.location === selectedLocation;
-    const matchesType = selectedType === 'all' || job.type === selectedType;
-    const matchesSearch = searchQuery === '' ||
-      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.description.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return matchesDepartment && matchesLocation && matchesType && matchesSearch;
+  const [activeTab, setActiveTab] = useState<'overview' | 'roadmap' | 'projects' | 'resources' | 'salary'>('overview');
+  const [userProfile, setUserProfile] = useState<UserProfile>({
+    name: 'Rohan',
+    currentSkills: ['HTML5', 'CSS3', 'JavaScript Basics'],
+    interests: ['Frontend', 'UI Design'],
+    hoursPerWeek: 15,
+    targetRole: 'Frontend Developer',
+    timeline: '12 months'
   });
 
-  const featuredJobs = filteredJobs.filter(job => job.featured);
-  const regularJobs = filteredJobs.filter(job => !job.featured);
+  // TODO: Replace with actual API call
+  // useEffect(() => {
+  //   fetchUserProfile();
+  //   fetchCareerPaths();
+  // }, []);
+
+  // Computed values
+  const selectedPathData = careerPaths.find(p => p.id === selectedPath);
+  const sortedPaths = [...careerPaths].sort((a, b) => b.matchScore - a.matchScore);
+
+  // Filter paths
+  const filteredPaths = sortedPaths.filter(path => {
+    const matchesSearch = searchQuery === '' ||
+      path.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      path.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesDifficulty = filterDifficulty === 'all' || path.difficulty === filterDifficulty;
+    const matchesTrend = filterTrend === 'all' || path.demandTrend === filterTrend;
+
+    return matchesSearch && matchesDifficulty && matchesTrend;
+  });
+
+  // Calculate overall progress for a path
+  const calculateProgress = (path: CareerPath) => {
+    const allSkills = path.levels.flatMap(level => level.skills);
+    const completedSkills = allSkills.filter(s => s.status === 'completed').length;
+    return Math.round((completedSkills / allSkills.length) * 100);
+  };
+
+  // Get skill status icon
+  const getSkillStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'in-progress':
+        return <Clock className="h-5 w-5 text-yellow-500" />;
+      case 'locked':
+        return <Lock className="h-5 w-5 text-gray-400" />;
+      default:
+        return null;
+    }
+  };
+
+  // Get trend icon
+  const getTrendIcon = (trend: string) => {
+    switch (trend) {
+      case 'up':
+        return <TrendingUp className="h-4 w-4 text-green-500" />;
+      case 'down':
+        return <TrendingDown className="h-4 w-4 text-red-500" />;
+      default:
+        return <Minus className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  // Toggle comparison
+  const toggleComparison = (pathId: string) => {
+    if (comparisonPaths.includes(pathId)) {
+      setComparisonPaths(comparisonPaths.filter(id => id !== pathId));
+    } else if (comparisonPaths.length < 3) {
+      setComparisonPaths([...comparisonPaths, pathId]);
+    }
+  };
 
   return (
-    <div className={`${!isDashboard ? "min-h-screen bg-background" : "bg-transparent"} dark:bg-black transition-colors duration-300`}>
-      <div className={`${!isDashboard ? "container mx-auto px-4 py-8 max-w-7xl" : "p-0"}`}>
-        {!isDashboard && (
-          <div className="flex items-center justify-between mb-8">
-            <Button
-              variant="ghost"
-              onClick={handleBack}
-              className="hover:bg-muted transition-colors"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            <ThemeToggle />
-          </div>
-        )}
+    <div className="min-h-screen bg-black-to-br from-black-50 via-black-50 to-black-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
 
-        {/* Hero Section - Hide if dashboard */}
-        {!isDashboard && (
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-6">
-              <Rocket className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-primary uppercase tracking-wider">
-                We're Hiring!
-              </span>
-            </div>
-            <h1 className="text-5xl md:text-7xl font-bold mb-8 bg-gradient-to-r from-primary via-blue-600 to-accent bg-clip-text text-transparent leading-tight">
-              Build Bridges With Us
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed">
-              Join our mission to connect people, ideas, and opportunities. We're building more than software—we're creating meaningful connections that change lives.
-            </p>
+        {/* Header Section */}
+        <div className="text-center space-y-4">
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-              {stats.map((stat, index) => {
-                const Icon = stat.icon;
-                return (
-                  <Card key={index} className="border-border bg-card/50 backdrop-blur-sm hover:border-primary/50 transition-all hover:shadow-lg">
-                    <CardContent className="pt-6 text-center">
-                      <Icon className="h-8 w-8 text-primary mx-auto mb-3" />
-                      <div className="text-3xl font-bold mb-1 text-foreground">{stat.value}</div>
-                      <div className="text-sm text-muted-foreground">{stat.label}</div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
-        {/* Company Values */}
-        <div className="mb-20">
-          <h2 className="text-3xl font-bold text-center mb-10 text-foreground">Our Values</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {companyValues.map((value, index) => {
-              const Icon = value.icon;
-              return (
-                <Card key={index} className="border-border bg-card hover:border-primary/30 transition-all text-center group">
-                  <CardContent className="pt-6">
-                    <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                      <Icon className="h-8 w-8 text-primary" />
-                    </div>
-                    <h3 className="font-bold text-xl mb-3 text-foreground">{value.title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{value.description}</p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
+          <h1 className="text-6xl md:text-6xl font-black">
+            <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              Find Your Perfect
+            </span>
+            <br />
+            <span className="text-slate-900 dark:text-white">Career Path</span>
+          </h1>
 
-        {/* Benefits Section */}
-        <div className="mb-20">
-          <h2 className="text-3xl font-bold text-center mb-4 text-foreground">Why Join Us?</h2>
-          <p className="text-center text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
-            We invest in our people with comprehensive benefits and perks designed to support your whole self.
+          <p className="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
+            Personalized roadmaps, skill tracking, and resources to help you land your dream job
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {benefits.map((benefit, index) => {
-              const Icon = benefit.icon;
-              return (
-                <Card key={index} className="border-border bg-card hover:border-primary/50 transition-all hover:shadow-xl group">
-                  <CardContent className="pt-6">
-                    <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4 group-hover:rotate-6 transition-transform">
-                      <Icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="font-bold text-lg mb-3 text-foreground">{benefit.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{benefit.description}</p>
-                    <ul className="space-y-2">
-                      {benefit.details.map((detail, idx) => (
-                        <li key={idx} className="text-xs text-muted-foreground flex items-center gap-2">
-                          <CheckCircle className="h-3 w-3 text-primary flex-shrink-0" />
-                          {detail}
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+
+          {/* User Stats */}
+
         </div>
 
         {/* Search and Filters */}
-        <div className="mb-8">
-          <div className="max-w-3xl mx-auto mb-8">
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-              <input
-                type="text"
-                placeholder="Search positions by title or keyword..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 rounded-2xl border border-border bg-card focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-lg shadow-sm"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-center mb-6">
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="hover:bg-muted border-border"
-            >
-              <Filter className="mr-2 h-4 w-4 text-primary" />
-              Filters
-              <ChevronDown className={`ml-2 h-4 w-4 transition-transform duration-300 ${showFilters ? 'rotate-180' : ''}`} />
-            </Button>
-          </div>
-
-          {showFilters && (
-            <div className="bg-white dark:bg-slate-800 rounded-lg p-6 mb-6 border-2 border-slate-200 dark:border-slate-700">
-              {/* Department Filter */}
-              <div className="mb-6">
-                <h3 className="font-semibold mb-3">Department</h3>
-                <div className="flex flex-wrap gap-3">
-                  {departments.map(dept => {
-                    const Icon = dept.icon;
-                    return (
-                      <Button
-                        key={dept.id}
-                        variant={selectedDepartment === dept.id ? "default" : "outline"}
-                        onClick={() => setSelectedDepartment(dept.id)}
-                        className={selectedDepartment === dept.id
-                          ? "bg-primary hover:bg-primary/90 text-white shadow-md shadow-primary/20"
-                          : "hover:bg-muted border-border text-muted-foreground hover:text-foreground"}
-                      >
-                        <Icon className="mr-2 h-4 w-4" />
-                        {dept.name}
-                      </Button>
-                    );
-                  })}
-                </div>
+        <Card className="border-2 border-slate-200 dark:border-slate-800">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row gap-4">
+              {/* Search */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search career paths..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                  >
+                    <X className="h-4 w-4 text-slate-400 hover:text-slate-600" />
+                  </button>
+                )}
               </div>
 
-              {/* Location Filter */}
-              <div className="mb-6">
-                <h3 className="font-semibold mb-3">Location</h3>
-                <div className="flex flex-wrap gap-3">
-                  {locations.map(loc => (
-                    <Button
-                      key={loc.id}
-                      variant={selectedLocation === loc.id ? "default" : "outline"}
-                      onClick={() => setSelectedLocation(loc.id)}
-                      className={selectedLocation === loc.id
-                        ? "bg-blue-600 hover:bg-blue-700"
-                        : "hover:bg-white dark:hover:bg-slate-700"}
-                    >
-                      {loc.name}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+              {/* Filter Toggle */}
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="border-2"
+              >
+                <Filter className="mr-2 h-4 w-4" />
+                Filters
+                {(filterDifficulty !== 'all' || filterTrend !== 'all') && (
+                  <Badge variant="secondary" className="ml-2 bg-blue-500 text-white h-5 w-5 p-0 flex items-center justify-center rounded-full">
+                    {[filterDifficulty !== 'all', filterTrend !== 'all'].filter(Boolean).length}
+                  </Badge>
+                )}
+                <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+              </Button>
 
-              {/* Job Type Filter */}
-              <div>
-                <h3 className="font-semibold mb-3">Employment Type</h3>
-                <div className="flex flex-wrap gap-3">
-                  {jobTypes.map(type => (
-                    <Button
-                      key={type.id}
-                      variant={selectedType === type.id ? "default" : "outline"}
-                      onClick={() => setSelectedType(type.id)}
-                      className={selectedType === type.id
-                        ? "bg-blue-600 hover:bg-blue-700"
-                        : "hover:bg-white dark:hover:bg-slate-700"}
-                    >
-                      {type.name}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Job Listings */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-center mb-2">
-            Open Positions
-          </h2>
-          <p className="text-center text-slate-600 dark:text-slate-300 mb-8">
-            {filteredJobs.length} {filteredJobs.length === 1 ? 'position' : 'positions'} available
-          </p>
-
-          {/* Featured Jobs */}
-          {featuredJobs.length > 0 && (
-            <div className="mb-12">
-              <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-foreground">
-                <Star className="h-6 w-6 text-yellow-500 fill-yellow-500" />
-                Featured Positions
-              </h3>
-              <div className="space-y-6">
-                {featuredJobs.map(job => (
-                  <Card key={job.id} className="hover:shadow-2xl transition-all border-l-4 border-l-primary bg-card/50 backdrop-blur-md overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-4">
-                      <Badge className="bg-primary/10 text-primary border-0 font-bold px-3 py-1">
-                        HIGHLITED
-                      </Badge>
-                    </div>
-                    <CardHeader>
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-4">
-                            <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-wider">
-                              {departments.find(d => d.id === job.department)?.name}
-                            </span>
-                          </div>
-                          <CardTitle className="text-3xl mb-4 flex items-center gap-3 text-foreground group-hover:text-primary transition-colors">
-                            <div className="p-2 bg-primary/10 rounded-xl">
-                              <Briefcase className="h-6 w-6 text-primary" />
-                            </div>
-                            {job.title}
-                          </CardTitle>
-                          <CardDescription className="text-lg text-muted-foreground leading-relaxed">
-                            {job.description}
-                          </CardDescription>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-6 text-sm text-muted-foreground mt-6">
-                        <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-lg border border-border">
-                          <MapPin className="h-4 w-4 text-primary" />
-                          {job.locationName}
-                        </div>
-                        <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-lg border border-border">
-                          <Clock className="h-4 w-4 text-primary" />
-                          {jobTypes.find(t => t.id === job.type)?.name}
-                        </div>
-                        <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-lg border border-border">
-                          <DollarSign className="h-4 w-4 text-primary" />
-                          {job.salary}
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="mb-6 mt-6">
-                        <h4 className="font-bold text-sm mb-3 uppercase tracking-wider text-muted-foreground">Expertise Required:</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {job.skills.map((skill, idx) => (
-                            <Badge key={idx} variant="secondary" className="px-3 py-1 bg-primary/5 text-primary border-primary/10">
-                              {skill}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <Button className="w-full bg-primary hover:bg-primary/90 text-white h-12 text-lg font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.01]">
-                        Apply for this position
-                        <ArrowRight className="ml-2 h-5 w-5" />
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Regular Jobs */}
-          {regularJobs.length > 0 && (
-            <div>
-              <h3 className="text-xl font-semibold mb-4">All Positions</h3>
-              <div className="grid md:grid-cols-2 gap-6">
-                {regularJobs.map(job => (
-                  <Card key={job.id} className="hover:shadow-xl transition-all border-border bg-card group">
-                    <CardHeader>
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
-                              {departments.find(d => d.id === job.department)?.name}
-                            </Badge>
-                          </div>
-                          <CardTitle className="text-xl mb-2 text-foreground group-hover:text-primary transition-colors">{job.title}</CardTitle>
-                          <CardDescription className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-                            {job.description}
-                          </CardDescription>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-3 text-xs text-slate-600 dark:text-slate-400">
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {job.locationName}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {jobTypes.find(t => t.id === job.type)?.name}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="h-3 w-3" />
-                          {job.salary}
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="mb-4">
-                        <div className="flex flex-wrap gap-2">
-                          {job.skills.slice(0, 4).map((skill, idx) => (
-                            <span key={idx} className="px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-xs">
-                              {skill}
-                            </span>
-                          ))}
-                          {job.skills.length > 4 && (
-                            <span className="px-2 py-1 text-slate-500 dark:text-slate-400 text-xs">
-                              +{job.skills.length - 4} more
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <Button variant="outline" className="w-full">
-                        View Details
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {filteredJobs.length === 0 && (
-            <Card className="py-12 text-center">
-              <CardContent>
-                <Briefcase className="h-16 w-16 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">No positions found</h3>
-                <p className="text-slate-600 dark:text-slate-400 mb-4">
-                  Try adjusting your search or filter criteria
-                </p>
+              {/* View Toggle */}
+              <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
                 <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedDepartment('all');
-                    setSelectedLocation('all');
-                    setSelectedType('all');
-                    setSearchQuery('');
-                  }}
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className="h-8"
                 >
-                  Clear Filters
+                  <LayoutGrid className="h-4 w-4" />
                 </Button>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="h-8"
+                >
+                  <LayoutList className="h-4 w-4" />
+                </Button>
+              </div>
 
-        {/* Hiring Process */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-center mb-4">Our Hiring Process</h2>
-          <p className="text-center text-slate-600 dark:text-slate-300 mb-8 max-w-2xl mx-auto">
-            We've designed our process to be transparent, respectful, and efficient. Here's what to expect.
-          </p>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {hiringProcess.map((step, index) => (
-              <Card key={index} className="relative border-2 hover:border-blue-300 dark:hover:border-blue-700 transition-all">
-                <CardContent className="pt-6">
-                  <div className="absolute -top-4 -left-4 w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg">
-                    {step.step}
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="font-bold text-lg mb-2">{step.title}</h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{step.description}</p>
-                    <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
-                      <Clock className="h-3 w-3" />
-                      <span>{step.duration}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+              {/* Comparison Toggle */}
+              <Button
+                variant={showComparison ? 'default' : 'outline'}
+                onClick={() => setShowComparison(!showComparison)}
+                className="border-2"
+              >
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Compare
+                {comparisonPaths.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {comparisonPaths.length}
+                  </Badge>
+                )}
+              </Button>
+            </div>
 
-        {/* Testimonials */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-center mb-4">What Our Team Says</h2>
-          <p className="text-center text-slate-600 dark:text-slate-300 mb-8 max-w-2xl mx-auto">
-            Hear from people who've built their careers with us.
-          </p>
-          <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="border-2 hover:border-blue-300 dark:hover:border-blue-700 transition-all">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            {/* Filter Options */}
+            {showFilters && (
+              <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700 space-y-4">
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 block">
+                    Difficulty Level
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {['all', 'Easy', 'Medium', 'Hard'].map(diff => (
+                      <Button
+                        key={diff}
+                        variant={filterDifficulty === diff ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setFilterDifficulty(diff)}
+                      >
+                        {diff === 'all' ? 'All Levels' : diff}
+                      </Button>
                     ))}
                   </div>
-                  <p className="text-slate-700 dark:text-slate-300 mb-4 italic">
-                    "{testimonial.quote}"
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold">
-                      {testimonial.avatar}
-                    </div>
-                    <div>
-                      <p className="font-semibold">{testimonial.name}</p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">{testimonial.role}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+                </div>
 
-        {/* FAQs */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-center mb-4">Frequently Asked Questions</h2>
-          <p className="text-center text-slate-600 dark:text-slate-300 mb-8 max-w-2xl mx-auto">
-            Got questions? We've got answers.
-          </p>
-          <div className="max-w-3xl mx-auto space-y-4">
-            {faqs.map((faq, index) => (
-              <Card key={index} className="border-2 hover:border-blue-300 dark:hover:border-blue-700 transition-all">
-                <CardHeader>
-                  <div
-                    className="flex items-center justify-between cursor-pointer"
-                    onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 block">
+                    Demand Trend
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {['all', 'up', 'stable', 'down'].map(trend => (
+                      <Button
+                        key={trend}
+                        variant={filterTrend === trend ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setFilterTrend(trend)}
+                      >
+                        {trend === 'all' ? 'All Trends' : trend === 'up' ? '📈 Rising' : trend === 'stable' ? '➡️ Stable' : '📉 Declining'}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {(filterDifficulty !== 'all' || filterTrend !== 'all') && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setFilterDifficulty('all');
+                      setFilterTrend('all');
+                    }}
                   >
-                    <CardTitle className="text-lg">{faq.question}</CardTitle>
-                    <ChevronDown
-                      className={`h-5 w-5 text-slate-400 transition-transform ${expandedFaq === index ? 'rotate-180' : ''
-                        }`}
-                    />
-                  </div>
-                </CardHeader>
-                {expandedFaq === index && (
-                  <CardContent>
-                    <p className="text-slate-600 dark:text-slate-400">{faq.answer}</p>
-                  </CardContent>
+                    <X className="mr-2 h-4 w-4" />
+                    Clear Filters
+                  </Button>
                 )}
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* CTA Section */}
-        <Card className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0">
-          <CardContent className="py-12 text-center">
-            <Building className="h-16 w-16 mx-auto mb-6 opacity-80" />
-            <h2 className="text-3xl font-bold mb-4">Don't See a Role That Fits?</h2>
-            <p className="text-lg text-blue-100 mb-6 max-w-2xl mx-auto">
-              We're always looking for talented people to join our team. Send us your resume and we'll keep you in mind for future opportunities.
-            </p>
-            <Button variant="secondary" size="lg" className="bg-white text-blue-600 hover:bg-blue-50">
-              Submit General Application
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
+
+        {/* Comparison View */}
+        {showComparison && comparisonPaths.length > 0 && (
+          <Card className="border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-blue-600" />
+                Career Path Comparison
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-700">
+                      <th className="text-left py-3 px-4 font-semibold">Feature</th>
+                      {comparisonPaths.map(pathId => {
+                        const path = careerPaths.find(p => p.id === pathId);
+                        return path ? (
+                          <th key={pathId} className="text-left py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <path.icon className="h-4 w-4" />
+                              {path.name}
+                              <button
+                                onClick={() => toggleComparison(pathId)}
+                                className="ml-2 text-slate-400 hover:text-slate-600"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </th>
+                        ) : null;
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-slate-200 dark:border-slate-700">
+                      <td className="py-3 px-4 font-medium">Match Score</td>
+                      {comparisonPaths.map(pathId => {
+                        const path = careerPaths.find(p => p.id === pathId);
+                        return path ? (
+                          <td key={pathId} className="py-3 px-4">
+                            <Badge variant="secondary" className="bg-blue-500 text-white">
+                              {path.matchScore}%
+                            </Badge>
+                          </td>
+                        ) : null;
+                      })}
+                    </tr>
+                    <tr className="border-b border-slate-200 dark:border-slate-700">
+                      <td className="py-3 px-4 font-medium">Time to Job Ready</td>
+                      {comparisonPaths.map(pathId => {
+                        const path = careerPaths.find(p => p.id === pathId);
+                        return path ? (
+                          <td key={pathId} className="py-3 px-4">{path.timeToJobReady}</td>
+                        ) : null;
+                      })}
+                    </tr>
+                    <tr className="border-b border-slate-200 dark:border-slate-700">
+                      <td className="py-3 px-4 font-medium">Difficulty</td>
+                      {comparisonPaths.map(pathId => {
+                        const path = careerPaths.find(p => p.id === pathId);
+                        return path ? (
+                          <td key={pathId} className="py-3 px-4">
+                            <Badge variant={path.difficulty === 'Hard' ? 'destructive' : 'secondary'}>
+                              {path.difficulty}
+                            </Badge>
+                          </td>
+                        ) : null;
+                      })}
+                    </tr>
+                    <tr className="border-b border-slate-200 dark:border-slate-700">
+                      <td className="py-3 px-4 font-medium">Avg Salary (Fresher)</td>
+                      {comparisonPaths.map(pathId => {
+                        const path = careerPaths.find(p => p.id === pathId);
+                        return path ? (
+                          <td key={pathId} className="py-3 px-4 font-semibold text-green-600">
+                            {path.avgSalary.fresher}
+                          </td>
+                        ) : null;
+                      })}
+                    </tr>
+                    <tr className="border-b border-slate-200 dark:border-slate-700">
+                      <td className="py-3 px-4 font-medium">Job Openings</td>
+                      {comparisonPaths.map(pathId => {
+                        const path = careerPaths.find(p => p.id === pathId);
+                        return path ? (
+                          <td key={pathId} className="py-3 px-4">{path.jobOpenings.toLocaleString()}</td>
+                        ) : null;
+                      })}
+                    </tr>
+                    <tr>
+                      <td className="py-3 px-4 font-medium">Remote %</td>
+                      {comparisonPaths.map(pathId => {
+                        const path = careerPaths.find(p => p.id === pathId);
+                        return path ? (
+                          <td key={pathId} className="py-3 px-4">{path.remotePercentage}%</td>
+                        ) : null;
+                      })}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Career Paths Grid/List */}
+        {!selectedPath ? (
+          <div className={viewMode === 'grid' ? 'grid md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
+            {filteredPaths.map((path, index) => {
+              const Icon = path.icon;
+              const progress = calculateProgress(path);
+              const isTopMatch = index === 0;
+
+              return (
+                <Card
+                  key={path.id}
+                  className={`group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 border-2 ${isTopMatch
+                    ? 'border-yellow-400 dark:border-yellow-600 bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20'
+                    : 'border-slate-200 dark:border-slate-800 hover:border-blue-500'
+                    }`}
+                  onClick={() => setSelectedPath(path.id)}
+                >
+                  {/* Top Match Badge */}
+                  {isTopMatch && (
+                    <div className="absolute top-4 right-4 z-10">
+                      <Badge className="bg-yellow-500 text-white font-bold shadow-lg">
+                        <Trophy className="h-3 w-3 mr-1" />
+                        BEST MATCH
+                      </Badge>
+                    </div>
+                  )}
+
+                  {/* Gradient Background */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${path.color} opacity-0 group-hover:opacity-5 transition-opacity`} />
+
+                  <CardHeader>
+                    {/* Icon & Title */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${path.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
+                        <Icon className="h-7 w-7 text-white" />
+                      </div>
+
+                      {showComparison && (
+                        <Button
+                          variant={comparisonPaths.includes(path.id) ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleComparison(path.id);
+                          }}
+                          disabled={!comparisonPaths.includes(path.id) && comparisonPaths.length >= 3}
+                        >
+                          {comparisonPaths.includes(path.id) ? <CheckCircle className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                        </Button>
+                      )}
+                    </div>
+
+                    <CardTitle className="text-2xl mb-2 group-hover:text-blue-600 transition-colors">
+                      {path.name}
+                    </CardTitle>
+
+                    <CardDescription className="text-sm leading-relaxed">
+                      {path.description}
+                    </CardDescription>
+
+                    {/* Match Score */}
+                    <div className="mt-4 flex items-center gap-2">
+                      <div className="flex-1 bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+                        <div
+                          className={`h-full bg-gradient-to-r ${path.color} transition-all duration-500`}
+                          style={{ width: `${path.matchScore}%` }}
+                        />
+                      </div>
+                      <Badge variant="secondary" className="bg-blue-500 text-white font-bold">
+                        {path.matchScore}% Match
+                      </Badge>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="space-y-4">
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1">
+                          <Clock className="h-3 w-3" />
+                          Time to Ready
+                        </div>
+                        <div className="font-bold text-slate-900 dark:text-white">
+                          {path.timeToJobReady}
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1">
+                          <DollarSign className="h-3 w-3" />
+                          Avg Salary
+                        </div>
+                        <div className="font-bold text-green-600">
+                          {path.avgSalary.fresher}
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1">
+                          <Briefcase className="h-3 w-3" />
+                          Job Openings
+                        </div>
+                        <div className="font-bold text-slate-900 dark:text-white">
+                          {path.jobOpenings.toLocaleString()}
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1">
+                          <TrendingUp className="h-3 w-3" />
+                          Demand
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {getTrendIcon(path.demandTrend)}
+                          <span className="font-bold text-slate-900 dark:text-white capitalize">
+                            {path.demandTrend}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Badges */}
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="secondary" className={
+                        path.difficulty === 'Easy' ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' :
+                          path.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400' :
+                            'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+                      }>
+                        {path.difficulty}
+                      </Badge>
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
+                        {path.remotePercentage}% Remote
+                      </Badge>
+                      {progress > 0 && (
+                        <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                          {progress}% Complete
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Action Button */}
+                    <Button className={`w-full bg-gradient-to-r ${path.color} hover:opacity-90 text-white shadow-lg`}>
+                      Explore Roadmap
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          /* Detailed Path View */
+          <div className="space-y-6">
+            {/* Back Button & Header */}
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                onClick={() => setSelectedPath(null)}
+                className="border-2"
+              >
+                <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
+                Back to All Paths
+              </Button>
+
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm">
+                  <Bookmark className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Share2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {selectedPathData && (
+              <>
+                {/* Path Header Card */}
+                <Card className="border-2 border-slate-200 dark:border-slate-800 overflow-hidden">
+                  <div className={`h-2 bg-gradient-to-r ${selectedPathData.color}`} />
+                  <CardHeader>
+                    <div className="flex items-start gap-6">
+                      <div className={`w-20 h-20 rounded-3xl bg-gradient-to-br ${selectedPathData.color} flex items-center justify-center shadow-xl`}>
+                        <selectedPathData.icon className="h-10 w-10 text-white" />
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <CardTitle className="text-4xl mb-2">{selectedPathData.name}</CardTitle>
+                            <CardDescription className="text-lg">{selectedPathData.description}</CardDescription>
+                          </div>
+
+                          <Badge className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-lg px-4 py-2">
+                            <Trophy className="h-4 w-4 mr-2" />
+                            {selectedPathData.matchScore}% Match
+                          </Badge>
+                        </div>
+
+                        {/* Quick Stats */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                            <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 mb-1">
+                              <Clock className="h-4 w-4" />
+                              Timeline
+                            </div>
+                            <div className="text-2xl font-bold text-slate-900 dark:text-white">
+                              {selectedPathData.timeToJobReady}
+                            </div>
+                          </div>
+
+                          <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-xl p-4 border border-green-200 dark:border-green-800">
+                            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 mb-1">
+                              <DollarSign className="h-4 w-4" />
+                              Fresher Salary
+                            </div>
+                            <div className="text-2xl font-bold text-green-600">
+                              {selectedPathData.avgSalary.fresher}
+                            </div>
+                          </div>
+
+                          <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800">
+                            <div className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400 mb-1">
+                              <Briefcase className="h-4 w-4" />
+                              Openings
+                            </div>
+                            <div className="text-2xl font-bold text-slate-900 dark:text-white">
+                              {selectedPathData.jobOpenings.toLocaleString()}
+                            </div>
+                          </div>
+
+                          <div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 rounded-xl p-4 border border-orange-200 dark:border-orange-800">
+                            <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400 mb-1">
+                              <TrendingUp className="h-4 w-4" />
+                              Demand
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {getTrendIcon(selectedPathData.demandTrend)}
+                              <span className="text-2xl font-bold text-slate-900 dark:text-white capitalize">
+                                {selectedPathData.demandTrend}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Overall Progress */}
+                        <div className="mt-6">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                              Your Progress
+                            </span>
+                            <span className="text-sm font-bold text-blue-600">
+                              {calculateProgress(selectedPathData)}%
+                            </span>
+                          </div>
+                          <Progress value={calculateProgress(selectedPathData)} className="h-3" />
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
+
+                {/* Tabs */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                  {[
+                    { id: 'overview', label: 'Overview', icon: Info },
+                    { id: 'roadmap', label: 'Skills Roadmap', icon: Target },
+                    { id: 'projects', label: 'Projects', icon: Code },
+                    { id: 'resources', label: 'Resources', icon: BookOpen },
+                    { id: 'salary', label: 'Salary Insights', icon: DollarSign }
+                  ].map(tab => (
+                    <Button
+                      key={tab.id}
+                      variant={activeTab === tab.id ? 'default' : 'outline'}
+                      onClick={() => setActiveTab(tab.id as any)}
+                      className="flex items-center gap-2"
+                    >
+                      <tab.icon className="h-4 w-4" />
+                      {tab.label}
+                    </Button>
+                  ))}
+                </div>
+
+                {/* Tab Content */}
+                {activeTab === 'overview' && (
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Top Companies */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Building className="h-5 w-5 text-blue-600" />
+                          Top Hiring Companies
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedPathData.topCompanies.map(company => (
+                            <Badge key={company} variant="secondary" className="px-3 py-1.5">
+                              {company}
+                            </Badge>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Related Paths */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Rocket className="h-5 w-5 text-purple-600" />
+                          Related Career Paths
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {selectedPathData.relatedPaths.map(relatedPath => {
+                            const path = careerPaths.find(p => p.name === relatedPath);
+                            return path ? (
+                              <button
+                                key={relatedPath}
+                                onClick={() => setSelectedPath(path.id)}
+                                className="w-full flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <path.icon className="h-4 w-4" />
+                                  <span className="font-medium">{relatedPath}</span>
+                                </div>
+                                <ChevronRight className="h-4 w-4 text-slate-400" />
+                              </button>
+                            ) : null;
+                          })}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Key Highlights */}
+                    <Card className="md:col-span-2">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Sparkles className="h-5 w-5 text-yellow-600" />
+                          Why Choose This Path?
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid md:grid-cols-3 gap-4">
+                          <div className="flex items-start gap-3 p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                            <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <div className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                                High Demand
+                              </div>
+                              <div className="text-sm text-green-700 dark:text-green-300">
+                                {selectedPathData.jobOpenings.toLocaleString()}+ active job openings
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <Laptop className="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <div className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                                Remote Friendly
+                              </div>
+                              <div className="text-sm text-blue-700 dark:text-blue-300">
+                                {selectedPathData.remotePercentage}% of jobs offer remote work
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-start gap-3 p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                            <TrendingUp className="h-6 w-6 text-purple-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <div className="font-semibold text-purple-900 dark:text-purple-100 mb-1">
+                                Great Salary
+                              </div>
+                              <div className="text-sm text-purple-700 dark:text-purple-300">
+                                Up to {selectedPathData.avgSalary.senior} for seniors
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {activeTab === 'roadmap' && (
+                  <div className="space-y-6">
+                    {/* Roadmap Timeline */}
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="flex items-center gap-2">
+                            <Target className="h-5 w-5 text-blue-600" />
+                            Learning Roadmap
+                          </CardTitle>
+                          <Badge variant="secondary">
+                            {selectedPathData.levels.length} Levels
+                          </Badge>
+                        </div>
+                        <CardDescription>
+                          Follow this structured path to become job-ready
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {selectedPathData.levels.map((level, levelIndex) => {
+                          const isExpanded = expandedLevel === levelIndex;
+                          const completedSkills = level.skills.filter(s => s.status === 'completed').length;
+                          const totalSkills = level.skills.length;
+                          const levelProgress = Math.round((completedSkills / totalSkills) * 100);
+
+                          return (
+                            <div key={level.level} className="relative">
+                              {/* Vertical Line */}
+                              {levelIndex < selectedPathData.levels.length - 1 && (
+                                <div className="absolute left-8 top-20 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700" />
+                              )}
+
+                              <Card className={`border-2 transition-all ${isExpanded ? 'border-blue-500 shadow-lg' : 'border-slate-200 dark:border-slate-800'
+                                }`}>
+                                <CardHeader
+                                  className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                                  onClick={() => setExpandedLevel(isExpanded ? null : levelIndex)}
+                                >
+                                  <div className="flex items-center gap-4">
+                                    {/* Level Number */}
+                                    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${selectedPathData.color} flex items-center justify-center shadow-lg flex-shrink-0 relative z-10`}>
+                                      <span className="text-2xl font-black text-white">{level.level}</span>
+                                    </div>
+
+                                    {/* Level Info */}
+                                    <div className="flex-1">
+                                      <div className="flex items-center justify-between mb-2">
+                                        <CardTitle className="text-xl">{level.title}</CardTitle>
+                                        <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                      </div>
+
+                                      <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
+                                        <div className="flex items-center gap-1">
+                                          <Clock className="h-4 w-4" />
+                                          {level.duration}
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <CheckCircle className="h-4 w-4" />
+                                          {completedSkills}/{totalSkills} skills
+                                        </div>
+                                      </div>
+
+                                      {/* Progress Bar */}
+                                      <div className="mt-3">
+                                        <div className="flex items-center justify-between mb-1">
+                                          <span className="text-xs text-slate-500">Progress</span>
+                                          <span className="text-xs font-bold text-blue-600">{levelProgress}%</span>
+                                        </div>
+                                        <Progress value={levelProgress} className="h-2" />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </CardHeader>
+
+                                {/* Expanded Skills */}
+                                {isExpanded && (
+                                  <CardContent className="pt-0">
+                                    <div className="space-y-3 mt-4">
+                                      {level.skills.map(skill => (
+                                        <div
+                                          key={skill.id}
+                                          className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${skill.status === 'completed'
+                                            ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800'
+                                            : skill.status === 'in-progress'
+                                              ? 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800'
+                                              : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
+                                            }`}
+                                        >
+                                          <div className="flex items-center gap-3 flex-1">
+                                            {getSkillStatusIcon(skill.status)}
+                                            <div className="flex-1">
+                                              <div className="font-semibold text-slate-900 dark:text-white">
+                                                {skill.name}
+                                              </div>
+                                              <div className="text-xs text-slate-500 mt-1">
+                                                {skill.estimatedWeeks} {skill.estimatedWeeks === 1 ? 'week' : 'weeks'} · {skill.category}
+                                              </div>
+                                              {skill.status === 'in-progress' && skill.progress && (
+                                                <div className="mt-2">
+                                                  <Progress value={skill.progress} className="h-1.5" />
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+
+                                          {skill.status === 'completed' ? (
+                                            <Badge className="bg-green-500 text-white">
+                                              Completed
+                                            </Badge>
+                                          ) : skill.status === 'in-progress' ? (
+                                            <Badge className="bg-yellow-500 text-white">
+                                              {skill.progress}%
+                                            </Badge>
+                                          ) : (
+                                            <Button size="sm" variant="outline">
+                                              Start Learning
+                                            </Button>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </CardContent>
+                                )}
+                              </Card>
+                            </div>
+                          );
+                        })}
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {activeTab === 'projects' && (
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {selectedPathData.projects.length > 0 ? (
+                      selectedPathData.projects.map(project => (
+                        <Card key={project.id} className="border-2 border-slate-200 dark:border-slate-800">
+                          <CardHeader>
+                            <div className="flex items-start justify-between mb-2">
+                              <CardTitle className="text-xl">{project.title}</CardTitle>
+                              <Badge
+                                variant={
+                                  project.difficulty === 'beginner'
+                                    ? 'secondary'
+                                    : project.difficulty === 'intermediate'
+                                      ? 'default'
+                                      : 'destructive'
+                                }
+                              >
+                                {project.difficulty}
+                              </Badge>
+                            </div>
+                            <CardDescription>{project.description}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            {/* Skills Used */}
+                            <div>
+                              <div className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                Skills Used:
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {project.skillsUsed.map(skill => (
+                                  <Badge key={skill} variant="secondary">
+                                    {skill}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Estimated Time */}
+                            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                              <Clock className="h-4 w-4" />
+                              Estimated: {project.estimatedHours} hours
+                            </div>
+
+                            {/* Status & Action */}
+                            <div className="flex items-center gap-3">
+                              {project.status === 'completed' ? (
+                                <>
+                                  <Badge className="bg-green-500 text-white flex-1 justify-center py-2">
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    Completed
+                                  </Badge>
+                                  <Button variant="outline" size="sm">
+                                    View Project
+                                  </Button>
+                                </>
+                              ) : project.status === 'in-progress' ? (
+                                <Button className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white">
+                                  <Play className="h-4 w-4 mr-2" />
+                                  Continue Building
+                                </Button>
+                              ) : (
+                                <Button className={`flex-1 bg-gradient-to-r ${selectedPathData.color} text-white`}>
+                                  <Rocket className="h-4 w-4 mr-2" />
+                                  Start Project
+                                </Button>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    ) : (
+                      <Card className="md:col-span-2 border-2 border-dashed">
+                        <CardContent className="py-12 text-center">
+                          <Code className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+                          <p className="text-slate-500">Projects coming soon for this path!</p>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'resources' && (
+                  <div className="space-y-6">
+                    {selectedPathData.learningResources.length > 0 ? (
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {selectedPathData.learningResources.map(resource => (
+                          <Card key={resource.id} className="border-2 border-slate-200 dark:border-slate-800 hover:border-blue-500 transition-all">
+                            <CardHeader>
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-start gap-3">
+                                  {resource.type === 'video' ? (
+                                    <Video className="h-5 w-5 text-red-600" />
+                                  ) : resource.type === 'course' ? (
+                                    <GraduationCap className="h-5 w-5 text-blue-600" />
+                                  ) : resource.type === 'article' ? (
+                                    <FileText className="h-5 w-5 text-green-600" />
+                                  ) : resource.type === 'practice' ? (
+                                    <Code className="h-5 w-5 text-purple-600" />
+                                  ) : (
+                                    <BookOpen className="h-5 w-5 text-orange-600" />
+                                  )}
+                                  <div>
+                                    <CardTitle className="text-base mb-1">{resource.title}</CardTitle>
+                                    <CardDescription className="text-sm">{resource.platform}</CardDescription>
+                                  </div>
+                                </div>
+                                {resource.isFree ? (
+                                  <Badge className="bg-green-500 text-white">Free</Badge>
+                                ) : (
+                                  <Badge variant="secondary">Paid</Badge>
+                                )}
+                              </div>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div className="flex items-center justify-between text-sm">
+                                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                                  <Clock className="h-4 w-4" />
+                                  {resource.duration}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                  <span className="font-semibold">{resource.rating}</span>
+                                </div>
+                              </div>
+                              <Button variant="outline" className="w-full" asChild>
+                                <a href={resource.url} target="_blank" rel="noopener noreferrer">
+                                  View Resource
+                                  <ExternalLink className="ml-2 h-4 w-4" />
+                                </a>
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <Card className="border-2 border-dashed">
+                        <CardContent className="py-12 text-center">
+                          <BookOpen className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+                          <p className="text-slate-500">Learning resources coming soon!</p>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'salary' && (
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Salary by Experience */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <DollarSign className="h-5 w-5 text-green-600" />
+                          Salary by Experience
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {[
+                          { level: 'Fresher (0-1 year)', salary: selectedPathData.avgSalary.fresher, color: 'from-green-500 to-emerald-500' },
+                          { level: 'Junior (1-3 years)', salary: selectedPathData.avgSalary.junior, color: 'from-blue-500 to-cyan-500' },
+                          { level: 'Mid-level (3-5 years)', salary: selectedPathData.avgSalary.mid, color: 'from-purple-500 to-pink-500' },
+                          { level: 'Senior (5+ years)', salary: selectedPathData.avgSalary.senior, color: 'from-orange-500 to-red-500' }
+                        ].map((item, index) => (
+                          <div key={index} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                {item.level}
+                              </span>
+                              <span className="text-lg font-bold text-green-600">
+                                {item.salary}
+                              </span>
+                            </div>
+                            <div className={`h-3 bg-gradient-to-r ${item.color} rounded-full`} style={{ width: `${25 + index * 20}%` }} />
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+
+                    {/* Salary Insights */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <BarChart3 className="h-5 w-5 text-blue-600" />
+                          Key Insights
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <div className="flex items-start gap-3">
+                            <TrendingUp className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <div className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                                Salary Growth
+                              </div>
+                              <div className="text-sm text-blue-700 dark:text-blue-300">
+                                Average 30-40% increment year-over-year
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                          <div className="flex items-start gap-3">
+                            <MapPin className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <div className="font-semibold text-purple-900 dark:text-purple-100 mb-1">
+                                Top Paying Cities
+                              </div>
+                              <div className="text-sm text-purple-700 dark:text-purple-300">
+                                Bangalore, Pune, Hyderabad, Gurgaon
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                          <div className="flex items-start gap-3">
+                            <Globe className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <div className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                                Remote Opportunities
+                              </div>
+                              <div className="text-sm text-green-700 dark:text-green-300">
+                                {selectedPathData.remotePercentage}% jobs offer remote work
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Success Stories Section */}
+        {!selectedPath && (
+          <div className="space-y-6">
+            <div className="text-center">
+              <Badge variant="secondary" className="mb-4 bg-purple-500/10 text-purple-600 border-purple-500/20">
+                <Users className="h-3 w-3 mr-1" />
+                Success Stories
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-black mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Students Who Made It
+              </h2>
+              <p className="text-slate-600 dark:text-slate-400">
+                Real stories from students who followed these paths
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {successStories.map((story, index) => (
+                <Card key={index} className="border-2 border-slate-200 dark:border-slate-800 hover:border-purple-500 transition-all">
+                  <CardHeader>
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">
+                        {story.avatar}
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">{story.name}</CardTitle>
+                        <CardDescription className="text-sm">
+                          {story.role} at {story.company}
+                        </CardDescription>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 mb-3">
+                      <Badge className="bg-green-500 text-white">
+                        <DollarSign className="h-3 w-3 mr-1" />
+                        {story.package}
+                      </Badge>
+                      <Badge variant="secondary">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {story.timeline}
+                      </Badge>
+                    </div>
+
+                    <p className="text-sm text-slate-600 dark:text-slate-400 italic leading-relaxed">
+                      &ldquo;{story.quote}&rdquo;
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-xs text-slate-500 mb-2">Skills mastered:</div>
+                    <div className="flex flex-wrap gap-1">
+                      {story.skills.map(skill => (
+                        <Badge key={skill} variant="secondary" className="text-xs">
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* CTA Section */}
+        {!selectedPath && (
+          <Card className="border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+            <CardContent className="py-12 text-center">
+              <h2 className="text-3xl font-black mb-4 text-slate-900 dark:text-white">
+                Ready to Start Your Journey?
+              </h2>
+              <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-2xl mx-auto">
+                Choose a career path above and start building your skills today. Our personalized roadmap will guide you every step of the way.
+              </p>
+              <div className="flex flex-wrap justify-center gap-4">
+                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg">
+                  <Target className="mr-2 h-5 w-5" />
+                  Take Career Assessment
+                </Button>
+                <Button size="lg" variant="outline">
+                  <MessageSquare className="mr-2 h-5 w-5" />
+                  Talk to Mentor
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
-}           
+}

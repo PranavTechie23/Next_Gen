@@ -151,13 +151,11 @@ export default function CollegeDashboard() {
       {/* Enhanced Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border shadow-sm">
         <div className="container flex items-center justify-between h-16 px-6">
-          <div className="flex items-center gap-3">
-            <div className="w-14 h-14 flex items-center justify-center">
-              <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
-            </div>
-            <div>
-              <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">NextGen</span>
-              <p className="text-xs text-muted-foreground">College Portal</p>
+          <div className="flex items-center gap-0 group cursor-pointer" onClick={() => navigate("/")}>
+            <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
+            <div className="flex flex-col">
+              <span className="font-black text-xl bg-gradient-to-r from-pink-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">NextGen</span>
+              <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-80">College Portal</p>
             </div>
           </div>
 
@@ -246,8 +244,8 @@ export default function CollegeDashboard() {
                       setMobileMenuOpen(false);
                     }}
                     className={`w-full text-left px-4 py-3 rounded-lg font-bold capitalize transition-all ${selectedView === view
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-muted/50"
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted/50"
                       }`}
                   >
                     {view}
@@ -1113,14 +1111,16 @@ export default function CollegeDashboard() {
         <div className="container px-6 py-16 max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
             {/* Company Info */}
-            <div className="space-y-5">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg">
-                  <GraduationCap className="w-7 h-7 text-white" />
-                </div>
-                <div>
-                  <span className="font-black text-xl bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">Campus Career</span>
-                  <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">College Portal</p>
+            <div className="space-y-6">
+              <div className="flex items-center gap-0 group cursor-pointer" onClick={() => navigate("/")}>
+                <img
+                  src="/NG/NextGen_light.png"
+                  alt="NextGen Logo"
+                  className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="flex flex-col">
+                  <span className="font-black text-xl bg-gradient-to-r from-pink-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">NextGen</span>
+                  <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-80">AI-Driven</p>
                 </div>
               </div>
               <p className="text-base text-muted-foreground leading-relaxed">

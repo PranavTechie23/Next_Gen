@@ -1,4 +1,5 @@
-import { useState, Fragment } from "react";
+import { useState, Fragment, useRef, useEffect } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,6 +8,18 @@ import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 // Import all student feature components
 import Careers from "@/pages/student/careers";
 import StudentWebinar from "@/pages/student/webinars";
@@ -18,6 +31,7 @@ import CorporateNewsPage from "@/pages/student/CorporateNews";
 
 
 import StudentFeedbackForm from "@/pages/student/feedbackForm";
+// import SkillTest from "@/pages/student/SkillTest";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -27,24 +41,53 @@ import {
   LogOut, Settings, TrendingUp, AlertCircle, CheckCircle, Target, Award, BookOpen,
   Briefcase, Code, GraduationCap, Zap, Star, Users, Shield, Globe, Cloud, Cpu,
   BarChart as BarChartIcon, Lock, Upload, Database, Terminal, Server, Palette,
-  Smartphone, Monitor, Clock, MessageSquare, ChevronRight, ExternalLink, Download,
+  Smartphone, Monitor, Clock, MessageSquare, ChevronRight, ChevronLeft, ExternalLink, Download,
   Bell, User, ArrowUpRight, ArrowDownRight, Rocket, Brain, Trophy, Building2,
   FileText, Activity, CheckSquare, Circle, Plus, Search, Filter, Eye, Play,
   CheckCircle2, XCircle, AlertTriangle, Flame, Mail, Phone, MapPin, Github,
   Linkedin, Twitter, Instagram, Share2, Bookmark, LineChart as LineChartIcon, Calendar,
   TrendingDown, Edit, Upload as UploadIcon, Download as DownloadIcon, LayoutDashboard,
   Users as UsersIcon, Briefcase as BriefcaseIcon, Palette as PaletteIcon,
-  Newspaper, Heart, DollarSign, FileCheck, Sparkles, HelpCircle
+  Newspaper, Heart, DollarSign, CreditCard, FileCheck, Sparkles, HelpCircle, Menu, PanelLeft
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function StudentDashboard() {
   const [, navigate] = useLocation();
   const { theme } = useTheme();
-  const [activeTab, setActiveTab] = useState("overview");
+  // Initialize tab from URL search secondary fallback to localStorage
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlTab = params.get("tab");
+    if (urlTab) return urlTab;
+    return localStorage.getItem("student-active-tab") || "overview";
+  });
+
+  // Sync tab state to URL and localStorage
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tab") !== activeTab) {
+      params.set("tab", activeTab);
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState({ ...window.history.state }, "", newUrl);
+    }
+    localStorage.setItem("student-active-tab", activeTab);
+  }, [activeTab]);
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState(null);
   const [viewMode, setViewMode] = useState("radar");
+  const [showProfileChecklist, setShowProfileChecklist] = useState(true);
   const isDark = theme === "dark";
+  const mainContentRef = useRef<HTMLElement>(null);
+
+  // Scroll to top when activeTab changes
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTo(0, 0);
+    }
+  }, [activeTab]);
 
   // Student Profile Data
   const studentProfile = {
@@ -53,10 +96,66 @@ export default function StudentDashboard() {
     email: "rahul.sharma@college.edu",
     phone: "+91 98765 43210",
     branch: "Computer Science & Engineering",
+    college: "Northeastern University",
+    bio: "Passionate about building scalable web applications and AI-driven solutions.",
     year: "Final Year",
     cgpa: 8.5,
-    avatar: "RS"
+    avatar: ""
   };
+
+  const resumeInputRef = useRef<HTMLInputElement>(null);
+
+  const handleResumeClick = () => {
+    resumeInputRef.current?.click();
+  };
+  interface UserProfile {
+    skills: string[];
+    interests: string[];
+    learningGoals: string[];
+  }
+  const onResumeFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== "application/pdf") {
+        toast.error("Please upload a PDF file");
+        return;
+      }
+      toast.success(`Resume "${file.name}" uploaded successfully!`);
+      // Here you would typically handle the actual file upload to a server
+    }
+  };
+  const MOCK_USER: UserProfile = {
+    skills: ['React', 'TypeScript', 'Node.js', 'Python', 'JavaScript'],
+    interests: ['Web Development', 'AI/ML', 'Cloud', 'DevOps'],
+    learningGoals: ['Next.js', 'Docker', 'AWS']
+  };
+  const profileChecklist = [
+    {
+      label: "Setup your profile",
+      completed: !!(studentProfile.name && studentProfile.phone),
+      path: "/student/setting"
+    },
+    {
+      label: "Add your profile photo",
+      completed: studentProfile.avatar.startsWith("/"),
+      path: "/student/setting"
+    },
+    {
+      label: "Add your Bio",
+      completed: !!studentProfile.bio,
+      path: "/student/setting"
+    },
+    {
+      label: "Add your College",
+      completed: !!studentProfile.college,
+      path: "/student/setting"
+    },
+    {
+      label: "Connect your first profile",
+      completed: true,
+      path: "/student/setting"
+    },
+  ];
 
   // Evolution Track Data
   const evolutionData = [
@@ -81,8 +180,8 @@ export default function StudentDashboard() {
     },
     {
       label: "Skills Mastered",
-      value: "12/18",
-      change: "+3",
+      value: "67%",
+      change: "+17%",
       trend: "up",
       icon: Award,
       color: "bg-gradient-to-br from-green-500 to-emerald-600",
@@ -642,96 +741,240 @@ export default function StudentDashboard() {
 
 
     { id: "feedback", label: "Feedback", icon: MessageSquare },
+    { id: "skill-test", label: "Skill Test", icon: Zap },
+  ];
+
+  const sidebarSections: Array<{ title: string; ids: Array<(typeof sidebarLinks)[number]["id"]> }> = [
+    { title: "PROFILE TRACKER", ids: ["overview", "skills"] },
+    { title: "QUESTION TRACKER", ids: ["opportunities", "learning"] },
+    { title: "RESOURCES", ids: ["progress", "careers", "webinars", "blog", "features", "caseStudies", "corporateNews"] },
+    { title: "WELLBEING", ids: ["wellbeing"] },
+    { title: "PLANS", ids: ["pricing", "refundPolicy"] },
+    { title: "COMMUNITY", ids: ["feedback"] },
+    { title: "ASSESSMENTS", ids: ["skill-test"] },
   ];
 
   return (
-    <div className={`flex h-screen ${isDark ? "bg-black" : "bg-background"} text-foreground font-sans selection:bg-blue-500/30 overflow-hidden`}>
-      {/* Sleek Sidebar */}
-      <aside className={`sticky top-0 h-screen z-50 transition-all duration-500 ${isSidebarOpen ? "w-72" : "w-24"} p-6 flex flex-col shrink-0 bg-transparent`}>
-        <div className={`flex-1 ${isDark ? "bg-[#0c0c14]" : "bg-sidebar/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[2.5rem] flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.05)] overflow-hidden relative group`}>
-          <div className={`absolute inset-0 bg-gradient-to-b ${isDark ? "from-blue-500/5" : "from-blue-500/5"} via-transparent ${isDark ? "to-purple-500/5" : "to-purple-500/5"} opacity-50 pointer-events-none`}></div>
-
-          <div className="p-8 pb-10 flex items-center gap-4 relative z-10 transition-all">
-            <div
-              className="w-16 h-16 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0 cursor-pointer"
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            >
-              <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
-            </div>
-            {isSidebarOpen && (
-              <div className="animate-in fade-in slide-in-from-left-2 duration-500">
-                <h2 className={`font-black text-xl ${isDark ? "text-white" : "text-gray-900"} tracking-tighter leading-none`}>Student</h2>
-                <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest mt-1 opacity-80">Career Hub</p>
-              </div>
-            )}
-          </div>
-
-          <nav className="flex-1 px-4 space-y-2 relative z-10 overflow-y-auto custom-scrollbar">
-            {sidebarLinks.map((link) => (
-              <button
-                key={link.id}
-                onClick={() => setActiveTab(link.id)}
-                className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 relative group/nav ${activeTab === link.id
-                  ? `${isDark ? "bg-white/5" : "bg-blue-50/50"} text-blue-600 ${isDark ? "shadow-[inset_0_0_20px_rgba(59,130,246,0.05)]" : "shadow-sm shadow-blue-500/5"}`
-                  : `${isDark ? "text-muted-foreground/40 hover:text-white hover:bg-white/5" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"}`
-                  }`}
-              >
-                <link.icon className={`w-5 h-5 transition-colors ${activeTab === link.id ? "text-blue-600" : isDark ? "group-hover/nav:text-white" : "group-hover/nav:text-slate-700"}`} />
-                {isSidebarOpen && <span className={`font-bold text-sm tracking-wide ${activeTab === link.id ? "text-blue-600" : ""}`}>{link.label}</span>}
-                {activeTab === link.id && (
-                  <div className="absolute left-0 w-1.5 h-8 bg-blue-600 rounded-r-full shadow-[0_0_20px_rgba(59,130,246,0.5)]"></div>
-                )}
-              </button>
-            ))}
-          </nav>
-
-          {/* Sidebar Footer */}
-          <div className={`p-6 relative z-10 border-t ${isDark ? "border-white/5" : "border-gray-200"} space-y-4`}>
-            {isSidebarOpen && (
-              <div className={`p-4 ${isDark ? "bg-white/5" : "bg-slate-50/50"} rounded-2xl ${isDark ? "border-white/5" : "border-slate-100"} group/profile cursor-pointer ${isDark ? "hover:bg-white/10" : "hover:bg-slate-100/50"} transition-all mb-2`}>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center font-black text-white shadow-lg flex-shrink-0 group-hover/profile:rotate-3 transition-transform">{studentProfile.avatar}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`font-black text-[10px] ${isDark ? "text-white" : "text-slate-900"} truncate uppercase tracking-tight`}>{studentProfile.name}</p>
-                    <p className={`text-[9px] ${isDark ? "text-muted-foreground" : "text-slate-500"} truncate opacity-60 tracking-widest uppercase font-bold`}>{studentProfile.id}</p>
+    <div className={`flex h-screen ${isDark ? "bg-black" : "bg-background"} text-foreground font-manrope selection:bg-blue-500/30 overflow-hidden relative`}>
+      {/* Premium Background Glows */}
+      {isDark && (
+        <div className="premium-glow-bg">
+          <div className="premium-glow-1" />
+          <div className="premium-glow-2" />
+          <div className="premium-glow-3" />
+        </div>
+      )}
+      {/* Mobile sidebar (drawer) */}
+      <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+        <SheetContent side="left" className={`${isDark ? "bg-[#0c0c14]" : "bg-white"} p-0 w-72 [&>button]:hidden`}>
+          <div className="h-full flex flex-col">
+            {/* Brand */}
+            <div className={`px-5 py-5 border-b ${isDark ? "border-white/10" : "border-slate-200"} flex items-center justify-between`}>
+              <div className="flex items-center gap-0 group cursor-pointer" onClick={() => navigate("/")}>
+                <img
+                  src="/NG/NextGen_light.png"
+                  alt="NextGen Logo"
+                  className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="min-w-0 flex flex-col justify-center">
+                  <div className="font-black text-base bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
+                    NextGen
                   </div>
+                  <p className={`text-[9px] font-bold uppercase tracking-widest mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                    AI-Driven
+                  </p>
                 </div>
               </div>
-            )}
-
-            <div className="flex flex-col gap-2">
               <button
-                onClick={() => navigate("/student/setting")}
-                className={`w-full flex items-center gap-4 p-4 rounded-2xl text-muted-foreground/40 hover:text-blue-400 hover:bg-blue-400/5 transition-all group/settings ${!isSidebarOpen && 'justify-center'}`}
+                type="button"
+                onClick={() => setIsMobileSidebarOpen(false)}
+                className={`h-9 w-9 rounded-lg flex items-center justify-center transition-colors ${isDark ? "hover:bg-white/10 text-slate-200" : "hover:bg-slate-100 text-slate-700"}`}
+                aria-label="Close menu"
+                title="Close menu"
               >
-                <Settings className="w-5 h-5 group-hover/settings:rotate-90 transition-transform duration-700" />
-                {isSidebarOpen && <span className="font-black text-[11px] uppercase tracking-[0.2em]">Config System</span>}
+                <ChevronLeft className="w-5 h-5" strokeWidth={2.5} />
               </button>
+            </div>
 
-              <div className={`flex items-center gap-2 ${!isSidebarOpen ? 'flex-col' : 'justify-between px-2'}`}>
-                <ThemeToggle />
-                <button
-                  onClick={() => navigate("/")}
-                  className="p-3 rounded-xl text-red-400/40 hover:text-red-400 hover:bg-red-400/10 transition-all group/logout"
-                >
-                  <LogOut className="w-5 h-5 group-hover/logout:-translate-x-1 transition-transform" />
-                </button>
-              </div>
+            {/* Links (clean sections like reference) */}
+            <nav className="flex-1 overflow-y-auto sidebar-scrollbar px-3 py-4">
+              {sidebarSections.map((section) => (
+                <div key={section.title} className="mb-4 last:mb-0">
+                  <div className={`px-2 text-[11px] font-semibold tracking-widest uppercase ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                    {section.title}
+                  </div>
+                  <div className={`mt-2 mb-2 h-px ${isDark ? "bg-white/10" : "bg-slate-200"}`} />
+                  <div className="space-y-1">
+                    {section.ids.map((id) => {
+                      const link = sidebarLinks.find((l) => l.id === id);
+                      if (!link) return null;
+                      const Icon = link.icon;
+                      const isActive = activeTab === link.id;
+                      return (
+                        <button
+                          key={link.id}
+                          onClick={() => {
+                            setActiveTab(link.id);
+                            setIsMobileSidebarOpen(false);
+                            navigate(`/student/dashboard?tab=${link.id}`);
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${isActive
+                            ? isDark
+                              ? "bg-white/10 text-blue-300"
+                              : "bg-blue-50 text-blue-700"
+                            : isDark
+                              ? "text-slate-300 hover:bg-white/10"
+                              : "text-slate-700 hover:bg-slate-100"
+                            }`}
+                        >
+                          <Icon className={`w-5 h-5 ${isActive ? (isDark ? "text-blue-300" : "text-blue-700") : (isDark ? "text-slate-400" : "text-slate-500")}`} />
+                          <span className="font-semibold text-sm">{link.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </nav>
+
+            {/* Footer */}
+            <div className={`p-4 border-t ${isDark ? "border-white/10" : "border-slate-200"} flex items-center justify-between`}>
+              <ThemeToggle />
+              <button
+                onClick={() => navigate("/")}
+                className={`p-3 rounded-xl transition-colors ${isDark ? "text-red-300 hover:bg-red-500/10" : "text-red-600 hover:bg-red-50"}`}
+                title="Log out"
+                aria-label="Log out"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
             </div>
           </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Desktop Sidebar - Left */}
+      <aside className={`hidden lg:flex sticky top-0 h-screen z-50 transition-all duration-500 relative overflow-visible ${isSidebarOpen ? "w-72" : "w-[6rem]"} ${isSidebarOpen ? "p-4 pr-2" : "p-3"} flex-col shrink-0 bg-transparent`}>
+        <div className={`flex-1 min-w-0 ${isDark ? "bg-[#0c0c14]" : "bg-white"} ${isDark ? "border-white/10" : "border-slate-200"} rounded-[2.5rem] flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.05)] overflow-hidden relative`}>
+          <div className={`absolute inset-0 bg-gradient-to-b ${isDark ? "from-blue-500/5" : "from-blue-500/5"} via-transparent ${isDark ? "to-purple-500/5" : "to-purple-500/5"} opacity-50 pointer-events-none`}></div>
+
+          {/* Header: brand logo & name */}
+          <div className={`flex items-center gap-0 relative z-10 transition-all flex-shrink-0 ${isSidebarOpen ? "px-5 pt-6 pb-4" : "p-3 py-6 justify-center"}`}>
+            <div
+              className="group cursor-pointer flex items-center gap-0"
+              onClick={() => navigate("/")}
+              title="NextGen AI-Driven Career Hub"
+            >
+              <img
+                src="/NG/NextGen_light.png"
+                alt="NextGen Logo"
+                className={`${isSidebarOpen ? "h-14 w-14" : "h-12 w-12"} object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110`}
+              />
+              {isSidebarOpen && (
+                <div className="min-w-0 animate-fadeIn overflow-hidden flex flex-col justify-center">
+                  <div className="font-black text-2xl tracking-tighter leading-none bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    NextGen
+                  </div>
+                  <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"} opacity-80 whitespace-nowrap`}>
+                    AI-Driven
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <nav className={`flex-1 min-w-0 flex flex-col overflow-y-auto sidebar-scrollbar pt-1 ${isSidebarOpen ? "px-3 pr-2" : "px-1.5"}`}>
+            {sidebarSections.map((section) => (
+              <div key={section.title} className={`${isSidebarOpen ? "mb-4" : "mb-2"} last:mb-0`}>
+                {isSidebarOpen && (
+                  <>
+                    <div className={`px-2 text-[11px] font-semibold tracking-widest uppercase ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                      {section.title}
+                    </div>
+                    <div className={`mt-2 mb-2 h-px ${isDark ? "bg-white/10" : "bg-slate-200"}`} />
+                  </>
+                )}
+                <div className={`${isSidebarOpen ? "space-y-1" : "space-y-1"}`}>
+                  {section.ids.map((id) => {
+                    const link = sidebarLinks.find((l) => l.id === id);
+                    if (!link) return null;
+                    const Icon = link.icon;
+                    const isActive = activeTab === link.id;
+                    return (
+                      <button
+                        key={link.id}
+                        onClick={() => {
+                          setActiveTab(link.id);
+                          navigate(`/student/dashboard?tab=${link.id}`);
+                        }}
+                        title={link.label}
+                        className={`w-full flex items-center gap-3 sm:gap-4 rounded-xl transition-all duration-200 relative flex-shrink-0 ${!isSidebarOpen ? "justify-center p-3" : "px-3 py-3"} ${isActive
+                          ? isDark
+                            ? "bg-blue-500/20 ring-1 ring-blue-400/40 text-blue-200"
+                            : "bg-blue-100 ring-1 ring-blue-200 text-blue-800"
+                          : isDark
+                            ? "text-slate-300 hover:bg-white/10"
+                            : "text-slate-700 hover:bg-slate-100"
+                          }`}
+                      >
+                        <Icon className={`flex-shrink-0 transition-colors ${isSidebarOpen ? "w-5 h-5" : "w-6 h-6"} ${isActive ? (isDark ? "text-blue-300" : "text-blue-700") : (isDark ? "text-slate-400" : "text-slate-500")}`} />
+                        {isSidebarOpen && <span className="font-semibold text-sm truncate min-w-0">{link.label}</span>}
+                        {isSidebarOpen && isActive && (
+                          <div className={`absolute left-0 w-1 h-6 rounded-r-full ${isDark ? "bg-blue-400" : "bg-blue-600"}`} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </nav>
         </div>
+
+        {/* Floating Toggle Button - Attached to Right Edge */}
+        <button
+          type="button"
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className={`absolute top-6 -right-12 z-[60] h-12 w-12 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center ${isDark
+            ? "bg-[#0c0c14] border-white/20 text-slate-300 hover:text-white"
+            : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+            }`}
+          aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          <PanelLeft className={`w-6 h-6 transition-transform duration-500 ${isSidebarOpen ? "" : "rotate-180"}`} />
+        </button>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 p-8 overflow-y-auto custom-scrollbar relative bg-transparent">
-        <div className="max-w-[1400px] mx-auto space-y-10 pb-20">
+      <main
+        ref={mainContentRef}
+        data-scroll-container
+        className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto overflow-x-hidden custom-scrollbar relative bg-transparent"
+      >
+        <div className="max-w-[1400px] mx-auto space-y-6 sm:space-y-8 lg:space-y-10 pb-16 sm:pb-20">
 
-          <header className={`${isSidebarOpen ? 'flex' : 'flex flex-col items-center'} items-end justify-between gap-6 mb-8 text-center sm:text-left`}>
-            <div className={`${!isSidebarOpen && 'flex flex-col items-center'}`}>
-              <h1 className={`text-6xl font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight capitalize mb-2`}>
+          <header className={`flex items-center justify-between gap-4 sm:gap-6 mb-6 sm:mb-8`}>
+            {/* Desktop header space reserved for toggle when floating nearby */}
+            <div className="hidden lg:block w-16" />
+
+            <div className={`flex-1 min-w-0`}>
+              {/* Mobile hamburger */}
+              <div className="flex items-center justify-between gap-3 lg:hidden mb-3">
+                <button
+                  type="button"
+                  onClick={() => setIsMobileSidebarOpen(true)}
+                  className={`h-11 w-11 rounded-2xl flex items-center justify-center transition-colors ${isDark ? "bg-white/5 hover:bg-white/10 text-slate-200" : "bg-slate-100 hover:bg-slate-200 text-slate-800"}`}
+                  aria-label="Open menu"
+                  title="Open menu"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+                <div className={`flex-1 h-px ${isDark ? "bg-white/5" : "bg-slate-200"}`} />
+              </div>
+              <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold ${isDark ? "text-white" : "text-slate-900"} tracking-tight capitalize`}>
                 {sidebarLinks.find(l => l.id === activeTab)?.label || activeTab}
               </h1>
-              <p className={`${isDark ? "text-blue-400" : "text-blue-600"} text-base font-bold uppercase tracking-widest opacity-90`}>
+              <p className={`${isDark ? "text-blue-400" : "text-blue-600"} text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] opacity-90 mt-1`}>
                 {activeTab === "overview" ? "Career Readiness Dashboard" :
                   activeTab === "skills" ? "Skill Architecture Analysis" :
                     activeTab === "opportunities" ? "Placement Opportunities" :
@@ -739,16 +982,132 @@ export default function StudentDashboard() {
                         activeTab === "progress" ? "Progress & Milestones" :
                           activeTab === "careers" ? "Career Opportunities & Resources" :
                             activeTab === "webinars" ? "Live Learning Sessions" :
-                              activeTab === "blog" ? "Career Insights & Articles" :
-
-
-                                activeTab === "corporateNews" ? "Industry News & Updates" :
-
-
-
-                                  activeTab === "feedback" ? "Share Your Feedback" :
-                                    "Student Portal"}
+                              activeTab === "blog" ? "Personalized content" :
+                                activeTab === "features" ? "Platform Features & Capabilities" :
+                                  activeTab === "caseStudies" ? "Success Stories & Case Studies" :
+                                    activeTab === "corporateNews" ? "Industry News & Updates" :
+                                      activeTab === "wellbeing" ? "Student Wellbeing Hub" :
+                                        activeTab === "pricing" ? "Pricing Plans & Packages" :
+                                          activeTab === "refundPolicy" ? "Refund Policy & Terms" :
+                                            activeTab === "feedback" ? "Share Your Feedback" :
+                                              activeTab === "skill-test" ? "Skill Proficiency Assessment" :
+                                                "Student Portal"}
               </p>
+            </div>
+
+            {/* Premium Header Controls - Relocated for better accessibility */}
+            <div className="flex items-center gap-3 sm:gap-4">
+              {/* Company Wise Kit button removed on Skill Test view for a cleaner assessment experience */}
+              {activeTab !== "skill-test" && (
+                <Button
+                  variant="outline"
+                  className={`hidden md:flex h-11 px-6 rounded-2xl font-bold text-xs uppercase tracking-widest gap-2 transform transition-all hover:scale-105 active:scale-95 ${isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}
+                >
+                  <span>Company Wise Kit</span>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                </Button>
+              )}
+
+              <div className={`h-11 w-11 flex items-center justify-center rounded-2xl border transition-all ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}>
+                <ThemeToggle className="!h-10 !w-10 !rounded-xl border-0 bg-transparent hover:bg-transparent" />
+              </div>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className={`h-11 w-11 flex items-center justify-center rounded-2xl border transition-all relative group ${isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-white border-slate-200 text-slate-900 shadow-sm hover:bg-slate-50"}`}>
+                    <Bell className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                    <div className="absolute top-2.5 right-2.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-background animate-pulse" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" sideOffset={12} className={`w-[380px] p-0 rounded-[2rem] overflow-hidden border-0 shadow-[0_20px_50px_rgba(0,0,0,0.3)] ${isDark ? "bg-[#0c0c14]" : "bg-white"}`}>
+                  <div className={`p-6 border-b ${isDark ? "border-white/5" : "border-slate-100"}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className={`text-lg font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight`}>Profile Checklist</h3>
+                      <div className={`w-10 h-10 rounded-xl ${isDark ? "bg-blue-500/10" : "bg-blue-50"} flex items-center justify-center border ${isDark ? "border-blue-500/20" : "border-blue-100"}`}>
+                        <CheckCircle2 className={`w-5 h-5 ${isDark ? "text-blue-400" : "text-blue-600"}`} />
+                      </div>
+                    </div>
+                    <p className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"} font-bold uppercase tracking-widest`}>Complete these to unlock premium features</p>
+                  </div>
+                  <div className="p-4 space-y-2">
+                    {profileChecklist.map((item, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => navigate(item.path)}
+                        className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-300 group/item cursor-pointer border ${isDark ? "border-white/5 hover:bg-white/5 hover:border-white/10" : "border-slate-100 hover:bg-slate-50 hover:border-slate-200"}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {item.completed ? (
+                            <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
+                              <CheckCircle2 className="w-4 h-4" />
+                            </div>
+                          ) : (
+                            <div className={`w-6 h-6 rounded-full border-2 ${isDark ? "border-white/20" : "border-slate-300"} flex items-center justify-center transition-colors group-hover/item:border-blue-500/50`}>
+                              <div className="w-4 h-4 rounded-full" />
+                            </div>
+                          )}
+                          <span className={`font-bold text-xs ${item.completed ? (isDark ? "text-slate-500 line-through decoration-slate-700" : "text-slate-400 line-through decoration-slate-200") : (isDark ? "text-slate-200" : "text-slate-700")} group-hover/item:text-blue-500 transition-colors uppercase tracking-tight`}>
+                            {item.label}
+                          </span>
+                        </div>
+                        {item.completed ? (
+                          <ChevronRight className={`w-3.5 h-3.5 ${isDark ? "text-slate-600" : "text-slate-400"} transition-all duration-300 group-hover/item:translate-x-1 group-hover/item:text-blue-500`} />
+                        ) : (
+                          <ExternalLink className={`w-3.5 h-3.5 text-blue-500 opacity-0 group-hover/item:opacity-100 transition-all duration-300 transform translate-x-1`} />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <div className={`p-4 bg-slate-500/5 ${isDark ? "bg-white/5" : "bg-slate-50"} flex items-center justify-center`}>
+                    <button className={`text-[9px] font-black uppercase tracking-[0.2em] ${isDark ? "text-slate-500 hover:text-white" : "text-slate-400 hover:text-slate-900"} transition-all`}>
+                      Dismiss all notifications
+                    </button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-3 focus:outline-none group">
+                    <div className="relative">
+                      <Avatar className={`w-11 h-11 rounded-2xl border-2 transition-all group-hover:border-blue-500/50 ${isDark ? "border-white/10" : "border-white shadow-md shadow-slate-200/50"}`}>
+                        <AvatarImage src={studentProfile.avatar} />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-sm">{studentProfile.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 ${isDark ? "border-[#0c0c14]" : "border-white"} bg-green-500 shadow-sm`} />
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" sideOffset={12} className={`w-64 p-2 rounded-2xl animate-in fade-in zoom-in-95 duration-200 ${isDark ? "bg-[#0c0c14] border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] text-white" : "bg-white border-slate-100 shadow-[0_10px_40px_rgba(0,0,0,0.1)] text-slate-900"}`}>
+                  <DropdownMenuLabel className="mb-2">
+                    <div className="flex items-center gap-3 px-2 py-2">
+                      <Avatar className="w-11 h-11 rounded-xl">
+                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-sm">{studentProfile.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col min-w-0 text-left">
+                        <span className={`font-black text-[11px] uppercase tracking-tight`}>{studentProfile.name}</span>
+                        <span className={`text-[9px] opacity-60 truncate max-w-[140px] font-bold uppercase tracking-widest`}>{studentProfile.email}</span>
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className={`${isDark ? "bg-white/5" : "bg-slate-100"} -mx-2 my-2`} />
+                  <DropdownMenuGroup className="p-1 space-y-1">
+                    <DropdownMenuItem onClick={() => navigate("/student/setting")} className={`rounded-xl flex items-center gap-3 p-3 transition-all cursor-pointer ${isDark ? "hover:bg-white/5" : "hover:bg-slate-50"}`}>
+                      <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                        <User className="w-4 h-4 text-indigo-500" />
+                      </div>
+                      <span className="font-bold text-[10px] uppercase tracking-widest text-inherit">Profile Setting</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator className={`${isDark ? "bg-white/5" : "bg-slate-100"} -mx-2 my-2`} />
+                  <DropdownMenuItem onClick={() => navigate("/")} className={`rounded-xl flex items-center gap-3 p-3 transition-all cursor-pointer group/signout ${isDark ? "hover:bg-red-500/10 text-red-400" : "hover:bg-red-50 text-red-500"}`}>
+                    <div className={`w-8 h-8 rounded-lg ${isDark ? "bg-red-500/10" : "bg-red-500/5"} flex items-center justify-center transition-colors group-hover/signout:bg-red-500/20`}>
+                      <LogOut className="w-4 h-4" />
+                    </div>
+                    <span className="font-black text-[10px] uppercase tracking-[0.15em]">Log Out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </header>
 
@@ -759,17 +1118,17 @@ export default function StudentDashboard() {
                 <div className={`absolute top-0 right-0 w-[600px] h-[600px] ${isDark ? "bg-blue-500/5" : "bg-blue-500/5"} rounded-full -mr-80 -mt-80 blur-[150px] pointer-events-none`}></div>
                 <div className={`absolute bottom-0 left-0 w-[400px] h-[400px] ${isDark ? "bg-purple-500/5" : "bg-purple-500/5"} rounded-full -ml-60 -mb-60 blur-[100px] pointer-events-none`}></div>
 
-                <CardContent className="p-12">
-                  <div className="flex flex-col lg:flex-row items-start justify-between gap-8 relative z-10">
+                <CardContent className="p-6 sm:p-8 lg:p-12">
+                  <div className="flex flex-col lg:flex-row items-start justify-between gap-6 sm:gap-8 relative z-10">
                     <div className="flex-1">
-                      <h2 className={`text-4xl font-black ${isDark ? "text-white" : "text-slate-900"} mb-4 tracking-tight leading-tight`}>
+                      <h2 className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold ${isDark ? "text-white" : "text-slate-900"} mb-3 sm:mb-4 tracking-tight leading-tight`}>
                         Welcome back,<br />
                         <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                           {studentProfile.name.split(' ')[0]}! 👋
                         </span>
                       </h2>
-                      <p className={`${isDark ? "text-blue-100/80" : "text-slate-600"} text-lg font-medium mb-8 max-w-2xl leading-relaxed`}>
-                        Your current readiness status is <span className={`${isDark ? "text-white" : "text-slate-900"} font-black underline decoration-green-500/30 decoration-4 underline-offset-4`}>EXCELLENT</span>.
+                      <p className={`${isDark ? "text-blue-100/80" : "text-slate-600"} text-base sm:text-lg font-medium mb-6 sm:mb-8 max-w-2xl leading-relaxed`}>
+                        Your current readiness status is <span className={`${isDark ? "text-white" : "text-slate-900"} font-extrabold px-3 py-1 rounded-lg ${isDark ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-green-50 text-green-700 border border-green-200"} transition-all`}>EXCELLENT</span>.
                         You're among the top 10% of students in your branch!
                       </p>
                       <div className="flex flex-wrap items-center gap-4">
@@ -787,12 +1146,16 @@ export default function StudentDashboard() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex flex-row lg:flex-col gap-4 w-full lg:w-fit">
-                      <Button className="h-14 px-8 bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:opacity-90 font-black text-lg rounded-2xl flex-1 shadow-xl shadow-blue-500/30 gap-3 ring-4 ring-blue-500/20">
+                    <div className="flex flex-col sm:flex-row lg:flex-col gap-3 sm:gap-4 w-full lg:w-fit">
+                      <Button
+                        onClick={() => setActiveTab("skill-test")}
+                        className="h-14 px-8 bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:opacity-90 font-black text-lg rounded-2xl flex-1 shadow-xl shadow-blue-500/30 gap-3 ring-4 ring-blue-500/20"
+                      >
                         <Rocket className="w-6 h-6" />
                         Take Skill Test
                       </Button>
                       <Button
+                        onClick={handleResumeClick}
                         className="
     h-14 px-8 flex-1 rounded-2xl gap-3
     bg-indigo-600 text-white
@@ -806,33 +1169,42 @@ export default function StudentDashboard() {
                         <UploadIcon className="w-6 h-6" />
                         Resume (PDF)
                       </Button>
+                      <input
+                        type="file"
+                        ref={resumeInputRef}
+                        onChange={onResumeFileChange}
+                        accept=".pdf"
+                        className="hidden"
+                      />
 
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
+
+
               {/* Quick Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
                 {quickStats.map((stat, idx) => {
                   const Icon = stat.icon;
                   return (
-                    <Card key={idx} className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[2rem] overflow-hidden group hover:scale-[1.02] transition-all duration-300`}>
-                      <CardContent className="p-8">
-                        <div className="flex items-center justify-between mb-6">
-                          <div className={`w-14 h-14 rounded-2xl ${stat.color} flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform duration-500`}>
-                            <Icon className="w-7 h-7 text-white" />
+                    <Card key={idx} className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-2xl xl:rounded-[2rem] overflow-hidden group hover:scale-[1.02] transition-all duration-300`}>
+                      <CardContent className="p-5 sm:p-6 lg:p-8">
+                        <div className="flex items-center justify-between mb-4 sm:mb-6">
+                          <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl ${stat.color} flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform duration-500`}>
+                            <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                           </div>
-                          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-black ${stat.trend === "up" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+                          <div className={`flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold ${stat.trend === "up" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
                             }`}>
-                            {stat.trend === "up" ? <ArrowUpRight className="w-4 h-4 font-black" /> : <ArrowDownRight className="w-4 h-4" />}
+                            {stat.trend === "up" ? <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <ArrowDownRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                             {stat.change}
                           </div>
                         </div>
                         <div className="space-y-1">
-                          <p className={`text-base font-bold ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-widest leading-none opacity-80`}>{stat.label}</p>
-                          <p className={`text-4xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tight py-1`}>{stat.value}</p>
-                          <p className={`text-sm font-semibold ${isDark ? "text-gray-400/60" : "text-gray-600/80"} tracking-wide`}>{stat.description}</p>
+                          <p className={`text-xs sm:text-sm font-semibold ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-wider leading-none opacity-80`}>{stat.label}</p>
+                          <p className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold ${isDark ? "text-white" : "text-gray-900"} tracking-tight py-1 tabular-nums`}>{stat.value}</p>
+                          <p className={`text-xs sm:text-sm font-medium ${isDark ? "text-gray-400/60" : "text-gray-600/80"} tracking-wide`}>{stat.description}</p>
                         </div>
                       </CardContent>
                     </Card>
@@ -1841,7 +2213,7 @@ export default function StudentDashboard() {
           {/* Careers Tab */}
           {activeTab === "careers" && (
             <div className="space-y-10">
-              <Careers isDashboard={true} />
+              <Careers />
             </div>
           )}
 
@@ -1886,6 +2258,13 @@ export default function StudentDashboard() {
             </div>
           )}
 
+          {/* Skill Test Tab */}
+          {activeTab === "skill-test" && (
+            <div className="space-y-10">
+              <SkillTest onBack={() => setActiveTab("overview")} />
+            </div>
+          )}
+
           {/* CTA Footer - Only show on overview tab */}
           {activeTab === "overview" && (
             <div className={`bg-gradient-to-r ${isDark ? "from-blue-500/10 via-purple-500/10 to-blue-500/10" : "from-blue-50 via-purple-50 to-blue-50"} ${isDark ? "border-white/5" : "border-gray-200"} p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group mt-12`}>
@@ -1909,7 +2288,7 @@ export default function StudentDashboard() {
             </div>
           )}
         </div>
-      </main>
-    </div>
+      </main >
+    </div >
   );
 }

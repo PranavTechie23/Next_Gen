@@ -167,16 +167,21 @@ export default function Footer({ role = "public", className = "" }: FooterProps)
   const socialBg = isDark ? "bg-slate-800 hover:bg-slate-700" : "bg-gray-100 hover:bg-gray-200";
 
   return (
-    <footer className={`${footerBg} ${footerBorder} border-t py-12 mt-16 ${className}`}>
+    <footer className={`${isDark ? 'bg-background' : 'bg-white'} ${footerBorder} border-t py-12 mt-16 ${className}`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
           {/* Company Info */}
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-12 h-12 flex items-center justify-center">
-                <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
+            <div className="flex items-center gap-0 group cursor-pointer" onClick={() => window.location.href = "/"}>
+              <img
+                src="/NG/NextGen_light.png"
+                alt="NextGen Logo"
+                className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110"
+              />
+              <div className="flex flex-col justify-center leading-tight">
+                <span className="font-black text-xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">NextGen</span>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mt-0.5">AI-Driven</p>
               </div>
-              <span className={`font-bold text-lg ${textPrimary}`}>{footerConfig.company.name}</span>
             </div>
             {role !== "public" && (
               <p className={`text-xs ${textMuted} font-bold uppercase tracking-widest mb-2`}>
@@ -242,10 +247,10 @@ export default function Footer({ role = "public", className = "" }: FooterProps)
 
           {/* Quick Links */}
           <div>
-            <h3 className={`font-semibold mb-4 ${textPrimary}`}>
+            <h3 className={`text-lg font-bold mb-4 ${textPrimary}`}>
               {role === "public" ? "Company" : "Quick Links"}
             </h3>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-2.5 text-base">
               {quickLinks.map((link, index) => (
                 <li key={index}>
                   {('external' in link && link.external) ? (
@@ -272,8 +277,8 @@ export default function Footer({ role = "public", className = "" }: FooterProps)
 
           {/* Resources */}
           <div>
-            <h3 className={`font-semibold mb-4 ${textPrimary}`}>Resources</h3>
-            <ul className="space-y-2 text-sm">
+            <h3 className={`text-lg font-bold mb-4 ${textPrimary}`}>Resources</h3>
+            <ul className="space-y-2.5 text-base">
               {resources.map((link, index) => (
                 <li key={index}>
                   <Link href={link.href}>
@@ -288,8 +293,8 @@ export default function Footer({ role = "public", className = "" }: FooterProps)
 
           {/* Contact Info */}
           <div>
-            <h3 className={`font-semibold mb-4 ${textPrimary}`}>Contact Us</h3>
-            <ul className={`space-y-3 text-sm ${textSecondary}`}>
+            <h3 className={`text-lg font-bold mb-4 ${textPrimary}`}>Contact Us</h3>
+            <ul className={`space-y-3 text-base ${textSecondary}`}>
               <li className="flex items-start gap-3">
                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span>{footerConfig.contact.address}</span>

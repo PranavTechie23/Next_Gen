@@ -46,7 +46,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 py-12 md:py-4 relative overflow-x-hidden transition-colors duration-300">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/10 dark:from-primary/10 dark:via-background dark:to-accent/10" />
       {/* Theme Toggle */}
       <div className="absolute top-4 right-4 z-20">
@@ -76,28 +76,28 @@ export default function LoginPage() {
         }
       `}</style>
 
-      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-6 md:gap-8 items-center relative z-10">
+      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-8 items-center relative z-10 my-auto">
         {/* Left side - Branding and Features */}
-        <div className="hidden md:block space-y-6 md:space-y-8 slide-in">
+        <div className="hidden md:block space-y-8 slide-in">
           <div className="float">
-            <div className="inline-flex items-center gap-3 mb-6">
-              <div className="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center">
-                <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
-              </div>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+            <div className="flex items-center gap-0 mb-6 group cursor-pointer transition-all duration-300" onClick={() => window.location.href = "/"}>
+              <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-24 w-24 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
+              <div className="flex flex-col justify-center leading-tight">
+                <h1 className="text-4xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
                   NextGen
                 </h1>
-                <p className="text-muted-foreground text-xs md:text-sm font-medium">Your Path to Success</p>
+                <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest mt-0.5 opacity-80">
+                  AI-Driven
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="space-y-4 md:space-y-6">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground leading-tight">
+          <div className="space-y-6">
+            <h2 className="text-3xl font-bold text-foreground leading-tight">
               Welcome Back! 👋
             </h2>
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+            <p className="text-lg text-muted-foreground leading-relaxed">
               Sign in to access your personalized career dashboard and continue your journey to success.
             </p>
 
@@ -119,24 +119,27 @@ export default function LoginPage() {
         </div>
 
         {/* Right side - Login Form */}
-        <Card className="shadow-2xl border border-border bg-card/80 backdrop-blur-xl slide-in overflow-hidden" style={{ animationDelay: '0.2s' }}>
-          <CardContent className="p-8 md:p-10">
+        <Card className="shadow-xl border border-border bg-white dark:bg-slate-900 rounded-2xl slide-in overflow-hidden w-full max-w-md mx-auto md:max-w-none" style={{ animationDelay: '0.2s' }}>
+          <CardContent className="p-6 sm:p-8 md:p-10">
             {/* Mobile Logo */}
-            <div className="md:hidden text-center mb-8">
-              <div className="w-24 h-24 flex items-center justify-center mx-auto mb-4">
-                <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
+            <div className="md:hidden text-center mb-8 flex flex-col items-center">
+              <div className="flex items-center gap-0 justify-center mb-4 transition-transform hover:scale-105 cursor-pointer" onClick={() => window.location.href = "/"}>
+                <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-16 w-16 object-contain flex-shrink-0" />
+                <div className="flex flex-col items-start">
+                  <h1 className="text-2xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
+                    NextGen
+                  </h1>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">AI-Driven</p>
+                </div>
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                NextGen
-              </h1>
             </div>
 
             <div className="mb-8">
-              <h2 className="text-3xl font-bold text-foreground mb-2">Sign In</h2>
-              <p className="text-muted-foreground">Enter your credentials to access your account</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Sign In</h2>
+              <p className="text-sm sm:text-base text-muted-foreground">Enter your credentials to access your account</p>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-6">
+            <form onSubmit={handleLogin} className="space-y-5 sm:space-y-6">
               {/* Email Input */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-foreground/80">Email Address</label>
@@ -147,7 +150,7 @@ export default function LoginPage() {
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                    className="w-full pl-12 pr-4 py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm sm:text-base"
                     required
                   />
                 </div>
@@ -163,7 +166,7 @@ export default function LoginPage() {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-12 pr-12 py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                    className="w-full pl-12 pr-12 py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm sm:text-base"
                     required
                   />
                   <button
@@ -177,7 +180,7 @@ export default function LoginPage() {
               </div>
 
               {/* Remember Me & Forgot Password */}
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
                 <label className="flex items-center gap-2 cursor-pointer group">
                   <input
                     type="checkbox"
@@ -196,7 +199,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white py-4 rounded-xl font-semibold text-lg shadow-lg shadow-primary/20 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white py-4 rounded-xl font-semibold text-base sm:text-lg shadow-lg shadow-primary/20 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -218,17 +221,17 @@ export default function LoginPage() {
                 <div className="w-full border-t border-border"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-card text-muted-foreground font-medium">Or continue with</span>
+                <span className="px-4 bg-white dark:bg-slate-900 text-muted-foreground font-medium">Or continue with</span>
               </div>
             </div>
 
             {/* Social Login */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Button
                 type="button"
                 onClick={() => handleSocialLogin('google')}
                 variant="outline"
-                className="border-2 border-border hover:border-muted hover:bg-muted py-3 rounded-xl font-semibold text-foreground transition-all"
+                className="w-full border-2 border-border hover:border-muted hover:bg-muted py-3 rounded-xl font-semibold text-foreground transition-all flex items-center justify-center"
               >
                 <Chrome className="w-5 h-5 mr-2 text-red-500" />
                 Google
@@ -237,7 +240,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => handleSocialLogin('github')}
                 variant="outline"
-                className="border-2 border-border hover:border-muted hover:bg-muted py-3 rounded-xl font-semibold text-foreground transition-all"
+                className="w-full border-2 border-border hover:border-muted hover:bg-muted py-3 rounded-xl font-semibold text-foreground transition-all flex items-center justify-center"
               >
                 <GithubIcon className="w-5 h-5 mr-2" />
                 GitHub
@@ -255,9 +258,8 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </div>
-
       {/* Bottom Info */}
-      <div className="absolute bottom-4 left-0 right-0 text-center text-sm text-muted-foreground font-medium">
+      <div className="mt-8 text-center text-sm text-muted-foreground font-medium relative z-10">
         <p>© {new Date().getFullYear()} NextGen Platform. All rights reserved.</p>
       </div>
     </div>
