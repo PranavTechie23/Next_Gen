@@ -2259,11 +2259,11 @@ export default function StudentDashboard() {
           )}
 
           {/* Skill Test Tab */}
-          {activeTab === "skill-test" && (
+          {/* {activeTab === "skill-test" && (
             <div className="space-y-10">
               <SkillTest onBack={() => setActiveTab("overview")} />
             </div>
-          )}
+          )} */}
 
           {/* CTA Footer - Only show on overview tab */}
           {activeTab === "overview" && (

@@ -9,7 +9,7 @@ const plugins = [
   react(),
   tailwindcss(),
   // Dev-only plugins
-  ...(process.env.NODE_ENV !== "production" ? [jsxLocPlugin(), vitePluginManusRuntime()] : []),
+  ...(process.env.NODE_ENV !== "production" ? [vitePluginManusRuntime()] : []),
 ];
 
 export default defineConfig({
