@@ -291,13 +291,13 @@ const InstitutionsPage: React.FC = () => {
   const filteredInstitutions = institutions.filter((institution) => {
     const matchesTab = activeTab === 'all' || institution.status === activeTab;
     const matchesSearch = institution.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         institution.location.toLowerCase().includes(searchTerm.toLowerCase());
+      institution.location.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = selectedType === 'all' || institution.type === selectedType;
     const matchesCountry = selectedCountry === 'all' || institution.country === selectedCountry;
-    const matchesRating = selectedRating === 'all' || 
-                         (selectedRating === '4.5+' && institution.rating >= 4.5) ||
-                         (selectedRating === '4.0+' && institution.rating >= 4.0);
-    
+    const matchesRating = selectedRating === 'all' ||
+      (selectedRating === '4.5+' && institution.rating >= 4.5) ||
+      (selectedRating === '4.0+' && institution.rating >= 4.0);
+
     return matchesTab && matchesSearch && matchesType && matchesCountry && matchesRating;
   });
 
@@ -330,11 +330,19 @@ const InstitutionsPage: React.FC = () => {
   }, []);
 
   return (
-    <div className={`min-h-screen transition-colors duration-500 ${isDark ? 'bg-[#0a0b0e]' : 'bg-slate-50'}`}>
+    <div className={`min-h-screen transition-colors duration-500 ${isDark ? 'bg-background' : 'bg-slate-50'} relative overflow-hidden`}>
+      {/* Premium Background Glows */}
+      {isDark && (
+        <div className="premium-glow-bg">
+          <div className="premium-glow-1" />
+          <div className="premium-glow-2" />
+          <div className="premium-glow-3" />
+        </div>
+      )}
       {/* Main Content */}
       <div className="min-h-screen">
         {/* Header */}
-        <Header 
+        <Header
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           setIsModalOpen={setIsModalOpen}
@@ -524,10 +532,10 @@ interface HeaderProps {
   isDark: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ 
-  searchTerm, 
-  setSearchTerm, 
-  setIsModalOpen, 
+const Header: React.FC<HeaderProps> = ({
+  searchTerm,
+  setSearchTerm,
+  setIsModalOpen,
   setIsExportModalOpen,
   viewMode,
   setViewMode,
@@ -555,11 +563,10 @@ const Header: React.FC<HeaderProps> = ({
               placeholder="Search institutions... (⌘K)"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={`pl-10 pr-4 py-2.5 w-80 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all font-medium ${
-                isDark 
-                  ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:bg-white/10' 
+              className={`pl-10 pr-4 py-2.5 w-80 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all font-medium ${isDark
+                  ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:bg-white/10'
                   : 'bg-slate-50 border-slate-200 text-gray-900 focus:bg-white'
-              }`}
+                }`}
             />
           </div>
 
@@ -567,39 +574,36 @@ const Header: React.FC<HeaderProps> = ({
           <div className={`flex border-2 rounded-xl overflow-hidden ${isDark ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-white'}`}>
             <button
               onClick={() => setViewMode('grid')}
-              className={`px-4 py-2.5 transition-all font-semibold ${
-                viewMode === 'grid' 
-                  ? 'bg-blue-600 text-white shadow-lg' 
-                  : isDark 
-                    ? 'text-gray-400 hover:text-gray-300 hover:bg-white/10' 
+              className={`px-4 py-2.5 transition-all font-semibold ${viewMode === 'grid'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : isDark
+                    ? 'text-gray-400 hover:text-gray-300 hover:bg-white/10'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-slate-50'
-              }`}
+                }`}
             >
               ⊞
             </button>
             <div className={`w-px ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
             <button
               onClick={() => setViewMode('list')}
-              className={`px-4 py-2.5 transition-all font-semibold ${
-                viewMode === 'list' 
-                  ? 'bg-blue-600 text-white shadow-lg' 
-                  : isDark 
-                    ? 'text-gray-400 hover:text-gray-300 hover:bg-white/10' 
+              className={`px-4 py-2.5 transition-all font-semibold ${viewMode === 'list'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : isDark
+                    ? 'text-gray-400 hover:text-gray-300 hover:bg-white/10'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-slate-50'
-              }`}
+                }`}
             >
               ☰
             </button>
           </div>
 
           {/* Export Button */}
-          <button 
+          <button
             onClick={() => setIsExportModalOpen(true)}
-            className={`flex items-center gap-2 px-5 py-2.5 border-2 rounded-xl font-bold transition-all ${
-              isDark 
-                ? 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10 hover:border-white/20' 
+            className={`flex items-center gap-2 px-5 py-2.5 border-2 rounded-xl font-bold transition-all ${isDark
+                ? 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10 hover:border-white/20'
                 : 'border-slate-200 bg-white text-gray-700 hover:bg-slate-50 hover:border-slate-300'
-            }`}
+              }`}
           >
             <Download className="w-4 h-4" />
             Export
@@ -628,10 +632,9 @@ interface StatCardProps {
 
 const StatCard: React.FC<StatCardProps> = ({ stat, index, isDark }) => {
   return (
-    <div 
-      className={`p-6 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer border-t-4 border-transparent hover:border-t-4 fade-in delay-${index + 1} ${
-        isDark ? 'bg-white/[0.02] hover:bg-white/[0.05] backdrop-blur-xl' : 'bg-white hover:shadow-blue-500/10'
-      }`}
+    <div
+      className={`p-6 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer border-t-4 border-transparent hover:border-t-4 fade-in delay-${index + 1} ${isDark ? 'bg-white/[0.02] hover:bg-white/[0.05] backdrop-blur-xl' : 'bg-white hover:shadow-blue-500/10'
+        }`}
       style={{ borderTopColor: stat.color }}
     >
       <div className="flex items-center justify-between mb-4">
@@ -670,11 +673,10 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ isDark }) => {
       <div className={`lg:col-span-2 p-6 rounded-2xl shadow-xl ${isDark ? 'bg-white/[0.02] backdrop-blur-xl' : 'bg-white'}`}>
         <div className="flex justify-between items-center mb-6">
           <h3 className={`text-lg font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>Geographic Distribution</h3>
-          <select className={`px-4 py-2 border-2 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
-            isDark 
-              ? 'bg-white/5 border-white/10 text-white' 
+          <select className={`px-4 py-2 border-2 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${isDark
+              ? 'bg-white/5 border-white/10 text-white'
               : 'bg-white border-slate-200 text-gray-900'
-          }`}>
+            }`}>
             <option>Last 30 Days</option>
             <option>Last 90 Days</option>
             <option>Last Year</option>
@@ -715,12 +717,11 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ isDark }) => {
             { name: 'Stanford', rating: 4.8, logo: '🌲', color: '#8C1515' },
             { name: 'Oxford', rating: 4.8, logo: '📚', color: '#002147' },
           ].map((inst, i) => (
-            <div key={i} className={`flex items-center gap-3 p-3 rounded-lg transition-all cursor-pointer ${
-              isDark 
-                ? 'bg-white/5 hover:bg-white/10' 
+            <div key={i} className={`flex items-center gap-3 p-3 rounded-lg transition-all cursor-pointer ${isDark
+                ? 'bg-white/5 hover:bg-white/10'
                 : 'bg-gray-50 hover:bg-gray-100'
-            }`}>
-              <div 
+              }`}>
+              <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
                 style={{ backgroundColor: `${inst.color}15` }}
               >
@@ -754,9 +755,9 @@ interface QuickActionsProps {
 const QuickActions: React.FC<QuickActionsProps> = ({ setIsModalOpen, isDark }) => {
   const actions = [
     { icon: '🏢', title: 'Add New Institution', onClick: () => setIsModalOpen(true) },
-    { icon: '📊', title: 'View Analytics', onClick: () => {} },
-    { icon: '📥', title: 'Import Data', onClick: () => {} },
-    { icon: '⚙️', title: 'Manage Settings', onClick: () => {} },
+    { icon: '📊', title: 'View Analytics', onClick: () => { } },
+    { icon: '📥', title: 'Import Data', onClick: () => { } },
+    { icon: '⚙️', title: 'Manage Settings', onClick: () => { } },
   ];
 
   return (
@@ -765,15 +766,13 @@ const QuickActions: React.FC<QuickActionsProps> = ({ setIsModalOpen, isDark }) =
         <div
           key={index}
           onClick={action.onClick}
-          className={`p-5 rounded-xl border-2 border-dashed text-center cursor-pointer hover:border-blue-500 transition-all ${
-            isDark 
-              ? 'bg-white/[0.02] border-white/10 hover:bg-blue-500/10' 
+          className={`p-5 rounded-xl border-2 border-dashed text-center cursor-pointer hover:border-blue-500 transition-all ${isDark
+              ? 'bg-white/[0.02] border-white/10 hover:bg-blue-500/10'
               : 'bg-white border-gray-300 hover:bg-blue-50/50'
-          }`}
+            }`}
         >
-          <div className={`w-14 h-14 mx-auto mb-3 rounded-xl flex items-center justify-center text-3xl ${
-            isDark ? 'bg-blue-500/10' : 'bg-blue-50'
-          }`}>
+          <div className={`w-14 h-14 mx-auto mb-3 rounded-xl flex items-center justify-center text-3xl ${isDark ? 'bg-blue-500/10' : 'bg-blue-50'
+            }`}>
             {action.icon}
           </div>
           <div className={`text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{action.title}</div>
@@ -804,15 +803,14 @@ const Tabs: React.FC<TabsProps> = ({ activeTab, setActiveTab, isDark }) => {
         <button
           key={tab.id}
           onClick={() => setActiveTab(tab.id as any)}
-          className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
-            activeTab === tab.id
+          className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${activeTab === tab.id
               ? isDark
                 ? 'bg-blue-500/20 text-blue-400 shadow-sm'
                 : 'bg-white text-gray-900 shadow-sm'
               : isDark
                 ? 'text-gray-400 hover:text-gray-300'
                 : 'text-gray-600 hover:text-gray-900'
-          }`}
+            }`}
         >
           {tab.label}
         </button>
@@ -848,19 +846,17 @@ const FilterBar: React.FC<FilterBarProps> = ({
   isDark,
 }) => {
   return (
-    <div className={`p-5 rounded-xl shadow-sm mb-6 flex flex-wrap items-center gap-4 fade-in ${
-      isDark ? 'bg-white/[0.02]' : 'bg-white'
-    }`}>
+    <div className={`p-5 rounded-xl shadow-sm mb-6 flex flex-wrap items-center gap-4 fade-in ${isDark ? 'bg-white/[0.02]' : 'bg-white'
+      }`}>
       <span className={`text-sm font-semibold ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Filter by:</span>
-      
+
       <select
         value={selectedType}
         onChange={(e) => setSelectedType(e.target.value)}
-        className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
-          isDark 
-            ? 'bg-white/5 border-white/10 text-white' 
+        className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isDark
+            ? 'bg-white/5 border-white/10 text-white'
             : 'bg-white border-gray-300 text-gray-900'
-        }`}
+          }`}
       >
         <option value="all">All Types</option>
         <option value="university">University</option>
@@ -872,11 +868,10 @@ const FilterBar: React.FC<FilterBarProps> = ({
       <select
         value={selectedCountry}
         onChange={(e) => setSelectedCountry(e.target.value)}
-        className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
-          isDark 
-            ? 'bg-white/5 border-white/10 text-white' 
+        className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isDark
+            ? 'bg-white/5 border-white/10 text-white'
             : 'bg-white border-gray-300 text-gray-900'
-        }`}
+          }`}
       >
         <option value="all">All Countries</option>
         <option value="USA">USA</option>
@@ -888,11 +883,10 @@ const FilterBar: React.FC<FilterBarProps> = ({
       <select
         value={selectedRating}
         onChange={(e) => setSelectedRating(e.target.value)}
-        className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
-          isDark 
-            ? 'bg-white/5 border-white/10 text-white' 
+        className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isDark
+            ? 'bg-white/5 border-white/10 text-white'
             : 'bg-white border-gray-300 text-gray-900'
-        }`}
+          }`}
       >
         <option value="all">All Ratings</option>
         <option value="4.5+">4.5+ Stars</option>
@@ -904,24 +898,22 @@ const FilterBar: React.FC<FilterBarProps> = ({
           <button
             key={tag}
             onClick={() => toggleTag(tag)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTags.includes(tag)
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTags.includes(tag)
                 ? 'bg-blue-600 text-white'
                 : isDark
                   ? 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
                   : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-            }`}
+              }`}
           >
             {tag}
           </button>
         ))}
         <button
           onClick={() => setIsAdvancedFilterOpen(true)}
-          className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
-            isDark
+          className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${isDark
               ? 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
               : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
-          }`}
+            }`}
         >
           🔍 Advanced
         </button>
@@ -949,11 +941,10 @@ const InstitutionCard: React.FC<InstitutionCardProps> = ({ institution, index, o
   return (
     <div
       onClick={onClick}
-      className={`rounded-xl p-6 shadow-sm hover:shadow-xl hover:border-blue-500 border transition-all cursor-pointer hover:-translate-y-1 fade-in delay-${Math.min(index % 3 + 1, 4)} ${
-        isDark 
-          ? 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05]' 
+      className={`rounded-xl p-6 shadow-sm hover:shadow-xl hover:border-blue-500 border transition-all cursor-pointer hover:-translate-y-1 fade-in delay-${Math.min(index % 3 + 1, 4)} ${isDark
+          ? 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05]'
           : 'bg-white border-transparent'
-      }`}
+        }`}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
@@ -983,11 +974,10 @@ const InstitutionCard: React.FC<InstitutionCardProps> = ({ institution, index, o
           {[...Array(5)].map((_, i) => (
             <Star
               key={i}
-              className={`w-4 h-4 ${
-                i < Math.floor(institution.rating)
+              className={`w-4 h-4 ${i < Math.floor(institution.rating)
                   ? 'fill-yellow-400 text-yellow-400'
                   : isDark ? 'text-gray-600' : 'text-gray-300'
-              }`}
+                }`}
             />
           ))}
         </div>
@@ -1036,11 +1026,10 @@ const InstitutionCard: React.FC<InstitutionCardProps> = ({ institution, index, o
           <span className="text-green-600 font-semibold">+{institution.enrollmentGrowth}%</span>
           <span className={isDark ? 'text-gray-500' : 'text-gray-500'}>growth</span>
         </div>
-        <button className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
-          isDark 
-            ? 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20' 
+        <button className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${isDark
+            ? 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
             : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-        }`}>
+          }`}>
           View Details
         </button>
       </div>
@@ -1066,11 +1055,10 @@ const InstitutionListItem: React.FC<InstitutionListItemProps> = ({ institution, 
   return (
     <div
       onClick={onClick}
-      className={`rounded-xl p-5 shadow-sm hover:shadow-lg hover:border-blue-500 border transition-all cursor-pointer ${
-        isDark 
-          ? 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05]' 
+      className={`rounded-xl p-5 shadow-sm hover:shadow-lg hover:border-blue-500 border transition-all cursor-pointer ${isDark
+          ? 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05]'
           : 'bg-white border-transparent'
-      }`}
+        }`}
     >
       <div className="flex items-center gap-6">
         {/* Logo */}
@@ -1112,11 +1100,10 @@ const InstitutionListItem: React.FC<InstitutionListItemProps> = ({ institution, 
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
-                  className={`w-4 h-4 ${
-                    i < Math.floor(institution.rating)
+                  className={`w-4 h-4 ${i < Math.floor(institution.rating)
                       ? 'fill-yellow-400 text-yellow-400'
                       : isDark ? 'text-gray-600' : 'text-gray-300'
-                  }`}
+                    }`}
                 />
               ))}
             </div>
@@ -1136,25 +1123,22 @@ const InstitutionListItem: React.FC<InstitutionListItemProps> = ({ institution, 
 
         {/* Actions */}
         <div className="flex gap-2">
-          <button className={`w-9 h-9 flex items-center justify-center border rounded-lg transition-all ${
-            isDark 
-              ? 'border-white/10 hover:bg-white/10' 
+          <button className={`w-9 h-9 flex items-center justify-center border rounded-lg transition-all ${isDark
+              ? 'border-white/10 hover:bg-white/10'
               : 'border-gray-300 hover:bg-gray-50'
-          }`}>
+            }`}>
             <Edit2 className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />
           </button>
-          <button className={`w-9 h-9 flex items-center justify-center border rounded-lg transition-all ${
-            isDark 
-              ? 'border-white/10 hover:bg-white/10' 
+          <button className={`w-9 h-9 flex items-center justify-center border rounded-lg transition-all ${isDark
+              ? 'border-white/10 hover:bg-white/10'
               : 'border-gray-300 hover:bg-gray-50'
-          }`}>
+            }`}>
             <BarChart2 className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />
           </button>
-          <button className={`w-9 h-9 flex items-center justify-center border rounded-lg transition-all ${
-            isDark 
-              ? 'border-white/10 hover:bg-white/10' 
+          <button className={`w-9 h-9 flex items-center justify-center border rounded-lg transition-all ${isDark
+              ? 'border-white/10 hover:bg-white/10'
               : 'border-gray-300 hover:bg-gray-50'
-          }`}>
+            }`}>
             <MoreVertical className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />
           </button>
         </div>
@@ -1194,18 +1178,16 @@ const CreateInstitutionModal: React.FC<CreateInstitutionModalProps> = ({ setIsMo
         if (e.target === e.currentTarget) setIsModalOpen(false);
       }}
     >
-      <div className={`modal-content rounded-2xl p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto ${
-        isDark ? 'bg-slate-900' : 'bg-white'
-      }`}>
+      <div className={`modal-content rounded-2xl p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto ${isDark ? 'bg-slate-900' : 'bg-white'
+        }`}>
         <div className="flex justify-between items-center mb-6">
           <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Add New Institution</h2>
           <button
             onClick={() => setIsModalOpen(false)}
-            className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all ${
-              isDark 
-                ? 'bg-white/10 hover:bg-white/20 text-gray-300' 
+            className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all ${isDark
+                ? 'bg-white/10 hover:bg-white/20 text-gray-300'
                 : 'bg-gray-100 hover:bg-gray-200'
-            }`}
+              }`}
           >
             ✕
           </button>
@@ -1222,11 +1204,10 @@ const CreateInstitutionModal: React.FC<CreateInstitutionModalProps> = ({ setIsMo
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Enter institution name"
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  isDark 
-                    ? 'bg-white/5 border-white/10 text-white placeholder-gray-500' 
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDark
+                    ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
                     : 'bg-white border-gray-300 text-gray-900'
-                }`}
+                  }`}
                 required
               />
             </div>
@@ -1237,11 +1218,10 @@ const CreateInstitutionModal: React.FC<CreateInstitutionModalProps> = ({ setIsMo
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    isDark 
-                      ? 'bg-white/5 border-white/10 text-white' 
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDark
+                      ? 'bg-white/5 border-white/10 text-white'
                       : 'bg-white border-gray-300 text-gray-900'
-                  }`}
+                    }`}
                 >
                   <option value="university">University</option>
                   <option value="college">College</option>
@@ -1259,11 +1239,10 @@ const CreateInstitutionModal: React.FC<CreateInstitutionModalProps> = ({ setIsMo
                   value={formData.founded}
                   onChange={(e) => setFormData({ ...formData, founded: e.target.value })}
                   placeholder="1861"
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    isDark 
-                      ? 'bg-white/5 border-white/10 text-white placeholder-gray-500' 
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDark
+                      ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
                       : 'bg-white border-gray-300 text-gray-900'
-                  }`}
+                    }`}
                 />
               </div>
             </div>
@@ -1278,11 +1257,10 @@ const CreateInstitutionModal: React.FC<CreateInstitutionModalProps> = ({ setIsMo
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   placeholder="City, State"
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    isDark 
-                      ? 'bg-white/5 border-white/10 text-white placeholder-gray-500' 
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDark
+                      ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
                       : 'bg-white border-gray-300 text-gray-900'
-                  }`}
+                    }`}
                   required
                 />
               </div>
@@ -1292,11 +1270,10 @@ const CreateInstitutionModal: React.FC<CreateInstitutionModalProps> = ({ setIsMo
                 <select
                   value={formData.country}
                   onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    isDark 
-                      ? 'bg-white/5 border-white/10 text-white' 
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDark
+                      ? 'bg-white/5 border-white/10 text-white'
                       : 'bg-white border-gray-300 text-gray-900'
-                  }`}
+                    }`}
                 >
                   <option value="USA">United States</option>
                   <option value="UK">United Kingdom</option>
@@ -1314,11 +1291,10 @@ const CreateInstitutionModal: React.FC<CreateInstitutionModalProps> = ({ setIsMo
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="info@institution.edu"
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  isDark 
-                    ? 'bg-white/5 border-white/10 text-white placeholder-gray-500' 
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDark
+                    ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
                     : 'bg-white border-gray-300 text-gray-900'
-                }`}
+                  }`}
                 required
               />
             </div>
@@ -1331,11 +1307,10 @@ const CreateInstitutionModal: React.FC<CreateInstitutionModalProps> = ({ setIsMo
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="+1 (555) 123-4567"
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    isDark 
-                      ? 'bg-white/5 border-white/10 text-white placeholder-gray-500' 
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDark
+                      ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
                       : 'bg-white border-gray-300 text-gray-900'
-                  }`}
+                    }`}
                 />
               </div>
 
@@ -1346,11 +1321,10 @@ const CreateInstitutionModal: React.FC<CreateInstitutionModalProps> = ({ setIsMo
                   value={formData.website}
                   onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                   placeholder="www.institution.edu"
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    isDark 
-                      ? 'bg-white/5 border-white/10 text-white placeholder-gray-500' 
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDark
+                      ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
                       : 'bg-white border-gray-300 text-gray-900'
-                  }`}
+                    }`}
                 />
               </div>
             </div>
@@ -1360,11 +1334,10 @@ const CreateInstitutionModal: React.FC<CreateInstitutionModalProps> = ({ setIsMo
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
-              className={`flex-1 px-6 py-3 border rounded-lg font-semibold transition-all ${
-                isDark 
-                  ? 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10' 
+              className={`flex-1 px-6 py-3 border rounded-lg font-semibold transition-all ${isDark
+                  ? 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10'
                   : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-              }`}
+                }`}
             >
               Cancel
             </button>
@@ -1399,9 +1372,8 @@ const InstitutionDetailModal: React.FC<InstitutionDetailModalProps> = ({ institu
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className={`modal-content rounded-2xl p-8 max-w-5xl w-full max-h-[90vh] overflow-y-auto ${
-        isDark ? 'bg-slate-900' : 'bg-white'
-      }`}>
+      <div className={`modal-content rounded-2xl p-8 max-w-5xl w-full max-h-[90vh] overflow-y-auto ${isDark ? 'bg-slate-900' : 'bg-white'
+        }`}>
         <div className="flex justify-between items-start mb-6">
           <div className="flex items-center gap-4">
             <div
@@ -1426,11 +1398,10 @@ const InstitutionDetailModal: React.FC<InstitutionDetailModalProps> = ({ institu
           </div>
           <button
             onClick={onClose}
-            className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all ${
-              isDark 
-                ? 'bg-white/10 hover:bg-white/20 text-gray-300' 
+            className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all ${isDark
+                ? 'bg-white/10 hover:bg-white/20 text-gray-300'
                 : 'bg-gray-100 hover:bg-gray-200'
-            }`}
+              }`}
           >
             ✕
           </button>
@@ -1462,11 +1433,10 @@ const InstitutionDetailModal: React.FC<InstitutionDetailModalProps> = ({ institu
             {['Overview', 'Performance', 'Contact', 'Accreditation'].map((tab) => (
               <button
                 key={tab}
-                className={`pb-3 text-sm font-bold transition-all ${
-                  isDark 
-                    ? 'text-gray-400 hover:text-blue-400 border-b-2 border-transparent hover:border-blue-400' 
+                className={`pb-3 text-sm font-bold transition-all ${isDark
+                    ? 'text-gray-400 hover:text-blue-400 border-b-2 border-transparent hover:border-blue-400'
                     : 'text-gray-600 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600'
-                }`}
+                  }`}
               >
                 {tab}
               </button>
@@ -1564,11 +1534,10 @@ const InstitutionDetailModal: React.FC<InstitutionDetailModalProps> = ({ institu
                 {institution.accreditation.map((acc) => (
                   <span
                     key={acc}
-                    className={`px-3 py-1.5 rounded-xl text-sm font-bold ${
-                      isDark 
-                        ? 'bg-blue-500/10 text-blue-400' 
+                    className={`px-3 py-1.5 rounded-xl text-sm font-bold ${isDark
+                        ? 'bg-blue-500/10 text-blue-400'
                         : 'bg-blue-50 text-blue-700'
-                    }`}
+                      }`}
                   >
                     {acc}
                   </span>
@@ -1582,11 +1551,10 @@ const InstitutionDetailModal: React.FC<InstitutionDetailModalProps> = ({ institu
           <button className={`flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold hover:shadow-xl transition-all`}>
             View Full Analytics
           </button>
-          <button className={`px-6 py-3 border rounded-xl font-bold transition-all ${
-            isDark 
-              ? 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10' 
+          <button className={`px-6 py-3 border rounded-xl font-bold transition-all ${isDark
+              ? 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10'
               : 'border-gray-300 bg-white hover:bg-gray-50'
-          }`}>
+            }`}>
             Edit Institution
           </button>
         </div>
@@ -1612,18 +1580,16 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({ isOpen, onClo
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className={`modal-content rounded-2xl p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto ${
-        isDark ? 'bg-slate-900' : 'bg-white'
-      }`}>
+      <div className={`modal-content rounded-2xl p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto ${isDark ? 'bg-slate-900' : 'bg-white'
+        }`}>
         <div className="flex justify-between items-center mb-6">
           <h2 className={`text-2xl font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>Advanced Filters</h2>
           <button
             onClick={onClose}
-            className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all ${
-              isDark 
-                ? 'bg-white/10 hover:bg-white/20 text-gray-300' 
+            className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all ${isDark
+                ? 'bg-white/10 hover:bg-white/20 text-gray-300'
                 : 'bg-gray-100 hover:bg-gray-200'
-            }`}
+              }`}
           >
             ✕
           </button>
@@ -1637,20 +1603,18 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({ isOpen, onClo
               <input
                 type="number"
                 placeholder="Min students"
-                className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
-                  isDark 
-                    ? 'bg-white/5 border-white/10 text-white placeholder-gray-500' 
+                className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${isDark
+                    ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
                     : 'bg-white border-gray-300 text-gray-900'
-                }`}
+                  }`}
               />
               <input
                 type="number"
                 placeholder="Max students"
-                className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
-                  isDark 
-                    ? 'bg-white/5 border-white/10 text-white placeholder-gray-500' 
+                className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${isDark
+                    ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
                     : 'bg-white border-gray-300 text-gray-900'
-                }`}
+                  }`}
               />
             </div>
           </div>
@@ -1665,9 +1629,8 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({ isOpen, onClo
               min="0"
               max="100"
               defaultValue="80"
-              className={`w-full h-2 rounded-lg appearance-none cursor-pointer ${
-                isDark ? 'bg-white/5' : 'bg-gray-200'
-              }`}
+              className={`w-full h-2 rounded-lg appearance-none cursor-pointer ${isDark ? 'bg-white/5' : 'bg-gray-200'
+                }`}
             />
             <div className={`flex justify-between text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
               <span>0%</span>
@@ -1683,20 +1646,18 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({ isOpen, onClo
               <input
                 type="number"
                 placeholder="From year"
-                className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
-                  isDark 
-                    ? 'bg-white/5 border-white/10 text-white placeholder-gray-500' 
+                className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${isDark
+                    ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
                     : 'bg-white border-gray-300 text-gray-900'
-                }`}
+                  }`}
               />
               <input
                 type="number"
                 placeholder="To year"
-                className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
-                  isDark 
-                    ? 'bg-white/5 border-white/10 text-white placeholder-gray-500' 
+                className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${isDark
+                    ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
                     : 'bg-white border-gray-300 text-gray-900'
-                }`}
+                  }`}
               />
             </div>
           </div>
@@ -1706,11 +1667,10 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({ isOpen, onClo
             <label className={`block text-sm font-bold mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Accreditation</label>
             <div className="grid grid-cols-3 gap-2">
               {['ABET', 'AACSB', 'NEASC', 'WASC', 'QAA', 'EQUIS'].map((acc) => (
-                <label key={acc} className={`flex items-center gap-2 p-3 rounded-xl cursor-pointer transition-all ${
-                  isDark 
-                    ? 'bg-white/5 hover:bg-white/10' 
+                <label key={acc} className={`flex items-center gap-2 p-3 rounded-xl cursor-pointer transition-all ${isDark
+                    ? 'bg-white/5 hover:bg-white/10'
                     : 'bg-gray-50 hover:bg-gray-100'
-                }`}>
+                  }`}>
                   <input type="checkbox" className="w-4 h-4 text-blue-600" />
                   <span className={`text-sm font-bold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{acc}</span>
                 </label>
@@ -1722,11 +1682,10 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({ isOpen, onClo
         <div className="flex gap-3 mt-8">
           <button
             onClick={onClose}
-            className={`flex-1 px-6 py-3 border-2 rounded-xl font-bold transition-all ${
-              isDark 
-                ? 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10' 
+            className={`flex-1 px-6 py-3 border-2 rounded-xl font-bold transition-all ${isDark
+                ? 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10'
                 : 'border-gray-300 bg-white hover:bg-gray-50'
-            }`}
+              }`}
           >
             Reset Filters
           </button>
@@ -1759,18 +1718,16 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, isDark }) =>
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className={`modal-content rounded-2xl p-8 max-w-lg w-full ${
-        isDark ? 'bg-slate-900' : 'bg-white'
-      }`}>
+      <div className={`modal-content rounded-2xl p-8 max-w-lg w-full ${isDark ? 'bg-slate-900' : 'bg-white'
+        }`}>
         <div className="flex justify-between items-center mb-6">
           <h2 className={`text-2xl font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>Export Institutions</h2>
           <button
             onClick={onClose}
-            className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all ${
-              isDark 
-                ? 'bg-white/10 hover:bg-white/20 text-gray-300' 
+            className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all ${isDark
+                ? 'bg-white/10 hover:bg-white/20 text-gray-300'
                 : 'bg-gray-100 hover:bg-gray-200'
-            }`}
+              }`}
           >
             ✕
           </button>
@@ -1788,11 +1745,10 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, isDark }) =>
               ].map((option) => (
                 <button
                   key={option.format}
-                  className={`p-4 border-2 rounded-xl transition-all text-center ${
-                    isDark 
-                      ? 'border-white/10 hover:border-blue-500 hover:bg-blue-500/10' 
+                  className={`p-4 border-2 rounded-xl transition-all text-center ${isDark
+                      ? 'border-white/10 hover:border-blue-500 hover:bg-blue-500/10'
                       : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50'
-                  }`}
+                    }`}
                 >
                   <div className="text-2xl mb-1">{option.icon}</div>
                   <div className={`text-sm font-bold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{option.format}</div>
@@ -1805,11 +1761,10 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, isDark }) =>
             <label className={`block text-sm font-bold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Include</label>
             <div className="space-y-2">
               {['Basic Details', 'Contact Information', 'Performance Metrics', 'Accreditation'].map((option) => (
-                <label key={option} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
-                  isDark 
-                    ? 'bg-white/5 hover:bg-white/10' 
+                <label key={option} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${isDark
+                    ? 'bg-white/5 hover:bg-white/10'
                     : 'bg-gray-50 hover:bg-gray-100'
-                }`}>
+                  }`}>
                   <input type="checkbox" defaultChecked className="w-4 h-4 text-blue-600" />
                   <span className={`text-sm font-bold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{option}</span>
                 </label>
@@ -1821,11 +1776,10 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, isDark }) =>
         <div className="flex gap-3 mt-6">
           <button
             onClick={onClose}
-            className={`flex-1 px-6 py-3 border-2 rounded-xl font-bold transition-all ${
-              isDark 
-                ? 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10' 
+            className={`flex-1 px-6 py-3 border-2 rounded-xl font-bold transition-all ${isDark
+                ? 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10'
                 : 'border-gray-300 bg-white hover:bg-gray-50'
-            }`}
+              }`}
           >
             Cancel
           </button>
