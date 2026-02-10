@@ -1,154 +1,99 @@
-# Backend Architecture & Requirements Plan
+# Backend Architecture & Robust System Design
 
 ## 1. Executive Summary
-The frontend for the Campus Career & Placement Platform is extensive, covering detailed workflows for Students, Recruiters, TPOs, and Super Admins. The backend must support these with a robust, modular architecture.
-Currently, the backend code is **non-existent** (greenfield), with only a proposed structure in documentation. This plan outlines the **complete scope** of backend work required to support the existing frontend.
+The Campus Career & Placement Platform is transitioning from a basic project to an **Enterprise-Grade System**. This architecture prioritizes **Data Integrity, Security, and Business Logic Enforcement** (Policy Engines) over simple CRUD operations.
+
+The system connects 4 key stakeholders:
+1.  **TPO Admin** (Superuser, Policy Maker)
+2.  **TPO Department Heads** (Analytics & Training)
+3.  **Recruiters** (External Hiring Partners)
+4.  **Students** (End Users)
 
 ---
 
-## 2. Core Backend Modules
-*Based on `backend_breakpoints.md` and essential platform functions.*
+## 2. Core Architectural Pillars (The "Robust" Upgrades)
 
-### 2.1 Authentication & Authorization Module
-*Responsibility: Secure access, role management, session handling.*
-- **Components**: `authController`, `authMiddleware`, `Passport/JWT Strategy`
-- **APIs**:
-  - `POST /api/auth/register` (Student/TPO/Recruiter registry)
-  - `POST /api/auth/login`
-  - `POST /api/auth/logout`
-  - `POST /api/auth/refresh-token`
-  - `POST /api/auth/forgot-password`
-  - `POST /api/auth/reset-password`
-  - `GET /api/auth/me` (Current user context)
+### 2.1 The Policy Engine (Logic Layer)
+Instead of simple data entry, every major action is gated by a "Policy Check".
+-   **Anti-Hoarding Rule**: A student cannot apply for a new job *unless* the new package is significantly higher (e.g., > 1.5x) than their current offer.
+-   **Debarment Enforcer**: Students marked as "Debarred" (Blacklisted) are systemically blocked from the API level during the freeze period.
+-   **Eligibility Validator**: Jobs automatically filter students based on Verified Academic Data (CGPA, Backlogs, Branch), not self-reported data.
 
-### 2.2 Student Module
-*Responsibility: Profile management, dashboard stats, resume data.*
-- **Components**: `studentController`, `studentService`, `profileHelper`
-- **APIs**:
-  - `GET /api/students/profile` (Get own profile)
-  - `PUT /api/students/profile` (Update details - locks after TPO verification)
-  - `GET /api/students/dashboard` (Aggregated stats: jobs applied, interviews, events)
-  - `GET /api/students/resume` (Fetch resume builder data)
-  - `PUT /api/students/resume` (Save resume builder data)
-  - `POST /api/students/resume/generate` (Generate PDF) **[GAP]**
+### 2.2 The State Machine (Data Integrity)
+-   **Profile Locking**: Key academic fields (CGPA, Backlogs) are **Locked** after TPO verification.
+-   **Auto-Reset**: If a student edits critical data after approval, their status automatically reverts to `PENDING_VERIFICATION`, preventing data fraud.
+-   **Application Lifecycle**: Usage of strict Enums for application states (`APPLIED` -> `SHORTLISTED` -> `INTERVIEW` -> `OFFERED` -> `PLACED`).
 
-### 2.3 Jobs & Applications Module
-*Responsibility: Job posting, searching, applying, eligibility checks.*
-- **Components**: `jobController`, `applicationController`, `eligibilityEngine`
-- **APIs**:
-  - `GET /api/jobs` (List with filters: Role, CTC, Company)
-  - `GET /api/jobs/:id` (Details)
-  - `POST /api/jobs` (Recruiter: Create Job)
-  - `PUT /api/jobs/:id` (Recruiter: Update/Close Job)
-  - `POST /api/jobs/:id/apply` (Student: Apply - triggers Eligibility Engine)
-  - `GET /api/applications/my` (Student: Track history)
-  - `GET /api/applications/job/:jobId` (Recruiter: View applicants)
-  - `PUT /api/applications/:id/status` (Recruiter: Shortlist/Reject)
+### 2.3 The "Trust-But-Verify" Logic (Audit & Security)
+-   **Audit Trail**: Every critical write operation (Profile Update, Student Debarment, Result Upload) is logged in an immutable `audit_logs` table.
+-   **Soft Deletes**: Critical entities (Users, Jobs) are never hard-deleted. They are flagged `is_active = false` to preserve history for analytics.
 
-### 2.4 Interview & Offer Module
-*Responsibility: Scheduling, feedback, offer rollout.*
-- **Components**: `interviewController`, `offerController`
-- **APIs**:
-  - `POST /api/interviews/schedule` (Recruiter)
-  - `GET /api/interviews/my` (Student/Recruiter lists)
-  - `POST /api/interviews/:id/feedback` (Recruiter submit feedback)
-  - `POST /api/offers/generate` (Recruiter)
-  - `PUT /api/offers/:id/respond` (Student: Accept/Reject)
-
-### 2.5 TPO / College Module
-*Responsibility: Student verification, college-level settings.*
-- **Components**: `tpoController`, `collegeService`
-- **APIs**:
-  - `GET /api/tpo/students/unverified`
-  - `PUT /api/tpo/students/:id/verify` (Lock profile)
-  - `GET /api/tpo/dashboard` (Stats for the college)
-  - `PUT /api/tpo/settings` (College info updates)
-
-### 2.6 Admin & Analytics Module
-*Responsibility: Platform oversight, onboarding colleges, reports.*
-- **Components**: `adminController`, `analyticsController`, `reportService`
-- **APIs**:
-  - `POST /api/admin/institutions` (Onboard new college)
-  - `GET /api/admin/metrics` (System health, user counts)
-  - `GET /api/admin/analytics/placement` (Charts: Placement % by branch/year)
-  - `GET /api/admin/reports/export` (CSV/Excel download)
-  - `POST /api/admin/users/override` (Role/Access override)
+### 2.4 External Data Loop (Analytics Accuracy)
+-   **External Offers**: Students can report Off-Campus Placements/Higher Studies. Once verified by TPO, these count towards college analytics, fixing the "Unplaced" data gap.
 
 ---
 
-## 3. Missing / Undefined Backend Modules
-*These are required by frontend pages but were NOT detailed in `backend_breakpoints.md`.*
+## 3. Detailed Data Architecture
 
-### 3.1 Content Management System (CMS) & Resources **[MAJOR GAP]**
-*Pages: Blog, CaseStudies, CorporateNews, SuccessStories, Webinars, WellBeing*
-*Responsibility: Allow Admin/TPO to publish content for students.*
-- **Components**: `cmsController`, `contentService`
-- **APIs**:
-  - `GET /api/content/:type` (Fetch list of blogs/news/stories)
-  - `GET /api/content/:type/:id` (Read single item)
-  - `POST /api/content` (Admin: Create content)
-  - `PUT /api/content/:id` (Admin: Update)
-  - `DELETE /api/content/:id` (Admin: Remove)
-  - `POST /api/webinars/:id/register` (Student registration for webinars)
+### 3.1 Central Identity & Authentication
+*Single Source of Truth for Login.*
+-   **Table**: `users`
+-   **Fields**: `id`, `email`, `password_hash`, `role` (ENUM), `is_active`.
+-   **Logic**: Centralized Auth Middleware checks `is_active` status on every request.
 
-### 3.2 Assessment & Prep Engine **[MAJOR GAP]**
-*Pages: Assessments, InterviewPrep (Mock Tests)*
-*Responsibility: Create tests, serve questions, evaluate answers.*
-- **Components**: `assessmentController`, `scoringEngine`
-- **APIs**:
-  - `GET /api/assessments` (List available tests)
-  - `GET /api/assessments/:id` (Start test - fetch questions)
-  - `POST /api/assessments/:id/submit` (Submit answers, calculate score)
-  - `POST /api/admin/assessments` (Create new test template)
+### 3.2 Student Profile & Policy Data
+*The "Heavy Lifter" - Stores verified data and policy flags.*
+-   **Table**: `students` (Linked to `users`)
+-   **Key Fields**:
+    -   `profile_approval_status` (Enum: PENDING, APPROVED, REJECTED)
+    -   `is_placed` (Boolean) - **Crucial for Hoarding Logic**
+    -   `current_package_value` (Decimal) - **Crucial for "Dream Offer" Logic**
+    -   `is_debarred` (Boolean) - **Crucial for Compliance**
+    -   `debar_lift_date` (Date)
+-   **Table**: `student_profiles` (Resume, Links, Skills - Student Editable)
 
-### 3.3 General Support & Feedback
-*Pages: ContactUs, FeedbackForm, HelpCenter*
-- **Components**: `supportController`, `feedbackService`
-- **APIs**:
-  - `POST /api/support/contact` (Public contact form)
-  - `POST /api/feedback` (User feedback submission)
-  - `GET /api/admin/feedback` (Admin review)
-  - `GET /api/faqs` (Help Center data)
+### 3.3 Recruitment Engine
+*Manages the "Event" and "Specific Roles".*
+-   **Table**: `recruitment_drives` (The Event, e.g., "TCS NQT 2026")
+-   **Table**: `job_postings` (The Roles)
+    -   **Policy Fields**: `package_value`, `min_cgpa`, `eligible_branches` (JSON), `max_backlogs`.
 
-### 3.4 Shared Infrastructure Services
-*These cross-cutting concerns are needed to support all modules.*
-- **File Upload Service**:
-  - *Usage*: Profile pics, Resumes, Company Logos, Assessment attachments.
-  - *API*: `POST /api/upload` (Returns URL/Path).
-  - *Tech*: Multer (Local) or AWS S3 SDK.
-- **Notification Service**:
-  - *Usage*: "You were shortlisted", "New Job Posted", "Profile Verified".
-  - *API*: `GET /api/notifications` (In-app list), `PUT /api/notifications/:id/read`.
-  - *Background*: Email/SMS workers (Nodemailer/Twilio).
-- **Payment / Billing Service**:
-  - *Pages*: Pricing, RefundPolicy.
-  - *Scope*: If the platform charges colleges/recruiters, integration with Stripe/Razorpay is needed.
-  - *API*: `POST /api/payment/checkout`, `POST /api/payment/webhook`.
+### 3.4 Transactional Logic (Applications)
+*The core link between Student and Job.*
+-   **Table**: `applications`
+    -   **Constraint**: Unique constraint on `(student_id, job_id)` to prevent double applications.
+    -   **Status Flow**: `APPLIED` -> `SHORTLISTED` -> `INTERVIEW_SCHEDULED` -> `SELECTED` -> `PLACED`.
+
+### 3.5 Compliance & Security
+-   **Table**: `audit_logs`
+    -   Tracks: `actor_id`, `action_type`, `target_entity`, `old_value`, `new_value`.
 
 ---
 
-## 4. Proposed Backend Project Structure
-To organize this large scope, use a feature-folder or distinct layer architecture:
+## 4. Backend Module Breakdown
 
-```
-server/
-├── src/
-│   ├── config/             # DB, Env, Passport
-│   ├── controllers/        # Request handlers (Auth, Job, Student, CMS...)
-│   ├── middleware/         # Auth, Validation, Upload, ErrorHandler
-│   ├── models/             # Mongoose/Sequelize Schemas
-│   ├── routes/             # API Route definitions
-│   ├── services/           # Business logic (Email, PDF, Scoring)
-│   ├── utils/              # Helpers (Eligibility, Date calculations)
-│   ├── app.js              # Express app setup
-│   └── index.js            # Entry point
-└── ...
-```
+### 4.1 Auth Module (RBAC)
+-   **Middleware**: `verifyRole(['TPO', 'RECRUITER'])`, `validateActiveUser`.
+-   **Rate Limiting**: applied to Login/Register endpoints.
 
-## 5. Summary of Scope
-The backend is significantly larger than just "Users and Jobs".
-- **Total Modules**: ~8 (Auth, Student, Job, Interview, TPO, Admin, CMS, Assessment)
-- **Estimated Endpoints**: 60-80 APIs
-- **Critical Integrations**: File Storage, Email/SMS, PDF Generation.
+### 4.2 Student Module (Profile & Policy)
+-   **GET /me**: Returns profile + Policy Status (Placed? Debarred?).
+-   **PUT /profile**: Triggers "Auto-Reset" logic if critical fields change.
+-   **POST /external-offer**: Upload proof for off-campus placement.
 
-**Recommendation**: Start with **Auth** and **Student Profile**, then **Jobs**, then **CMS**. Leave **Assessments**/Interviews for later phases.
+### 4.3 Recruitment Module (The Filter)
+-   **POST /jobs**: Validates eligibility criteria structure.
+-   **GET /jobs/:id/eligibility**: (Student Side) Returns `true/false` + `reason` (e.g., "CGPA too low", "Already Placed").
+
+### 4.4 Analytics Module
+-   **Real-time Stats**: Aggregates data including "External Placements".
+-   **Placement Prediction**: Uses historical data to suggest "Win Probability" for students.
+
+---
+
+## 5. Technology Stack Recommendation
+-   **Runtime**: Node.js + Express.js
+-   **Database**: MySQL (Relational consistency is key for this schema)
+-   **ORM**: Prisma (Preferred) or Sequelize - for Type Safety and Migrations.
+-   **Validation**: Zod (Strict schema validation for inputs).
+-   **File Storage**: Multer (Local) or AWS S3 (Production).
