@@ -967,7 +967,7 @@ export default function StudentDashboard() {
               <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold ${isDark ? "text-white" : "text-slate-900"} tracking-tight capitalize`}>
                 {sidebarLinks.find(l => l.id === activeTab)?.label || activeTab}
               </h1>
-              <p className={`${isDark ? "text-blue-400" : "text-blue-600"} text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] opacity-90 mt-1`}>
+              <p className={`${isDark ? "text-blue-400" : "text-blue-600"} text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] opacity-90 mt-1 border-b-0 no-underline`}>
                 {activeTab === "overview" ? "Career Readiness Dashboard" :
                   activeTab === "skills" ? "Skill Architecture Analysis" :
                     activeTab === "opportunities" ? "Placement Opportunities" :

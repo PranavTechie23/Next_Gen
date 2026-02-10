@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
@@ -19,6 +19,15 @@ export default function CollegeDashboard() {
   const [timeRange, setTimeRange] = useState("year");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isMobile = useIsMobile();
+  const mainContentRef = useRef<HTMLElement>(null);
+
+  // Scroll to top when selectedView changes
+  useEffect(() => {
+    window.scrollTo(0, 0); // For mobile/desktop where window might scroll
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTo(0, 0); // For specific scrollable container
+    }
+  }, [selectedView]);
 
   const collegeStats = [
     { label: "Total Students", value: "1,240", change: "+5%", trend: "up", icon: Users, color: "bg-blue-500" },
@@ -257,7 +266,11 @@ export default function CollegeDashboard() {
         </div>
       </header>
 
-      <main className="container py-6 md:py-12 px-4 sm:px-6 max-w-7xl mx-auto">
+      <main
+        ref={mainContentRef}
+        data-scroll-container
+        className="container py-6 md:py-12 px-4 sm:px-6 max-w-7xl mx-auto"
+      >
         {/* Welcome Section with Actions */}
         <div className="mb-12 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="space-y-3">
