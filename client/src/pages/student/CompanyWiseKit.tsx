@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
     CheckCircle, Building2, Target, Check, Lightbulb, BookOpen,
@@ -36,35 +38,33 @@ const DIFF_STYLES: Record<string, { bg: string; text: string }> = {
     Hard: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400" },
 };
 
-// ─── Typewriter Component ───────────────────────────────────────────────
-function TypewriterText({ text, speed = 40, delay = 0, className = "" }: { text: string; speed?: number; delay?: number; className?: string }) {
+// ─── Typewriter Component (Looping) ───────────────────────────────────
+function TypewriterText({ phrases, speed = 80, wait = 2000, className = "" }: { phrases: string[]; speed?: number; wait?: number; className?: string }) {
+    const [phraseIndex, setPhraseIndex] = useState(0);
     const [index, setIndex] = useState(0);
-    const ref = useRef<HTMLSpanElement>(null);
-    const isInView = useInView(ref, { once: true });
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
-        if (!isInView) return;
-        setIndex(0);
         const timeout = setTimeout(() => {
-            const timer = setInterval(() => {
-                setIndex((prev) => {
-                    if (prev < text.length) {
-                        return prev + 1;
-                    }
-                    clearInterval(timer);
-                    return prev;
-                });
-            }, speed);
-            return () => clearInterval(timer);
-        }, delay);
+            if (!isDeleting && index < phrases[phraseIndex].length) {
+                setIndex(prev => prev + 1);
+            } else if (isDeleting && index > 0) {
+                setIndex(prev => prev - 1);
+            } else if (!isDeleting && index === phrases[phraseIndex].length) {
+                setTimeout(() => setIsDeleting(true), wait);
+            } else if (isDeleting && index === 0) {
+                setIsDeleting(false);
+                setPhraseIndex(prev => (prev + 1) % phrases.length);
+            }
+        }, isDeleting ? speed / 2 : speed);
 
         return () => clearTimeout(timeout);
-    }, [text, speed, delay, isInView]);
+    }, [index, isDeleting, phraseIndex, phrases, speed, wait]);
 
     return (
-        <span ref={ref} className={className}>
-            {text.slice(0, index)}
-            {index < text.length && <span className="animate-pulse">|</span>}
+        <span className={className}>
+            {phrases[phraseIndex].slice(0, index)}
+            <span className="animate-pulse ml-0.5">|</span>
         </span>
     );
 }
@@ -232,7 +232,61 @@ const LOGO_MAP: Record<string, string> = {
     "X": "x.com",
     "IndiaBix": "indiabix.com",
     "FreshersWorld": "freshersworld.com",
-    "PrepInsta": "prepinsta.com"
+    "PrepInsta": "prepinsta.com",
+    "Agiliad": "agiliad.com",
+    "3EA": "3ea.in",
+    "64squares": "64squares.com",
+    "abs": "abs-solutions.com",
+    "Aligned Automation": "alignedautomation.com",
+    "Amura": "amuramarketing.com",
+    "bizAmica Software": "bizamica.com",
+    "BUDDI.AI": "buddi.ai",
+    "CakeSoft Technologies": "cakesoft.com",
+    "Centiro": "centiro.com",
+    "Cloudwerx": "cloudwerx.tech",
+    "Codevita Live": "codevita.live",
+    "EPIKInDiFi": "epikindifi.com",
+    "Flo Group": "flo-group.com",
+    "Growisto": "growisto.com",
+    "Infogen Labs": "infogenlabs.com",
+    "IntegriChain": "integrichain.com",
+    "iQ Digital": "iqdigital.com",
+    "Jaro Education": "jaroeducation.com",
+    "JISA Softech": "jisasoftech.com",
+    "Jombay": "jombay.com",
+    "K12 Techno Services": "k12techno.com",
+    "Kylas": "kylas.io",
+    "McKinley & Rice": "mckinleyrice.com",
+    "Mindstix Software Labs": "mindstix.com",
+    "Moxie": "moxie.ai",
+    "oneXtel": "onextel.com",
+    "PlanetSpark": "planetspark.in",
+    "Product Dossier": "productdossier.com",
+    "RackWare Technologies": "rackware.com",
+    "Rayden Design": "raydendesign.com",
+    "Red Panda": "redpanda.com",
+    "RIA Advisory": "riaadvisory.com",
+    "Rudder Analytics": "rudderanalytics.com",
+    "Ryussi Technologies": "ryussi.com",
+    "Sagitec": "sagitec.com",
+    "Scalex Technology": "scalex.in",
+    "Screen Magic": "gupshup.io",
+    "SE2": "se2.com",
+    "Sedemac Mechatronics": "sedemac.com",
+    "TechVerito": "techverito.com",
+    "Tracelink": "tracelink.com",
+    "TripStack": "tripstack.com",
+    "Vadini Infocenter": "vadiniinfocenter.com",
+    "Valuence Holdings": "valuence.inc",
+    "Vertical Fox": "verticalfox.com",
+    "Wednesday Solutions": "wednesday.solutions",
+    "Zlen": "zlen.io",
+    "Coding Ninjas": "codingninjas.com",
+    "NeetCode": "neetcode.io",
+    "Take U Forward": "takeuforward.org",
+    "CSES Problem Set": "cses.fi",
+    "TLE Eliminators": "tle-eliminators.com",
+    "AtCoder": "atcoder.jp"
 };
 
 
@@ -387,6 +441,11 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
     const [tierFilter, setTierFilter] = useState<string>("all");
     // How to order companies in the grid
     const [sortMode, setSortMode] = useState<"recommended" | "az" | "problems_desc" | "package_desc">("recommended");
+    // Suggestion form state
+    const [showSuggestion, setShowSuggestion] = useState(false);
+    const [suggestionCompany, setSuggestionCompany] = useState<string>("");
+    const [suggestionType, setSuggestionType] = useState<"tips" | "dos" | "donts" | "other">("tips");
+    const [suggestionText, setSuggestionText] = useState("");
     const topRef = useRef<HTMLDivElement>(null);
 
     // Scroll to top when a company is selected
@@ -439,14 +498,38 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
         });
     };
 
-    const company = companies.find(c => c.id === selectedCompany);
+    const company: Company | undefined = companies.find(c => c.id === selectedCompany);
+
+    // ─── Dynamic Placeholder Hook ─────────────────────────────────────
+    const searchPlaceholder = (() => {
+        const phrases = ["Search by Company Name...", "Search for Specific Questions...", "Find FAANG Problems...", "Explore Startup Trends..."];
+        const [pIdx, setPIdx] = useState(0);
+        const [idx, setIdx] = useState(0);
+        const [isDel, setIsDel] = useState(false);
+
+        useEffect(() => {
+            const timer = setTimeout(() => {
+                if (!isDel && idx < phrases[pIdx].length) setIdx(i => i + 1);
+                else if (isDel && idx > 0) setIdx(i => i - 1);
+                else if (!isDel && idx === phrases[pIdx].length) setTimeout(() => setIsDel(true), 1500);
+                else { setIsDel(false); setPIdx(p => (p + 1) % phrases.length); }
+            }, isDel ? 40 : 80);
+            return () => clearTimeout(timer);
+        }, [idx, isDel, pIdx]);
+
+        return phrases[pIdx].slice(0, idx);
+    })();
 
     // ─── Filtering Logic ──────────────────────────────────────────────
     const filteredCompanies = useMemo(() => {
-        // 1) Basic filtering by tier + search
+        // 1) Basic filtering by tier + search (Company Name OR Question Title)
         let list = companies.filter(c => {
             const matchesTier = tierFilter === "all" || c.tier === tierFilter;
-            const matchesSearch = search === "" || c.name.toLowerCase().includes(search.toLowerCase());
+            const searchTerm = search.toLowerCase();
+            const matchesSearch = search === "" ||
+                c.name.toLowerCase().includes(searchTerm) ||
+                c.problems.some(p => p.title.toLowerCase().includes(searchTerm));
+
             return matchesTier && matchesSearch;
         });
 
@@ -500,6 +583,29 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
     const totalProblems = useMemo(() => new Set(companies.flatMap(c => c.problems.map(p => p.title))).size, [companies]);
     const uniqueSolvedCount = solvedTitles.size;
 
+    const handleSubmitSuggestion = (e: React.FormEvent) => {
+        e.preventDefault();
+        const payload = {
+            companyId: suggestionCompany || selectedCompany,
+            type: suggestionType,
+            text: suggestionText.trim(),
+            submittedAt: new Date().toISOString(),
+        };
+
+        if (!payload.text) return;
+
+        try {
+            const existing = JSON.parse(localStorage.getItem("cwk-suggestions") || "[]");
+            existing.push(payload);
+            localStorage.setItem("cwk-suggestions", JSON.stringify(existing));
+        } catch {
+            // ignore errors, this is just a client-side stash
+        }
+
+        setShowSuggestion(false);
+        setSuggestionText("");
+    };
+
     // ─── Preferences Modal ─────────────────────────────────────────────
     const PreferencesModal = () => {
         const [localPrefs, setLocalPrefs] = useState(preferences);
@@ -513,7 +619,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
 
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={`w-full max-w-lg rounded-3xl p-8 shadow-2xl ${isDark ? "bg-slate-900 border border-white/10" : "bg-white"}`}>
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={`w-full max-w-lg rounded-3xl p-8 shadow-2xl ${isDark ? "bg-slate border border-white/10" : "bg-white"}`}>
                     <div className="text-center mb-8">
                         <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/20">
                             <Target className="w-8 h-8 text-white" />
@@ -529,7 +635,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                                 {["FAANG", "Product", "Service", "Finance", "Startup"].map(t => (
                                     <button key={t} onClick={() => toggleTier(t)}
                                         className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${localPrefs.tiers.includes(t)
-                                            ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/20"
+                                            ? "bg-black-600 border-black-600 text-white shadow-md shadow-blue-500/20"
                                             : isDark ? "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10" : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"}`}>
                                         {t}
                                     </button>
@@ -711,24 +817,45 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                 </div>
 
                 {/* Filters */}
-                <div className={`rounded-2xl p-4 mb-6 border flex flex-col sm:flex-row gap-3 ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-white border-slate-200 shadow-sm"}`}>
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search problems..."
-                            className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-sm font-semibold border transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${isDark ? "bg-white/5 border-white/10 text-white placeholder:text-slate-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400"}`} />
+                <div className={`rounded-3xl p-5 mb-8 border flex flex-col md:flex-row gap-4 items-center ${isDark ? "bg-slate-900/40 border-white/[0.06] backdrop-blur-md" : "bg-white border-slate-200 shadow-sm"}`}>
+                    <div className="relative flex-1 group w-full">
+                        <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isDark ? "text-slate-500 group-focus-within:text-blue-400" : "text-slate-400 group-focus-within:text-blue-600"}`} />
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            placeholder="Search problems by name or topic..."
+                            className={`w-full pl-11 pr-4 py-3 rounded-2xl text-sm font-bold border transition-all focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${isDark ? "bg-white/[0.03] border-white/10 text-white placeholder:text-slate-600 focus:border-blue-500/50" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-400"}`}
+                        />
                     </div>
-                    <select value={diffFilter} onChange={e => setDiffFilter(e.target.value)}
-                        className={`px-4 py-2.5 rounded-xl text-sm font-bold border cursor-pointer ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
-                        <option value="all">All Difficulty</option>
-                        <option value="Easy">Easy</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Hard">Hard</option>
-                    </select>
-                    <select value={topicFilter} onChange={e => setTopicFilter(e.target.value)}
-                        className={`px-4 py-2.5 rounded-xl text-sm font-bold border cursor-pointer ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
-                        <option value="all">All Topics</option>
-                        {allTopics.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
+
+                    <div className="flex items-center gap-3 w-full md:w-auto">
+                        <Select value={diffFilter} onValueChange={setDiffFilter}>
+                            <SelectTrigger className={`h-11 px-5 min-w-[160px] rounded-2xl text-[11px] font-black uppercase tracking-widest border transition-all ${isDark ? "bg-white/[0.03] border-white/10 text-slate-100" : "bg-slate-50 border-slate-200 text-slate-800"}`}>
+                                <SelectValue placeholder="Difficulty" />
+                            </SelectTrigger>
+                            <SelectContent className={`border-none shadow-2xl rounded-2xl ${isDark ? "bg-slate-900 text-white border border-white/10" : "bg-white text-slate-900"}`}>
+                                <SelectItem value="all" className="font-bold py-3 text-[10px] uppercase tracking-widest">All Difficulty</SelectItem>
+                                <SelectItem value="Easy" className="font-bold py-3 text-[10px] uppercase tracking-widest text-green-500">Easy</SelectItem>
+                                <SelectItem value="Medium" className="font-bold py-3 text-[10px] uppercase tracking-widest text-yellow-500">Medium</SelectItem>
+                                <SelectItem value="Hard" className="font-bold py-3 text-[10px] uppercase tracking-widest text-red-500">Hard</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        <Select value={topicFilter} onValueChange={setTopicFilter}>
+                            <SelectTrigger className={`h-11 px-5 min-w-[180px] rounded-2xl text-[11px] font-black uppercase tracking-widest border transition-all ${isDark ? "bg-white/[0.03] border-white/10 text-slate-100" : "bg-slate-50 border-slate-200 text-slate-800"}`}>
+                                <SelectValue placeholder="Topic" />
+                            </SelectTrigger>
+                            <SelectContent className={`border-none shadow-2xl rounded-2xl max-h-[300px] ${isDark ? "bg-slate-900 text-white border border-white/10" : "bg-white text-slate-900"}`}>
+                                <SelectItem value="all" className="font-bold py-3 text-[10px] uppercase tracking-widest">All Topics</SelectItem>
+                                {allTopics.map(t => (
+                                    <SelectItem key={t} value={t} className="font-bold py-3 text-[10px] uppercase tracking-widest">
+                                        {t}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
 
                 {/* Problem Table */}
@@ -785,87 +912,231 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
     // ─── Company List View ────────────────────────────────────────
     return (
         <div>
-            {/* Header */}
-            <div className="mb-8 flex flex-col items-center justify-center gap-6 text-center overflow-hidden">
-                <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-                    <TypewriterText
-                        text="Target any company — see all frequently asked problems, interview rounds, and track your progress."
-                        speed={35}
-                        delay={200}
-                        className={`text-lg sm:text-xl font-bold leading-relaxed bg-gradient-to-r ${isDark ? "from-blue-300 via-purple-300 to-pink-300" : "from-blue-600 via-purple-600 to-pink-600"} bg-clip-text text-transparent`}
-                    />
-                </motion.div>
-                {preferences.onboarded && (
-                    <div className={`px-4 py-2 rounded-xl text-xs font-bold border flex items-center gap-2 ${isDark ? "bg-white/5 border-white/10 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
-                        <span>Target: {preferences.tiers.join(", ")}</span>
-                        <button onClick={() => setShowModal(true)} className="text-blue-500 hover:underline ml-2">Edit</button>
+            {/* Suggestion modal */}
+            {showSuggestion && (
+                <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className={`w-[min(100%-2rem,720px)] max-w-2xl rounded-3xl p-6 sm:p-8 md:p-10 shadow-2xl ${isDark ? "bg-black border border-white/10" : "bg-white border border-slate-200"}`}>
+                        <div className="flex items-start justify-between mb-4">
+                            <div>
+                                <h2 className={`text-xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Suggest Company Insight</h2>
+                                <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                                    Share interview tips, do&apos;s & don&apos;ts, or any helpful notes for this company.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowSuggestion(false)}
+                                className={`text-xs font-bold px-2 py-1 rounded-lg ${isDark ? "text-slate-400 hover:bg-white/10" : "text-slate-500 hover:bg-slate-100"}`}
+                            >
+                                Close
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmitSuggestion} className="space-y-4">
+                            <div className="space-y-1">
+                                <label className={`text-xs font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                                    Company (optional)
+                                </label>
+                                <Select
+                                    value={suggestionCompany || selectedCompany || ""}
+                                    onValueChange={setSuggestionCompany}
+                                >
+                                    <SelectTrigger className={isDark ? "bg-white/5 border-white/10 text-slate-100" : "bg-slate-50 border-slate-200 text-slate-800"}>
+                                        <SelectValue placeholder={companies.find(c => c.id === (suggestionCompany || selectedCompany))?.name || "Select a company"} />
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-64">
+                                        {companies.map(c => (
+                                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className={`text-xs font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                                    What are you sharing?
+                                </label>
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        { id: "tips", label: "Interview Tips" },
+                                        { id: "dos", label: "Do's" },
+                                        { id: "donts", label: "Don'ts" },
+                                        { id: "other", label: "Other" },
+                                    ].map(opt => (
+                                        <button
+                                            key={opt.id}
+                                            type="button"
+                                            onClick={() => setSuggestionType(opt.id as typeof suggestionType)}
+                                            className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all ${suggestionType === opt.id
+                                                ? "bg-black-600 border-black-600 text-white"
+                                                : isDark
+                                                    ? "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10"
+                                                    : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                                                }`}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className={`text-xs font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                                    Your suggestion
+                                </label>
+                                <Textarea
+                                    value={suggestionText}
+                                    onChange={e => setSuggestionText(e.target.value)}
+                                    rows={4}
+                                    placeholder="Example: In Round 2 they focused a lot on system design for payment flows. Make sure you know ACID, isolation levels, and high-level architecture."
+                                    className={isDark ? "bg-white/5 border-white/10 text-slate-100" : "bg-slate-50 border-slate-200 text-slate-900"}
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setShowSuggestion(false)}
+                                    className={isDark ? "border-white/10 text-slate-200" : ""}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={!suggestionText.trim()}
+                                    className="font-bold"
+                                >
+                                    Submit
+                                </Button>
+                            </div>
+                        </form>
                     </div>
-                )}
+                </div>
+            )}
+            {/* Header */}
+            <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-6 overflow-hidden">
+                <div className="max-w-2xl text-center md:text-left">
+                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
+                        <TypewriterText
+                            phrases={[
+                                "Target any company — Ace your interviews.",
+                                "Search by Company Name or Questions.",
+                                "Track progress & ace placements.",
+                                "Curated FAANG & Product resources."
+                            ]}
+                            speed={50}
+                            wait={3000}
+                            className={`text-xl sm:text-2xl lg:text-3xl font-black leading-tight bg-gradient-to-r ${isDark ? "from-blue-300 via-purple-300 to-pink-300" : "from-blue-600 via-purple-600 to-pink-600"} bg-clip-text text-transparent`}
+                        />
+                    </motion.div>
+                    {preferences.onboarded && (
+                        <div className={`mt-3 inline-flex px-3 py-1.5 rounded-lg text-[9px] font-black border items-center gap-2 uppercase tracking-widest ${isDark ? "bg-white/5 border-white/10 text-slate-500" : "bg-white border-slate-200 text-slate-400"}`}>
+                            <span>Target: {preferences.tiers.join(" • ")}</span>
+                            <button onClick={() => setShowModal(true)} className="text-blue-500 hover:underline">Edit</button>
+                        </div>
+                    )}
+                </div>
+                {/* Suggestion button */}
+                <button
+                    onClick={() => setShowSuggestion(true)}
+                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all shadow-sm
+                    ${isDark ? "bg-white/5 border-white/10 text-slate-100 hover:bg-white/10" : "bg-white border-slate-200 text-slate-800 hover:bg-slate-50"}`}
+                >
+                    <Lightbulb className="w-4 h-4 text-amber-400" />
+                    Suggest Insight
+                </button>
             </div>
 
             {/* Stats Row */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 {[
-                    { label: "Companies", value: companies.length.toString(), icon: Building2, gradient: "from-blue-500 to-cyan-500" },
-                    { label: "Total Problems", value: totalProblems.toString(), icon: Code, gradient: "from-green-500 to-emerald-500" },
-                    { label: "Unique Solved", value: uniqueSolvedCount.toString(), icon: CheckCircle, gradient: "from-purple-500 to-pink-500" },
-                    { label: "Completion", value: `${totalProblems > 0 ? Math.round((uniqueSolvedCount / totalProblems) * 100) : 0}%`, icon: Target, gradient: "from-orange-500 to-red-500" },
+                    { label: "Companies", value: companies.length.toString(), icon: Building2, gradient: "from-blue-500 to-cyan-500", glow: "group-hover:bg-blue-500/10" },
+                    { label: "Total Problems", value: totalProblems.toString(), icon: Code, gradient: "from-emerald-500 to-teal-500", glow: "group-hover:bg-emerald-500/10" },
+                    { label: "Unique Solved", value: uniqueSolvedCount.toString(), icon: CheckCircle, gradient: "from-purple-500 to-indigo-500", glow: "group-hover:bg-purple-500/10" },
+                    { label: "Completion Rate", value: `${totalProblems > 0 ? Math.round((uniqueSolvedCount / totalProblems) * 100) : 0}%`, icon: Target, gradient: "from-orange-500 to-rose-500", glow: "group-hover:bg-orange-500/10" },
                 ].map(s => (
-                    <div key={s.label} className={`rounded-2xl p-5 flex items-center gap-4 border transition-all hover:scale-[1.02] ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-slate-200 shadow-sm"}`}>
-                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${s.gradient} flex items-center justify-center shadow-md`}><s.icon className="w-6 h-6 text-white" /></div>
-                        <div>
-                            <p className={`text-2xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>{s.value}</p>
-                            <p className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>{s.label}</p>
+                    <div key={s.label} className={`group rounded-2xl p-5 flex items-center gap-4 border transition-all hover:scale-[1.02] relative overflow-hidden ${isDark ? "bg-white/[0.03] border-white/[0.06] hover:border-white/10" : "bg-white border-slate-200 shadow-sm hover:shadow-md"}`}>
+                        <div className={`absolute inset-0 transition-opacity opacity-0 group-hover:opacity-100 ${s.glow}`} />
+                        <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${s.gradient} flex items-center justify-center shadow-lg relative z-10`}><s.icon className="w-5 h-5 text-white" /></div>
+                        <div className="relative z-10">
+                            <p className={`text-xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>{s.value}</p>
+                            <p className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>{s.label}</p>
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* Search + Tier Filter + Sort */}
-            <div className={`rounded-2xl p-4 mb-6 border flex flex-col lg:flex-row gap-3 lg:items-center ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-white border-slate-200 shadow-sm"}`}>
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                        type="text"
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        placeholder="Search companies..."
-                        className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-sm font-semibold border transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${isDark ? "bg-white/5 border-white/10 text-white placeholder:text-slate-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400"}`}
-                    />
-                </div>
-                <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-                    <div className="flex flex-wrap gap-2">
-                        {["all", "FAANG", "Product", "Finance", "Service", "Startup"].map(t => (
-                            <button
-                                key={t}
-                                onClick={() => setTierFilter(t)}
-                                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${tierFilter === t ? "bg-blue-600 text-white shadow-md" : isDark ? "bg-white/5 text-slate-300 hover:bg-white/10" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+            {/* Search + Tier Filter + Sort (CENTERED) */}
+            <div className="flex flex-col items-center mb-10 gap-6">
+                <div className={`w-full max-w-6xl rounded-[32px] p-5 sm:p-7 border flex flex-col gap-6 ${isDark ? "bg-slate-950/60 border-white/[0.08] backdrop-blur-xl" : "bg-white border-slate-200 shadow-xl shadow-slate-200/50"}`}>
+                    <div className="flex flex-col md:flex-row gap-4 md:items-center">
+                        <div className="relative flex-[2] group">
+                            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                            <input
+                                type="text"
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                placeholder={searchPlaceholder}
+                                className={`w-full pl-12 pr-6 py-3.5 rounded-2xl text-sm font-bold border transition-all focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${isDark ? "bg-white/[0.03] border-white/10 text-white placeholder:text-slate-600 focus:border-blue-500/50" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-400"}`}
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-3 justify-center flex-1">
+                            <span className={`text-[9px] font-black uppercase tracking-widest min-w-fit ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+                                Sort by
+                            </span>
+                            <Select
+                                value={sortMode}
+                                onValueChange={value => setSortMode(value as typeof sortMode)}
                             >
-                                {t === "all" ? "All" : t}
-                            </button>
-                        ))}
+                                <SelectTrigger className={`h-11 px-5 w-full md:min-w-[180px] rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${isDark ? "bg-white/[0.03] border-white/10 text-slate-100" : "bg-slate-50 border-slate-200 text-slate-800 focus:bg-white"}`}>
+                                    <div className="flex items-center gap-2">
+                                        <SelectValue placeholder="Recommended" />
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent className={`border-none shadow-2xl rounded-2xl ${isDark ? "bg-slate-900 text-white border border-white/10" : "bg-white text-slate-900"}`}>
+                                    <SelectItem value="recommended" className="font-bold py-3 text-[9px] uppercase tracking-widest focus:bg-blue-500/10">Recommended</SelectItem>
+                                    <SelectItem value="az" className="font-bold py-3 text-[9px] uppercase tracking-widest focus:bg-blue-500/10">Alphabetical (A–Z)</SelectItem>
+                                    <SelectItem value="problems_desc" className="font-bold py-3 text-[9px] uppercase tracking-widest focus:bg-blue-500/10">Total Problems</SelectItem>
+                                    <SelectItem value="package_desc" className="font-bold py-3 text-[9px] uppercase tracking-widest focus:bg-blue-500/10">Highest Package</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span className={`text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                            Sort by
-                        </span>
-                        <Select
-                            value={sortMode}
-                            onValueChange={value => setSortMode(value as typeof sortMode)}
-                        >
-                            <SelectTrigger className={`h-9 px-3 rounded-xl text-xs font-semibold border bg-transparent ${isDark ? "border-white/10 text-slate-100" : "border-slate-200 text-slate-800"}`}>
-                                <div className="flex items-center gap-1.5">
-                                    <Filter className="w-3 h-3 opacity-70" />
-                                    <SelectValue placeholder="Recommended" />
-                                </div>
-                            </SelectTrigger>
-                            <SelectContent align="end" className="text-xs font-semibold">
-                                <SelectItem value="recommended">Recommended (FAANG/Product first)</SelectItem>
-                                <SelectItem value="az">A–Z (Name)</SelectItem>
-                                <SelectItem value="problems_desc">Problems (High → Low)</SelectItem>
-                                <SelectItem value="package_desc">Package (High → Low)</SelectItem>
-                            </SelectContent>
-                        </Select>
+
+                    <div className={`p-1.5 rounded-[20px] flex flex-wrap gap-1.5 justify-center ${isDark ? "bg-white/5" : "bg-slate-50"}`}>
+                        {["all", "FAANG", "Product", "Finance", "Service", "Startup"].map(t => {
+                            const isActive = tierFilter === t;
+                            const tierGrads: Record<string, string> = {
+                                FAANG: "from-purple-600 to-indigo-600",
+                                Product: "from-blue-600 to-cyan-600",
+                                Finance: "from-amber-500 to-orange-500",
+                                Service: "from-emerald-600 to-teal-600",
+                                Startup: "from-rose-600 to-pink-600",
+                                all: "from-indigo-600 to-blue-600"
+                            };
+
+                            return (
+                                <button
+                                    key={t}
+                                    onClick={() => setTierFilter(t)}
+                                    className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all relative overflow-hidden group/btn ${isActive
+                                            ? "text-white shadow-lg scale-105 z-10"
+                                            : isDark ? "text-slate-500 hover:text-white" : "text-slate-500 hover:text-slate-900"
+                                        }`}
+                                >
+                                    {isActive && (
+                                        <motion.div
+                                            layoutId="activeTab"
+                                            className={`absolute inset-0 bg-gradient-to-r ${tierGrads[t] || "from-blue-600 to-indigo-600"}`}
+                                            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                        />
+                                    )}
+                                    {!isActive && <div className={`absolute inset-0 opacity-0 group-hover/btn:opacity-100 transition-opacity ${isDark ? "bg-white/5" : "bg-white"}`} />}
+                                    <span className="relative z-10">{t === "all" ? "Explore All" : t}</span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
@@ -885,7 +1156,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
 
                             {isRecommended && tierFilter === 'all' && search === '' && (
                                 <div className="absolute top-3 left-3 z-10">
-                                    <Badge className="bg-blue-500 text-white text-[9px] font-bold uppercase tracking-widest shadow-md">Recommended</Badge>
+                                    <Badge className="bg-indigo-600 text-white text-[9px] font-bold uppercase tracking-widest shadow-md border-0">Recommended</Badge>
                                 </div>
                             )}
                             <div className={`h-1.5 w-full bg-gradient-to-r ${c.gradient} opacity-80`} />
