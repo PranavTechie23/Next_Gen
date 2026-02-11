@@ -834,7 +834,10 @@ export default function StudentDashboard() {
             <div className={`p-4 border-t ${isDark ? "border-white/10" : "border-slate-200"} flex items-center justify-between`}>
               <ThemeToggle />
               <button
-                onClick={() => navigate("/")}
+                onClick={() => {
+                  localStorage.removeItem("userRole");
+                  navigate("/");
+                }}
                 className={`p-3 rounded-xl transition-colors ${isDark ? "text-red-300 hover:bg-red-500/10" : "text-red-600 hover:bg-red-50"}`}
                 title="Log out"
                 aria-label="Log out"
@@ -1089,7 +1092,10 @@ export default function StudentDashboard() {
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator className={`${isDark ? "bg-white/5" : "bg-slate-100"} -mx-2 my-2`} />
-                  <DropdownMenuItem onClick={() => navigate("/")} className={`rounded-xl flex items-center gap-3 p-3 transition-all cursor-pointer group/signout ${isDark ? "hover:bg-red-500/10 text-red-400" : "hover:bg-red-50 text-red-500"}`}>
+                  <DropdownMenuItem onClick={() => {
+                    localStorage.removeItem("userRole");
+                    navigate("/");
+                  }} className={`rounded-xl flex items-center gap-3 p-3 transition-all cursor-pointer group/signout ${isDark ? "hover:bg-red-500/10 text-red-400" : "hover:bg-red-50 text-red-500"}`}>
                     <div className={`w-8 h-8 rounded-lg ${isDark ? "bg-red-500/10" : "bg-red-500/5"} flex items-center justify-center transition-colors group-hover/signout:bg-red-500/20`}>
                       <LogOut className="w-4 h-4" />
                     </div>
