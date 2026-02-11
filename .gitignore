@@ -104,3 +104,11 @@ temp/
 *.db
 *.sqlite
 *.sqlite3
+Contents/INVESTOR_README.md
+Contents/INVESTOR_PITCH.md
+Contents/BUSINESS_ROADMAP.md
+client/src/data/companyProblemPools.ts
+client/src/data/companyListOthers.ts
+client/src/data/companyListMajor.ts
+client/src/data/companyListExtra.ts
+pool_titles.txt
