@@ -70,7 +70,6 @@ function TypewriterText({ text, speed = 40, delay = 0, className = "" }: { text:
 }
 
 // ─── Company Logo Component ─────────────────────────────────────────────
-// ─── Company Logo Component ─────────────────────────────────────────────
 const LOGO_MAP: Record<string, string> = {
     "Google": "google.com",
     "Amazon": "amazon.com",
@@ -86,7 +85,7 @@ const LOGO_MAP: Record<string, string> = {
     "Morgan Stanley": "morganstanley.com",
     "Adobe": "adobe.com",
     "Salesforce": "salesforce.com",
-    "Barclays": "barclays.com", // barclays.co.uk sometimes better
+    "Barclays": "barclays.com",
     "TCS": "tcs.com",
     "TCS Digital": "tcs.com",
     "TCS Ninja": "tcs.com",
@@ -174,7 +173,7 @@ const LOGO_MAP: Record<string, string> = {
     "Codeforces": "codeforces.com",
     "GeeksforGeeks": "geeksforgeeks.org",
     "ElasticRun": "elastic.run",
-    "eQ Technologic": "1eq.com", // Found domain for eQ Technologic
+    "eQ Technologic": "1eq.com",
     "Eumentis Cloud": "eumentis.com",
     "Extramarks Education": "extramarks.com",
     "GNS Engineering India": "gns-mbh.com",
@@ -182,20 +181,78 @@ const LOGO_MAP: Record<string, string> = {
     "Hexaview Technologies": "hexaviewtech.com",
     "Fabric Inc": "fabric.inc",
     "EnthrallTech": "enthralltech.com",
-    // Add generic catch-alls for short names if needed
+    "Rakuten": "rakuten.com",
+    "Delhivery": "delhivery.com",
+    "Arista Networks": "arista.com",
+    "Zocdoc": "zocdoc.com",
+    "Siemens": "siemens.com",
+    "Sophos": "sophos.com",
+    "Vodafone": "vodafone.com",
+    "TIBCO": "tibco.com",
+    "Schlumberger": "slb.com",
+    "Ciena": "ciena.com",
+    "Veritas Technologies": "veritas.com",
+    "MindTickle": "mindtickle.com",
+    "Jio": "jio.com",
+    "Jio Platforms": "jio.com",
+    "Zensar": "zensar.com",
+    "Coforge": "coforge.com",
+    "LTIMindtree": "ltimindtree.com",
+    "Societe Generale": "socgen.com",
+    "IDFC FIRST Bank": "idfcfirstbank.com",
+    "Worldline": "worldline.com",
+    "FIS": "fisglobal.com",
+    "Fiserv": "fiserv.com",
+    "NCR Voyix": "ncrvoyix.com",
+    "Diebold Nixdorf": "dieboldnixdorf.com",
+    "Amdocs": "amdocs.com",
+    "Cisco": "cisco.com",
+    "Intel": "intel.com",
+    "IBM": "ibm.com",
+    "Oracle": "oracle.com",
+    "SAP": "sap.com",
+    "Dell": "dell.com",
+    "HP": "hp.com",
+    "Sony": "sony.com",
+    "Samsung": "samsung.com",
+    "Qualcomm": "qualcomm.com",
+    "Nvidia": "nvidia.com",
+    "Broadcom": "broadcom.com",
+    "Texas Instruments": "ti.com",
+    "VMware": "vmware.com",
+    "Atlassian": "atlassian.com",
+    "Twilio": "twilio.com",
+    "Slack": "slack.com",
+    "Zoom": "zoom.us",
+    "Discord": "discord.com",
+    "Spotify": "spotify.com",
+    "Snap": "snapchat.com",
+    "Pinterest": "pinterest.com",
+    "Twitter": "twitter.com",
+    "X": "x.com",
+    "IndiaBix": "indiabix.com",
+    "FreshersWorld": "freshersworld.com",
+    "PrepInsta": "prepinsta.com"
 };
 
+
+
 // ─── Manual High-Quality Logos (Overrides) ──────────────────────────────
+// Prefer local assets in /public/logos for reliability and performance.
 const MANUAL_LOGOS: Record<string, string> = {
-    // Use white/transparent logos where possible for dark gradients
-    "Apple": "https://upload.wikimedia.org/wikipedia/commons/3/31/Apple_logo_white.svg",
-    "Microsoft": "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg",
-    "Google": "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg",
-    "Netflix": "https://upload.wikimedia.org/wikipedia/commons/f/ff/Netflix-new-icon.png",
-    "Amazon": "https://upload.wikimedia.org/wikipedia/commons/4/4a/Amazon_icon.svg",
-    "ElasticRun": "https://upload.wikimedia.org/wikipedia/commons/e/e0/Elasticrun_Logo.svg",
-    "Extramarks Education": "https://upload.wikimedia.org/wikipedia/commons/1/18/Extramarks_Logo.jpg",
-    // Add more if needed
+    "Google": "/logos/google.jpg",
+    "Amazon": "/logos/amazon.jpg",
+    "Meta": "/logos/meta.jpg",
+    "Microsoft": "/logos/microsoft.png",
+    "Netflix": "/logos/netflix_light.jpg",
+    "Uber": "/logos/uber.jpg",
+    "Stripe": "/logos/stripe.jpg",
+    "Adobe": "/logos/adobe.jpg",
+    "Goldman Sachs": "/logos/goldman.jpg",
+    "J.P. Morgan": "/logos/morgan.jpg",
+    "JP Morgan": "/logos/morgan.jpg",
+    "Airbnb": "/logos/airbnb.jpg",
+    // Add more mappings here as you add logo files
 };
 
 // ─── Logo Visibility Configuration ──────────────────────────────────────
@@ -203,20 +260,34 @@ const INVERT_IN_DARK = new Set(["Amazon", "Uber", "Tesla", "Sony", "Samsung", "H
 const INVERT_IN_LIGHT = new Set(["Apple"]);
 
 const CompanyLogo = ({ name, logoValue, textSize = "text-lg", padding = "p-2" }: { name: string; logoValue: string; textSize?: string; padding?: string }) => {
-    // 1. Resolve Domain
-    let domain = "";
-    const isExplicitUrl = logoValue.length > 5 && (logoValue.includes("http") || logoValue.includes("/"));
+    // 1. Resolve domain from either explicit URL or known mapping
+    const isExplicitUrl = logoValue.length > 5 && (logoValue.startsWith("http://") || logoValue.startsWith("https://"));
 
-    if (!isExplicitUrl) {
+    let domain = "";
+    if (isExplicitUrl) {
+        // Try to extract domain from Clearbit URL
+        const clearbitMatch = logoValue.match(/logo\.clearbit\.com\/([^/?]+)/i);
+        if (clearbitMatch?.[1]) {
+            domain = clearbitMatch[1];
+        }
+        // Fall back to our LOGO_MAP if we didn't get a domain
+        if (!domain && LOGO_MAP[name]) {
+            domain = LOGO_MAP[name];
+        }
+        // Last resort: derive from company name
+        if (!domain) {
+            domain = `${name.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`;
+        }
+    } else {
         if (LOGO_MAP[name]) {
             domain = LOGO_MAP[name];
         } else {
-            domain = `${name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`;
+            domain = `${name.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`;
         }
     }
 
     // 2. Define Sources
-    // Priority: Manual Override -> Explicit URL -> Clearbit -> Google Favicon
+    // Priority: Manual Override (local or curated) -> Explicit URL from data -> Clearbit -> Google Favicon
 
     const manualLogo = MANUAL_LOGOS[name];
 
@@ -231,19 +302,33 @@ const CompanyLogo = ({ name, logoValue, textSize = "text-lg", padding = "p-2" }:
     const [hasError, setHasError] = useState(false);
 
     const handleError = () => {
-        // If we are already using the manual logo or explicit URL and it failed, we are done.
-        if (src === manualLogo || src === logoValue) {
+        // 1) If manual logo failed, nothing better to try
+        if (src === manualLogo) {
             setHasError(true);
             return;
         }
 
-        // If we were using Clearbit, try Google Favicon
-        if (src.includes("logo.clearbit.com")) {
-            setSrc(`https://www.google.com/s2/favicons?domain=${domain}&sz=128`);
-            return;
+        // 2) If explicit URL from data failed (e.g. Wikipedia / custom),
+        //    try Clearbit as a fallback using the resolved domain.
+        if (src === logoValue && isExplicitUrl) {
+            if (domain) {
+                const clearbitUrl = `https://logo.clearbit.com/${domain}`;
+                if (src !== clearbitUrl) {
+                    setSrc(clearbitUrl);
+                    return;
+                }
+            }
         }
 
-        // If Google Favicon also fails (or we were using something else), show initials
+        // 3) If we were using Clearbit and it failed, try Google favicon.
+        if (src.includes("logo.clearbit.com")) {
+            if (domain) {
+                setSrc(`https://www.google.com/s2/favicons?domain=${domain}&sz=128`);
+                return;
+            }
+        }
+
+        // 4) As a final fallback, show stylized initials.
         setHasError(true);
     };
 
