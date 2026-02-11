@@ -1066,47 +1066,33 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                 ))}
             </div>
 
-            {/* Search + Tier Filter + Sort (CENTERED) */}
-            <div className="flex flex-col items-center mb-10 gap-6">
-                <div className={`w-full max-w-6xl rounded-[32px] p-5 sm:p-7 border flex flex-col gap-6 ${isDark ? "bg-slate-950/60 border-white/[0.08] backdrop-blur-xl" : "bg-white border-slate-200 shadow-xl shadow-slate-200/50"}`}>
-                    <div className="flex flex-col md:flex-row gap-4 md:items-center">
-                        <div className="relative flex-[2] group">
-                            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-                            <input
-                                type="text"
-                                value={search}
-                                onChange={e => setSearch(e.target.value)}
-                                placeholder={searchPlaceholder}
-                                className={`w-full pl-12 pr-6 py-3.5 rounded-2xl text-sm font-bold border transition-all focus:outline-none focus:ring-4 focus:ring-blue-500/20 ${isDark ? "bg-white/[0.03] border-white/10 text-white placeholder:text-slate-600 focus:border-blue-500/50" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-400"}`}
-                            />
-                        </div>
+            {/* Search + Tier Filter + Sort (SINGLE LINE CONSOLIDATED) */}
+            <div className="flex flex-col items-center mb-10">
+                <div className={`w-full max-w-7xl rounded-[40px] md:rounded-full p-2 md:p-3 border flex flex-col lg:flex-row items-center gap-4 ${isDark ? "bg-slate-950/60 border-white/[0.08] backdrop-blur-xl shadow-2xl" : "bg-white border-slate-200 shadow-xl shadow-slate-200/40"}`}>
 
-                        <div className="flex items-center gap-3 justify-center flex-1">
-                            <span className={`text-[9px] font-black uppercase tracking-widest min-w-fit ${isDark ? "text-slate-600" : "text-slate-400"}`}>
-                                Sort by
-                            </span>
-                            <Select
-                                value={sortMode}
-                                onValueChange={value => setSortMode(value as typeof sortMode)}
-                            >
-                                <SelectTrigger className={`h-11 px-5 w-full md:min-w-[180px] rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${isDark ? "bg-white/[0.03] border-white/10 text-slate-100" : "bg-slate-50 border-slate-200 text-slate-800 focus:bg-white"}`}>
-                                    <div className="flex items-center gap-2">
-                                        <SelectValue placeholder="Recommended" />
-                                    </div>
-                                </SelectTrigger>
-                                <SelectContent className={`border-none shadow-2xl rounded-2xl ${isDark ? "bg-slate-900 text-white border border-white/10" : "bg-white text-slate-900"}`}>
-                                    <SelectItem value="recommended" className="font-bold py-3 text-[9px] uppercase tracking-widest focus:bg-blue-500/10">Recommended</SelectItem>
-                                    <SelectItem value="az" className="font-bold py-3 text-[9px] uppercase tracking-widest focus:bg-blue-500/10">Alphabetical (A–Z)</SelectItem>
-                                    <SelectItem value="problems_desc" className="font-bold py-3 text-[9px] uppercase tracking-widest focus:bg-blue-500/10">Total Problems</SelectItem>
-                                    <SelectItem value="package_desc" className="font-bold py-3 text-[9px] uppercase tracking-widest focus:bg-blue-500/10">Highest Package</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                    {/* Search Input (Narrower) */}
+                    <div className="relative group w-full lg:w-72 pl-2">
+                        <Search className={`absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isDark ? "text-slate-500 group-focus-within:text-blue-400" : "text-slate-400 group-focus-within:text-blue-600"}`} />
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            placeholder={searchPlaceholder}
+                            className={`w-full pl-12 pr-4 py-3 rounded-full text-sm font-bold border transition-all focus:outline-none focus:ring-4 focus:ring-blue-500/10 ${isDark ? "bg-white/[0.03] border-white/10 text-white placeholder:text-slate-600 focus:border-blue-500/50" : "bg-slate-50 border-slate-100 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-400"}`}
+                        />
                     </div>
 
-                    <div className={`p-1.5 rounded-[20px] flex flex-wrap gap-1.5 justify-center ${isDark ? "bg-white/5" : "bg-slate-50"}`}>
-                        {["all", "FAANG", "Product", "Finance", "Service", "Startup"].map(t => {
+                    {/* Tier Filters (Center) */}
+                    <div className="flex flex-wrap items-center justify-center gap-1 md:gap-2 px-4">
+                        {["all", "Product", "Finance", "Service", "Startup"].map(t => {
                             const isActive = tierFilter === t;
+                            const tierColors: Record<string, string> = {
+                                Product: "hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400",
+                                Finance: "hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400",
+                                Service: "hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400",
+                                Startup: "hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400",
+                                all: "hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400"
+                            };
                             const tierGrads: Record<string, string> = {
                                 FAANG: "from-purple-600 to-indigo-600",
                                 Product: "from-blue-600 to-cyan-600",
@@ -1120,9 +1106,9 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                                 <button
                                     key={t}
                                     onClick={() => setTierFilter(t)}
-                                    className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all relative overflow-hidden group/btn ${isActive
-                                            ? "text-white shadow-lg scale-105 z-10"
-                                            : isDark ? "text-slate-500 hover:text-white" : "text-slate-500 hover:text-slate-900"
+                                    className={`px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all relative overflow-hidden group/btn ${isActive
+                                            ? "text-white shadow-lg z-10"
+                                            : `${tierColors[t]} ${isDark ? "text-slate-400" : "text-slate-500"}`
                                         }`}
                                 >
                                     {isActive && (
@@ -1132,11 +1118,28 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                                             transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                                         />
                                     )}
-                                    {!isActive && <div className={`absolute inset-0 opacity-0 group-hover/btn:opacity-100 transition-opacity ${isDark ? "bg-white/5" : "bg-white"}`} />}
                                     <span className="relative z-10">{t === "all" ? "Explore All" : t}</span>
                                 </button>
                             );
                         })}
+                    </div>
+
+                    {/* Sort (Right) */}
+                    <div className="flex items-center gap-3 pr-4">
+                        <span className={`hidden xl:inline text-[11px] font-black uppercase tracking-widest ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+                            Sort by
+                        </span>
+                        <Select value={sortMode} onValueChange={value => setSortMode(value as typeof sortMode)}>
+                            <SelectTrigger className={`h-11 px-5 min-w-[200px] rounded-full text-[11px] font-black uppercase tracking-widest border border-transparent transition-all ${isDark ? "bg-white/[0.03] text-slate-100 hover:border-white/10" : "bg-slate-50 text-slate-800 hover:bg-white hover:border-slate-200"}`}>
+                                <SelectValue placeholder="Recommended" />
+                            </SelectTrigger>
+                            <SelectContent className={`border-none shadow-2xl rounded-2xl ${isDark ? "bg-slate-900 text-white border border-white/10" : "bg-white text-slate-900"}`}>
+                                <SelectItem value="recommended" className="font-bold py-3 text-[11px] uppercase tracking-widest">Recommended</SelectItem>
+                                <SelectItem value="az" className="font-bold py-3 text-[11px] uppercase tracking-widest">Alphabetical (A–Z)</SelectItem>
+                                <SelectItem value="problems_desc" className="font-bold py-3 text-[11px] uppercase tracking-widest">Total Problems</SelectItem>
+                                <SelectItem value="package_desc" className="font-bold py-3 text-[11px] uppercase tracking-widest">Highest Package</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
             </div>

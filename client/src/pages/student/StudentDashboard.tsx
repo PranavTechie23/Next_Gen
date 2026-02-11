@@ -989,10 +989,17 @@ export default function StudentDashboard() {
 
             {/* Premium Header Controls - Relocated for better accessibility */}
             <div className="flex items-center gap-3 sm:gap-4">
-              {/* Company Wise Kit button removed on Skill Test view for a cleaner assessment experience */}
-              {activeTab !== "assessment-hub" && (
+              {/* Quick access button to open Company Wise Kit tab from anywhere */}
+              {activeTab !== "company-kit" && (
                 <Button
                   variant="outline"
+                  onClick={() => {
+                    setActiveTab("company-kit");
+                    const params = new URLSearchParams(window.location.search);
+                    params.set("tab", "company-kit");
+                    const newUrl = `${window.location.pathname}?${params.toString()}`;
+                    window.history.replaceState({ ...window.history.state }, "", newUrl);
+                  }}
                   className={`hidden md:flex h-11 px-6 rounded-2xl font-bold text-xs uppercase tracking-widest gap-2 transform transition-all hover:scale-105 active:scale-95 ${isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}
                 >
                   <span>Company Wise Kit</span>
