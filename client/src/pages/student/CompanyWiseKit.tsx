@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-    ExternalLink, Search, Code, ChevronRight, Filter,
-    CheckCircle, Building2, Target, Check
+    CheckCircle, Building2, Target, Check, Lightbulb, BookOpen,
+    ExternalLink, Search, Code, ChevronRight, Filter
 } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 
@@ -172,6 +173,15 @@ const LOGO_MAP: Record<string, string> = {
     "CodeChef": "codechef.com",
     "Codeforces": "codeforces.com",
     "GeeksforGeeks": "geeksforgeeks.org",
+    "ElasticRun": "elastic.run",
+    "eQ Technologic": "1eq.com", // Found domain for eQ Technologic
+    "Eumentis Cloud": "eumentis.com",
+    "Extramarks Education": "extramarks.com",
+    "GNS Engineering India": "gns-mbh.com",
+    "Helpshift Technologies": "helpshift.com",
+    "Hexaview Technologies": "hexaviewtech.com",
+    "Fabric Inc": "fabric.inc",
+    "EnthrallTech": "enthralltech.com",
     // Add generic catch-alls for short names if needed
 };
 
@@ -183,8 +193,14 @@ const MANUAL_LOGOS: Record<string, string> = {
     "Google": "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg",
     "Netflix": "https://upload.wikimedia.org/wikipedia/commons/f/ff/Netflix-new-icon.png",
     "Amazon": "https://upload.wikimedia.org/wikipedia/commons/4/4a/Amazon_icon.svg",
+    "ElasticRun": "https://upload.wikimedia.org/wikipedia/commons/e/e0/Elasticrun_Logo.svg",
+    "Extramarks Education": "https://upload.wikimedia.org/wikipedia/commons/1/18/Extramarks_Logo.jpg",
     // Add more if needed
 };
+
+// ─── Logo Visibility Configuration ──────────────────────────────────────
+const INVERT_IN_DARK = new Set(["Amazon", "Uber", "Tesla", "Sony", "Samsung", "HP", "Dell", "IBM", "Intel", "Cisco", "Oracle", "Fabric Inc", "GNS Engineering India"]);
+const INVERT_IN_LIGHT = new Set(["Apple"]);
 
 const CompanyLogo = ({ name, logoValue, textSize = "text-lg", padding = "p-2" }: { name: string; logoValue: string; textSize?: string; padding?: string }) => {
     // 1. Resolve Domain
@@ -236,11 +252,21 @@ const CompanyLogo = ({ name, logoValue, textSize = "text-lg", padding = "p-2" }:
         return <span className={`text-white font-black drop-shadow-md ${textSize}`}>{fallbackText}</span>;
     }
 
+    // Determine filter classes for theme visibility
+    let filterClass = "";
+    if (INVERT_IN_DARK.has(name)) {
+        filterClass += " dark:brightness-0 dark:invert ";
+    }
+    if (INVERT_IN_LIGHT.has(name)) {
+        // Base is White (e.g. Apple). Light mode: make Black. Dark mode: keep White.
+        filterClass += " brightness-0 dark:filter-none dark:brightness-100 ";
+    }
+
     return (
         <img
             src={src}
             alt={name}
-            className={`w-full h-full object-contain ${padding}`}
+            className={`w-full h-full object-contain ${padding} ${filterClass} transition-all duration-300`}
             onError={handleError}
             referrerPolicy="no-referrer"
             loading="lazy"
@@ -274,6 +300,18 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
     const [diffFilter, setDiffFilter] = useState<string>("all");
     const [topicFilter, setTopicFilter] = useState<string>("all");
     const [tierFilter, setTierFilter] = useState<string>("all");
+    // How to order companies in the grid
+    const [sortMode, setSortMode] = useState<"recommended" | "az" | "problems_desc" | "package_desc">("recommended");
+    const topRef = useRef<HTMLDivElement>(null);
+
+    // Scroll to top when a company is selected
+    useEffect(() => {
+        if (selectedCompany) {
+            // Instant scroll to top (no animation)
+            topRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
+            window.scrollTo(0, 0);
+        }
+    }, [selectedCompany]);
 
     // STORE PROBLEM TITLES instead of IDs for shared progress
     const [solvedTitles, setSolvedTitles] = useState<Set<string>>(() => {
@@ -320,21 +358,41 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
 
     // ─── Filtering Logic ──────────────────────────────────────────────
     const filteredCompanies = useMemo(() => {
+        // 1) Basic filtering by tier + search
         let list = companies.filter(c => {
             const matchesTier = tierFilter === "all" || c.tier === tierFilter;
             const matchesSearch = search === "" || c.name.toLowerCase().includes(search.toLowerCase());
             return matchesTier && matchesSearch;
         });
 
-        // If simple search/filter is active, just return list
-        if (tierFilter !== "all" || search !== "") return list;
+        // 2) Sorting – dynamic but simple
+        const safeList = [...list]; // avoid mutating derived arrays elsewhere
 
-        return list.sort((a, b) => {
-            const aMatch = preferences.tiers.includes(a.tier) ? 1 : 0;
-            const bMatch = preferences.tiers.includes(b.tier) ? 1 : 0;
-            return bMatch - aMatch; // Recommended first
-        });
-    }, [tierFilter, search, preferences, companies]);
+        // Helper: extract numeric part of avgPackage like "25 LPA"
+        const getPackageValue = (pkg: string) => {
+            const match = pkg?.toString().match(/[\d.]+/);
+            return match ? parseFloat(match[0]) : 0;
+        };
+
+        if (sortMode === "az") {
+            safeList.sort((a, b) => a.name.localeCompare(b.name));
+        } else if (sortMode === "problems_desc") {
+            safeList.sort((a, b) => b.problems.length - a.problems.length);
+        } else if (sortMode === "package_desc") {
+            safeList.sort((a, b) => getPackageValue(b.avgPackage) - getPackageValue(a.avgPackage));
+        } else {
+            // "recommended" – prefer tiers the student picked in onboarding (FAANG/Product/etc.)
+            safeList.sort((a, b) => {
+                const aMatch = preferences.tiers.includes(a.tier) ? 1 : 0;
+                const bMatch = preferences.tiers.includes(b.tier) ? 1 : 0;
+                // If both equal on preference, fall back to name for stable ordering
+                if (bMatch !== aMatch) return bMatch - aMatch;
+                return a.name.localeCompare(b.name);
+            });
+        }
+
+        return safeList;
+    }, [tierFilter, search, sortMode, preferences, companies]);
 
     const filteredProblems = useMemo(() => {
         if (!company) return [];
@@ -439,7 +497,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
         const hardCount = company.problems.filter(p => p.difficulty === "Hard").length;
 
         return (
-            <div>
+            <div ref={topRef} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {/* Back + Company Header */}
                 <div className="mb-8">
                     <button onClick={() => { setSelectedCompany(null); setSearch(""); setDiffFilter("all"); setTopicFilter("all"); }}
@@ -508,6 +566,62 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                                 </div>
                             ))}
                         </div>
+                    </div>
+                </div>
+
+                {/* ─── INSIDE SCOOP: Tips & Resources ───────────────────────────── */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+                    {/* Interview Tips Card */}
+                    <div className={`rounded-3xl p-6 sm:p-8 border h-full transition-all hover:shadow-lg ${isDark ? "bg-amber-500/[0.03] border-amber-500/20 hover:border-amber-500/30" : "bg-gradient-to-br from-amber-50 to-orange-50 border-orange-100 hover:border-orange-200"}`}>
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20 ${isDark ? "bg-amber-500/20 text-amber-400" : "bg-white text-orange-500"}`}>
+                                <Lightbulb className="w-5 h-5" />
+                            </div>
+                            <h3 className={`text-xl font-black ${isDark ? "text-amber-100" : "text-slate-800"}`}>Interview Tips</h3>
+                        </div>
+
+                        {(company.interviewTips && company.interviewTips.length > 0) ? (
+                            <ul className="space-y-4">
+                                {company.interviewTips.map((tip, i) => (
+                                    <li key={i} className="flex gap-3">
+                                        <div className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${isDark ? "bg-amber-500" : "bg-orange-500"}`} />
+                                        <p className={`text-sm font-medium leading-relaxed ${isDark ? "text-slate-300" : "text-slate-700"}`}>{tip}</p>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <div className={`flex flex-col items-center justify-center p-8 text-center border-2 border-dashed rounded-2xl ${isDark ? "border-white/10" : "border-slate-200"}`}>
+                                <p className={`text-sm font-bold ${isDark ? "text-slate-500" : "text-slate-400"}`}>No specific tips available yet.</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Resources Card */}
+                    <div className={`rounded-3xl p-6 sm:p-8 border h-full transition-all hover:shadow-lg ${isDark ? "bg-blue-500/[0.03] border-blue-500/20 hover:border-blue-500/30" : "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100 hover:border-blue-200"}`}>
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 ${isDark ? "bg-blue-500/20 text-blue-400" : "bg-white text-blue-600"}`}>
+                                <BookOpen className="w-5 h-5" />
+                            </div>
+                            <h3 className={`text-xl font-black ${isDark ? "text-blue-100" : "text-slate-800"}`}>Curated Resources</h3>
+                        </div>
+
+                        {(company.resources && company.resources.length > 0) ? (
+                            <div className="grid gap-3">
+                                {company.resources.map((res, i) => (
+                                    <a key={i} href={res.url} target="_blank" rel="noopener noreferrer"
+                                        className={`group flex items-center justify-between p-4 rounded-xl border transition-all ${isDark
+                                            ? "bg-white/5 border-white/5 hover:bg-white/10 hover:border-blue-500/30 text-slate-300 hover:text-white"
+                                            : "bg-white border-slate-200 hover:border-blue-300 hover:shadow-md text-slate-600 hover:text-blue-700"}`}>
+                                        <span className="text-sm font-bold">{res.label}</span>
+                                        <ExternalLink className={`w-4 h-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 ${isDark ? "text-slate-500 group-hover:text-blue-400" : "text-slate-400 group-hover:text-blue-600"}`} />
+                                    </a>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className={`flex flex-col items-center justify-center p-8 text-center border-2 border-dashed rounded-2xl ${isDark ? "border-white/10" : "border-slate-200"}`}>
+                                <p className={`text-sm font-bold ${isDark ? "text-slate-500" : "text-slate-400"}`}>No resources available yet.</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -622,20 +736,52 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                 ))}
             </div>
 
-            {/* Search + Tier Filter */}
-            <div className={`rounded-2xl p-4 mb-6 border flex flex-col sm:flex-row gap-3 ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-white border-slate-200 shadow-sm"}`}>
+            {/* Search + Tier Filter + Sort */}
+            <div className={`rounded-2xl p-4 mb-6 border flex flex-col lg:flex-row gap-3 lg:items-center ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-white border-slate-200 shadow-sm"}`}>
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search companies..."
-                        className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-sm font-semibold border transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${isDark ? "bg-white/5 border-white/10 text-white placeholder:text-slate-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400"}`} />
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        placeholder="Search companies..."
+                        className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-sm font-semibold border transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${isDark ? "bg-white/5 border-white/10 text-white placeholder:text-slate-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400"}`}
+                    />
                 </div>
-                <div className="flex flex-wrap gap-2">
-                    {["all", "FAANG", "Product", "Finance", "Service", "Startup"].map(t => (
-                        <button key={t} onClick={() => setTierFilter(t)}
-                            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${tierFilter === t ? "bg-blue-600 text-white shadow-md" : isDark ? "bg-white/5 text-slate-300 hover:bg-white/10" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
-                            {t === "all" ? "All" : t}
-                        </button>
-                    ))}
+                <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+                    <div className="flex flex-wrap gap-2">
+                        {["all", "FAANG", "Product", "Finance", "Service", "Startup"].map(t => (
+                            <button
+                                key={t}
+                                onClick={() => setTierFilter(t)}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${tierFilter === t ? "bg-blue-600 text-white shadow-md" : isDark ? "bg-white/5 text-slate-300 hover:bg-white/10" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+                            >
+                                {t === "all" ? "All" : t}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className={`text-[11px] font-semibold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                            Sort by
+                        </span>
+                        <Select
+                            value={sortMode}
+                            onValueChange={value => setSortMode(value as typeof sortMode)}
+                        >
+                            <SelectTrigger className={`h-9 px-3 rounded-xl text-xs font-semibold border bg-transparent ${isDark ? "border-white/10 text-slate-100" : "border-slate-200 text-slate-800"}`}>
+                                <div className="flex items-center gap-1.5">
+                                    <Filter className="w-3 h-3 opacity-70" />
+                                    <SelectValue placeholder="Recommended" />
+                                </div>
+                            </SelectTrigger>
+                            <SelectContent align="end" className="text-xs font-semibold">
+                                <SelectItem value="recommended">Recommended (FAANG/Product first)</SelectItem>
+                                <SelectItem value="az">A–Z (Name)</SelectItem>
+                                <SelectItem value="problems_desc">Problems (High → Low)</SelectItem>
+                                <SelectItem value="package_desc">Package (High → Low)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
             </div>
 
