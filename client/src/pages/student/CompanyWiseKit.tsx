@@ -87,8 +87,9 @@ const LOGO_MAP: Record<string, string> = {
     "Salesforce": "salesforce.com",
     "Barclays": "barclays.com",
     "TCS": "tcs.com",
-    "TCS Digital": "tcs.com",
     "TCS Ninja": "tcs.com",
+    "CodeVita": "tcscodevita.com",
+    "TCS Digital": "tcs.com",
     "Infosys": "infosys.com",
     "Wipro": "wipro.com",
     "Cognizant": "cognizant.com",
@@ -124,7 +125,21 @@ const LOGO_MAP: Record<string, string> = {
     "Bank of America": "bankofamerica.com",
     "HSBC": "hsbc.com",
     "Standard Chartered": "sc.com",
-    "BNY Mellon": "bnymellon.com",
+    "BNY Mellon": "bny.com",
+    "BNY": "bny.com",
+    "Fractal AI": "fractal.ai",
+    "Fractal": "fractal.ai",
+    "Froncort": "fractal.ai",
+    "Froncort AI": "fractal.ai",
+    "Fractal Analytics": "fractal.ai",
+    "Concord AI": "concordnow.com",
+    "Concort": "concordnow.com",
+    "Concort AI": "concordnow.com",
+    "BMC Software": "bmc.com",
+    "BMC": "bmc.com",
+    "ProcDNA": "procdna.com",
+    "Sarvatra Technologies": "sarvatra.tech",
+    "Sarvatra": "sarvatra.tech",
     "BlackRock": "blackrock.com",
     "D. E. Shaw": "deshaw.com",
     "Arcesium": "arcesium.com",
@@ -142,8 +157,33 @@ const LOGO_MAP: Record<string, string> = {
     "Oyo": "oyorooms.com",
     "Razorpay": "razorpay.com",
     "Udaan": "udaan.com",
-    "ShareChat": "sharechat.com",
-    "Cred": "cred.club",
+    "CRED": "cred.club",
+    "Cakesoft Tech": "cakesofttech.com",
+    "Cyient": "cyient.com",
+    "HCL": "hcltech.com",
+    "Samsung": "samsung.com",
+    "ElasticRun": "elasticrun.com",
+    "Swasthya AI": "swasthya.ai",
+    "Amura": "amuratech.com",
+    "Infogen Labs": "infogenlabs.com",
+    "Quantiphi": "quantiphi.com",
+    "Quantphi": "quantiphi.com",
+    "eQ Technology": "1eq.com",
+    "IDFC First Bank": "idfcfirstbank.com",
+    "se2": "se2.com",
+    "SE2": "se2.com",
+    "Winjit": "winjit.com",
+    "Winjit Technology": "winjit.com",
+    "Scalex Technology": "scalex.io",
+    "IQ Digital": "iqdigital.com",
+    "iq digital": "iqdigital.com",
+    "Codevita Live": "codevita.live",
+    "Flo Group": "flo-group.com",
+    "Uptiq": "uptiq.ai",
+    "Ideas": "ideas.com",
+    "General Mills": "generalmills.com",
+    "FPL Technology": "fpltech.com",
+    "FPL Technologies": "fpltech.com",
     "Groww": "groww.in",
     "Zerodha": "zerodha.com",
     "Upstox": "upstox.com",
@@ -172,7 +212,6 @@ const LOGO_MAP: Record<string, string> = {
     "CodeChef": "codechef.com",
     "Codeforces": "codeforces.com",
     "GeeksforGeeks": "geeksforgeeks.org",
-    "ElasticRun": "elastic.run",
     "eQ Technologic": "1eq.com",
     "Eumentis Cloud": "eumentis.com",
     "Extramarks Education": "extramarks.com",
@@ -214,7 +253,6 @@ const LOGO_MAP: Record<string, string> = {
     "Dell": "dell.com",
     "HP": "hp.com",
     "Sony": "sony.com",
-    "Samsung": "samsung.com",
     "Qualcomm": "qualcomm.com",
     "Nvidia": "nvidia.com",
     "Broadcom": "broadcom.com",
@@ -238,19 +276,12 @@ const LOGO_MAP: Record<string, string> = {
     "64squares": "64squares.com",
     "abs": "abs-solutions.com",
     "Aligned Automation": "alignedautomation.com",
-    "Amura": "amuramarketing.com",
     "bizAmica Software": "bizamica.com",
     "BUDDI.AI": "buddi.ai",
     "CakeSoft Technologies": "cakesoft.com",
     "Centiro": "centiro.com",
     "Cloudwerx": "cloudwerx.tech",
-    "Codevita Live": "codevita.live",
     "EPIKInDiFi": "epikindifi.com",
-    "Flo Group": "flo-group.com",
-    "Growisto": "growisto.com",
-    "Infogen Labs": "infogenlabs.com",
-    "IntegriChain": "integrichain.com",
-    "iQ Digital": "iqdigital.com",
     "Jaro Education": "jaroeducation.com",
     "JISA Softech": "jisasoftech.com",
     "Jombay": "jombay.com",
@@ -269,9 +300,6 @@ const LOGO_MAP: Record<string, string> = {
     "Rudder Analytics": "rudderanalytics.com",
     "Ryussi Technologies": "ryussi.com",
     "Sagitec": "sagitec.com",
-    "Scalex Technology": "scalex.in",
-    "Screen Magic": "gupshup.io",
-    "SE2": "se2.com",
     "Sedemac Mechatronics": "sedemac.com",
     "TechVerito": "techverito.com",
     "Tracelink": "tracelink.com",
@@ -295,11 +323,9 @@ const LOGO_MAP: Record<string, string> = {
 // Prefer local assets in /public/logos for reliability and performance.
 const MANUAL_LOGOS: Record<string, string> = {
     "Google": "/logos/google.jpg",
-    "Amazon": "/logos/amazon.jpg",
     "Meta": "/logos/meta.jpg",
     "Microsoft": "/logos/microsoft.png",
     "Netflix": "/logos/netflix_light.jpg",
-    "Uber": "/logos/uber.jpg",
     "Stripe": "/logos/stripe.jpg",
     "Adobe": "/logos/adobe.jpg",
     "Goldman Sachs": "/logos/goldman.jpg",
@@ -310,8 +336,8 @@ const MANUAL_LOGOS: Record<string, string> = {
 };
 
 // ─── Logo Visibility Configuration ──────────────────────────────────────
-const INVERT_IN_DARK = new Set(["Amazon", "Uber", "Tesla", "Sony", "Samsung", "HP", "Dell", "IBM", "Intel", "Cisco", "Oracle", "Fabric Inc", "GNS Engineering India"]);
-const INVERT_IN_LIGHT = new Set(["Apple"]);
+const INVERT_IN_DARK = new Set(["Amazon", "Uber", "CRED", "Cred", "Tesla", "Sony", "Samsung", "HP", "Dell", "IBM", "Intel", "Cisco", "Oracle", "Fabric Inc", "GNS Engineering India", "Cakesoft Tech", "TCS Ninja", "CodeVita", "Cyient", "HCL", "ElasticRun", "Amura", "Infogen Labs", "IDFC First Bank", "IDFC FIRST Bank", "Quantiphi", "Quantphi", "64squares", "eQ Technologic", "eQ Technology", "TCS Digital", "se2", "SE2", "Winjit", "Winjit Technology", "Scalex Technology", "IQ Digital", "iq digital", "Codevita Live", "Flo Group", "BNY", "BNY Mellon", "BMC", "BMC Software", "ProcDNA", "Sarvatra", "Sarvatra Technologies", "Fractal", "Fractal AI", "Concord AI", "Uptiq", "Ideas", "General Mills", "FPL Technology", "FPL Technologies"]);
+const INVERT_IN_LIGHT = new Set(["Apple", "Github"]);
 
 const CompanyLogo = ({ name, logoValue, textSize = "text-lg", padding = "p-2" }: { name: string; logoValue: string; textSize?: string; padding?: string }) => {
     // 1. Resolve domain from either explicit URL or known mapping
@@ -356,33 +382,25 @@ const CompanyLogo = ({ name, logoValue, textSize = "text-lg", padding = "p-2" }:
     const [hasError, setHasError] = useState(false);
 
     const handleError = () => {
-        // 1) If manual logo failed, nothing better to try
+        // 1) If manual logo failed, try Clearbit
         if (src === manualLogo) {
-            setHasError(true);
+            setSrc(`https://logo.clearbit.com/${domain}`);
             return;
         }
 
-        // 2) If explicit URL from data failed (e.g. Wikipedia / custom),
-        //    try Clearbit as a fallback using the resolved domain.
-        if (src === logoValue && isExplicitUrl) {
-            if (domain) {
-                const clearbitUrl = `https://logo.clearbit.com/${domain}`;
-                if (src !== clearbitUrl) {
-                    setSrc(clearbitUrl);
-                    return;
-                }
-            }
+        // 2) If Clearbit/Explicit failed, try Unavatar (High Quality)
+        if (src.includes("logo.clearbit.com") || (src === logoValue && isExplicitUrl)) {
+            setSrc(`https://unavatar.io/${domain}?fallback=false`);
+            return;
         }
 
-        // 3) If we were using Clearbit and it failed, try Google favicon.
-        if (src.includes("logo.clearbit.com")) {
-            if (domain) {
-                setSrc(`https://www.google.com/s2/favicons?domain=${domain}&sz=128`);
-                return;
-            }
+        // 3) If Unavatar failed, try DuckDuckGo Icons (Better than Google)
+        if (src.includes("unavatar.io")) {
+            setSrc(`https://icons.duckduckgo.com/ip3/${domain}.ico`);
+            return;
         }
 
-        // 4) As a final fallback, show stylized initials.
+        // 4) Final fallback: show initials (prevent blurry globe)
         setHasError(true);
     };
 
@@ -394,7 +412,8 @@ const CompanyLogo = ({ name, logoValue, textSize = "text-lg", padding = "p-2" }:
     // Determine filter classes for theme visibility
     let filterClass = "";
     if (INVERT_IN_DARK.has(name)) {
-        filterClass += " dark:brightness-0 dark:invert ";
+        // Just invert for dark mode. If it's a black-on-white JPG, it becomes white-on-black.
+        filterClass += " dark:invert ";
     }
     if (INVERT_IN_LIGHT.has(name)) {
         // Base is White (e.g. Apple). Light mode: make Black. Dark mode: keep White.
@@ -1107,8 +1126,8 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                                     key={t}
                                     onClick={() => setTierFilter(t)}
                                     className={`px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all relative overflow-hidden group/btn ${isActive
-                                            ? "text-white shadow-lg z-10"
-                                            : `${tierColors[t]} ${isDark ? "text-slate-400" : "text-slate-500"}`
+                                        ? "text-white shadow-lg z-10"
+                                        : `${tierColors[t]} ${isDark ? "text-slate-400" : "text-slate-500"}`
                                         }`}
                                 >
                                     {isActive && (
