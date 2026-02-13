@@ -18,19 +18,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { motion, useScroll, useTransform, useSpring, AnimatePresence, useInView } from "framer-motion";
 import { useLocation } from "wouter";
 
-const companyLogos = [
-  "/logos/google.jpg",
-  "/logos/microsoft.png",
-  "/logos/amazon.jpg",
-  "/logos/meta.jpg",
-  { dark: "/logos/netflix_dark.jpg", light: "/logos/netflix_light.jpg" },
-  "/logos/adobe.jpg",
-  "/logos/uber.jpg",
-  "/logos/airbnb.jpg",
-  "/logos/stripe.jpg",
-  "/logos/goldman.jpg",
-  "/logos/morgan.jpg"
-];
+
 
 // --- Inline Components ---
 
@@ -189,7 +177,7 @@ export default function PremiumLandingPage() {
   const journeySectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
     target: journeySectionRef,
-    offset: ["start 20%", "end 90%"] // Starts drawing when top hits 20%, ends when bottom hits 90%
+    offset: ["start 80%", "end 20%"]
   });
 
   const scaleX = useSpring(scrollYProgress, {
@@ -249,12 +237,7 @@ export default function PremiumLandingPage() {
     },
   };
 
-  const stats = [
-    { value: "50K+", label: "Students Empowered", icon: Users, gradient: "from-blue-500 to-cyan-500" },
-    { value: "100+", label: "Partner Colleges", icon: Building2, gradient: "from-purple-500 to-pink-500" },
-    { value: "95%", label: "Placement Success", icon: Target, gradient: "from-green-500 to-emerald-500" },
-    { value: "1000+", label: "Dream Companies", icon: Rocket, gradient: "from-orange-500 to-red-500" },
-  ];
+
 
   const features = [
     {
@@ -423,10 +406,11 @@ export default function PremiumLandingPage() {
 
 
 
-  // Defines the SVG Path specifically tuned to zigzag between the cards
-  // Start Center -> Right(DSA) -> Left(Project) -> Right(Mock) -> Left(Intern) -> Center(Job)
-  // Adjusted Y-values to ensure it reaches the Internship card (2100) and Job card (2600)
-  const pathDefinition = "M 300 0 C 300 150 550 350 550 600 C 550 850 50 850 50 1100 C 50 1350 550 1350 550 1600 C 550 1850 50 1850 50 2100 C 50 2350 300 2450 300 2600 L 300 3100";
+  // Desktop Path: Wide zigzag - Adjusted for taller 3600px height
+  const pathDefinition = "M 300 0 C 300 200 550 400 550 700 C 550 1000 50 1000 50 1300 C 50 1600 550 1600 550 1900 C 550 2200 50 2200 50 2500 C 50 2800 300 2900 300 3100 L 300 3600";
+
+  // Mobile Path: Subtle center wave (reduced amplitude) - Adjusted for taller 3600px height
+  const mobilePathDefinition = "M 300 0 C 300 200 330 400 330 700 C 330 1000 270 1000 270 1300 C 270 1600 330 1600 330 1900 C 330 2200 270 2200 270 2500 C 270 2800 300 2900 300 3100 L 300 3600";
 
   return (
     <div ref={containerRef} className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white overflow-x-hidden transition-colors duration-200 grainy-bg">
@@ -625,39 +609,21 @@ export default function PremiumLandingPage() {
             </Button>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
-            {stats.map((stat, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-              >
-                <Card className="p-6 sm:p-8 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border border-slate-200 dark:border-white/10 hover:border-blue-500/30 transition-all hover:-translate-y-2 group shadow-lg">
-                  <div className={`w-14 h-14 bg-gradient-to-br ${stat.gradient} rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:scale-110 shadow-lg`}>
-                    <stat.icon className="w-7 h-7 text-white" />
-                  </div>
-                  <p className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white mb-2">{stat.value}</p>
-                  <p className="text-xs sm:text-sm text-slate-500 font-bold uppercase tracking-widest">{stat.label}</p>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
+
         </div>
       </section>
 
       {/* Features Grid and Tabs */}
-      <section className="py-24 px-4 sm:px-6 relative" id="features">
+      <section className="pt-0 pb-12 px-4 sm:px-6 relative" id="features">
         <div className="container mx-auto max-w-7xl">
-          <div className="text-center mb-20 px-4">
+          <div className="text-center mb-10 px-4">
             <Badge className="px-4 py-2 bg-blue-600/10 text-blue-600 dark:bg-blue-600/20 dark:text-blue-300 font-bold mb-6">Our Capabilities</Badge>
             <h2 className="text-3xl sm:text-6xl font-black mb-6 text-slate-900 dark:text-white leading-tight">Built for High-Growth Careers</h2>
             <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto leading-relaxed">Everything you need to transform career readiness and institutional outcomes.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16 px-4">
-            {features.map((feature, idx) => (
+            {features.slice(0, 3).map((feature, idx) => (
               <motion.div
                 key={idx}
                 initial={{ opacity: 0, y: 20 }}
@@ -678,14 +644,7 @@ export default function PremiumLandingPage() {
                     <Badge variant="outline" className="mb-4 border-slate-200 dark:border-white/20 text-slate-500 dark:text-slate-400">{feature.stats}</Badge>
                     <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mb-4">{feature.title}</h3>
                     <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed mb-6 h-auto sm:h-20 lg:h-24">{feature.description}</p>
-                    <div className="space-y-3 mb-8">
-                      {feature.benefits.map((benefit, bi) => (
-                        <div key={bi} className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                          {benefit}
-                        </div>
-                      ))}
-                    </div>
+
                   </div>
                 </Card>
               </motion.div>
@@ -758,7 +717,7 @@ export default function PremiumLandingPage() {
                 filter: comparisonView === "before" ? "grayscale(0%)" : "grayscale(100%)",
               }}
               onClick={() => setComparisonView("before")}
-              className="cursor-pointer"
+              className={`cursor-pointer ${comparisonView === "before" ? "block relative z-10" : "hidden lg:block lg:opacity-40"}`}
             >
               <div className="bg-slate-50 dark:bg-slate-900/40 p-6 sm:p-12 rounded-[2.5rem] sm:rounded-[3.5rem] border-2 border-slate-200 dark:border-white/5 shadow-2xl h-full ">
                 <div className="flex flex-col sm:flex-row items-center gap-6 mb-12">
@@ -791,7 +750,7 @@ export default function PremiumLandingPage() {
                 filter: comparisonView === "after" ? "grayscale(0%)" : "grayscale(100%)",
               }}
               onClick={() => setComparisonView("after")}
-              className="cursor-pointer"
+              className={`cursor-pointer ${comparisonView === "after" ? "block relative z-10" : "hidden lg:block lg:opacity-40"}`}
             >
               <div className="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-slate-900 dark:to-indigo-950/40 p-6 sm:p-12 rounded-[2.5rem] sm:rounded-[3.5rem] border-2 border-indigo-200 dark:border-blue-500/20 shadow-2xl h-full">
                 <div className="flex flex-col sm:flex-row items-center gap-6 mb-12">
@@ -823,13 +782,13 @@ export default function PremiumLandingPage() {
             </motion.div>
           </div>
         </div>
-      </section>
+      </section >
 
       {/* How it Works / Scroll Journey */}
-      <section className="py-32 px-4 sm:px-6 relative overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-50" id="how-it-works" ref={journeySectionRef}>
+      < section className="py-32 px-4 sm:px-6 relative overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-50" id="how-it-works" ref={journeySectionRef} >
 
         {/* Background Decorative Blurs */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-blue-600/5 dark:bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+        < div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-blue-600/5 dark:bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
 
         <div className="container mx-auto max-w-7xl relative">
           <div className="text-center mb-24 px-4">
@@ -843,8 +802,8 @@ export default function PremiumLandingPage() {
             <div className="absolute inset-0 flex justify-center pointer-events-none">
               <svg
                 width="600"
-                height="3100"
-                viewBox="0 0 600 3100"
+                height="3600"
+                viewBox="0 0 600 3600"
                 fill="none"
                 className="w-full max-w-[800px]"
                 // Crucial: Ensures the SVG scales correctly without distortion
@@ -868,33 +827,68 @@ export default function PremiumLandingPage() {
                   </filter>
                 </defs>
 
-                {/* Background Shadow Path */}
+                {/* === DESKTOP PATHS (Hidden on mobile) === */}
+                {/* Desktop Shadow Path */}
                 <motion.path
                   d={pathDefinition}
                   stroke="url(#journey-gradient)"
                   strokeWidth="60"
                   strokeLinecap="round"
-                  className="blur-3xl opacity-10 dark:opacity-20"
+                  className="blur-3xl opacity-10 dark:opacity-20 hidden md:block" // Hidden on mobile
                   style={{ pathLength: scrollYProgress }}
                 />
 
-                {/* Main Animated Path */}
+                {/* Desktop Main Animated Path */}
                 <motion.path
                   d={pathDefinition}
                   stroke="url(#journey-gradient)"
                   strokeWidth="6"
                   strokeLinecap="round"
+                  className="hidden md:block" // Hidden on mobile
                   style={{ pathLength: scrollYProgress }}
                   filter="url(#glow)"
                 />
 
-                {/* Animated Glow Bead */}
+                {/* Desktop Bead */}
                 <motion.circle
                   r="12"
                   fill="white"
-                  className="shadow-2xl"
+                  className="shadow-2xl hidden md:block" // Hidden on mobile
                   style={{
                     offsetPath: `path('${pathDefinition}')`,
+                    offsetDistance: useTransform(scrollYProgress, [0, 1], ["0%", "100%"]),
+                  }}
+                />
+
+                {/* === MOBILE PATHS (Visible only on mobile) === */}
+                {/* Mobile Shadow Path */}
+                <motion.path
+                  d={mobilePathDefinition}
+                  stroke="url(#journey-gradient)"
+                  strokeWidth="40"
+                  strokeLinecap="round"
+                  className="blur-3xl opacity-10 dark:opacity-20 md:hidden" // Visible on mobile
+                  style={{ pathLength: scrollYProgress }}
+                />
+
+                {/* Mobile Main Animated Path */}
+                <motion.path
+                  d={mobilePathDefinition}
+                  stroke="url(#journey-gradient)"
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  className="md:hidden" // Visible on mobile
+                  style={{ pathLength: scrollYProgress }}
+                  filter="url(#glow)"
+                />
+
+                {/* Mobile Bead */}
+                <motion.circle
+                  r="12"
+                  fill="white"
+                  className="shadow-2xl md:hidden" // Visible on mobile
+                  style={{
+                    offsetPath: `path('${mobilePathDefinition}')`,
                     offsetDistance: useTransform(scrollYProgress, [0, 1], ["0%", "100%"]),
                   }}
                 />
@@ -902,7 +896,7 @@ export default function PremiumLandingPage() {
             </div>
 
             {/* Journey Stops */}
-            <div className="relative z-10 px-4">
+            <div className="relative z-10 px-4 space-y-24 sm:space-y-0">
               {/* Start: Profile */}
               <div className="h-[400px] flex items-center justify-center">
                 <motion.div
@@ -931,7 +925,7 @@ export default function PremiumLandingPage() {
               </div>
 
               {/* Stop 1: DSA Mastery (RIGHT) */}
-              <div className="h-[500px] flex items-center justify-end md:pr-[5%]">
+              <div className="h-[500px] flex items-center justify-center md:justify-end md:pr-[5%]">
                 <motion.div
                   initial={{ opacity: 0, x: 50 }}
                   whileInView={{ opacity: 1, x: 0 }}
@@ -963,7 +957,7 @@ export default function PremiumLandingPage() {
               </div>
 
               {/* Stop 2: Project Alpha (LEFT) */}
-              <div className="h-[500px] flex items-center justify-start md:pl-[5%]">
+              <div className="h-[500px] flex items-center justify-center md:justify-start md:pl-[5%]">
                 <motion.div
                   initial={{ opacity: 0, x: -50 }}
                   whileInView={{ opacity: 1, x: 0 }}
@@ -1000,7 +994,7 @@ export default function PremiumLandingPage() {
               </div>
 
               {/* Stop 3: Mock Interview (RIGHT) */}
-              <div className="h-[500px] flex items-center justify-end md:pr-[5%]">
+              <div className="h-[500px] flex items-center justify-center md:justify-end md:pr-[5%]">
                 <motion.div
                   initial={{ opacity: 0, x: 50 }}
                   whileInView={{ opacity: 1, x: 0 }}
@@ -1046,7 +1040,7 @@ export default function PremiumLandingPage() {
               </div>
 
               {/* Stop 4: Internship (LEFT) */}
-              <div className="h-[500px] flex items-center justify-start md:pl-[5%]">
+              <div className="h-[500px] flex items-center justify-center md:justify-start md:pl-[5%]">
                 <motion.div
                   initial={{ opacity: 0, x: -50 }}
                   whileInView={{ opacity: 1, x: 0 }}
@@ -1110,14 +1104,14 @@ export default function PremiumLandingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </section >
       {/* Success Metrics */}
-      <section className="py-24 relative overflow-hidden bg-white dark:bg-black">
+      < section className="py-24 relative overflow-hidden bg-white dark:bg-black" >
         {/* Dynamic Background: Gradient shows more subtly in dark mode */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 dark:from-grey-500/20 dark:via-black-500/50 dark:to-purple-500/20" />
+        < div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 dark:from-grey-500/20 dark:via-black-500/50 dark:to-purple-500/20" />
 
         {/* Glassmorphism Blur Layer */}
-        <div className="absolute inset-0 backdrop-blur-3xl opacity-50" />
+        < div className="absolute inset-0 backdrop-blur-3xl opacity-50" />
 
         <div className="container mx-auto max-w-7xl relative z-10 px-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
@@ -1155,10 +1149,10 @@ export default function PremiumLandingPage() {
             ))}
           </div>
         </div>
-      </section>
+      </section >
 
       {/* Testimonials */}
-      <section className="py-24 px-4 sm:px-6 relative" id="testimonials">
+      < section className="py-24 px-4 sm:px-6 relative" id="testimonials" >
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-16 sm:mb-20 px-4">
             <Badge className="px-4 py-2 bg-yellow-600/10 text-yellow-600 dark:bg-yellow-600/20 dark:text-yellow-300 font-bold mb-6">Wall of Success</Badge>
@@ -1202,28 +1196,10 @@ export default function PremiumLandingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </section >
 
       {/* Companies Scroll */}
-      <section className="py-20 bg-slate-100/50 dark:bg-slate-900/20 border-y border-slate-200 dark:border-white/5 overflow-hidden">
-        <div className="container mx-auto px-4">
-          <p className="text-center font-bold text-blue-600 text-lg sm:text-2xl mb-12 uppercase tracking-[0.2em] sm:tracking-[0.4em] px-4">Where our students get placed</p>
-          <div className="flex gap-10 animate-scroll w-max flex-nowrap">
-            {[...companyLogos, ...companyLogos].map((c, i) => {
-              const src = typeof c === 'string' ? c : (theme === 'dark' ? c.dark : c.light);
-              return (
-                <div key={i} className="flex flex-shrink-0 items-center justify-center h-24 sm:h-36 px-8 sm:px-16 transition-all group">
-                  <img
-                    src={src}
-                    alt="Company Logo"
-                    className="h-8 sm:h-12 w-auto object-contain transition-all grayscale hover:grayscale-0 opacity-70 hover:opacity-100"
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+
 
       {/* Pricing
       <section className="py-24 px-4 sm:px-6 relative" id="pricing">
@@ -1262,27 +1238,66 @@ export default function PremiumLandingPage() {
       </section> */}
 
       {/* FAQ */}
-      <section className="py-24 px-4 sm:px-6">
-        <div className="container mx-auto max-w-4xl px-4">
+      <section className="py-24 px-4 sm:px-6 relative overflow-hidden" id="faq">
+        <div className="absolute inset-0 bg-slate-50/50 dark:bg-slate-900/50 pointer-events-none" />
+        <div className="container mx-auto max-w-7xl relative z-10 px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-black mb-4 text-slate-900 dark:text-white leading-tight">Frequently Asked Questions</h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400 font-medium leading-relaxed">Everything you need to know about the platform.</p>
+            <Badge className="px-4 py-2 bg-blue-600/10 text-blue-600 dark:bg-blue-600/20 dark:text-blue-300 font-bold mb-6">Support</Badge>
+            <h2 className="text-3xl sm:text-6xl font-black mb-6 text-slate-900 dark:text-white leading-tight">Got Questions?</h2>
+            <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed font-medium">We've got answers. Everything you need to know about the platform.</p>
           </div>
-          <div className="space-y-4">
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
             {faqs.map((faq, i) => (
-              <Card key={i} className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 overflow-hidden transition-all hover:border-blue-500/30 group shadow-lg rounded-2xl">
-                <button onClick={() => setActiveFaq(activeFaq === i ? null : i)} className="w-full p-6 sm:p-8 text-left flex items-center justify-between gap-4">
-                  <span className="text-lg sm:text-xl font-bold text-slate-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug">{faq.question}</span>
-                  <div className={`w-8 h-8 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center transition-transform flex-shrink-0 ${activeFaq === i ? 'rotate-180 bg-blue-600 border-blue-600 text-white' : 'text-slate-400'}`}>
-                    <ChevronRight className="w-5 h-5 rotate-90" />
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+              >
+                <div
+                  className={`h-full p-[1px] rounded-[2rem] transition-all duration-500 group ${activeFaq === i
+                    ? 'bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 shadow-2xl shadow-blue-500/20'
+                    : 'bg-transparent hover:bg-slate-200 dark:hover:bg-white/10'
+                    }`}
+                >
+                  <div className="h-full bg-white dark:bg-slate-950 rounded-[2rem] relative overflow-hidden transition-all">
+                    <button
+                      onClick={() => setActiveFaq(activeFaq === i ? null : i)}
+                      className="w-full p-8 text-left flex flex-col gap-4 relative z-10"
+                    >
+                      <div className="flex items-start justify-between gap-6">
+                        <span className={`text-xl font-bold transition-colors duration-300 ${activeFaq === i ? 'bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent' : 'text-slate-900 dark:text-white'}`}>
+                          {faq.question}
+                        </span>
+                        <div className={`w-10 h-10 rounded-full border flex items-center justify-center flex-shrink-0 transition-all duration-300 ${activeFaq === i ? 'bg-blue-600 border-blue-600 text-white rotate-180 scale-110' : 'border-slate-200 dark:border-white/10 text-slate-400 group-hover:border-blue-500 group-hover:text-blue-500'}`}>
+                          <ChevronRight className="w-5 h-5" />
+                        </div>
+                      </div>
+
+                      <AnimatePresence>
+                        {activeFaq === i && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                            animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
+                            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            className="overflow-hidden"
+                          >
+                            <p className="text-slate-600 dark:text-slate-400 font-medium leading-relaxed text-base sm:text-lg border-t border-slate-100 dark:border-white/5 pt-4">
+                              {faq.answer}
+                            </p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </button>
+
+                    {/* Decorative Background Elements */}
+                    <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-600/5 to-purple-600/5 rounded-full blur-3xl transition-opacity duration-500 pointer-events-none ${activeFaq === i ? 'opacity-100' : 'opacity-0'}`} />
                   </div>
-                </button>
-                {activeFaq === i && (
-                  <div className="p-6 sm:p-8 pt-0 border-t border-slate-100 dark:border-white/5 animate-in slide-in-from-top-4">
-                    <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 leading-relaxed font-medium">{faq.answer}</p>
-                  </div>
-                )}
-              </Card>
+                </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -1365,6 +1380,6 @@ export default function PremiumLandingPage() {
           animation-play-state: paused;
         }
       `}</style>
-    </div>
+    </div >
   );
 }
