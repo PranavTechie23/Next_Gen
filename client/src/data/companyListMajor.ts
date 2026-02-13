@@ -78,6 +78,19 @@ export const MAJOR_COMPANIES: Company[] = [
             { id: "g57", title: "Longest Repeating Character Replacement", difficulty: "Medium", topic: "Sliding Window", url: "https://leetcode.com/problems/longest-repeating-character-replacement/", frequency: "Medium", acceptance: "53.2%" },
             { id: "g58", title: "Container With Most Water", difficulty: "Medium", topic: "Two Pointers", url: "https://leetcode.com/problems/container-with-most-water/", frequency: "High", acceptance: "54.7%" },
             { id: "g59", title: "Is Subsequence", difficulty: "Easy", topic: "Two Pointers", url: "https://leetcode.com/problems/is-subsequence/", frequency: "High", acceptance: "47.7%" },
+            { id: "g60", title: "Count of Smaller Numbers After Self", difficulty: "Hard", topic: "Segment Tree", url: "https://leetcode.com/problems/count-of-smaller-numbers-after-self/", frequency: "Medium", acceptance: "42.5%" },
+            { id: "g61", title: "Longest Increasing Path in a Matrix", difficulty: "Hard", topic: "DFS", url: "https://leetcode.com/problems/longest-increasing-path-in-a-matrix/", frequency: "Medium", acceptance: "53.2%" },
+            { id: "g62", title: "Range Sum Query 2D - Mutable", difficulty: "Hard", topic: "Binary Indexed Tree", url: "https://leetcode.com/problems/range-sum-query-2d-mutable/", frequency: "Low", acceptance: "44.6%" },
+            { id: "g63", title: "Split Array Largest Sum", difficulty: "Hard", topic: "Binary Search", url: "https://leetcode.com/problems/split-array-largest-sum/", frequency: "High", acceptance: "54.7%" },
+            { id: "g64", title: "Evaluate Division", difficulty: "Medium", topic: "Graph", url: "https://leetcode.com/problems/evaluate-division/", frequency: "Medium", acceptance: "61.6%" },
+            { id: "g65", title: "Bus Routes", difficulty: "Hard", topic: "BFS", url: "https://leetcode.com/problems/bus-routes/", frequency: "Medium", acceptance: "47.2%" },
+            { id: "g66", title: "Swim in Rising Water", difficulty: "Hard", topic: "Heap", url: "https://leetcode.com/problems/swim-in-rising-water/", frequency: "Medium", acceptance: "60.4%" },
+            { id: "g67", title: "Cracking the Safe", difficulty: "Hard", topic: "Backtracking", url: "https://leetcode.com/problems/cracking-the-safe/", frequency: "Low", acceptance: "56.8%" },
+            { id: "g68", title: "Robot Room Cleaner", difficulty: "Hard", topic: "Backtracking", url: "https://leetcode.com/problems/robot-room-cleaner/", frequency: "High", acceptance: "77.5%" },
+            { id: "g69", title: "Logger Rate Limiter", difficulty: "Easy", topic: "Design", url: "https://leetcode.com/problems/logger-rate-limiter/", frequency: "High", acceptance: "74.8%" },
+            { id: "g70", title: "Design Search Autocomplete System", difficulty: "Hard", topic: "Design", url: "https://leetcode.com/problems/design-search-autocomplete-system/", frequency: "High", acceptance: "47.7%" },
+            { id: "g71", title: "Confusing Number II", difficulty: "Hard", topic: "Backtracking", url: "https://leetcode.com/problems/confusing-number-ii/", frequency: "Medium", acceptance: "49.6%" },
+            { id: "g72", title: "Text Justification", difficulty: "Hard", topic: "String", url: "https://leetcode.com/problems/text-justification/", frequency: "High", acceptance: "42.0%" },
         ]
     },
     {
@@ -155,6 +168,18 @@ export const MAJOR_COMPANIES: Company[] = [
             { id: "a55", title: "Clone Graph", difficulty: "Medium", topic: "Graph", url: "https://leetcode.com/problems/clone-graph/", frequency: "Medium", acceptance: "55.7%" },
             { id: "a56", title: "Max Area of Island", difficulty: "Medium", topic: "Graph", url: "https://leetcode.com/problems/max-area-of-island/", frequency: "Medium", acceptance: "71.9%" },
             { id: "a57", title: "Number of Enclaves", difficulty: "Medium", topic: "Graph", url: "https://leetcode.com/problems/number-of-enclaves/", frequency: "Medium", acceptance: "68.2%" },
+            { id: "a58", title: "Concatenated Words", difficulty: "Hard", topic: "DP", url: "https://leetcode.com/problems/concatenated-words/", frequency: "Medium", acceptance: "49.6%" },
+            { id: "a59", title: "LFU Cache", difficulty: "Hard", topic: "Design", url: "https://leetcode.com/problems/lfu-cache/", frequency: "Medium", acceptance: "45.7%" },
+            { id: "a60", title: "Design In-Memory File System", difficulty: "Hard", topic: "Design", url: "https://leetcode.com/problems/design-in-memory-file-system/", frequency: "High", acceptance: "63.9%" },
+            { id: "a61", title: "Maximum Frequency Stack", difficulty: "Hard", topic: "Stack", url: "https://leetcode.com/problems/maximum-frequency-stack/", frequency: "Medium", acceptance: "66.5%" },
+            { id: "a62", title: "Reorganize String", difficulty: "Medium", topic: "Heap", url: "https://leetcode.com/problems/reorganize-string/", frequency: "High", acceptance: "54.2%" },
+            { id: "a63", title: "Boundary of Binary Tree", difficulty: "Medium", topic: "Tree", url: "https://leetcode.com/problems/boundary-of-binary-tree/", frequency: "High", acceptance: "44.6%" },
+            { id: "a64", title: "All Nodes Distance K in Binary Tree", difficulty: "Medium", topic: "Tree", url: "https://leetcode.com/problems/all-nodes-distance-k-in-binary-tree/", frequency: "Medium", acceptance: "64.0%" },
+            { id: "a65", title: "Analyze User Website Visit Pattern", difficulty: "Medium", topic: "Hash Map", url: "https://leetcode.com/problems/analyze-user-website-visit-pattern/", frequency: "High", acceptance: "44.5%" },
+            { id: "a66", title: "Integer to English Words", difficulty: "Hard", topic: "String", url: "https://leetcode.com/problems/integer-to-english-words/", frequency: "High", acceptance: "31.2%" },
+            { id: "a67", title: "Design Tic-Tac-Toe", difficulty: "Medium", topic: "Design", url: "https://leetcode.com/problems/design-tic-tac-toe/", frequency: "High", acceptance: "59.3%" },
+            { id: "a68", title: "Meeting Rooms II", difficulty: "Medium", topic: "Heap", url: "https://leetcode.com/problems/meeting-rooms-ii/", frequency: "High", acceptance: "50.9%" },
+            { id: "a69", title: "Sliding Window Maximum", difficulty: "Hard", topic: "Sliding Window", url: "https://leetcode.com/problems/sliding-window-maximum/", frequency: "High", acceptance: "46.3%" },
         ]
     },
     {
@@ -231,6 +256,16 @@ export const MAJOR_COMPANIES: Company[] = [
             { id: "ms55", title: "4Sum", difficulty: "Medium", topic: "Two Pointers", url: "https://leetcode.com/problems/4sum/", frequency: "Medium", acceptance: "38.2%" },
             { id: "ms56", title: "Median of Two Sorted Arrays", difficulty: "Hard", topic: "Binary Search", url: "https://leetcode.com/problems/median-of-two-sorted-arrays/", frequency: "High", acceptance: "33.4%" },
             { id: "ms57", title: "Sliding Window Maximum", difficulty: "Hard", topic: "Sliding Window", url: "https://leetcode.com/problems/sliding-window-maximum/", frequency: "High", acceptance: "46.3%" },
+            { id: "ms58", title: "Serialize and Deserialize N-ary Tree", difficulty: "Hard", topic: "Tree", url: "https://leetcode.com/problems/serialize-and-deserialize-n-ary-tree/", frequency: "Medium", acceptance: "65.6%" },
+            { id: "ms59", title: "Find All Anagrams in a String", difficulty: "Medium", topic: "Sliding Window", url: "https://leetcode.com/problems/find-all-anagrams-in-a-string/", frequency: "High", acceptance: "50.7%" },
+            { id: "ms60", title: "Basic Calculator II", difficulty: "Medium", topic: "Stack", url: "https://leetcode.com/problems/basic-calculator-ii/", frequency: "Medium", acceptance: "43.5%" },
+            { id: "ms61", title: "Max Stack", difficulty: "Hard", topic: "Design", url: "https://leetcode.com/problems/max-stack/", frequency: "Medium", acceptance: "43.8%" },
+            { id: "ms62", title: "Design Hit Counter", difficulty: "Medium", topic: "Design", url: "https://leetcode.com/problems/design-hit-counter/", frequency: "High", acceptance: "69.0%" },
+            { id: "ms63", title: "Encode and Decode TinyURL", difficulty: "Medium", topic: "Design", url: "https://leetcode.com/problems/encode-and-decode-tinyurl/", frequency: "Medium", acceptance: "86.7%" },
+            { id: "ms64", title: "Random Pick with Weight", difficulty: "Medium", topic: "Math", url: "https://leetcode.com/problems/random-pick-with-weight/", frequency: "Medium", acceptance: "46.7%" },
+            { id: "ms65", title: "Meeting Rooms II", difficulty: "Medium", topic: "Heap", url: "https://leetcode.com/problems/meeting-rooms-ii/", frequency: "High", acceptance: "50.9%" },
+            { id: "ms66", title: "Employee Free Time", difficulty: "Hard", topic: "Intervals", url: "https://leetcode.com/problems/employee-free-time/", frequency: "Medium", acceptance: "72.4%" },
+            { id: "ms67", title: "Reconstruct Itinerary", difficulty: "Hard", topic: "Graph", url: "https://leetcode.com/problems/reconstruct-itinerary/", frequency: "Medium", acceptance: "43.1%" },
         ]
     },
     {
@@ -295,6 +330,16 @@ export const MAJOR_COMPANIES: Company[] = [
             { id: "mt43", title: "Populating Next Right Pointers", difficulty: "Medium", topic: "Tree", url: "https://leetcode.com/problems/populating-next-right-pointers-in-each-node/", frequency: "High", acceptance: "61.3%" },
             { id: "mt44", title: "Reverse Nodes in k-Group", difficulty: "Hard", topic: "Linked List", url: "https://leetcode.com/problems/reverse-nodes-in-k-group/", frequency: "High", acceptance: "63.0%" },
             { id: "mt45", title: "Find the Duplicate Number", difficulty: "Medium", topic: "Binary Search", url: "https://leetcode.com/problems/find-the-duplicate-number/", frequency: "High", acceptance: "63.0%" },
+            { id: "mt46", title: "Binary Tree Vertical Order Traversal", difficulty: "Medium", topic: "BFS", url: "https://leetcode.com/problems/binary-tree-vertical-order-traversal/", frequency: "High", acceptance: "56.4%" },
+            { id: "mt47", title: "Lowest Common Ancestor of a Binary Tree III", difficulty: "Medium", topic: "Tree", url: "https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-tree-iii/", frequency: "High", acceptance: "78.4%" },
+            { id: "mt48", title: "Making A Large Island", difficulty: "Hard", topic: "Graph", url: "https://leetcode.com/problems/making-a-large-island/", frequency: "High", acceptance: "46.9%" },
+            { id: "mt49", title: "Shortest Distance from All Buildings", difficulty: "Hard", topic: "BFS", url: "https://leetcode.com/problems/shortest-distance-from-all-buildings/", frequency: "Medium", acceptance: "42.5%" },
+            { id: "mt50", title: "Expression Add Operators", difficulty: "Hard", topic: "Backtracking", url: "https://leetcode.com/problems/expression-add-operators/", frequency: "Medium", acceptance: "40.0%" },
+            { id: "mt51", title: "Strobogrammatic Number II", difficulty: "Medium", topic: "Recursion", url: "https://leetcode.com/problems/strobogrammatic-number-ii/", frequency: "Medium", acceptance: "52.7%" },
+            { id: "mt52", title: "Palindrome Pairs", difficulty: "Hard", topic: "Trie", url: "https://leetcode.com/problems/palindrome-pairs/", frequency: "Medium", acceptance: "35.2%" },
+            { id: "mt53", title: "Simplify Path", difficulty: "Medium", topic: "Stack", url: "https://leetcode.com/problems/simplify-path/", frequency: "High", acceptance: "41.6%" },
+            { id: "mt54", title: "Custom Sort String", difficulty: "Medium", topic: "String", url: "https://leetcode.com/problems/custom-sort-string/", frequency: "Medium", acceptance: "70.5%" },
+            { id: "mt55", title: "Interval List Intersections", difficulty: "Medium", topic: "Two Pointers", url: "https://leetcode.com/problems/interval-list-intersections/", frequency: "Medium", acceptance: "71.7%" },
         ]
     },
     {
@@ -358,6 +403,15 @@ export const MAJOR_COMPANIES: Company[] = [
             { id: "ap43", title: "Subsets", difficulty: "Medium", topic: "Backtracking", url: "https://leetcode.com/problems/subsets/", frequency: "Medium", acceptance: "80.9%" },
             { id: "ap44", title: "Combination Sum", difficulty: "Medium", topic: "Backtracking", url: "https://leetcode.com/problems/combination-sum/", frequency: "Medium", acceptance: "74.7%" },
             { id: "ap45", title: "Word Search", difficulty: "Medium", topic: "Backtracking", url: "https://leetcode.com/problems/word-search/", frequency: "High", acceptance: "41.0%" },
+            { id: "ap46", title: "Design Twitter", difficulty: "Medium", topic: "Design", url: "https://leetcode.com/problems/design-twitter/", frequency: "Medium", acceptance: "39.2%" },
+            { id: "ap47", title: "LFU Cache", difficulty: "Hard", topic: "Design", url: "https://leetcode.com/problems/lfu-cache/", frequency: "High", acceptance: "45.7%" },
+            { id: "ap48", title: "Longest Consecutive Sequence", difficulty: "Medium", topic: "Union Find", url: "https://leetcode.com/problems/longest-consecutive-sequence/", frequency: "High", acceptance: "47.0%" },
+            { id: "ap49", title: "Basic Calculator", difficulty: "Hard", topic: "Stack", url: "https://leetcode.com/problems/basic-calculator/", frequency: "Medium", acceptance: "43.3%" },
+            { id: "ap50", title: "Integer to English Words", difficulty: "Hard", topic: "Recursion", url: "https://leetcode.com/problems/integer-to-english-words/", frequency: "High", acceptance: "31.2%" },
+            { id: "ap51", title: "Text Justification", difficulty: "Hard", topic: "String", url: "https://leetcode.com/problems/text-justification/", frequency: "Medium", acceptance: "42.0%" },
+            { id: "ap52", title: "Sliding Window Maximum", difficulty: "Hard", topic: "Queue", url: "https://leetcode.com/problems/sliding-window-maximum/", frequency: "High", acceptance: "46.3%" },
+            { id: "ap53", title: "Max Points on a Line", difficulty: "Hard", topic: "Math", url: "https://leetcode.com/problems/max-points-on-a-line/", frequency: "Medium", acceptance: "25.0%" },
+            { id: "ap54", title: "N-Queens II", difficulty: "Hard", topic: "Backtracking", url: "https://leetcode.com/problems/n-queens-ii/", frequency: "Medium", acceptance: "74.1%" },
         ]
     },
     // ─── Major Finance ──────────────────────────────────────────────────
@@ -462,6 +516,15 @@ export const MAJOR_COMPANIES: Company[] = [
             { id: "fk18", title: "Partition Equal Subset Sum", difficulty: "Medium", topic: "DP", url: "https://leetcode.com/problems/partition-equal-subset-sum/", frequency: "High", acceptance: "48.4%" },
             { id: "fk19", title: "Median of Two Sorted Arrays", difficulty: "Hard", topic: "Binary Search", url: "https://leetcode.com/problems/median-of-two-sorted-arrays/", frequency: "High", acceptance: "43.8%" },
             { id: "fk20", title: "Burst Balloons", difficulty: "Hard", topic: "DP", url: "https://leetcode.com/problems/burst-balloons/", frequency: "High", acceptance: "61.3%" },
+            { id: "fk21", title: "The Skyline Problem", difficulty: "Hard", topic: "Divide and Conquer", url: "https://leetcode.com/problems/the-skyline-problem/", frequency: "Medium", acceptance: "43.0%" },
+            { id: "fk22", title: "Min Stack", difficulty: "Medium", topic: "Stack", url: "https://leetcode.com/problems/min-stack/", frequency: "High", acceptance: "54.8%" },
+            { id: "fk23", title: "Snakes and Ladders", difficulty: "Medium", topic: "BFS", url: "https://leetcode.com/problems/snakes-and-ladders/", frequency: "High", acceptance: "44.6%" },
+            { id: "fk24", title: "LFU Cache", difficulty: "Hard", topic: "Design", url: "https://leetcode.com/problems/lfu-cache/", frequency: "High", acceptance: "45.7%" },
+            { id: "fk25", title: "Critical Connections in a Network", difficulty: "Hard", topic: "Graph", url: "https://leetcode.com/problems/critical-connections-in-a-network/", frequency: "Medium", acceptance: "57.3%" },
+            { id: "fk26", title: "Sliding Window Maximum", difficulty: "Hard", topic: "Queue", url: "https://leetcode.com/problems/sliding-window-maximum/", frequency: "High", acceptance: "46.3%" },
+            { id: "fk27", title: "Find Median from Data Stream", difficulty: "Hard", topic: "Heap", url: "https://leetcode.com/problems/find-median-from-data-stream/", frequency: "High", acceptance: "51.8%" },
+            { id: "fk28", title: "Word Ladder II", difficulty: "Hard", topic: "BFS", url: "https://leetcode.com/problems/word-ladder-ii/", frequency: "Medium", acceptance: "28.3%" },
+            { id: "fk29", title: "Alien Dictionary", difficulty: "Hard", topic: "Topological Sort", url: "https://leetcode.com/problems/alien-dictionary/", frequency: "Medium", acceptance: "35.4%" },
         ]
     },
     // ─── Factory-generated Major Product Companies ──────────────────────
@@ -477,7 +540,16 @@ export const MAJOR_COMPANIES: Company[] = [
             { label: "Salesforce Engineering Blog", url: "https://developer.salesforce.com/blogs" }
         ]
     ),
-    mkProd("crowdstrike", "CrowdStrike", "https://logo.clearbit.com/crowdstrike.com", "from-red-600 to-red-500", "Cybersecurity and endpoint protection platform", "₹15-28 LPA", 1),
+    mkProd("crowdstrike", "CrowdStrike", "https://logo.clearbit.com/crowdstrike.com", "from-red-600 to-red-500", "Cybersecurity and endpoint protection platform", "₹15-28 LPA", 1, ["Recruiter Screen", "Technical Assessment (Coding)", "System Design", "Technical Discussion"],
+        [
+            "Coding rounds often feature 2-3 LeetCode-style questions (String Compression, Key-Value Store).",
+            "Be prepared for Deep-Dive questions on 'Thread Implementation' and 'LRU Cache'.",
+            "System Design focus: Designing a scalable, read-heavy system like a Facebook feature or Key-Value store."
+        ],
+        [
+            { label: "CrowdStrike Careers", url: "https://www.crowdstrike.com/careers/" }
+        ]
+    ),
     {
         id: "uber", name: "Uber", logo: "https://upload.wikimedia.org/wikipedia/commons/c/cc/Uber_logo_2018.png", gradient: "from-black to-slate-700",
         tier: "Product", description: "Ride-sharing, food delivery and mobility technology",
@@ -512,6 +584,15 @@ export const MAJOR_COMPANIES: Company[] = [
             { id: "ub16", title: "Reverse Integer", difficulty: "Medium", topic: "Math", url: "https://leetcode.com/problems/reverse-integer/", frequency: "High", acceptance: "30.3%" },
             { id: "ub17", title: "Swap Nodes in Pairs", difficulty: "Medium", topic: "Linked List", url: "https://leetcode.com/problems/swap-nodes-in-pairs/", frequency: "High", acceptance: "67.2%" },
             { id: "ub18", title: "Jump Game II", difficulty: "Medium", topic: "Greedy", url: "https://leetcode.com/problems/jump-game-ii/", frequency: "High", acceptance: "41.5%" },
+            { id: "ub19", title: "Bus Routes", difficulty: "Hard", topic: "BFS", url: "https://leetcode.com/problems/bus-routes/", frequency: "Medium", acceptance: "47.2%" },
+            { id: "ub20", title: "Alien Dictionary", difficulty: "Hard", topic: "Topological Sort", url: "https://leetcode.com/problems/alien-dictionary/", frequency: "Medium", acceptance: "35.4%" },
+            { id: "ub21", title: "Text Justification", difficulty: "Hard", topic: "String", url: "https://leetcode.com/problems/text-justification/", frequency: "Medium", acceptance: "42.0%" },
+            { id: "ub22", title: "Find the Closest Palindrome", difficulty: "Hard", topic: "String", url: "https://leetcode.com/problems/find-the-closest-palindrome/", frequency: "Low", acceptance: "22.6%" },
+            { id: "ub23", title: "Serialize and Deserialize N-ary Tree", difficulty: "Hard", topic: "Tree", url: "https://leetcode.com/problems/serialize-and-deserialize-n-ary-tree/", frequency: "Medium", acceptance: "65.6%" },
+            { id: "ub24", title: "Design Quad Tree", difficulty: "Medium", topic: "Tree", url: "https://leetcode.com/problems/construct-quad-tree/", frequency: "Low", acceptance: "77.5%" },
+            { id: "ub25", title: "Employee Free Time", difficulty: "Hard", topic: "Intervals", url: "https://leetcode.com/problems/employee-free-time/", frequency: "Medium", acceptance: "72.4%" },
+            { id: "ub26", title: "Max Stack", difficulty: "Hard", topic: "Design", url: "https://leetcode.com/problems/max-stack/", frequency: "Medium", acceptance: "43.8%" },
+            { id: "ub27", title: "Design Hit Counter", difficulty: "Medium", topic: "Design", url: "https://leetcode.com/problems/design-hit-counter/", frequency: "High", acceptance: "69.0%" },
         ]
     },
     mkProd("mastercard", "Mastercard", "https://logo.clearbit.com/mastercard.com", "from-red-600 to-orange-500", "Global payments technology company", "₹14-25 LPA", 3, ["Recruiter Screen", "Phone Interview", "Technical Rounds x3", "HR"],
@@ -555,37 +636,271 @@ export const MAJOR_COMPANIES: Company[] = [
             { label: "MindTickle Careers", url: "https://www.mindtickle.com/careers/" }
         ]
     ),
-    mkProd("druva", "Druva", "https://logo.clearbit.com/druva.com", "from-blue-600 to-indigo-500", "Cloud data protection and management", "₹14-22 LPA", 4),
+    mkProd("druva", "Druva", "https://logo.clearbit.com/druva.com", "from-blue-600 to-indigo-500", "Cloud data protection and management", "₹14-22 LPA", 4, ["Online Test (MCQs + Coding)", "Technical Round 1 (DSA/OS)", "Technical Round 2 (System Design/Projects)", "Managerial Round"],
+        [
+            "Don't just say 'I don't know'—ask for hints and show a 'never give up' attitude.",
+            "Start with brute-force solutions before optimizing.",
+            "Be ready for OS concepts like Mutex, Semaphore, and Memory Management."
+        ],
+        [
+            { label: "Druva Engineering", url: "https://www.druva.com/about/engineering/" }
+        ]
+    ),
 
-    mkProd("rakuten", "Rakuten", "https://logo.clearbit.com/rakuten.com", "from-red-600 to-rose-500", "Japanese e-commerce and internet services giant", "₹12-22 LPA", 0),
-    mkProd("delhivery", "Delhivery", "https://logo.clearbit.com/delhivery.com", "from-red-500 to-orange-400", "Logistics and supply chain services", "₹10-18 LPA", 1),
-    mkProd("icertis", "Icertis", "https://logo.clearbit.com/icertis.com", "from-green-600 to-emerald-500", "Contract management software platform", "₹12-22 LPA", 2),
-    mkProd("arista", "Arista Networks", "https://logo.clearbit.com/arista.com", "from-blue-700 to-blue-500", "Cloud networking solutions", "₹15-28 LPA", 3),
+    mkProd("rakuten", "Rakuten", "https://logo.clearbit.com/rakuten.com", "from-red-600 to-rose-500", "Japanese e-commerce and internet services giant", "₹12-22 LPA", 0, ["Online Assessment (Aptitude + Coding)", "Technical Round 1 (DSA/DBMS)", "Technical Round 2 (System Design/Java)", "HR Round (Rakuten Shugi)"],
+        [
+            "Read about 'Rakuten Shugi' (core principles)—it's crucial for the HR round.",
+            "Expect Java-heavy questions: SpringBoot, Multithreading, and Collections.",
+            "System Design is asked even for SDE-2 roles (e.g., Load Balancing, SOLID)."
+        ],
+        [
+            { label: "Rakuten Shugi", url: "https://rakuten.today/blog/rakuten-shugi-principles-for-success.html" }
+        ]
+    ),
+    mkProd("delhivery", "Delhivery", "https://logo.clearbit.com/delhivery.com", "from-red-500 to-orange-400", "Logistics and supply chain services", "₹10-18 LPA", 1, ["Mettl Online Test", "Technical Round 1 (DSA)", "Technical Round 2 (Projects/DBMS)", "HR Round"],
+        [
+            "Know your resume projects inside out—expect deep dives into architecture and challenges.",
+            "DBMS is a favorite: SQL queries, Normalization, and Indexing.",
+            "Interviewers are friendly; treat it like a collaborative discussion."
+        ],
+        [
+            { label: "Delhivery Technology", url: "https://www.delhivery.com/technology" }
+        ]
+    ),
+    mkProd("icertis", "Icertis", "https://logo.clearbit.com/icertis.com", "from-green-600 to-emerald-500", "Contract management software platform", "₹12-22 LPA", 2, ["Online Test (MCQs + Coding)", "Technical Round 1 (OOPs/DSA)", "Technical Round 2 (DBMS/Projects)", "HR Round (FORTE)"],
+        [
+            "Align your answers with 'FORTE' values (Fairness, Openness, Respect, Teamwork, Execution).",
+            "Strong focus on OOPs concepts and writing clean code on paper/whiteboard.",
+            "SQL queries are almost guaranteed."
+        ],
+        [
+            { label: "Icertis FORTE Values", url: "https://www.icertis.com/company/values/" }
+        ]
+    ),
+    mkProd("arista", "Arista Networks", "https://logo.clearbit.com/arista.com", "from-blue-700 to-blue-500", "Cloud networking solutions", "₹15-28 LPA", 3, ["HackerRank/CoderPad", "Technical Round (C/C++ & OS)", "System Design", "Director Round"],
+        [
+            "Deep knowledge of C/C++ pointers, memory management (malloc/free), and OS internals is non-negotiable.",
+            "DSA questions are often Medium-Hard (Linked Lists, Trees, Bit manipulation).",
+            "Be prepared to code without an IDE (Whiteboard/Notepad)."
+        ],
+        [
+            { label: "Arista Careers", url: "https://www.arista.com/en/careers" }
+        ]
+    ),
 
 
-    mkProd("zocdoc", "Zocdoc", "https://logo.clearbit.com/zocdoc.com", "from-yellow-500 to-orange-500", "Healthcare marketplace for patients", "₹15-25 LPA", 4),
-    mkProd("siemens", "Siemens", "https://logo.clearbit.com/siemens.com", "from-teal-600 to-cyan-500", "Industrial automation and digital solutions", "₹8-16 LPA", 0),
-    mkProd("sophos", "Sophos", "https://logo.clearbit.com/sophos.com", "from-blue-700 to-blue-500", "Cybersecurity solutions and services", "₹10-18 LPA", 1),
-    mkProd("vodafone", "Vodafone", "https://logo.clearbit.com/vodafone.com", "from-red-600 to-red-500", "Telecommunications and technology company", "₹8-15 LPA", 2),
-    mkProd("tibco", "TIBCO", "https://logo.clearbit.com/tibco.com", "from-blue-600 to-indigo-600", "Enterprise middleware and analytics", "₹10-18 LPA", 3),
-    mkProd("schlumberger", "Schlumberger", "https://logo.clearbit.com/slb.com", "from-blue-800 to-blue-600", "Oilfield services and technology company", "₹12-20 LPA", 4),
-    mkProd("ciena", "Ciena", "https://logo.clearbit.com/ciena.com", "from-blue-500 to-cyan-500", "Networking systems and software provider", "₹12-20 LPA", 0),
-    mkProd("veritas", "Veritas Technologies", "https://logo.clearbit.com/veritas.com", "from-red-700 to-red-500", "Enterprise data management solutions", "₹10-18 LPA", 1),
-    mkProd("nice", "NICE Systems", "https://logo.clearbit.com/nice.com", "from-blue-600 to-indigo-500", "AI-powered contact center and compliance", "₹10-18 LPA", 2),
-    mkProd("avaya", "Avaya", "https://logo.clearbit.com/avaya.com", "from-red-600 to-orange-500", "Unified communications and contact center", "₹8-14 LPA", 3),
-    mkProd("hitachi", "Hitachi Vantara", "https://logo.clearbit.com/hitachivantara.com", "from-red-600 to-red-400", "Data-driven digital solutions and IoT", "₹8-16 LPA", 4),
-    mkProd("pharmeasy", "PharmEasy", "https://logo.clearbit.com/pharmeasy.in", "from-green-600 to-green-400", "Online pharmacy and healthcare platform", "₹10-18 LPA", 0),
+    mkProd("zocdoc", "Zocdoc", "https://logo.clearbit.com/zocdoc.com", "from-yellow-500 to-orange-500", "Healthcare marketplace for patients", "₹15-25 LPA", 4, ["Recruiter Screen", "Technical Round (Algo)", "System Design", "Behavioral (STAR method)"],
+        [
+            "Show passion for the healthcare mission—why Zocdoc?",
+            "Use the STAR method for behavioral questions.",
+            "Database schema design is a common technical topic."
+        ],
+        [
+            { label: "Zocdoc Tech Blog", url: "https://www.zocdoc.com/tech/" }
+        ]
+    ),
+    mkProd("siemens", "Siemens", "https://logo.clearbit.com/siemens.com", "from-teal-600 to-cyan-500", "Industrial automation and digital solutions", "₹8-16 LPA", 0, ["Online Technical Test", "Technical Round 1 (Projects/OOPs)", "Technical Round 2 (DSA/System Design)", "Managerial Round", "HR Round"],
+        [
+            "Strong emphasis on academic scores (70%+ or 7 CGPA).",
+            "Deep dive into OOP concepts (inheritance, polymorphism) with real-world examples.",
+            "Be prepared to screen-share and walk through your projects code-line by code-line."
+        ],
+        [
+            { label: "Siemens Job Search", url: "https://jobs.siemens.com/jobs" }
+        ]
+    ),
+    mkProd("sophos", "Sophos", "https://logo.clearbit.com/sophos.com", "from-blue-700 to-blue-500", "Cybersecurity solutions and services", "₹10-18 LPA", 1, ["Online Coding Assessment", "Technical Round 1 (C++/Java)", "Technical Round 2 (System Design/Networking)", "HR Round"],
+        [
+            "Networking fundamentals (TCP/IP, OSI model) are a massive plus.",
+            "Expect detailed questions on C/C++ memory management and pointers.",
+            "System Design questions focus on low-level API design."
+        ],
+        [
+            { label: "Sophos Careers", url: "https://www.sophos.com/en-us/company/careers" }
+        ]
+    ),
+    mkProd("vodafone", "Vodafone", "https://logo.clearbit.com/vodafone.com", "from-red-600 to-red-500", "Telecommunications and technology company", "₹8-15 LPA", 2, ["Aptitude & English Test", "Technical Round 1 (Java/Spring)", "Technical Round 2 (SQL/Agile)", "Group Discussion", "HR Round"],
+        [
+            "Java 8 features (Streams, Lambdas) and Spring Boot are very frequently asked.",
+            "Prepare for competency-based behavioral questions (STAR method).",
+            "Group discussions might cover current work trends (e.g., WFH vs WFO)."
+        ],
+        [
+            { label: "Vodafone Careers", url: "https://www.vodafone.com/careers" }
+        ]
+    ),
+    mkProd("tibco", "TIBCO", "https://logo.clearbit.com/tibco.com", "from-blue-600 to-indigo-600", "Enterprise middleware and analytics", "₹10-18 LPA", 3, ["Online Assessment", "Technical Round 1 (Java/Integration)", "Technical Round 2 (TIBCO Tools/Middleware)", "HR Round"],
+        [
+            "Familiarity with TIBCO BusinessWorks or EMS is a huge advantage.",
+            "Strong focus on Middleware concepts, XML, and complex integration patterns.",
+            "Explain how you handle performance tuning and version control in integration projects."
+        ],
+        [
+            { label: "TIBCO Community", url: "https://community.tibco.com/" }
+        ]
+    ),
+    mkProd("schlumberger", "Schlumberger", "https://logo.clearbit.com/slb.com", "from-blue-800 to-blue-600", "Oilfield services and technology company", "₹12-20 LPA", 4, ["Online Coding (Java/Logic)", "Group Discussion", "Technical Round (Embedded/C++)", "Managerial Round", "HR Round"],
+        [
+            "Embedded systems knowledge (SPI, I2C, Microcontrollers) is highly valued.",
+            "Expect logic puzzles and math-based coding problems (e.g., Fibonacci, Decimal to Binary).",
+            "Cultural fit is critical—demonstrate teamwork and ability to work in harsh environments."
+        ],
+        [
+            { label: "SLB Early Careers", url: "https://careers.slb.com/early-careers" }
+        ]
+    ),
+    mkProd("ciena", "Ciena", "https://logo.clearbit.com/ciena.com", "from-blue-500 to-cyan-500", "Networking systems and software provider", "₹12-20 LPA", 0, ["HR Screening", "Technical Assessment", "Technical Interview x2", "Behavioral"],
+        [
+            "Strong command of C/C++ and Linux environment is essential.",
+            "Networking concepts (TCP/IP, DNS, Packet Switching) are heavily tested.",
+            "DSA focus: Linked Lists (Reverse, Detect Loop), Trees, and custom smart pointers."
+        ],
+        [
+            { label: "Ciena Careers", url: "https://www.ciena.com/about/careers" }
+        ]
+    ),
+    mkProd("veritas", "Veritas Technologies", "https://logo.clearbit.com/veritas.com", "from-red-700 to-red-500", "Enterprise data management solutions", "₹10-18 LPA", 1, ["Aptitude Test (CS Fundamentals)", "Technical Round 1 (DSA/String Manipulation)", "Technical Round 2 (System Design/SQL)", "HR Round"],
+        [
+            "Focus on File Handling, OS concepts, and scalable backup system design.",
+            "Expect a mix of C++ STL and SQL queries in technical rounds.",
+            "Data Analysis and Integrity are key themes for Veritas."
+        ],
+        [
+            { label: "Veritas Careers", url: "https://www.veritas.com/company/careers" }
+        ]
+    ),
+    mkProd("nice", "NICE Systems", "https://logo.clearbit.com/nice.com", "from-blue-600 to-indigo-500", "AI-powered contact center and compliance", "₹10-18 LPA", 2, ["Online Test (Coding + Aptitude)", "Technical Round (DSA/DBMS)", "Managerial Round (Puzzles/Projects)", "HR Round"],
+        [
+            "Puzzles (like '9 coins') are frequently asked in Managerial rounds.",
+            "Strong focus on SQL joins, normalization, and Employee/Salary queries.",
+            "Be prepared to explain your project's tech stack in depth."
+        ],
+        [
+            { label: "NICE Careers", url: "https://www.nice.com/careers" }
+        ]
+    ),
+    mkProd("avaya", "Avaya", "https://logo.clearbit.com/avaya.com", "from-red-600 to-orange-500", "Unified communications and contact center", "₹8-14 LPA", 3, ["Online Test (MCQ + Coding)", "Technical Round 1 (C++/OS)", "Technical Round 2 (Networks/System Design)", "HR Round"],
+        [
+            "Networking concepts (Sockets, IP, TCP/UDP) are heavily tested.",
+            "Expect OS questions on Threads, Process, and Deadlocks (Dining Philosophers).",
+            "Be ready to explain how Google Search works internally."
+        ],
+        [
+            { label: "Avaya Careers", url: "https://www.avaya.com/en/about-avaya/careers/" }
+        ]
+    ),
+    mkProd("hitachi", "Hitachi Vantara", "https://logo.clearbit.com/hitachivantara.com", "from-red-600 to-red-400", "Data-driven digital solutions and IoT", "₹8-16 LPA", 4, ["Online Assessment", "Technical Round 1 (Java/SQL)", "Technical Round 2 (Project/Design)", "HR Round"],
+        [
+            "Java fundamentals (Collections, Multithreading) are essential.",
+            "Expect React/JavaScript questions if applying for Full Stack roles.",
+            "Communication clarity is very important."
+        ],
+        [
+            { label: "Hitachi Vantara Careers", url: "https://www.hitachivantara.com/en-us/company/careers.html" }
+        ]
+    ),
+    mkProd("pharmeasy", "PharmEasy", "https://logo.clearbit.com/pharmeasy.in", "from-green-600 to-green-400", "Online pharmacy and healthcare platform", "₹10-18 LPA", 0, ["Online Coding Round", "Technical Round 1 (JS/React/DSA)", "Technical Round 2 (System Design)", "Bar Raiser/Managerial"],
+        [
+            "Frontend roles face heavy JS questions: Hoisting, Currying, Closures.",
+            "Behavioral questions focus on ' earning trust' and 'handling failure'.",
+            "System design is crucial for SDE-2+ roles."
+        ],
+        [
+            { label: "PharmEasy Tech", url: "https://blog.pharmeasy.in/tech/" }
+        ]
+    ),
 
-    mkProd("platform9", "Platform9 Systems", "https://logo.clearbit.com/platform9.com", "from-blue-600 to-indigo-500", "Cloud-native Kubernetes infrastructure", "₹12-22 LPA", 1),
-    mkProd("ptcsoftware", "PTC Software", "https://logo.clearbit.com/ptc.com", "from-green-700 to-green-500", "CAD, PLM, IoT and AR solutions", "₹10-18 LPA", 2),
-    mkProd("espressif", "Espressif Systems", "https://logo.clearbit.com/espressif.com", "from-red-600 to-orange-500", "IoT wireless chip and module manufacturer", "₹10-18 LPA", 3),
-    mkProd("endurance", "Endurance International", "https://logo.clearbit.com/endurance.com", "from-blue-500 to-indigo-500", "Web hosting and technology services", "₹8-14 LPA", 4),
-    mkProd("avalara", "Avalara Technologies", "https://logo.clearbit.com/avalara.com", "from-orange-600 to-amber-500", "Tax compliance automation platform", "₹10-18 LPA", 0),
+    mkProd("platform9", "Platform9 Systems", "https://logo.clearbit.com/platform9.com", "from-blue-600 to-indigo-500", "Cloud-native Kubernetes infrastructure", "₹12-22 LPA", 1, ["Screening Round (JS/React)", "Technical Round 1 (React/State Management)", "Technical Round 2 (Output-based JS)", "Managerial Round"],
+        [
+            "Frontend roles focus heavily on 'Output-based Js questions' (Closures, Hoisting, Event Loop).",
+            "Expect a machine coding round: e.g., 'Fetch Pokemon API and display in a table'.",
+            "Platform engineers need strong Linux/PowerShell scripting and AWS/Azure knowledge."
+        ],
+        [
+            { label: "Platform9 Careers", url: "https://platform9.com/company/careers/" }
+        ]
+    ),
+    mkProd("ptcsoftware", "PTC Software", "https://logo.clearbit.com/ptc.com", "from-green-700 to-green-500", "CAD, PLM, IoT and AR solutions", "₹10-18 LPA", 2, ["Online Aptitude & Coding", "Technical Round 1 (DSA/OOPs)", "Technical Round 2 (System Design/Scaler)", "HR Round"],
+        [
+            "Aptitude tests are tricky (Logic/Data Interpretation)—prepare well.",
+            "Expect questions on 'Handling large/messy datasets' and ensuring data integrity.",
+            "Java/C++ proficiency is strict; know internal workings of HashMaps."
+        ],
+        [
+            { label: "PTC Careers", url: "https://www.ptc.com/en/careers" }
+        ]
+    ),
+    mkProd("espressif", "Espressif Systems", "https://logo.clearbit.com/espressif.com", "from-red-600 to-orange-500", "IoT wireless chip and module manufacturer", "₹10-18 LPA", 3, ["Technical Written Test", "Technical Round 1 (Embedded/C)", "Technical Round 2 (FreeRTOS/Protocols)", "HR Round"],
+        [
+            "Must know ESP32 architecture (Dual-core Xtensa, GPIOs, Deep Sleep).",
+            "Deep dive into Communication Protocols: UART, SPI, I2C, and CAN.",
+            "RTOS concepts (Mutex, Semaphore) and FreeRTOS specifics are mandatory."
+        ],
+        [
+            { label: "Espressif Careers", url: "https://www.espressif.com/en/company/job-opportunities" }
+        ]
+    ),
+    mkProd("endurance", "Endurance International", "https://logo.clearbit.com/endurance.com", "from-blue-500 to-indigo-500", "Web hosting and technology services", "₹8-14 LPA", 4, ["Online Assessment (MCQ + Coding)", "Technical Round 1 (DSA/CS Fundamentals)", "Technical Round 2 (System Design)", "HR Round"],
+        [
+            "Online test covers Linux concepts and 'Output-based C/C++' questions.",
+            "System Design focus: Designing a Cache, handling threads and locks.",
+            "Be ready to implement Heap operations or Merge Sort for Linked Lists."
+        ],
+        [
+            { label: "Newfold Digital (Endurance)", url: "https://newfold.com/careers" }
+        ]
+    ),
+    mkProd("avalara", "Avalara Technologies", "https://logo.clearbit.com/avalara.com", "from-orange-600 to-amber-500", "Tax compliance automation platform", "₹10-18 LPA", 0, ["Online Screening", "Technical Round 1 (Coding/DSA)", "Technical Round 2 (Design/Projects)", "Managerial Round"],
+        [
+            "TDD (Test Driven Development) and BDD are often discussed.",
+            "Technical stack focus: .NET, Angular, and DBMS concepts.",
+            "'How have you learned from a time you failed badly?' - Prepare a solid story."
+        ],
+        [
+            { label: "Avalara Careers", url: "https://www.avalara.com/us/en/about/careers.html" }
+        ]
+    ),
 
-    mkProd("aci", "ACI Worldwide", "https://logo.clearbit.com/aciworldwide.com", "from-blue-600 to-blue-400", "Electronic payment and banking solutions", "₹10-18 LPA", 1),
-    mkProd("acquia", "Acquia", "https://logo.clearbit.com/acquia.com", "from-blue-500 to-blue-400", "Cloud platform for Drupal digital experiences", "₹10-16 LPA", 2),
-    mkProd("adp", "ADP", "https://logo.clearbit.com/adp.com", "from-red-600 to-red-500", "Human capital management and payroll", "₹8-15 LPA", 3),
-    mkProd("ideas", "IDeaS A SAS", "https://logo.clearbit.com/ideas.com", "from-blue-600 to-cyan-500", "Revenue management solutions for hospitality", "₹8-14 LPA", 4),
+    mkProd("aci", "ACI Worldwide", "https://logo.clearbit.com/aciworldwide.com", "from-blue-600 to-blue-400", "Electronic payment and banking solutions", "₹10-18 LPA", 1, ["Online Assessment (Coding + Aptitude)", "Technical Round 1 (Java/DSA)", "Technical Round 2 (DBMS/SQL)", "HR Round"],
+        [
+            "Coding on paper is sometimes asked—practice without an IDE.",
+            "Deep focus on Java (Interfaces, Polymorphism) and JDBC connectivity.",
+            "SQL questions are frequent: Nth highest salary, Stored Procedures, Triggers."
+        ],
+        [
+            { label: "ACI Careers", url: "https://www.aciworldwide.com/about-aci/careers" }
+        ]
+    ),
+    mkProd("acquia", "Acquia", "https://logo.clearbit.com/acquia.com", "from-blue-500 to-blue-400", "Cloud platform for Drupal digital experiences", "₹10-16 LPA", 2, ["Online Coding Challenge", "Technical Round 1 (PHP/Drupal)", "Technical Round 2 (System Design/CMS)", "HR Round"],
+        [
+            "Drupal knowledge (Modules, Hooks, Theming) is heavily tested for specific roles.",
+            "PHP fundamentals: Sessions, Design Patterns, Class Loading.",
+            "Expect practical questions like 'How to ensure code maintainability?'."
+        ],
+        [
+            { label: "Acquia Careers", url: "https://www.acquia.com/careers" }
+        ]
+    ),
+    mkProd("adp", "ADP", "https://logo.clearbit.com/adp.com", "from-red-600 to-red-500", "Human capital management and payroll", "₹8-15 LPA", 3, ["Online Aptitude & Coding", "Technical Round 1 (Java/OOPs)", "Technical Round 2 (SDLC/System Design)", "HR Round"],
+        [
+            "Strong emphasis on OOPs (Encapsulation vs Abstraction) and Java Collections.",
+            "Explain SDLC (Software Development Life Cycle) and Agile methodologies.",
+            "Behavioral questions focus on 'Handling conflict in a team' and 'Optimizing application performance'."
+        ],
+        [
+            { label: "ADP Careers", url: "https://jobs.adp.com/" }
+        ]
+    ),
+    mkProd("ideas", "IDeaS A SAS", "https://logo.clearbit.com/ideas.com", "from-blue-600 to-cyan-500", "Revenue management solutions for hospitality", "₹8-14 LPA", 4, ["Online Assessment", "Technical Round 1 (Java/Spring)", "Technical Round 2 (SQL/DB)", "HR Round"],
+        [
+            "Java 8 features, Spring Boot, and Hibernate are core requirements.",
+            "Database knowledge (MSSQL, MySQL) and SQL query tuning are tested.",
+            "Explain your understanding of Test Driven Development (TDD) and CI/CD."
+        ],
+        [
+            { label: "IDeaS Careers", url: "https://ideas.com/careers/" }
+        ]
+    ),
 
     // ─── Factory-generated Finance Companies ────────────────────────────
     mkFin("hsbc", "HSBC", "https://logo.clearbit.com/hsbc.com", "from-red-700 to-red-500", "Global banking and financial services", "₹12-22 LPA", 0, ["Online Test", "Technical x2", "Value Assessment", "HR"],
@@ -611,7 +926,16 @@ export const MAJOR_COMPANIES: Company[] = [
             { label: "Deutsche Bank Careers India", url: "https://www.db.com/careers/en/graduates/locations/india.html" }
         ]
     ),
-    mkFin("ubs", "UBS", "https://logo.clearbit.com/ubs.com", "from-red-600 to-gray-600", "Swiss investment bank and wealth management", "₹15-28 LPA", 0),
+    mkFin("ubs", "UBS", "https://logo.clearbit.com/ubs.com", "from-red-600 to-gray-600", "Swiss investment bank and wealth management", "₹15-28 LPA", 0, ["Online Assessment (HackerRank)", "Technical Round 1 (Java/DSA)", "Technical Round 2 (System Design/DB)", "HR Round"],
+        [
+            "DSA questions often involve Arrays (Missing number) and Sorting.",
+            "Explain the 4 pillars of OOPs with real-world project examples.",
+            "System Design: Analyze a simple web app backend or API design."
+        ],
+        [
+            { label: "UBS Careers", url: "https://www.ubs.com/global/en/careers.html" }
+        ]
+    ),
     mkFin("jpmorgan", "JP Morgan", "https://logo.clearbit.com/jpmorgan.com", "from-slate-700 to-blue-800", "Global financial services and investment banking", "₹14-25 LPA", 1, ["HackerRank Coding", "Technical x2", "HireVue Behavioral", "Super Day"],
         [
             "JP Morgan is moving towards 'Super Day' — multiple back-to-back interviews in one day.",
@@ -623,13 +947,76 @@ export const MAJOR_COMPANIES: Company[] = [
             { label: "JP Morgan Business Principles", url: "https://www.jpmorganchase.com/about/our-business/business-principles" }
         ]
     ),
-    mkFin("ey", "Ernst & Young", "https://logo.clearbit.com/ey.com", "from-yellow-500 to-yellow-400", "Professional services — audit, consulting, advisory", "₹6-14 LPA", 0),
-    mkFin("clsa", "CLSA", "https://logo.clearbit.com/clsa.com", "from-blue-700 to-indigo-600", "Asia-focused brokerage and investment group", "₹10-18 LPA", 1),
-    mkFin("idfc", "IDFC FIRST Bank", "https://logo.clearbit.com/idfcfirstbank.com", "from-red-600 to-rose-500", "Universal banking and retail finance", "₹6-12 LPA", 0),
-    mkFin("rbl", "RBL Bank", "https://logo.clearbit.com/rblbank.com", "from-blue-600 to-blue-500", "Private sector banking and financial services", "₹5-10 LPA", 1),
-    mkFin("finiq", "FinIQ", "https://logo.clearbit.com/finiq.com", "from-green-600 to-teal-500", "Financial software for wealth management", "₹6-12 LPA", 0),
+    mkFin("ey", "Ernst & Young", "https://logo.clearbit.com/ey.com", "from-yellow-500 to-yellow-400", "Professional services — audit, consulting, advisory", "₹6-14 LPA", 0, ["Online Assessment", "Technical Round 1 (Code/Logic)", "Technical Round 2 (System Design/Cloud)", "HR Round"],
+        [
+            "Focus on SQL queries (Joins, 2nd highest salary) and Normalization.",
+            "Explain differences between Abstract Class vs Interface, Process vs Thread.",
+            "Behavioral: Use the STAR method to describe teamwork and adaptability."
+        ],
+        [
+            { label: "EY Careers", url: "https://www.ey.com/en_gl/careers" }
+        ]
+    ),
+    mkFin("clsa", "CLSA", "https://logo.clearbit.com/clsa.com", "from-blue-700 to-indigo-600", "Asia-focused brokerage and investment group", "₹10-18 LPA", 1, ["Aptitude & Technical Test", "Coding Round (DSA)", "Technical Interviews (L1/L2)", "HR Round"],
+        [
+            "Aptitude test includes puzzles and data interpretation.",
+            "Coding round focuses on DSA patterns (String manipulation, Subsets).",
+            "L2 rounds deep-dive into Academic Projects and Java Core (Multithreading)."
+        ],
+        [
+            { label: "CLSA Careers", url: "https://www.clsa.com/careers/" }
+        ]
+    ),
+    mkFin("idfc", "IDFC FIRST Bank", "https://logo.clearbit.com/idfcfirstbank.com", "from-red-600 to-rose-500", "Universal banking and retail finance", "₹6-12 LPA", 0, ["Online Code-a-thon", "Technical Round 1 (Projects/DSA)", "Technical Round 2 (DBMS/OS)", "Managerial Round"],
+        [
+            "Assessment includes aptitude, technical MCQs (SQL/Excel), and coding.",
+            "Project discussion is extensive: Architecture, Tech Stack, Challenges.",
+            "Java/Python specifics: Exception Handling, Collections, Virtual Functions."
+        ],
+        [
+            { label: "IDFC FIRST Bank Careers", url: "https://www.idfcfirstbank.com/careers" }
+        ]
+    ),
+    mkFin("rbl", "RBL Bank", "https://logo.clearbit.com/rblbank.com", "from-blue-600 to-blue-500", "Private sector banking and financial services", "₹5-10 LPA", 1, ["Aptitude Test", "Technical Interview", "HR Interview"],
+        [
+            "General banking tech questions: Financial products, Compliance.",
+            "Prepare for standard behavioral questions ('Tell me about yourself').",
+            "Excel skills (for data management) and basic SQL are often tested."
+        ],
+        [
+            { label: "RBL Bank Careers", url: "https://www.rblbank.com/careers" }
+        ]
+    ),
+    mkFin("finiq", "FinIQ", "https://logo.clearbit.com/finiq.com", "from-green-600 to-teal-500", "Financial software for wealth management", "₹6-12 LPA", 0, ["Online Test (Reliscore)", "Technical Round (DBMS/Networking)", "HR Round"],
+        [
+            "Online test covers General Knowledge, Math, DBMS, and Logic.",
+            "Networking: OSI Model, DNS, HTTP/HTTPS, IP/MAC Addresses.",
+            "Coding questions are often mathematical (Prime, Armstrong, Matrix)."
+        ],
+        [
+            { label: "FinIQ Careers", url: "https://www.finiq.com/careers" }
+        ]
+    ),
 
-    mkFin("flextrade", "FlexTrade", "https://logo.clearbit.com/flextrade.com", "from-blue-600 to-cyan-500", "Multi-asset execution management systems", "₹10-18 LPA", 1),
-    mkFin("iongroup", "ION Group", "https://logo.clearbit.com/iongroup.com", "from-blue-800 to-blue-600", "Trading and treasury technology solutions", "₹8-16 LPA", 0),
+    mkFin("flextrade", "FlexTrade", "https://logo.clearbit.com/flextrade.com", "from-blue-600 to-cyan-500", "Multi-asset execution management systems", "₹10-18 LPA", 1, ["Online Test (Linux/C++/SQL)", "Technical Round 1 (Algo/Trading)", "Technical Round 2 (System Design)", "Managerial Round"],
+        [
+            "High-Frequency Trading concepts: Algorithm optimization, Multithreading.",
+            "FIX Protocol knowledge is a significant plus.",
+            "C++ roles: Deep dive into Pointers, References, and OOP."
+        ],
+        [
+            { label: "FlexTrade Careers", url: "https://flextrade.com/careers/" }
+        ]
+    ),
+    mkFin("iongroup", "ION Group", "https://logo.clearbit.com/iongroup.com", "from-blue-800 to-blue-600", "Trading and treasury technology solutions", "₹8-16 LPA", 0, ["Online Assessment (DSA/Logic)", "Technical Round 1 (OOP/OS)", "Case Study Round", "Leadership Round"],
+        [
+            "Online test includes DSA, Logic, and sometimes Graph-based problems.",
+            "Case Study round assesses analytical business problem solving.",
+            "Strong focus on CS Fundamentals: OS (Paging, Deadlocks), DBMS."
+        ],
+        [
+            { label: "ION Group Careers", url: "https://iongroup.com/careers/" }
+        ]
+    ),
 
 ];
