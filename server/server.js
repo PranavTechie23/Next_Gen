@@ -10,6 +10,9 @@ app.use(cors()); // Allow frontend to connect later
 app.use(express.json()); // Allow JSON data
 app.use(morgan('dev'));
 
+const authRoutes = require('./src/routes/authRoutes');
+app.use('/api/auth', authRoutes);
+
 app.get('/',(req,res)=>{
     res.json({message:'Placement Automation API is Running'});
 });
