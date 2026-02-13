@@ -108,13 +108,10 @@ const footerConfig = {
         { label: "Jobs & Opportunities", href: "/student/dashboard" },
         { label: "Learning Paths", href: "/student/dashboard" },
         { label: "Webinars", href: "/webinars" },
-
       ],
       resources: [
         { label: "Feedback", href: "/student/feedbackForm" },
         { label: "Settings", href: "/student/setting" },
-
-
       ],
     },
     college: {

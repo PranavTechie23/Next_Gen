@@ -1084,11 +1084,14 @@ export default function EnterpriseAdminDashboard() {
   const handleLogout = useCallback(() => {
     toast.loading("Logging out...", { id: "logout" });
     setTimeout(() => {
-      // Clear any stored authentication data if needed
-      // localStorage.removeItem('authToken');
-      // sessionStorage.clear();
+      // Clear client-side auth/session flags
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("userRole");
+        // localStorage.removeItem("authToken");
+        // sessionStorage.clear();
+      }
       toast.success("Logged out successfully", { id: "logout" });
-      navigate("/");
+      navigate("/login");
     }, 500);
   }, [navigate]);
 

@@ -1587,7 +1587,15 @@ const IntegrationsPage: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-500 ${isDark ? 'bg-[#0a0b0e] text-slate-100' : 'bg-gradient-to-br from-gray-50 via-white to-blue-50/30 text-gray-900'}`}>
+    <div className={`min-h-screen transition-colors duration-500 ${isDark ? 'bg-background text-slate-100' : 'bg-gradient-to-br from-gray-50 via-white to-blue-50/30 text-gray-900'} relative overflow-hidden`}>
+      {/* Premium Background Glows */}
+      {isDark && (
+        <div className="premium-glow-bg">
+          <div className="premium-glow-1" />
+          <div className="premium-glow-2" />
+          <div className="premium-glow-3" />
+        </div>
+      )}
       <div className="px-4 sm:px-6 lg:px-8 pt-6 pb-12">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
           <div>

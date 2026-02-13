@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import {
     Rocket, GraduationCap, BarChart, Clock, CheckCircle, Sparkles,
     Briefcase, Monitor, FileText, Shield, ArrowUpRight, Cpu
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useInView } from "framer-motion";
 
 // ─── Platform Data ──────────────────────────────────────────────────────
 interface Platform {
@@ -17,7 +17,8 @@ interface Platform {
     description: string;
     longDescription: string;
     url: string;
-    logo: string;
+    logo: string;        // short code (IB, LC, etc.)
+    logoUrl?: string;    // optional real logo URL
     gradient: string;
     category: string;
     tags: string[];
@@ -48,6 +49,7 @@ const PLATFORMS: Platform[] = [
         longDescription: "Master quantitative aptitude, logical reasoning, verbal ability, and GK with topic-wise practice sets, solutions, and shortcuts.",
         url: "https://www.indiabix.com",
         logo: "IB",
+        logoUrl: "https://logo.clearbit.com/indiabix.com",
         gradient: "from-orange-500 to-red-500",
         category: "aptitude",
         tags: ["Aptitude", "Reasoning", "Verbal", "GK"],
@@ -65,6 +67,7 @@ const PLATFORMS: Platform[] = [
         longDescription: "Access company-specific placement papers, mock tests, and aptitude preparation designed for fresh graduates entering the job market.",
         url: "https://www.freshersworld.com",
         logo: "FW",
+        logoUrl: "https://logo.clearbit.com/freshersworld.com",
         gradient: "from-blue-500 to-indigo-500",
         category: "aptitude",
         tags: ["Placement Papers", "Mock Tests", "Jobs"],
@@ -82,6 +85,7 @@ const PLATFORMS: Platform[] = [
         longDescription: "Targeted preparation material for top IT company hiring rounds including aptitude, coding, and verbal sections with previous year questions.",
         url: "https://prepinsta.com",
         logo: "PI",
+        logoUrl: "https://logo.clearbit.com/prepinsta.com",
         gradient: "from-green-500 to-teal-500",
         category: "aptitude",
         tags: ["TCS", "Infosys", "Wipro", "Company Prep"],
@@ -101,6 +105,7 @@ const PLATFORMS: Platform[] = [
         longDescription: "Practice data structures, algorithms, and system design problems. Used by millions to prepare for FAANG and top-tier tech company interviews.",
         url: "https://leetcode.com",
         logo: "LC",
+        logoUrl: "https://logo.clearbit.com/leetcode.com",
         gradient: "from-yellow-500 to-orange-500",
         category: "dsa",
         tags: ["DSA", "Algorithms", "FAANG", "Contests"],
@@ -118,6 +123,7 @@ const PLATFORMS: Platform[] = [
         longDescription: "The most extensive library of DSA articles, tutorials, coding practice problems, and interview experiences covering every CS topic imaginable.",
         url: "https://www.geeksforgeeks.org",
         logo: "GG",
+        logoUrl: "https://logo.clearbit.com/geeksforgeeks.org",
         gradient: "from-green-600 to-green-500",
         category: "dsa",
         tags: ["DSA", "Tutorials", "Courses", "Interview Prep"],
@@ -135,6 +141,7 @@ const PLATFORMS: Platform[] = [
         longDescription: "Skill-based coding challenges across domains including algorithms, SQL, AI, and more. Many companies use HackerRank for their hiring assessments.",
         url: "https://www.hackerrank.com",
         logo: "HR",
+        logoUrl: "https://logo.clearbit.com/hackerrank.com",
         gradient: "from-emerald-500 to-green-600",
         category: "dsa",
         tags: ["Coding", "SQL", "Certification", "Hiring"],
@@ -152,6 +159,7 @@ const PLATFORMS: Platform[] = [
         longDescription: "Well-structured curriculum with mentored courses covering DSA, web development, and competitive programming with placement assistance.",
         url: "https://www.codingninjas.com",
         logo: "CN",
+        logoUrl: "https://logo.clearbit.com/codingninjas.com",
         gradient: "from-orange-600 to-red-600",
         category: "dsa",
         tags: ["DSA Course", "Mentored", "Placement"],
@@ -162,6 +170,61 @@ const PLATFORMS: Platform[] = [
         bestFor: "Structured, mentor-guided DSA learning",
         isFree: false,
     },
+    {
+        id: "neetcode",
+        name: "NeetCode",
+        description: "The best curated path to master LeetCode and Ace the Coding Interview.",
+        longDescription: "Structured roadmaps, video solutions, and clean code for the most important LeetCode problems. Highly recommended by top software engineers.",
+        url: "https://neetcode.io",
+        logo: "NC",
+        logoUrl: "https://logo.clearbit.com/neetcode.io",
+        gradient: "from-sky-500 to-blue-700",
+        category: "dsa",
+        tags: ["LeetCode", "Roadmaps", "Video Solutions", "Interview Prep"],
+        rating: 4.9,
+        users: "2M+",
+        difficulty: "All Levels",
+        features: ["NeetCode 150", "Blind 75", "Topic-wise Roadmaps", "System Design"],
+        bestFor: "Optimized, curated path for coding interview success",
+        isFree: true,
+    },
+    {
+        id: "striver",
+        name: "Take U Forward",
+        description: "Striver's SDE Sheet and DSA A-to-Z Roadmap for top placements.",
+        longDescription: "Home of the famous SDE Sheet and A-to-Z DSA Roadmap. Comprehensive video tutorials and problem lists that have helped thousands crack MAANG interviews.",
+        url: "https://takeuforward.org",
+        logo: "TUF",
+        logoUrl: "https://logo.clearbit.com/takeuforward.org",
+        gradient: "from-red-600 to-red-500",
+        category: "dsa",
+        tags: ["SDE Sheet", "DSA Roadmap", "Tutorials", "MAANG"],
+        rating: 4.9,
+        users: "2M+",
+        difficulty: "All Levels",
+        features: ["SDE Sheet", "DSA A-Z Series", "Company-specific Sheets", "Graphic Tutorials"],
+        bestFor: "Topic-wise mastery with detailed video explanations",
+        isFree: true,
+    },
+    {
+        id: "cses",
+        name: "CSES Problem Set",
+        description: "Master algorithm techniques with this pure, high-quality problem set.",
+        longDescription: "The CSES Problem Set contains a collection of high-quality algorithm problems. It covers a wide range of topics and is used for advanced algorithmic training.",
+        url: "https://cses.fi/problemset/",
+        logo: "CS",
+        logoUrl: "https://logo.clearbit.com/cses.fi",
+        gradient: "from-blue-600 to-cyan-700",
+        category: "dsa",
+        tags: ["Algorithms", "Advanced", "Problem Solving"],
+        rating: 4.8,
+        users: "500K+",
+        difficulty: "Advanced",
+        features: ["High-quality Problems", "Core Algorithms", "Fast Judge", "No Junk Problems"],
+        bestFor: "Advanced algorithmic thinking and core implementation",
+        isFree: true,
+    },
+
 
     // ─── Interview Prep ───
     {
@@ -171,6 +234,7 @@ const PLATFORMS: Platform[] = [
         longDescription: "A focused platform for interview preparation with a curated path of problems organized by topics, plus mock interview scheduling with peers.",
         url: "https://www.interviewbit.com",
         logo: "IB",
+        logoUrl: "https://logo.clearbit.com/interviewbit.com",
         gradient: "from-blue-600 to-indigo-600",
         category: "interview",
         tags: ["Mock Interviews", "Curated Problems", "Guided Path"],
@@ -182,12 +246,32 @@ const PLATFORMS: Platform[] = [
         isFree: true,
     },
     {
+        id: "algoexpert",
+        name: "AlgoExpert",
+        description: "The ultimate resource for coding interview preparation.",
+        longDescription: "Premium platform with high-quality video explanations for 160+ hand-picked coding questions, covering algorithms, data structures, and system design.",
+        url: "https://www.algoexpert.io",
+        logo: "AE",
+        logoUrl: "https://logo.clearbit.com/algoexpert.io",
+        gradient: "from-blue-500 to-indigo-500",
+        category: "interview",
+        tags: ["Coding Questions", "Video Explanations", "System Design"],
+        rating: 4.8,
+        users: "1M+",
+        difficulty: "All Levels",
+        features: ["160+ Hand-picked Questions", "Detailed Video Solutions", "In-browser Coding", "Behavioral Prep"],
+        bestFor: "High-quality, focused coding interview training",
+        isFree: false,
+    },
+
+    {
         id: "pramp",
         name: "Pramp",
         description: "Free peer-to-peer mock interviews with real engineers.",
         longDescription: "Practice live coding interviews with peers and get real-time feedback. Covers behavioral, system design, and coding interviews.",
         url: "https://www.pramp.com",
         logo: "PR",
+        logoUrl: "https://logo.clearbit.com/pramp.com",
         gradient: "from-purple-600 to-blue-600",
         category: "interview",
         tags: ["Mock Interviews", "Peer Practice", "Live Coding"],
@@ -205,6 +289,7 @@ const PLATFORMS: Platform[] = [
         longDescription: "Research companies, access real interview questions shared by candidates, and compare salaries before your next interview.",
         url: "https://www.glassdoor.co.in",
         logo: "GD",
+        logoUrl: "https://logo.clearbit.com/glassdoor.com",
         gradient: "from-green-500 to-lime-500",
         category: "interview",
         tags: ["Interview Questions", "Salaries", "Reviews"],
@@ -224,6 +309,7 @@ const PLATFORMS: Platform[] = [
         longDescription: "Text-based interactive courses with in-browser coding environments. Famous for the 'Grokking' series covering system design, coding patterns, and more.",
         url: "https://www.educative.io",
         logo: "ED",
+        logoUrl: "https://logo.clearbit.com/educative.io",
         gradient: "from-indigo-600 to-blue-600",
         category: "system-design",
         tags: ["System Design", "Grokking", "Interactive"],
@@ -241,6 +327,7 @@ const PLATFORMS: Platform[] = [
         longDescription: "A comprehensive GitHub repository with everything you need to prepare for system design interviews — diagrams, solutions, and real-world architectures.",
         url: "https://github.com/donnemartin/system-design-primer",
         logo: "SD",
+        logoUrl: "https://logo.clearbit.com/github.com",
         gradient: "from-slate-600 to-gray-600",
         category: "system-design",
         tags: ["Open Source", "System Design", "GitHub"],
@@ -260,6 +347,7 @@ const PLATFORMS: Platform[] = [
         longDescription: "Participate in regular programming contests, solve challenging problems, and improve your competitive programming rating.",
         url: "https://codeforces.com",
         logo: "CF",
+        logoUrl: "https://logo.clearbit.com/codeforces.com",
         gradient: "from-blue-700 to-blue-500",
         category: "competitive",
         tags: ["Contests", "Competitive", "CP", "Rating"],
@@ -271,12 +359,50 @@ const PLATFORMS: Platform[] = [
         isFree: true,
     },
     {
+        id: "tle-eliminators",
+        name: "TLE Eliminators",
+        description: "Rank-up in competitive programming with structured coaching and contests.",
+        longDescription: "A specialized platform for CP training with structured courses, weekly contests, and expert mentorship to help you reach Candidate Master and beyond.",
+        url: "https://www.tle-eliminators.com",
+        logo: "TE",
+        logoUrl: "https://logo.clearbit.com/tle-eliminators.com",
+        gradient: "from-indigo-600 to-blue-800",
+        category: "competitive",
+        tags: ["CP Coaching", "Rating Up", "Mentorship", "Contests"],
+        rating: 4.8,
+        users: "100K+",
+        difficulty: "Advanced",
+        features: ["Live Sessions", "CP Roadmap", "Rating-based Training", "Doubt Support"],
+        bestFor: "Systematic improvement in competitive programming",
+        isFree: false,
+    },
+    {
+        id: "hackerearth",
+        name: "HackerEarth",
+        description: "Practice coding, compete in hackathons, and ace hiring challenges.",
+        longDescription: "A leading developer recruitment platform that offers coding practice, hackathons, and hiring assessments used by thousands of companies.",
+        url: "https://www.hackerearth.com",
+        logo: "HE",
+        logoUrl: "https://logo.clearbit.com/hackerearth.com",
+        gradient: "from-purple-700 to-indigo-600",
+        category: "competitive",
+        tags: ["Hiring Challenges", "Hackathons", "Practice", "CP"],
+        rating: 4.5,
+        users: "7M+",
+        difficulty: "All Levels",
+        features: ["Hiring Challenges", "Hackathons", "Practice Problems", "Company Tests"],
+        bestFor: "Participating in corporate hiring challenges",
+        isFree: true,
+    },
+
+    {
         id: "codechef",
         name: "CodeChef",
         description: "Monthly coding contests, practice problems, and learning paths from India.",
         longDescription: "India's leading competitive programming platform with regular contests, a structured learning path, and a strong community.",
         url: "https://www.codechef.com",
         logo: "CC",
+        logoUrl: "https://logo.clearbit.com/codechef.com",
         gradient: "from-amber-600 to-yellow-500",
         category: "competitive",
         tags: ["Contests", "CP", "Learning Paths", "Community"],
@@ -287,6 +413,25 @@ const PLATFORMS: Platform[] = [
         bestFor: "Building competitive programming fundamentals",
         isFree: true,
     },
+    {
+        id: "atcoder",
+        name: "AtCoder",
+        description: "Weekly high-quality competitive programming contests from Japan.",
+        longDescription: "Highly regarded for its elegant and educational problem sets. Regular Beginner (ABC) and Regular (ARC) contests used by top competitive programmers.",
+        url: "https://atcoder.jp",
+        logo: "AC",
+        logoUrl: "https://logo.clearbit.com/atcoder.jp",
+        gradient: "from-slate-800 to-slate-900",
+        category: "competitive",
+        tags: ["Contests", "CP", "Beginner Friendly", "Japan"],
+        rating: 4.8,
+        users: "400K+",
+        difficulty: "All Levels",
+        features: ["Weekly Contests (ABC)", "Educational Problems", "Rating System", "Clean Interface"],
+        bestFor: "Participating in high-quality, timed coding contests",
+        isFree: true,
+    },
+
 
     // ─── Placement Prep ───
     {
@@ -296,6 +441,7 @@ const PLATFORMS: Platform[] = [
         longDescription: "The largest job platform in India with millions of listings, resume hosting, company research, and application tracking.",
         url: "https://www.naukri.com",
         logo: "NK",
+        logoUrl: "https://logo.clearbit.com/naukri.com",
         gradient: "from-blue-600 to-sky-500",
         category: "placement",
         tags: ["Jobs", "Resume", "Apply", "Campus"],
@@ -313,6 +459,7 @@ const PLATFORMS: Platform[] = [
         longDescription: "Access thousands of expert-led courses on business, technology, and creative skills. Certificates can be added directly to your LinkedIn profile.",
         url: "https://www.linkedin.com/learning",
         logo: "LI",
+        logoUrl: "https://logo.clearbit.com/linkedin.com",
         gradient: "from-blue-700 to-blue-600",
         category: "placement",
         tags: ["Soft Skills", "Courses", "Certifications"],
@@ -330,6 +477,7 @@ const PLATFORMS: Platform[] = [
         longDescription: "Participate in competitions, hackathons, quizzes, and hiring challenges hosted by top companies and colleges across India.",
         url: "https://unstop.com",
         logo: "UN",
+        logoUrl: "https://res.cloudinary.com/dzu8o7ica/image/upload/v1707371558/unstop-logo_v4x_zqf0zv.png",
         gradient: "from-indigo-500 to-purple-600",
         category: "placement",
         tags: ["Hackathons", "Competitions", "Hiring Challenges"],
@@ -342,13 +490,101 @@ const PLATFORMS: Platform[] = [
     },
 ];
 
+// ─── Typewriter Component ───────────────────────────────────────────────
+function TypewriterText({ text, speed = 40, delay = 0, className = "" }: { text: string; speed?: number; delay?: number; className?: string }) {
+    const [index, setIndex] = useState(0);
+    const ref = useRef<HTMLSpanElement>(null);
+    const isInView = useInView(ref, { once: true });
+
+    useEffect(() => {
+        if (!isInView) return;
+        setIndex(0);
+        const timeout = setTimeout(() => {
+            const timer = setInterval(() => {
+                setIndex((prev) => {
+                    if (prev < text.length) {
+                        return prev + 1;
+                    }
+                    clearInterval(timer);
+                    return prev;
+                });
+            }, speed);
+            return () => clearInterval(timer);
+        }, delay);
+
+        return () => clearTimeout(timeout);
+    }, [text, speed, delay, isInView]);
+
+    return (
+        <span ref={ref} className={className}>
+            {text.slice(0, index)}
+            {index < text.length && <span className="animate-pulse">|</span>}
+        </span>
+    );
+}
+
 // ─── Stat Cards ──────────────────────────────────────────────────────────
 const QUICK_STATS = [
-    { label: "Platforms Integrated", value: "18+", icon: Globe, gradient: "from-blue-500 to-cyan-500" },
+    { label: "Platforms Integrated", value: "24+", icon: Globe, gradient: "from-blue-500 to-cyan-500" },
     { label: "Practice Problems", value: "50K+", icon: Code, gradient: "from-green-500 to-emerald-500" },
     { label: "Mock Interviews", value: "Live", icon: Users, gradient: "from-purple-500 to-pink-500" },
     { label: "Success Rate", value: "95%", icon: Target, gradient: "from-orange-500 to-red-500" },
 ];
+
+// ─── Platform Logo Component ─────────────────────────────────────────────
+function PlatformLogo({ platform }: { platform: Platform }) {
+    const { theme } = useTheme();
+    const isDark = theme === "dark";
+    const [logoSrc, setLogoSrc] = useState<string | null>(() => {
+        if (platform.logoUrl) return platform.logoUrl;
+        try {
+            const url = new URL(platform.url);
+            return `https://logo.clearbit.com/${url.hostname}`;
+        } catch {
+            return null;
+        }
+    });
+
+    const initials =
+        platform.logo && platform.logo.length <= 3
+            ? platform.logo.toUpperCase()
+            : platform.name
+                .split(" ")
+                .map((w) => w[0])
+                .join("")
+                .slice(0, 3)
+                .toUpperCase();
+
+    if (!logoSrc) {
+        return (
+            <div className={`w-full h-full flex items-center justify-center overflow-hidden`}>
+                <span className={`text-lg font-black ${isDark ? "text-white" : "text-slate-900"}`}>{initials}</span>
+            </div>
+        );
+    }
+
+
+
+
+    return (
+        <img
+            src={logoSrc}
+            alt={`${platform.name} logo`}
+            className="w-full h-full object-contain"
+            onError={() => {
+                if (logoSrc.includes("logo.clearbit.com")) {
+                    try {
+                        const url = new URL(platform.url);
+                        setLogoSrc(`https://www.google.com/s2/favicons?domain=${url.hostname}&sz=128`);
+                        return;
+                    } catch { }
+                }
+                setLogoSrc(null);
+            }}
+        />
+
+    );
+}
 
 // ─── Platform Card ──────────────────────────────────────────────────────
 function PlatformCard({ platform, isDark }: { platform: Platform; isDark: boolean }) {
@@ -366,8 +602,8 @@ function PlatformCard({ platform, isDark }: { platform: Platform; isDark: boolea
             className="group"
         >
             <div className={`relative rounded-3xl overflow-hidden border transition-all duration-500 h-full flex flex-col ${isDark
-                    ? "bg-white/[0.03] border-white/[0.06] hover:border-white/20 hover:bg-white/[0.06]"
-                    : "bg-white border-slate-200/80 hover:border-blue-300 hover:shadow-2xl hover:shadow-blue-500/10"
+                ? "bg-white/[0.03] border-white/[0.06] hover:border-white/20 hover:bg-white/[0.06]"
+                : "bg-white border-slate-200/80 hover:border-blue-300 hover:shadow-2xl hover:shadow-blue-500/10"
                 }`}>
                 {/* Top gradient accent */}
                 <div className={`h-1.5 w-full bg-gradient-to-r ${platform.gradient}`} />
@@ -376,9 +612,11 @@ function PlatformCard({ platform, isDark }: { platform: Platform; isDark: boolea
                     {/* Header */}
                     <div className="flex items-start justify-between mb-5">
                         <div className="flex items-center gap-4">
-                            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${platform.gradient} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                                <span className="text-white font-black text-lg">{platform.logo}</span>
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:scale-110`}>
+                                <PlatformLogo platform={platform} />
                             </div>
+
+
                             <div>
                                 <h3 className={`text-lg font-black ${isDark ? "text-white" : "text-slate-900"} group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors`}>
                                     {platform.name}
@@ -446,8 +684,8 @@ function PlatformCard({ platform, isDark }: { platform: Platform; isDark: boolea
                             <Button
                                 size="sm"
                                 className={`h-9 px-5 rounded-xl font-black text-xs uppercase tracking-wider gap-2 transition-all group-hover:scale-105 ${isDark
-                                        ? "bg-white/10 hover:bg-white/20 text-white border border-white/10"
-                                        : "bg-slate-900 hover:bg-blue-600 text-white shadow-md"
+                                    ? "bg-white/10 hover:bg-white/20 text-white border border-white/10"
+                                    : "bg-slate-900 hover:bg-blue-600 text-white shadow-md"
                                     }`}
                             >
                                 Practice
@@ -492,46 +730,44 @@ const AssessmentHub: React.FC<AssessmentHubProps> = ({ isDashboard = false, onBa
     return (
         <div className={`${isDashboard ? "" : "min-h-screen"} ${isDark ? "" : ""}`}>
             {/* Hero / Header */}
-            <div className="mb-10">
-                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
-                    <div>
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg`}>
-                                <Rocket className="w-6 h-6 text-white" />
-                            </div>
-                            <Badge className="bg-blue-600/10 text-blue-600 dark:text-blue-400 font-black text-xs uppercase tracking-widest border-blue-600/20">
-                                End-to-End Preparation
-                            </Badge>
-                        </div>
-                        <h2 className={`text-3xl sm:text-4xl font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight mb-3`}>
-                            Assessment Hub
-                        </h2>
-                        <p className={`text-base sm:text-lg max-w-2xl ${isDark ? "text-slate-400" : "text-slate-600"} leading-relaxed`}>
-                            Practice on the world's best platforms. From aptitude to system design — everything you need to crack any interview, all in one place.
-                        </p>
+            <div className="mb-12 flex flex-col items-center justify-center gap-6 text-center overflow-hidden">
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="flex flex-col items-center"
+                >
+                    <div className="flex items-center gap-3 mb-6">
                     </div>
-                </div>
 
-                {/* Quick Stats */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    {QUICK_STATS.map((stat) => (
-                        <div
-                            key={stat.label}
-                            className={`rounded-2xl p-5 flex items-center gap-4 border transition-all hover:scale-[1.02] ${isDark
-                                    ? "bg-white/[0.03] border-white/[0.06] hover:border-white/15"
-                                    : "bg-white border-slate-200 shadow-sm hover:shadow-md"
-                                }`}
-                        >
-                            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-md`}>
-                                <stat.icon className="w-6 h-6 text-white" />
-                            </div>
-                            <div>
-                                <p className={`text-2xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>{stat.value}</p>
-                                <p className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>{stat.label}</p>
-                            </div>
+                    <TypewriterText
+                        text="Practice on the world's best platforms. From aptitude to system design — everything you need to crack any interview, all in one place."
+                        speed={30}
+                        delay={300}
+                        className={`text-lg sm:text-xl font-black leading-relaxed max-w-3xl bg-gradient-to-r ${isDark ? "from-blue-300 via-purple-300 to-pink-300" : "from-blue-600 via-purple-600 to-pink-600"} bg-clip-text text-transparent`}
+                    />
+                </motion.div>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                {QUICK_STATS.map((stat) => (
+                    <div
+                        key={stat.label}
+                        className={`rounded-2xl p-5 flex items-center gap-4 border transition-all hover:scale-[1.02] ${isDark
+                            ? "bg-white/[0.03] border-white/[0.06] hover:border-white/15"
+                            : "bg-white border-slate-200 shadow-sm hover:shadow-md"
+                            }`}
+                    >
+                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-md`}>
+                            <stat.icon className="w-6 h-6 text-white" />
                         </div>
-                    ))}
-                </div>
+                        <div>
+                            <p className={`text-2xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>{stat.value}</p>
+                            <p className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>{stat.label}</p>
+                        </div>
+                    </div>
+                ))}
             </div>
 
             {/* Search & Filter Bar */}
@@ -546,8 +782,8 @@ const AssessmentHub: React.FC<AssessmentHubProps> = ({ isDashboard = false, onBa
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search platforms, skills, or tags..."
                             className={`w-full pl-12 pr-4 py-3.5 rounded-xl font-semibold text-sm border transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${isDark
-                                    ? "bg-white/5 border-white/10 text-white placeholder:text-slate-500"
-                                    : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400"
+                                ? "bg-white/5 border-white/10 text-white placeholder:text-slate-500"
+                                : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400"
                                 }`}
                         />
                     </div>
@@ -569,10 +805,10 @@ const AssessmentHub: React.FC<AssessmentHubProps> = ({ isDashboard = false, onBa
                             key={cat.id}
                             onClick={() => setActiveCategory(cat.id)}
                             className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold uppercase tracking-wider transition-all ${isActive
-                                    ? `bg-gradient-to-r ${cat.color} text-white shadow-lg shadow-blue-500/20 scale-105`
-                                    : isDark
-                                        ? "bg-white/5 text-slate-300 hover:bg-white/10 border border-white/5"
-                                        : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 shadow-sm"
+                                ? `bg-gradient-to-r ${cat.color} text-white shadow-lg shadow-blue-500/20 scale-105`
+                                : isDark
+                                    ? "bg-white/5 text-slate-300 hover:bg-white/10 border border-white/5"
+                                    : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 shadow-sm"
                                 }`}
                         >
                             <cat.icon className="w-4 h-4" />
@@ -632,7 +868,7 @@ const AssessmentHub: React.FC<AssessmentHubProps> = ({ isDashboard = false, onBa
                     </Button>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

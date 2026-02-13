@@ -2263,7 +2263,15 @@ const StudentsPage: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-500 ${isDark ? 'bg-[#0a0b0e] text-slate-100' : 'bg-gradient-to-br from-gray-50 via-white to-blue-50/30 text-gray-900'}`}>
+    <div className={`min-h-screen transition-colors duration-500 ${isDark ? 'bg-background text-slate-100' : 'bg-gradient-to-br from-gray-50 via-white to-blue-50/30 text-gray-900'} relative overflow-hidden`}>
+      {/* Premium Background Glows */}
+      {isDark && (
+        <div className="premium-glow-bg">
+          <div className="premium-glow-1" />
+          <div className="premium-glow-2" />
+          <div className="premium-glow-3" />
+        </div>
+      )}
       {/* Header */}
       <div className={`border-b transition-colors px-6 md:px-8 py-8 ${isDark ? 'border-white/5' : 'border-slate-200'}`}>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">

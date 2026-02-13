@@ -28,6 +28,8 @@ import CollegeSetting from "./pages/college/Setting";
 import CollegeFeedback from "./pages/college/feedbackForm";
 import CollegeInfo from "./pages/college/college_info";
 
+import DepartmentDashboard from "./pages/department/DepartmentDashboard";
+
 
 
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -73,7 +75,6 @@ function Router() {
       <Route path="/webinars" component={Webinar} />
 
 
-
       <Route path="/privacy" component={PrivacyPage} />
 
       {/* Admin Routes */}
@@ -98,6 +99,9 @@ function Router() {
       <Route path="/college/setting" component={CollegeSetting} />
       <Route path="/college/feedbackForm" component={CollegeFeedback} />
       <Route path="/college/college_info" component={CollegeInfo} />
+
+      {/* Department Routes */}
+      <Route path="/department/dashboard" component={DepartmentDashboard} />
 
       {/* Additional Pages & Aliases */}
       <Route path="/security" component={Security} />

@@ -394,24 +394,23 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-500 ${isDark ? 'bg-[#0a0c14]' : 'bg-[#f8fafc]'} ${isDark ? 'text-white' : 'text-slate-900'} p-4 lg:p-8`}>
-      {/* Animated Background (dark mode only) */}
-      <div className={`fixed inset-0 overflow-hidden pointer-events-none ${isDark ? 'block' : 'hidden'}`}>
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: '8s' }} />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: '12s', animationDelay: '2s' }} />
-        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-cyan-500/3 rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: '15s', animationDelay: '5s' }} />
-      </div>
+    <div className={`min-h-screen transition-colors duration-500 ${isDark ? 'bg-background' : 'bg-slate-50'} ${isDark ? 'text-white' : 'text-slate-900'} p-4 lg:p-8 relative overflow-hidden`}>
+      {/* Premium Background Glows */}
+      {isDark && (
+        <div className="premium-glow-bg">
+          <div className="premium-glow-1" />
+          <div className="premium-glow-2" />
+          <div className="premium-glow-3" />
+        </div>
+      )}
 
       <div className="relative max-w-[1800px] mx-auto space-y-6">
         {/* ========== HEADER ========== */}
         <div className="flex items-start justify-between">
           <div>
             <h1
-              className={`text-4xl font-bold mb-2 ${isDark 
-                ? 'bg-gradient-to-r from-white via-blue-100 to-cyan-200 bg-clip-text text-transparent' 
+              className={`text-4xl font-bold mb-2 ${isDark
+                ? 'bg-gradient-to-r from-white via-blue-100 to-cyan-200 bg-clip-text text-transparent'
                 : 'text-slate-900'}`}
               style={{ fontFamily: "'Manrope', sans-serif", letterSpacing: '-0.03em' }}
             >
@@ -509,11 +508,10 @@ export default function ReportsPage() {
           {stats.map((stat, index) => (
             <div
               key={index}
-              className={`rounded-2xl p-6 border shadow-sm hover:shadow-md transition-all group ${
-                isDark 
-                  ? 'bg-gradient-to-br from-white/5 to-white/[0.02] border-white/10 hover:border-white/20' 
+              className={`rounded-2xl p-6 border shadow-sm hover:shadow-md transition-all group ${isDark
+                  ? 'bg-gradient-to-br from-white/5 to-white/[0.02] border-white/10 hover:border-white/20'
                   : 'bg-white border-slate-200'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg`}>
@@ -535,8 +533,8 @@ export default function ReportsPage() {
         </div>
 
         {/* ========== FILTERS & SEARCH ========== */}
-        <div className={`rounded-2xl p-6 border shadow-sm ${isDark 
-          ? 'bg-gradient-to-br from-white/5 to-white/[0.02] border-white/10' 
+        <div className={`rounded-2xl p-6 border shadow-sm ${isDark
+          ? 'bg-gradient-to-br from-white/5 to-white/[0.02] border-white/10'
           : 'bg-white border-slate-200'}`}>
           <div className="flex flex-wrap gap-4">
             {/* Search */}
@@ -548,20 +546,18 @@ export default function ReportsPage() {
                   placeholder="Search reports by name, description, or tags..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`w-full pl-12 pr-4 py-3 rounded-xl border transition-all focus:outline-none focus:border-blue-500/50 ${
-                    isDark 
-                      ? 'bg-white/5 border-white/10 text-white placeholder-gray-500' 
+                  className={`w-full pl-12 pr-4 py-3 rounded-xl border transition-all focus:outline-none focus:border-blue-500/50 ${isDark
+                      ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
                       : 'bg-slate-100 border-slate-200 text-slate-900 placeholder-slate-500'
-                  }`}
+                    }`}
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${
-                      isDark 
-                        ? 'text-gray-400 hover:text-white' 
+                    className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${isDark
+                        ? 'text-gray-400 hover:text-white'
                         : 'text-slate-400 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -570,24 +566,22 @@ export default function ReportsPage() {
             </div>
 
             {/* Category Filter */}
-            <div className={`flex gap-2 border rounded-xl p-1 ${
-              isDark 
-                ? 'bg-white/5 border-white/10' 
+            <div className={`flex gap-2 border rounded-xl p-1 ${isDark
+                ? 'bg-white/5 border-white/10'
                 : 'bg-slate-100 border-slate-200'
-            }`}>
+              }`}>
               {['all', 'Financial', 'Academic', 'Operational', 'Custom'].map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat as any)}
-                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                    selectedCategory === cat
-                      ? isDark 
-                        ? 'bg-blue-500/20 text-blue-400' 
+                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${selectedCategory === cat
+                      ? isDark
+                        ? 'bg-blue-500/20 text-blue-400'
                         : 'bg-slate-900 text-white'
                       : isDark
                         ? 'text-gray-400 hover:text-white'
                         : 'text-slate-600 hover:text-slate-900'
-                  }`}
+                    }`}
                 >
                   {cat.charAt(0).toUpperCase() + cat.slice(1)}
                 </button>
@@ -598,11 +592,10 @@ export default function ReportsPage() {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value as any)}
-              className={`px-4 py-3 rounded-xl border cursor-pointer focus:outline-none focus:border-blue-500/50 ${
-                isDark 
-                  ? 'bg-white/5 border-white/10 text-white' 
+              className={`px-4 py-3 rounded-xl border cursor-pointer focus:outline-none focus:border-blue-500/50 ${isDark
+                  ? 'bg-white/5 border-white/10 text-white'
                   : 'bg-slate-100 border-slate-200 text-slate-900'
-              }`}
+                }`}
             >
               <option value="all">All Status</option>
               <option value="Ready">Ready</option>
@@ -615,11 +608,10 @@ export default function ReportsPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className={`px-4 py-3 rounded-xl border cursor-pointer focus:outline-none focus:border-blue-500/50 ${
-                isDark 
-                  ? 'bg-white/5 border-white/10 text-white' 
+              className={`px-4 py-3 rounded-xl border cursor-pointer focus:outline-none focus:border-blue-500/50 ${isDark
+                  ? 'bg-white/5 border-white/10 text-white'
                   : 'bg-slate-100 border-slate-200 text-slate-900'
-              }`}
+                }`}
             >
               <option value="date">Sort by Date</option>
               <option value="name">Sort by Name</option>
@@ -627,46 +619,42 @@ export default function ReportsPage() {
             </select>
 
             {/* View Mode */}
-            <div className={`flex gap-2 border rounded-xl p-1 ${
-              isDark 
-                ? 'bg-white/5 border-white/10' 
+            <div className={`flex gap-2 border rounded-xl p-1 ${isDark
+                ? 'bg-white/5 border-white/10'
                 : 'bg-slate-100 border-slate-200'
-            }`}>
+              }`}>
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-lg transition-all ${
-                  viewMode === 'grid'
-                    ? isDark 
-                      ? 'bg-blue-500/20 text-blue-400' 
+                className={`p-2 rounded-lg transition-all ${viewMode === 'grid'
+                    ? isDark
+                      ? 'bg-blue-500/20 text-blue-400'
                       : 'bg-slate-900 text-white'
                     : isDark
                       ? 'text-gray-400 hover:text-white'
                       : 'text-slate-600 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <Grid className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-2 rounded-lg transition-all ${
-                  viewMode === 'list'
-                    ? isDark 
-                      ? 'bg-blue-500/20 text-blue-400' 
+                className={`p-2 rounded-lg transition-all ${viewMode === 'list'
+                    ? isDark
+                      ? 'bg-blue-500/20 text-blue-400'
                       : 'bg-slate-900 text-white'
                     : isDark
                       ? 'text-gray-400 hover:text-white'
                       : 'text-slate-600 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <List className="w-5 h-5" />
               </button>
             </div>
 
-            <button className={`px-4 py-3 rounded-xl transition-all border flex items-center gap-2 ${
-              isDark 
-                ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' 
+            <button className={`px-4 py-3 rounded-xl transition-all border flex items-center gap-2 ${isDark
+                ? 'bg-white/5 border-white/10 text-white hover:bg-white/10'
                 : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-            }`}>
+              }`}>
               <Filter className="w-4 h-4" />
               More
             </button>
@@ -674,11 +662,10 @@ export default function ReportsPage() {
         </div>
 
         {/* ========== REPORT TEMPLATES ========== */}
-        <div className={`rounded-2xl p-6 border shadow-sm ${
-          isDark 
-            ? 'bg-gradient-to-br from-white/5 to-white/[0.02] border-white/10' 
+        <div className={`rounded-2xl p-6 border shadow-sm ${isDark
+            ? 'bg-gradient-to-br from-white/5 to-white/[0.02] border-white/10'
             : 'bg-white border-slate-200'
-        }`}>
+          }`}>
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className={`text-xl font-bold mb-1 flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -687,11 +674,10 @@ export default function ReportsPage() {
               </h2>
               <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>Start with pre-built report templates</p>
             </div>
-            <button className={`text-sm transition-colors flex items-center gap-1 ${
-              isDark 
-                ? 'text-blue-400 hover:text-blue-300' 
+            <button className={`text-sm transition-colors flex items-center gap-1 ${isDark
+                ? 'text-blue-400 hover:text-blue-300'
                 : 'text-blue-600 hover:text-blue-700'
-            }`}>
+              }`}>
               View All
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -703,19 +689,17 @@ export default function ReportsPage() {
                 key={template.id}
                 className="relative group cursor-pointer transition-transform duration-200 hover:-translate-y-1"
               >
-                <div className={`rounded-xl p-5 border transition-all ${
-                  isDark 
-                    ? 'bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20' 
+                <div className={`rounded-xl p-5 border transition-all ${isDark
+                    ? 'bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20'
                     : 'bg-slate-50 hover:bg-slate-100 border-slate-200 hover:border-slate-300'
-                }`}>
+                  }`}>
                   <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${template.color} flex items-center justify-center mb-4 shadow-lg`}>
                     {template.icon}
                   </div>
-                  <h3 className={`text-sm font-bold mb-1 transition-colors ${
-                    isDark 
-                      ? 'text-white group-hover:text-blue-400' 
+                  <h3 className={`text-sm font-bold mb-1 transition-colors ${isDark
+                      ? 'text-white group-hover:text-blue-400'
                       : 'text-slate-900 group-hover:text-blue-500'
-                  }`}>
+                    }`}>
                     {template.name}
                   </h3>
                   <p className={`text-xs mb-3 line-clamp-2 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>{template.description}</p>
@@ -731,11 +715,10 @@ export default function ReportsPage() {
                     </div>
                   </div>
 
-                  <button className={`w-full mt-4 px-3 py-2 rounded-lg text-xs font-semibold transition-all border flex items-center justify-center gap-1 ${
-                    isDark 
-                      ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border-blue-500/30' 
+                  <button className={`w-full mt-4 px-3 py-2 rounded-lg text-xs font-semibold transition-all border flex items-center justify-center gap-1 ${isDark
+                      ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border-blue-500/30'
                       : 'bg-slate-900 text-white border-slate-900 hover:bg-slate-800'
-                  }`}>
+                    }`}>
                     <Plus className="w-3 h-3" />
                     Generate
                   </button>
@@ -760,11 +743,10 @@ export default function ReportsPage() {
                 </span>
                 <button
                   onClick={() => setSelectedReports(new Set())}
-                  className={`transition-colors ${
-                    isDark 
-                      ? 'text-gray-400 hover:text-white' 
+                  className={`transition-colors ${isDark
+                      ? 'text-gray-400 hover:text-white'
                       : 'text-slate-500 hover:text-slate-900'
-                  }`}
+                    }`}
                 >
                   Clear
                 </button>
@@ -793,11 +775,10 @@ export default function ReportsPage() {
             {paginatedReports.map((report) => (
               <div
                 key={report.id}
-                className={`rounded-2xl p-6 border shadow-sm hover:shadow-md transition-all group relative ${
-                  isDark 
-                    ? 'bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl border-white/10 hover:border-white/20' 
+                className={`rounded-2xl p-6 border shadow-sm hover:shadow-md transition-all group relative ${isDark
+                    ? 'bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl border-white/10 hover:border-white/20'
                     : 'bg-white border-slate-200'
-                }`}
+                  }`}
               >
                 {/* Selection Checkbox */}
                 <div className="absolute top-4 left-4 z-10">
@@ -806,11 +787,10 @@ export default function ReportsPage() {
                     checked={selectedReports.has(report.id)}
                     onChange={() => toggleSelection(report.id)}
                     onClick={(e) => e.stopPropagation()}
-                    className={`w-4 h-4 rounded cursor-pointer ${
-                      isDark 
-                        ? 'border-white/20 bg-white/5' 
+                    className={`w-4 h-4 rounded cursor-pointer ${isDark
+                        ? 'border-white/20 bg-white/5'
                         : 'border-slate-300 bg-white'
-                    }`}
+                      }`}
                   />
                 </div>
 
@@ -829,11 +809,10 @@ export default function ReportsPage() {
                 </div>
 
                 {/* Content */}
-                <h3 className={`text-lg font-bold mb-2 transition-colors ${
-                  isDark 
-                    ? 'text-white group-hover:text-blue-400' 
+                <h3 className={`text-lg font-bold mb-2 transition-colors ${isDark
+                    ? 'text-white group-hover:text-blue-400'
                     : 'text-slate-900 group-hover:text-blue-600'
-                }`}>
+                  }`}>
                   {report.title}
                 </h3>
                 <p className={`text-sm mb-4 line-clamp-2 ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>{report.description}</p>
@@ -841,11 +820,10 @@ export default function ReportsPage() {
                 {/* Tags */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   {report.tags.slice(0, 3).map((tag, i) => (
-                    <span key={i} className={`px-2 py-1 rounded-lg text-xs border ${
-                      isDark 
-                        ? 'bg-white/5 text-gray-400 border-white/10' 
+                    <span key={i} className={`px-2 py-1 rounded-lg text-xs border ${isDark
+                        ? 'bg-white/5 text-gray-400 border-white/10'
                         : 'bg-slate-100 text-slate-600 border-slate-200'
-                    }`}>
+                      }`}>
                       {tag}
                     </span>
                   ))}
@@ -877,28 +855,25 @@ export default function ReportsPage() {
                 {/* Actions */}
                 <div className="flex gap-2">
                   {report.status === 'Ready' && (
-                    <button className={`flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all border flex items-center justify-center gap-1.5 ${
-                  isDark 
-                    ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border-blue-500/30' 
-                    : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
-                }`}>
+                    <button className={`flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all border flex items-center justify-center gap-1.5 ${isDark
+                        ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border-blue-500/30'
+                        : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
+                      }`}>
                       <Download className="w-3.5 h-3.5" />
                       Download
                     </button>
                   )}
-                  <button className={`flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all border flex items-center justify-center gap-1.5 ${
-                    isDark 
-                      ? 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border-white/10' 
+                  <button className={`flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all border flex items-center justify-center gap-1.5 ${isDark
+                      ? 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border-white/10'
                       : 'bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border-slate-200'
-                  }`}>
+                    }`}>
                     <Eye className="w-3.5 h-3.5" />
                     Preview
                   </button>
-                  <button className={`px-3 py-2 rounded-lg transition-all border ${
-                    isDark 
-                      ? 'bg-white/5 hover:bg-white/10 border-white/10' 
+                  <button className={`px-3 py-2 rounded-lg transition-all border ${isDark
+                      ? 'bg-white/5 hover:bg-white/10 border-white/10'
                       : 'bg-slate-100 hover:bg-slate-200 border-slate-200'
-                  }`}>
+                    }`}>
                     <MoreVertical className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-slate-600'}`} />
                   </button>
                 </div>
@@ -906,64 +881,53 @@ export default function ReportsPage() {
             ))}
           </div>
         ) : (
-          <div className={`rounded-2xl border shadow-sm overflow-hidden ${
-            isDark 
-              ? 'bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl border-white/10' 
+          <div className={`rounded-2xl border shadow-sm overflow-hidden ${isDark
+              ? 'bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl border-white/10'
               : 'bg-white border-slate-200'
-          }`}>
+            }`}>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className={`border-b ${
-                    isDark 
-                      ? 'border-white/10 bg-white/5' 
+                  <tr className={`border-b ${isDark
+                      ? 'border-white/10 bg-white/5'
                       : 'border-slate-200 bg-slate-50'
-                  }`}>
-                    <th className="px-6 py-4 text-left">
-                      <input type="checkbox" className={`w-4 h-4 rounded cursor-pointer ${
-                        isDark 
-                          ? 'border-white/20 bg-white/5' 
-                          : 'border-slate-300 bg-white'
-                      }`} />
-                    </th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${
-                      isDark ? 'text-gray-400' : 'text-slate-600'
                     }`}>
+                    <th className="px-6 py-4 text-left">
+                      <input type="checkbox" className={`w-4 h-4 rounded cursor-pointer ${isDark
+                          ? 'border-white/20 bg-white/5'
+                          : 'border-slate-300 bg-white'
+                        }`} />
+                    </th>
+                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-slate-600'
+                      }`}>
                       Report
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${
-                      isDark ? 'text-gray-400' : 'text-slate-600'
-                    }`}>
+                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-slate-600'
+                      }`}>
                       Category
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${
-                      isDark ? 'text-gray-400' : 'text-slate-600'
-                    }`}>
+                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-slate-600'
+                      }`}>
                       Type
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${
-                      isDark ? 'text-gray-400' : 'text-slate-600'
-                    }`}>
+                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-slate-600'
+                      }`}>
                       Status
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${
-                      isDark ? 'text-gray-400' : 'text-slate-600'
-                    }`}>
+                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-slate-600'
+                      }`}>
                       Created
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${
-                      isDark ? 'text-gray-400' : 'text-slate-600'
-                    }`}>
+                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-slate-600'
+                      }`}>
                       Size
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${
-                      isDark ? 'text-gray-400' : 'text-slate-600'
-                    }`}>
+                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-slate-600'
+                      }`}>
                       Downloads
                     </th>
-                    <th className={`px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider ${
-                      isDark ? 'text-gray-400' : 'text-slate-600'
-                    }`}>
+                    <th className={`px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-slate-600'
+                      }`}>
                       Actions
                     </th>
                   </tr>
@@ -972,22 +936,20 @@ export default function ReportsPage() {
                   {paginatedReports.map((report) => (
                     <tr
                       key={report.id}
-                      className={`border-b transition-colors group ${
-                        isDark 
-                          ? 'border-white/10 hover:bg-white/5' 
+                      className={`border-b transition-colors group ${isDark
+                          ? 'border-white/10 hover:bg-white/5'
                           : 'border-slate-100 hover:bg-slate-50'
-                      }`}
+                        }`}
                     >
                       <td className="px-6 py-4">
                         <input
                           type="checkbox"
                           checked={selectedReports.has(report.id)}
                           onChange={() => toggleSelection(report.id)}
-                          className={`w-4 h-4 rounded cursor-pointer ${
-                            isDark 
-                              ? 'border-white/20 bg-white/5' 
+                          className={`w-4 h-4 rounded cursor-pointer ${isDark
+                              ? 'border-white/20 bg-white/5'
                               : 'border-slate-300 bg-white'
-                          }`}
+                            }`}
                         />
                       </td>
                       <td className="px-6 py-4">
@@ -996,11 +958,10 @@ export default function ReportsPage() {
                             {report.icon}
                           </div>
                           <div className="min-w-0">
-                            <p className={`text-sm font-semibold transition-colors truncate ${
-                              isDark 
-                                ? 'text-white group-hover:text-blue-400' 
+                            <p className={`text-sm font-semibold transition-colors truncate ${isDark
+                                ? 'text-white group-hover:text-blue-400'
                                 : 'text-slate-900 group-hover:text-blue-600'
-                            }`}>
+                              }`}>
                               {report.title}
                             </p>
                             <p className={`text-xs truncate ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>{report.generatedBy}</p>
@@ -1008,11 +969,10 @@ export default function ReportsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${
-                          isDark 
-                            ? 'bg-white/5 text-gray-300 border-white/10' 
+                        <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${isDark
+                            ? 'bg-white/5 text-gray-300 border-white/10'
                             : 'bg-slate-100 text-slate-700 border-slate-200'
-                        }`}>
+                          }`}>
                           {report.category}
                         </span>
                       </td>
@@ -1041,33 +1001,29 @@ export default function ReportsPage() {
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
                           {report.status === 'Ready' && (
-                            <button className={`p-2 rounded-lg transition-all border ${
-                              isDark 
-                                ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border-blue-500/30' 
+                            <button className={`p-2 rounded-lg transition-all border ${isDark
+                                ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border-blue-500/30'
                                 : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
-                            }`}>
+                              }`}>
                               <Download className="w-4 h-4" />
                             </button>
                           )}
-                          <button className={`p-2 rounded-lg transition-all border ${
-                            isDark 
-                              ? 'bg-white/5 hover:bg-white/10 border-white/10' 
+                          <button className={`p-2 rounded-lg transition-all border ${isDark
+                              ? 'bg-white/5 hover:bg-white/10 border-white/10'
                               : 'bg-slate-100 hover:bg-slate-200 border-slate-200'
-                          }`}>
+                            }`}>
                             <Eye className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-slate-600'}`} />
                           </button>
-                          <button className={`p-2 rounded-lg transition-all border ${
-                            isDark 
-                              ? 'bg-white/5 hover:bg-white/10 border-white/10' 
+                          <button className={`p-2 rounded-lg transition-all border ${isDark
+                              ? 'bg-white/5 hover:bg-white/10 border-white/10'
                               : 'bg-slate-100 hover:bg-slate-200 border-slate-200'
-                          }`}>
+                            }`}>
                             <Share2 className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-slate-600'}`} />
                           </button>
-                          <button className={`p-2 rounded-lg transition-all border ${
-                            isDark 
-                              ? 'bg-white/5 hover:bg-white/10 border-white/10' 
+                          <button className={`p-2 rounded-lg transition-all border ${isDark
+                              ? 'bg-white/5 hover:bg-white/10 border-white/10'
                               : 'bg-slate-100 hover:bg-slate-200 border-slate-200'
-                          }`}>
+                            }`}>
                             <MoreVertical className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-slate-600'}`} />
                           </button>
                         </div>
@@ -1082,11 +1038,10 @@ export default function ReportsPage() {
 
         {/* ========== PAGINATION ========== */}
         {totalPages > 1 && (
-          <div className={`flex items-center justify-between rounded-2xl p-6 border shadow-sm ${
-            isDark 
-              ? 'bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl border-white/10' 
+          <div className={`flex items-center justify-between rounded-2xl p-6 border shadow-sm ${isDark
+              ? 'bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl border-white/10'
               : 'bg-white border-slate-200'
-          }`}>
+            }`}>
             <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
               Page <span className={`${isDark ? 'text-white' : 'text-slate-900'} font-semibold`}>{currentPage}</span> of{' '}
               <span className={`${isDark ? 'text-white' : 'text-slate-900'} font-semibold`}>{totalPages}</span>
@@ -1095,22 +1050,20 @@ export default function ReportsPage() {
               <button
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1}
-                className={`px-4 py-2 border rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm ${
-                  isDark 
-                    ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white' 
+                className={`px-4 py-2 border rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm ${isDark
+                    ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
                     : 'bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-700'
-                }`}
+                  }`}
               >
                 First
               </button>
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className={`p-2 border rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                  isDark 
-                    ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white' 
+                className={`p-2 border rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isDark
+                    ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
                     : 'bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-700'
-                }`}
+                  }`}
               >
                 <ChevronDown className="w-5 h-5 rotate-90" />
               </button>
@@ -1132,15 +1085,14 @@ export default function ReportsPage() {
                     <button
                       key={i}
                       onClick={() => setCurrentPage(pageNum)}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all border ${
-                        currentPage === pageNum
-                          ? isDark 
-                            ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' 
+                      className={`px-4 py-2 rounded-lg font-medium transition-all border ${currentPage === pageNum
+                          ? isDark
+                            ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
                             : 'bg-blue-600 text-white border-blue-600'
                           : isDark
                             ? 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
                             : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
-                      }`}
+                        }`}
                     >
                       {pageNum}
                     </button>
@@ -1151,22 +1103,20 @@ export default function ReportsPage() {
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className={`p-2 border rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                  isDark 
-                    ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white' 
+                className={`p-2 border rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isDark
+                    ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
                     : 'bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-700'
-                }`}
+                  }`}
               >
                 <ChevronDown className="w-5 h-5 -rotate-90" />
               </button>
               <button
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={currentPage === totalPages}
-                className={`px-4 py-2 border rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm ${
-                  isDark 
-                    ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white' 
+                className={`px-4 py-2 border rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm ${isDark
+                    ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
                     : 'bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-700'
-                }`}
+                  }`}
               >
                 Last
               </button>
@@ -1175,11 +1125,10 @@ export default function ReportsPage() {
         )}
 
         {/* ========== RECENT ACTIVITY ========== */}
-        <div className={`rounded-2xl p-6 border shadow-sm ${
-          isDark 
-            ? 'bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl border-white/10' 
+        <div className={`rounded-2xl p-6 border shadow-sm ${isDark
+            ? 'bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl border-white/10'
             : 'bg-white border-slate-200'
-        }`}>
+          }`}>
           <h2 className={`text-xl font-bold mb-6 flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             <Activity className={`w-5 h-5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
             Recent Activity
@@ -1195,28 +1144,25 @@ export default function ReportsPage() {
             ].map((activity, index) => (
               <div
                 key={index}
-                className={`flex items-center gap-4 p-4 rounded-xl transition-all border group ${
-                  isDark 
-                    ? 'bg-white/5 hover:bg-white/10 border-white/10' 
+                className={`flex items-center gap-4 p-4 rounded-xl transition-all border group ${isDark
+                    ? 'bg-white/5 hover:bg-white/10 border-white/10'
                     : 'bg-slate-50 hover:bg-slate-100 border-slate-200'
-                }`}
+                  }`}
               >
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${
-                  isDark 
-                    ? 'bg-white/5 border-white/10' 
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${isDark
+                    ? 'bg-white/5 border-white/10'
                     : 'bg-white border-slate-200'
-                } ${activity.color}`}>
+                  } ${activity.color}`}>
                   {activity.icon}
                 </div>
                 <div className="flex-1">
                   <p className={`text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     <span className="font-semibold">{activity.user}</span>
                     {' '}<span className={isDark ? 'text-gray-400' : 'text-slate-500'}>{activity.action.toLowerCase()}</span>{' '}
-                    <span className={`font-semibold transition-colors ${
-                      isDark 
-                        ? 'group-hover:text-blue-400' 
+                    <span className={`font-semibold transition-colors ${isDark
+                        ? 'group-hover:text-blue-400'
                         : 'group-hover:text-blue-600'
-                    }`}>{activity.report}</span>
+                      }`}>{activity.report}</span>
                   </p>
                   <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-slate-500'}`}>{activity.time}</p>
                 </div>

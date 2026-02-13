@@ -24,14 +24,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Careers from "@/pages/student/careers";
 import StudentWebinar from "@/pages/student/webinars";
 import BlogPage from "@/pages/student/blog";
-
-
 import CorporateNewsPage from "@/pages/student/CorporateNews";
-
-
-
 import StudentFeedbackForm from "@/pages/student/feedbackForm";
-// import SkillTest from "@/pages/student/SkillTest";
+import AssessmentHub from "@/pages/student/AssessmentHub";
+import CompanyWiseKit from "@/pages/student/CompanyWiseKit";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -48,7 +44,7 @@ import {
   Linkedin, Twitter, Instagram, Share2, Bookmark, LineChart as LineChartIcon, Calendar,
   TrendingDown, Edit, Upload as UploadIcon, Download as DownloadIcon, LayoutDashboard,
   Users as UsersIcon, Briefcase as BriefcaseIcon, Palette as PaletteIcon,
-  Newspaper, Heart, DollarSign, CreditCard, FileCheck, Sparkles, HelpCircle, Menu, PanelLeft
+  Newspaper, DollarSign, CreditCard, FileCheck, Sparkles, HelpCircle, Menu, PanelLeft
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -652,7 +648,7 @@ export default function StudentDashboard() {
       description: "Solve coding problems",
       icon: Code,
       color: "from-blue-500 to-blue-600",
-      action: () => console.log("Practice")
+      action: () => setActiveTab("skills")
     },
     {
       title: "Mock Interview",
@@ -730,28 +726,25 @@ export default function StudentDashboard() {
     { id: "skills", label: "Skills", icon: PaletteIcon },
     { id: "opportunities", label: "Jobs", icon: BriefcaseIcon },
     { id: "learning", label: "Mentorship", icon: UsersIcon },
-    { id: "progress", label: "Profile", icon: User },
-    { id: "careers", label: "Careers", icon: Briefcase },
+    { id: "progress", label: "Progress", icon: TrendingUp },
+
     { id: "webinars", label: "Webinars", icon: Play },
     { id: "blog", label: "Blog", icon: BookOpen },
 
-
+    { id: "careers", label: "Careers", icon: Briefcase },
     { id: "corporateNews", label: "Corporate News", icon: Newspaper },
 
-
-
     { id: "feedback", label: "Feedback", icon: MessageSquare },
-    { id: "skill-test", label: "Skill Test", icon: Zap },
+    { id: "assessment-hub", label: "Assessment Hub", icon: Zap },
+    { id: "company-kit", label: "Company Wise Kit", icon: Building2 },
   ];
 
   const sidebarSections: Array<{ title: string; ids: Array<(typeof sidebarLinks)[number]["id"]> }> = [
     { title: "PROFILE TRACKER", ids: ["overview", "skills"] },
     { title: "QUESTION TRACKER", ids: ["opportunities", "learning"] },
-    { title: "RESOURCES", ids: ["progress", "careers", "webinars", "blog", "features", "caseStudies", "corporateNews"] },
-    { title: "WELLBEING", ids: ["wellbeing"] },
-    { title: "PLANS", ids: ["pricing", "refundPolicy"] },
+    { title: "RESOURCES", ids: ["progress", "careers", "webinars", "blog", "corporateNews"] },
     { title: "COMMUNITY", ids: ["feedback"] },
-    { title: "ASSESSMENTS", ids: ["skill-test"] },
+    { title: "PRACTICE & PREP", ids: ["assessment-hub", "company-kit"] },
   ];
 
   return (
@@ -841,7 +834,10 @@ export default function StudentDashboard() {
             <div className={`p-4 border-t ${isDark ? "border-white/10" : "border-slate-200"} flex items-center justify-between`}>
               <ThemeToggle />
               <button
-                onClick={() => navigate("/")}
+                onClick={() => {
+                  localStorage.removeItem("userRole");
+                  navigate("/");
+                }}
                 className={`p-3 rounded-xl transition-colors ${isDark ? "text-red-300 hover:bg-red-500/10" : "text-red-600 hover:bg-red-50"}`}
                 title="Log out"
                 aria-label="Log out"
@@ -974,7 +970,7 @@ export default function StudentDashboard() {
               <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold ${isDark ? "text-white" : "text-slate-900"} tracking-tight capitalize`}>
                 {sidebarLinks.find(l => l.id === activeTab)?.label || activeTab}
               </h1>
-              <p className={`${isDark ? "text-blue-400" : "text-blue-600"} text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] opacity-90 mt-1`}>
+              <p className={`${isDark ? "text-blue-400" : "text-blue-600"} text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] opacity-90 mt-1 border-b-0 no-underline`}>
                 {activeTab === "overview" ? "Career Readiness Dashboard" :
                   activeTab === "skills" ? "Skill Architecture Analysis" :
                     activeTab === "opportunities" ? "Placement Opportunities" :
@@ -983,24 +979,27 @@ export default function StudentDashboard() {
                           activeTab === "careers" ? "Career Opportunities & Resources" :
                             activeTab === "webinars" ? "Live Learning Sessions" :
                               activeTab === "blog" ? "Personalized content" :
-                                activeTab === "features" ? "Platform Features & Capabilities" :
-                                  activeTab === "caseStudies" ? "Success Stories & Case Studies" :
-                                    activeTab === "corporateNews" ? "Industry News & Updates" :
-                                      activeTab === "wellbeing" ? "Student Wellbeing Hub" :
-                                        activeTab === "pricing" ? "Pricing Plans & Packages" :
-                                          activeTab === "refundPolicy" ? "Refund Policy & Terms" :
-                                            activeTab === "feedback" ? "Share Your Feedback" :
-                                              activeTab === "skill-test" ? "Skill Proficiency Assessment" :
-                                                "Student Portal"}
+                                activeTab === "corporateNews" ? "Industry News & Updates" :
+                                  activeTab === "feedback" ? "Share Your Feedback" :
+                                    activeTab === "assessment-hub" ? "Assessment Hub — End-to-End Prep" :
+                                      activeTab === "company-kit" ? "Company Wise Problems & Tracking" :
+                                        "Student Portal"}
               </p>
             </div>
 
             {/* Premium Header Controls - Relocated for better accessibility */}
             <div className="flex items-center gap-3 sm:gap-4">
-              {/* Company Wise Kit button removed on Skill Test view for a cleaner assessment experience */}
-              {activeTab !== "skill-test" && (
+              {/* Quick access button to open Company Wise Kit tab from anywhere */}
+              {activeTab !== "company-kit" && (
                 <Button
                   variant="outline"
+                  onClick={() => {
+                    setActiveTab("company-kit");
+                    const params = new URLSearchParams(window.location.search);
+                    params.set("tab", "company-kit");
+                    const newUrl = `${window.location.pathname}?${params.toString()}`;
+                    window.history.replaceState({ ...window.history.state }, "", newUrl);
+                  }}
                   className={`hidden md:flex h-11 px-6 rounded-2xl font-bold text-xs uppercase tracking-widest gap-2 transform transition-all hover:scale-105 active:scale-95 ${isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}
                 >
                   <span>Company Wise Kit</span>
@@ -1100,7 +1099,10 @@ export default function StudentDashboard() {
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator className={`${isDark ? "bg-white/5" : "bg-slate-100"} -mx-2 my-2`} />
-                  <DropdownMenuItem onClick={() => navigate("/")} className={`rounded-xl flex items-center gap-3 p-3 transition-all cursor-pointer group/signout ${isDark ? "hover:bg-red-500/10 text-red-400" : "hover:bg-red-50 text-red-500"}`}>
+                  <DropdownMenuItem onClick={() => {
+                    localStorage.removeItem("userRole");
+                    navigate("/");
+                  }} className={`rounded-xl flex items-center gap-3 p-3 transition-all cursor-pointer group/signout ${isDark ? "hover:bg-red-500/10 text-red-400" : "hover:bg-red-50 text-red-500"}`}>
                     <div className={`w-8 h-8 rounded-lg ${isDark ? "bg-red-500/10" : "bg-red-500/5"} flex items-center justify-center transition-colors group-hover/signout:bg-red-500/20`}>
                       <LogOut className="w-4 h-4" />
                     </div>
@@ -1148,11 +1150,11 @@ export default function StudentDashboard() {
                     </div>
                     <div className="flex flex-col sm:flex-row lg:flex-col gap-3 sm:gap-4 w-full lg:w-fit">
                       <Button
-                        onClick={() => setActiveTab("skill-test")}
+                        onClick={() => setActiveTab("assessment-hub")}
                         className="h-14 px-8 bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:opacity-90 font-black text-lg rounded-2xl flex-1 shadow-xl shadow-blue-500/30 gap-3 ring-4 ring-blue-500/20"
                       >
                         <Rocket className="w-6 h-6" />
-                        Take Skill Test
+                        Assessment Hub
                       </Button>
                       <Button
                         onClick={handleResumeClick}
@@ -1262,120 +1264,37 @@ export default function StudentDashboard() {
                   </Card>
                 </div>
 
-                {/* Daily Streak */}
-                <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] overflow-hidden relative group`}>
-                  <div className={`absolute top-0 right-0 w-40 h-40 ${isDark ? "bg-amber-500/10" : "bg-amber-500/20"} rounded-full -mr-20 -mt-20 blur-2xl group-hover:scale-125 transition-transform duration-700`}></div>
-                  <CardContent className="p-12">
-                    <div className="text-center space-y-6">
-                      <div className="flex items-center justify-center gap-2  relative  z-10  w-full  h-full  flex-col  items-center    justify-center  ">
-                        <div className={`text-7xl font-black ${isDark ? "text-white" : "text-gray-900"} py-2 antialiased`}>12</div>
-                        <div className={`absolute -top-1 -right-4 w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center ${isDark ? "border-4 border-[#050509]" : "border-4 border-white"} animate-pulse`}>
-                          <Zap className="w-5 h-5 text-white" />
-                        </div>
-                      </div>
-                      <p className={`text-xl font-bold ${isDark ? "text-gray-400" : "text-gray-600"} -mt-3`}>DAYS IN A ROW! 🚀</p>
 
-                      <div className="flex gap-2 justify-center py-4">
-                        {Array.from({ length: 7 }).map((_, i) => (
-                          <div
-                            key={i}
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 transition-all ${i < 5 ? `${isDark ? "bg-amber-500/20 border-amber-500/50" : "bg-amber-100 border-amber-300"} scale-105` : isDark ? "bg-white/5 border-white/10" : "bg-gray-100 border-gray-200"
-                              }`}
+                {/* Quick Actions & Activity Feed */}
+                <div className="space-y-8">
+                  {/* Quick Actions */}
+                  <div>
+                    <h3 className={`text-xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tighter mb-4 px-2`}>Quick Actions</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {quickActions.map((action, idx) => {
+                        const Icon = action.icon;
+                        return (
+                          <button
+                            key={idx}
+                            onClick={action.action}
+                            className={`p-6 ${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-2xl group hover:scale-105 transition-all cursor-pointer text-left`}
                           >
-                            <CheckCircle2 className={`w-5 h-5 ${i < 5 ? "text-amber-400" : isDark ? "text-gray-400/30" : "text-gray-300"}`} />
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className={`p-4 ${isDark ? "bg-amber-500/5" : "bg-amber-50"} rounded-2xl ${isDark ? "border-amber-500/10" : "border-amber-200"}`}>
-                        <p className="text-sm font-black text-amber-400 tracking-wide uppercase">Bonus Reward Unlocks in 3 Days!</p>
-                      </div>
+                            <div className={`w-12 h-12 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center shadow-lg mb-3 group-hover:rotate-6 transition-transform`}>
+                              <Icon className="w-6 h-6 text-white" />
+                            </div>
+                            <h4 className={`text-base font-black ${isDark ? "text-white" : "text-gray-900"} mb-1`}>{action.title}</h4>
+                            <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"}`}>{action.description}</p>
+                          </button>
+                        );
+                      })}
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-              {/* Skill Progress Panels - Concentric Rings */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {[
-                  {
-                    title: "Skill Progress",
-                    label: "Data Science",
-                    ring1: 85,
-                    ring2: 65,
-                    ring3: 50,
-                    colors: ["#3b82f6", "#06b6d4", "#a855f7"]
-                  },
-                  {
-                    title: "Skill Progress",
-                    label: "Soft Skills",
-                    ring1: 90,
-                    ring2: 75,
-                    ring3: 80,
-                    colors: ["#ec4899", "#8b5cf6", "#3b82f6"]
-                  }
-                ].map((panel, idx) => (
-                  <Card key={idx} className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] p-12 overflow-hidden group`}>
-                    <h3 className={`text-sm font-black ${isDark ? "text-white/40" : "text-gray-600/60"} uppercase tracking-[0.2em] mb-12`}>{panel.title}</h3>
-                    <div className="flex items-center justify-center relative">
-                      <div className="w-[300px] h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            {/* Outer Ring (ring1) */}
-                            <Pie
-                              data={[{ value: panel.ring1 }, { value: 100 - panel.ring1 }]}
-                              innerRadius="88%"
-                              outerRadius="100%"
-                              paddingAngle={0}
-                              dataKey="value"
-                              startAngle={90}
-                              endAngle={-270}
-                              stroke="none"
-                            >
-                              <Cell fill={panel.colors[0]} />
-                              <Cell fill="rgba(255,255,255,0.03)" />
-                            </Pie>
+                  </div>
 
-                            {/* Middle Ring (ring2) */}
-                            <Pie
-                              data={[{ value: panel.ring2 }, { value: 100 - panel.ring2 }]}
-                              innerRadius="70%"
-                              outerRadius="82%"
-                              paddingAngle={0}
-                              dataKey="value"
-                              startAngle={90}
-                              endAngle={-270}
-                              stroke="none"
-                            >
-                              <Cell fill={panel.colors[1]} />
-                              <Cell fill="rgba(255,255,255,0.03)" />
-                            </Pie>
 
-                            {/* Inner Ring (ring3) */}
-                            <Pie
-                              data={[{ value: panel.ring3 }, { value: 100 - panel.ring3 }]}
-                              innerRadius="52%"
-                              outerRadius="64%"
-                              paddingAngle={0}
-                              dataKey="value"
-                              startAngle={90}
-                              endAngle={-270}
-                              stroke="none"
-                            >
-                              <Cell fill={panel.colors[2]} />
-                              <Cell fill="rgba(255,255,255,0.03)" />
-                            </Pie>
-                          </PieChart>
-                        </ResponsiveContainer>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-                          <span className={`text-3xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tighter leading-tight`}>
-                            {panel.label.split(' ')[0]}<br />{panel.label.split(' ')[1] || ""}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                </div>
               </div>
+
+
               {/* AI Recommendations - Top 3 */}
               <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] overflow-hidden shadow-2xl`}>
                 <CardContent className="p-12">
@@ -1456,201 +1375,8 @@ export default function StudentDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Daily Challenges & Quick Actions */}
-              <div className="grid lg:grid-cols-2 gap-8">
-                {/* Daily Challenges */}
-                <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] overflow-hidden shadow-2xl`}>
-                  <CardContent className="p-12">
-                    <div className="flex items-center justify-between mb-8">
-                      <div>
-                        <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-gray-900"} flex items-center gap-3`}>
-                          <Flame className="w-6 h-6 text-orange-500" />
-                          Daily Challenges
-                        </h3>
-                        <p className={`${isDark ? "text-gray-400" : "text-gray-600"} text-sm mt-1`}>Complete tasks to earn points</p>
-                      </div>
-                      <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">3 Active</Badge>
-                    </div>
-                    <div className="space-y-4">
-                      {dailyChallenges.map((challenge) => {
-                        const Icon = challenge.icon;
-                        const progressPercent = (challenge.progress / challenge.total) * 100;
-                        return (
-                          <div key={challenge.id} className={`p-6 ${isDark ? "bg-white/5" : "bg-gray-50"} rounded-2xl ${isDark ? "border-white/5" : "border-gray-200"} hover:border-orange-500/50 transition-all group`}>
-                            <div className="flex items-start gap-4 mb-4">
-                              <div className={`w-12 h-12 bg-gradient-to-br ${challenge.color} rounded-xl flex items-center justify-center shadow-lg`}>
-                                <Icon className="w-6 h-6 text-white" />
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex items-center justify-between mb-1">
-                                  <h4 className={`text-lg font-black ${isDark ? "text-white" : "text-gray-900"}`}>{challenge.title}</h4>
-                                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">{challenge.points} pts</Badge>
-                                </div>
-                                <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"} mb-3`}>{challenge.description}</p>
-                                <div className="space-y-2">
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className={isDark ? "text-gray-400" : "text-gray-600"}>Progress</span>
-                                    <span className="font-black text-blue-400">{challenge.progress}/{challenge.total}</span>
-                                  </div>
-                                  <div className={`h-2 ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-full overflow-hidden`}>
-                                    <div className={`h-full bg-gradient-to-r ${challenge.color} rounded-full transition-all duration-500`} style={{ width: `${progressPercent}%` }}></div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center justify-between mt-3">
-                                  <span className={`text-xs ${isDark ? "text-gray-500" : "text-gray-500"}`}>Due: {challenge.deadline}</span>
-                                  <Button size="sm" className="h-8 text-xs font-black bg-blue-500 hover:bg-blue-600 text-white">
-                                    Continue
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
 
-                {/* Quick Actions & Activity Feed */}
-                <div className="space-y-8">
-                  {/* Quick Actions */}
-                  <div>
-                    <h3 className={`text-xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tighter mb-4 px-2`}>Quick Actions</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      {quickActions.map((action, idx) => {
-                        const Icon = action.icon;
-                        return (
-                          <button
-                            key={idx}
-                            onClick={action.action}
-                            className={`p-6 ${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-2xl group hover:scale-105 transition-all cursor-pointer text-left`}
-                          >
-                            <div className={`w-12 h-12 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center shadow-lg mb-3 group-hover:rotate-6 transition-transform`}>
-                              <Icon className="w-6 h-6 text-white" />
-                            </div>
-                            <h4 className={`text-base font-black ${isDark ? "text-white" : "text-gray-900"} mb-1`}>{action.title}</h4>
-                            <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"}`}>{action.description}</p>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
 
-                  {/* Recent Activity Feed */}
-                  <div>
-                    <h3 className={`text-xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tighter mb-4 px-2 flex items-center gap-2`}>
-                      <Activity className="w-5 h-5" />
-                      Recent Activity
-                    </h3>
-                    <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-2xl overflow-hidden`}>
-                      <CardContent className="p-6">
-                        <div className="space-y-4">
-                          {recentActivity.map((activity) => {
-                            const Icon = activity.icon;
-                            return (
-                              <div key={activity.id} className={`flex items-start gap-4 p-4 ${isDark ? "bg-white/5" : "bg-gray-50"} rounded-xl hover:${isDark ? "bg-white/10" : "bg-gray-100"} transition-all group`}>
-                                <div className={`w-10 h-10 ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                                  <Icon className={`w-5 h-5 ${activity.color}`} />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h4 className={`text-sm font-black ${isDark ? "text-white" : "text-gray-900"} mb-1`}>{activity.title}</h4>
-                                  <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"} mb-1`}>{activity.description}</p>
-                                  <p className={`text-[10px] ${isDark ? "text-gray-500" : "text-gray-500"} uppercase tracking-wider`}>{activity.time}</p>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <Button variant="ghost" className="w-full mt-4 text-lg font-black text-blue-400 hover:bg-blue-500/10">
-                          View All Activity
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-              </div>
-
-              {/* Notifications & Company Match */}
-              <div className="grid lg:grid-cols-2 gap-8">
-                {/* Notifications */}
-                <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                  <CardContent className="p-12">
-                    <div className="flex items-center justify-between mb-8">
-                      <div className="flex items-center gap-3">
-                        <Bell className="w-6 h-6 text-blue-500" />
-                        <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-gray-900"}`}>Notifications</h3>
-                      </div>
-                      <Badge className="bg-red-500/20 text-red-400 border-red-500/30">2 New</Badge>
-                    </div>
-                    <div className="space-y-4">
-                      {notifications.map((notif) => (
-                        <div key={notif.id} className={`p-6 ${isDark ? "bg-white/5" : "bg-slate-50/50"} rounded-2xl ${isDark ? "border-white/5" : "border-slate-100"} ${notif.unread ? (isDark ? "border-blue-500/50 bg-blue-500/5" : "border-blue-200 bg-blue-50/50") : ""} transition-all group`}>
-                          <div className="flex items-start gap-4">
-                            <div className={`w-3 h-3 rounded-full mt-2 flex-shrink-0 ${notif.unread ? "bg-blue-500 animate-pulse" : "bg-transparent"}`}></div>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-2">
-                                <h4 className={`text-base font-black ${isDark ? "text-white" : "text-gray-900"}`}>{notif.title}</h4>
-                                <Badge className={
-                                  notif.type === "warning" ? "bg-orange-500/20 text-orange-400 border-orange-500/30" :
-                                    notif.type === "success" ? "bg-green-500/20 text-green-400 border-green-500/30" :
-                                      "bg-blue-500/20 text-blue-400 border-blue-500/30"
-                                }>
-                                  {notif.type}
-                                </Badge>
-                              </div>
-                              <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"} mb-2`}>{notif.message}</p>
-                              <p className={`text-xs ${isDark ? "text-gray-500" : "text-gray-500"} uppercase tracking-wider`}>{notif.time}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <Button variant="ghost" className="w-full mt-6 text-lg font-black text-blue-400 hover:bg-blue-500/10">
-                      View All Notifications
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                {/* Company Match Grid */}
-                <div className="space-y-8">
-                  <h3 className={`text-xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tighter px-2`}>Top Company Matches</h3>
-                  <div className="grid grid-cols-1 gap-6">
-                    {companyMatches.slice(0, 2).map((company) => (
-                      <Card key={company.name} className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[2rem] p-8 group hover:${isDark ? "bg-white/5" : "bg-slate-50/50"} transition-all cursor-pointer shadow-sm`}>
-                        <div className="flex items-center gap-6 mb-8">
-                          <div className={`w-16 h-16 ${company.color} rounded-[1.5rem] flex items-center justify-center shadow-2xl transition-transform group-hover:scale-105`}>
-                            <span className="text-2xl font-black text-white">{company.logo}</span>
-                          </div>
-                          <div className="flex-1">
-                            <h4 className={`text-2xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tighter`}>{company.name}</h4>
-                            <p className="text-[10px] font-black text-blue-400 uppercase opacity-60 tracking-[0.1em]">{company.level} • {company.salary}</p>
-                          </div>
-                          <div className="flex items-baseline gap-3">
-                            <span className="text-4xl font-black text-blue-400">{company.match}%</span>
-                          </div>
-                        </div>
-                        <div className={`mt-6 h-1.5 w-full ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-full overflow-hidden`}>
-                          <div
-                            className={`h-full transition-all duration-1000 ${company.match > 50 ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-red-500'}`}
-                            style={{ width: `${company.match}%` }}
-                          ></div>
-                        </div>
-                        <div className="flex flex-wrap gap-2 mt-4">
-                          {company.requirements.map((req, rIdx) => (
-                            <Badge key={rIdx} variant="outline" className={`text-[10px] font-black uppercase ${isDark ? "text-gray-400 border-white/10" : "text-gray-600 border-gray-300"}`}>
-                              {req}
-                            </Badge>
-                          ))}
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                  <Button variant="outline" className="w-full h-12 rounded-xl font-black text-sm uppercase tracking-widest" onClick={() => setActiveTab("opportunities")}>
-                    View All Companies
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
-              </div>
             </div>
           )}
 
@@ -1687,7 +1413,88 @@ export default function StudentDashboard() {
                       </Button>
                     </div>
                   </div>
+                  {/* Skill Progress Panels - Concentric Rings */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {[
+                      {
+                        title: "Skill Progress",
+                        label: "Data Science",
+                        ring1: 85,
+                        ring2: 65,
+                        ring3: 50,
+                        colors: ["#3b82f6", "#06b6d4", "#a855f7"]
+                      },
+                      {
+                        title: "Skill Progress",
+                        label: "Soft Skills",
+                        ring1: 90,
+                        ring2: 75,
+                        ring3: 80,
+                        colors: ["#ec4899", "#8b5cf6", "#3b82f6"]
+                      }
+                    ].map((panel, idx) => (
+                      <Card key={idx} className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] p-12 overflow-hidden group`}>
+                        <h3 className={`text-sm font-black ${isDark ? "text-white/40" : "text-gray-600/60"} uppercase tracking-[0.2em] mb-12`}>{panel.title}</h3>
+                        <div className="flex items-center justify-center relative">
+                          <div className="w-[300px] h-[300px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                {/* Outer Ring (ring1) */}
+                                <Pie
+                                  data={[{ value: panel.ring1 }, { value: 100 - panel.ring1 }]}
+                                  innerRadius="88%"
+                                  outerRadius="100%"
+                                  paddingAngle={0}
+                                  dataKey="value"
+                                  startAngle={90}
+                                  endAngle={-270}
+                                  stroke="none"
+                                >
+                                  <Cell fill={panel.colors[0]} />
+                                  <Cell fill="rgba(255,255,255,0.03)" />
+                                </Pie>
 
+                                {/* Middle Ring (ring2) */}
+                                <Pie
+                                  data={[{ value: panel.ring2 }, { value: 100 - panel.ring2 }]}
+                                  innerRadius="70%"
+                                  outerRadius="82%"
+                                  paddingAngle={0}
+                                  dataKey="value"
+                                  startAngle={90}
+                                  endAngle={-270}
+                                  stroke="none"
+                                >
+                                  <Cell fill={panel.colors[1]} />
+                                  <Cell fill="rgba(255,255,255,0.03)" />
+                                </Pie>
+
+                                {/* Inner Ring (ring3) */}
+                                <Pie
+                                  data={[{ value: panel.ring3 }, { value: 100 - panel.ring3 }]}
+                                  innerRadius="52%"
+                                  outerRadius="64%"
+                                  paddingAngle={0}
+                                  dataKey="value"
+                                  startAngle={90}
+                                  endAngle={-270}
+                                  stroke="none"
+                                >
+                                  <Cell fill={panel.colors[2]} />
+                                  <Cell fill="rgba(255,255,255,0.03)" />
+                                </Pie>
+                              </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                              <span className={`text-3xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tighter leading-tight`}>
+                                {panel.label.split(' ')[0]}<br />{panel.label.split(' ')[1] || ""}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
                   <div className="h-96">
                     {viewMode === "radar" ? (
                       <ResponsiveContainer width="100%" height="100%">
@@ -1969,45 +1776,6 @@ export default function StudentDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Weekly Goals */}
-              <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                <CardContent className="p-12">
-                  <div className="flex items-center gap-4 mb-10">
-                    <Flame className={`w-8 h-8 ${isDark ? "text-amber-400" : "text-amber-600"}`} />
-                    <div>
-                      <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Weekly Goals</h3>
-                      <p className={`text-lg font-bold ${isDark ? "text-gray-400" : "text-slate-600"}`}>Track your weekly learning objectives</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    {weeklyGoals.map((g, i) => (
-                      <div key={i} className={`p-6 ${isDark ? "border-white/5 bg-white/5" : "border-slate-100 bg-slate-50/50"} rounded-2xl hover:border-blue-500/30 transition-all shadow-sm`}>
-                        <div className="flex justify-between text-base font-bold mb-3">
-                          <span className={`${isDark ? "text-white" : "text-slate-900"}`}>{g.task}</span>
-                          <span className="text-blue-400">{g.completed}/{g.total}</span>
-                        </div>
-                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-blue-500 to-green-500 rounded-full transition-all duration-1000"
-                            style={{ width: `${(g.completed / g.total) * 100}%` }}
-                          ></div>
-                        </div>
-                        <div className="flex justify-between items-center mt-3">
-                          <Badge className={
-                            g.priority === 'high' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-                          }>
-                            {g.priority === 'high' ? 'High Priority' : 'Medium Priority'}
-                          </Badge>
-                          <Button variant="ghost" size="sm" className="text-xs font-black text-blue-400 hover:bg-blue-500/10">
-                            Update Progress
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           )}
 
@@ -2231,25 +1999,12 @@ export default function StudentDashboard() {
             </div>
           )}
 
-
-
-
-
           {/* Corporate News Tab */}
           {activeTab === "corporateNews" && (
             <div className="space-y-10">
               <CorporateNewsPage isDashboard={true} />
             </div>
           )}
-
-
-
-
-          {/* Pricing Tab */}
-
-
-          {/* Refund Policy Tab */}
-
 
           {/* Feedback Tab */}
           {activeTab === "feedback" && (
@@ -2258,12 +2013,19 @@ export default function StudentDashboard() {
             </div>
           )}
 
-          {/* Skill Test Tab */}
-          {/* {activeTab === "skill-test" && (
+          {/* Assessment Hub Tab */}
+          {activeTab === "assessment-hub" && (
             <div className="space-y-10">
-              <SkillTest onBack={() => setActiveTab("overview")} />
+              <AssessmentHub isDashboard={true} onBack={() => setActiveTab("feedback")} />
             </div>
-          )} */}
+          )}
+
+          {/* Company Wise Kit Tab */}
+          {activeTab === "company-kit" && (
+            <div className="space-y-10">
+              <CompanyWiseKit isDashboard={true} />
+            </div>
+          )} 
 
           {/* CTA Footer - Only show on overview tab */}
           {activeTab === "overview" && (
