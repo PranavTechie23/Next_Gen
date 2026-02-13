@@ -851,7 +851,7 @@ export default function StudentDashboard() {
 
       {/* Desktop Sidebar - Left */}
       <aside className={`hidden lg:flex sticky top-0 h-screen z-50 transition-all duration-500 relative overflow-visible ${isSidebarOpen ? "w-72" : "w-[6rem]"} ${isSidebarOpen ? "p-4 pr-2" : "p-3"} flex-col shrink-0 bg-transparent`}>
-        <div className={`flex-1 min-w-0 ${isDark ? "bg-[#0c0c14]" : "bg-white"} ${isDark ? "border-white/10" : "border-slate-200"} rounded-[2.5rem] flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.05)] overflow-hidden relative`}>
+        <div className={`flex-1 min-w-0 h-full ${isDark ? "bg-[#0c0c14]" : "bg-white"} ${isDark ? "border-white/10" : "border-slate-200"} rounded-[2.5rem] flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.05)] overflow-hidden relative`}>
           <div className={`absolute inset-0 bg-gradient-to-b ${isDark ? "from-blue-500/5" : "from-blue-500/5"} via-transparent ${isDark ? "to-purple-500/5" : "to-purple-500/5"} opacity-50 pointer-events-none`}></div>
 
           {/* Header: brand logo & name */}
@@ -945,9 +945,9 @@ export default function StudentDashboard() {
       <main
         ref={mainContentRef}
         data-scroll-container
-        className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto overflow-x-hidden custom-scrollbar relative bg-transparent"
+        className={`flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar relative bg-transparent ${activeTab === "company-kit" ? "flex flex-col" : "p-4 sm:p-6 lg:p-8"}`}
       >
-        <div className="max-w-[1400px] mx-auto space-y-6 sm:space-y-8 lg:space-y-10 pb-16 sm:pb-20">
+        <div className={`max-w-[1400px] mx-auto ${activeTab === "company-kit" ? "flex flex-col space-y-6 sm:space-y-8 lg:space-y-10 min-h-0" : "space-y-6 sm:space-y-8 lg:space-y-10"}`}>
 
           <header className={`flex items-center justify-between gap-4 sm:gap-6 mb-6 sm:mb-8`}>
             {/* Desktop header space reserved for toggle when floating nearby */}
@@ -2020,16 +2020,14 @@ export default function StudentDashboard() {
             </div>
           )}
 
-          {/* Company Wise Kit Tab */}
+          {/* Company Wise Kit Tab - fill viewport so list covers entire page */}
           {activeTab === "company-kit" && (
-            <div className="space-y-10">
-              <CompanyWiseKit isDashboard={true} />
-            </div>
+            <CompanyWiseKit isDashboard={true} />
           )}
 
           {/* CTA Footer - Only show on overview tab */}
           {activeTab === "overview" && (
-            <div className={`bg-gradient-to-r ${isDark ? "from-blue-500/10 via-purple-500/10 to-blue-500/10" : "from-blue-50 via-purple-50 to-blue-50"} ${isDark ? "border-white/5" : "border-gray-200"} p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group mt-12`}>
+            <div className={`bg-gradient-to-r ${isDark ? "from-blue-500/10 via-purple-500/10 to-blue-500/10" : "from-blue-50 via-purple-50 to-blue-50"} ${isDark ? "border-white/5" : "border-gray-200"} p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group mt-12 mb-4`}>
               <div className={`absolute top-0 right-0 w-96 h-96 ${isDark ? "bg-blue-500/5" : "bg-blue-500/5"} rounded-full -mr-48 -mt-48 blur-3xl group-hover:scale-110 transition-all duration-700`}></div>
               <div className="flex flex-col lg:flex-row items-center justify-between gap-8 relative z-10">
                 <div>
@@ -2050,7 +2048,7 @@ export default function StudentDashboard() {
             </div>
           )}
         </div>
-      </main >
-    </div >
+      </main>
+    </div>
   );
 }
