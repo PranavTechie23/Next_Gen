@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
     CheckCircle, Building2, Target, Check, Lightbulb, BookOpen,
-    ExternalLink, Search, Code, ChevronRight, Filter
+    ExternalLink, Search, Code, ChevronRight, ChevronLeft, Filter
 } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 
@@ -328,11 +328,47 @@ const MANUAL_LOGOS: Record<string, string> = {
     "Netflix": "/logos/netflix_light.jpg",
     "Stripe": "/logos/stripe.jpg",
     "Adobe": "/logos/adobe.jpg",
-    "Goldman Sachs": "/logos/goldman.jpg",
+    "Goldman Sachs": "/logos/goldmanSachs.jpg",
     "J.P. Morgan": "/logos/morgan.jpg",
     "JP Morgan": "/logos/morgan.jpg",
     "Airbnb": "/logos/airbnb.jpg",
-    // Add more mappings here as you add logo files
+    "Uber": "/logos/uber.jpg",
+    // Companies with logos in /public/logos directory
+    "64squares": "/logos/64squares.jpeg",
+    "CLSA": "/logos/CLSA.svg",
+    "CodeVita": "/logos/CODEVITA.jpeg",
+    "Codevita Live": "/logos/CODEVITA.jpeg",
+    "Cyient": "/logos/CYIENT.jpeg",
+    "Delhivery": "/logos/delhivery.png",
+    "ElasticRun": "/logos/ELASTIC RUN.png",
+    "Flo Group": "/logos/FLO GROUP.png",
+    "GNS Engineering India": "/logos/GNS ENGINEERING.jpeg",
+    "IDFC First Bank": "/logos/IDFCFirstBank.png",
+    "IDFC FIRST Bank": "/logos/IDFCFirstBank.png",
+    "Vadini Infocenter": "/logos/infocenter.jpeg",
+    "Infogen Labs": "/logos/infogen-labs.jpg",
+    "iQ Digital": "/logos/iq-digital.png",
+    "iq digital": "/logos/iq-digital.png",
+    "Jombay": "/logos/jombay.jpeg",
+    "K12 Techno Services": "/logos/K12 TECHNO SERVICES.png",
+    "KPIT Technologies": "/logos/KPIT.jpeg",
+    "KPIT": "/logos/KPIT.jpeg",
+    "Sagitec": "/logos/SAGITEC.avif",
+    "se2": "/logos/se2.jpeg",
+    "SE2": "/logos/se2.jpeg",
+    "Sedemac Mechatronics": "/logos/sedemac_mechatronics.jpeg",
+    "Swasthya AI": "/logos/swasthya.png",
+    "Talentio": "/logos/talentio.jpeg",
+    "Wednesday Solutions": "/logos/wednesday.png",
+    "Zlen": "/logos/zlen.jpeg",
+    "Amura": "/logos/amura.png",
+    "eQ Technologic": "/logos/eqTechnology.png",
+    "CakeSoft Technologies": "/logos/CakeSoft.png",
+    "BUDDI.AI": "/logos/buddhi.ai.png",
+    "FPL Technologies": "/logos/fpl_Technology.jpg",
+    "FPL Technology": "/logos/fpl_Technology.jpg",
+    "Paytm": "/logos/paytm.png",
+    "Scalex Technology": "/logos/scalex.png",
 };
 
 // ─── Logo Visibility Configuration ──────────────────────────────────────
@@ -466,6 +502,8 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
     const [suggestionType, setSuggestionType] = useState<"tips" | "dos" | "donts" | "other">("tips");
     const [suggestionText, setSuggestionText] = useState("");
     const topRef = useRef<HTMLDivElement>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 15;
 
     // Scroll to top when a company is selected
     useEffect(() => {
@@ -475,6 +513,10 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
             window.scrollTo(0, 0);
         }
     }, [selectedCompany]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [tierFilter, search, sortMode, preferences]);
 
     // STORE PROBLEM TITLES instead of IDs for shared progress
     const [solvedTitles, setSolvedTitles] = useState<Set<string>>(() => {
@@ -930,7 +972,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
 
     // ─── Company List View ────────────────────────────────────────
     return (
-        <div>
+        <div className={isDashboard ? `flex flex-col w-full ${isDark ? "bg-[#0c0c14]" : "bg-white"} -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 min-h-0` : ""}>
             {/* Suggestion modal */}
             {showSuggestion && (
                 <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -1087,10 +1129,10 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
 
             {/* Search + Tier Filter + Sort (SINGLE LINE CONSOLIDATED) */}
             <div className="flex flex-col items-center mb-10">
-                <div className={`w-full max-w-7xl rounded-[40px] md:rounded-full p-2 md:p-3 border flex flex-col lg:flex-row items-center gap-4 ${isDark ? "bg-slate-950/60 border-white/[0.08] backdrop-blur-xl shadow-2xl" : "bg-white border-slate-200 shadow-xl shadow-slate-200/40"}`}>
+                <div className={`w-full max-w-7xl rounded-[40px] md:rounded-full p-2 md:p-3 border flex flex-col lg:flex-row items-center gap-3 ${isDark ? "bg-slate-950/60 border-white/[0.08] backdrop-blur-xl shadow-2xl" : "bg-white border-slate-200 shadow-xl shadow-slate-200/40"}`}>
 
                     {/* Search Input (Narrower) */}
-                    <div className="relative group w-full lg:w-72 pl-2">
+                    <div className="relative group w-full lg:w-64 xl:w-72 pl-2">
                         <Search className={`absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isDark ? "text-slate-500 group-focus-within:text-blue-400" : "text-slate-400 group-focus-within:text-blue-600"}`} />
                         <input
                             type="text"
@@ -1101,8 +1143,8 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                         />
                     </div>
 
-                    {/* Tier Filters (Center) */}
-                    <div className="flex flex-wrap items-center justify-center gap-1 md:gap-2 px-4">
+                    {/* Tier Filters (Center) - Single Line */}
+                    <div className="flex items-center justify-center gap-1.5 px-2 flex-nowrap shrink-0">
                         {["all", "Product", "Finance", "Service", "Startup"].map(t => {
                             const isActive = tierFilter === t;
                             const tierColors: Record<string, string> = {
@@ -1125,7 +1167,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                                 <button
                                     key={t}
                                     onClick={() => setTierFilter(t)}
-                                    className={`px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all relative overflow-hidden group/btn ${isActive
+                                    className={`px-3 xl:px-5 py-2.5 rounded-full text-[10px] xl:text-[11px] font-black uppercase tracking-widest transition-all relative overflow-hidden group/btn whitespace-nowrap ${isActive
                                         ? "text-white shadow-lg z-10"
                                         : `${tierColors[t]} ${isDark ? "text-slate-400" : "text-slate-500"}`
                                         }`}
@@ -1144,12 +1186,12 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                     </div>
 
                     {/* Sort (Right) */}
-                    <div className="flex items-center gap-3 pr-4">
-                        <span className={`hidden xl:inline text-[11px] font-black uppercase tracking-widest ${isDark ? "text-slate-600" : "text-slate-400"}`}>
+                    <div className="flex items-center gap-2 pr-2 shrink-0">
+                        <span className={`hidden lg:inline text-[10px] xl:text-[11px] font-black uppercase tracking-widest ${isDark ? "text-slate-600" : "text-slate-400"}`}>
                             Sort by
                         </span>
                         <Select value={sortMode} onValueChange={value => setSortMode(value as typeof sortMode)}>
-                            <SelectTrigger className={`h-11 px-5 min-w-[200px] rounded-full text-[11px] font-black uppercase tracking-widest border border-transparent transition-all ${isDark ? "bg-white/[0.03] text-slate-100 hover:border-white/10" : "bg-slate-50 text-slate-800 hover:bg-white hover:border-slate-200"}`}>
+                            <SelectTrigger className={`h-11 px-3 xl:px-5 min-w-[140px] xl:min-w-[200px] rounded-full text-[10px] xl:text-[11px] font-black uppercase tracking-widest border border-transparent transition-all ${isDark ? "bg-white/[0.03] text-slate-100 hover:border-white/10" : "bg-slate-50 text-slate-800 hover:bg-white hover:border-slate-200"}`}>
                                 <SelectValue placeholder="Recommended" />
                             </SelectTrigger>
                             <SelectContent className={`border-none shadow-2xl rounded-2xl ${isDark ? "bg-slate-900 text-white border border-white/10" : "bg-white text-slate-900"}`}>
@@ -1165,7 +1207,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
 
             {/* Company Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                {filteredCompanies.map(c => {
+                {filteredCompanies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(c => {
                     const cSolved = c.problems.filter(p => solvedTitles.has(p.title)).length;
                     const cProgress = c.problems.length > 0 ? Math.round((cSolved / c.problems.length) * 100) : 0;
                     // Check if company matches preferences
@@ -1225,6 +1267,37 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                     );
                 })}
             </div>
+
+            {/* Pagination Controls */}
+            {filteredCompanies.length > itemsPerPage && (
+                <div className="flex justify-center items-center gap-4 mt-4">
+                    <Button
+                        variant="outline"
+                        onClick={() => {
+                            setCurrentPage(prev => Math.max(prev - 1, 1));
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        disabled={currentPage === 1}
+                        className={isDark ? "border-white/10 text-white hover:bg-white/10" : "border-slate-200 text-slate-700"}
+                    >
+                        <ChevronLeft className="w-4 h-4 mr-2" /> Previous
+                    </Button>
+                    <span className={`text-sm font-bold ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                        Page {currentPage} of {Math.ceil(filteredCompanies.length / itemsPerPage)}
+                    </span>
+                    <Button
+                        variant="outline"
+                        onClick={() => {
+                            setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredCompanies.length / itemsPerPage)));
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        disabled={currentPage === Math.ceil(filteredCompanies.length / itemsPerPage)}
+                        className={isDark ? "border-white/10 text-white hover:bg-white/10" : "border-slate-200 text-slate-700"}
+                    >
+                        Next <ChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                </div>
+            )}
         </div>
     );
 };

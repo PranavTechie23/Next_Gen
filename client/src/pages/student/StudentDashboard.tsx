@@ -947,7 +947,7 @@ export default function StudentDashboard() {
         data-scroll-container
         className={`flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar relative bg-transparent ${activeTab === "company-kit" ? "flex flex-col" : "p-4 sm:p-6 lg:p-8"}`}
       >
-        <div className={`max-w-[1400px] mx-auto ${activeTab === "company-kit" ? "flex flex-col space-y-6 sm:space-y-8 lg:space-y-10 min-h-0" : "space-y-6 sm:space-y-8 lg:space-y-10"}`}>
+        <div className={`${activeTab === "company-kit" ? "w-full px-4 sm:px-6 lg:px-8" : "max-w-[1400px] mx-auto"} ${activeTab === "company-kit" ? "flex flex-col space-y-6 sm:space-y-8 lg:space-y-10 min-h-0" : "space-y-6 sm:space-y-8 lg:space-y-10"}`}>
 
           <header className={`flex items-center justify-between gap-4 sm:gap-6 mb-6 sm:mb-8`}>
             {/* Desktop header space reserved for toggle when floating nearby */}
