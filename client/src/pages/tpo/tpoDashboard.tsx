@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
+import { getPlacementDrives, savePlacementDrive, type PlacementDrive } from "@/data/placementDrives";
+import { Textarea } from "@/components/ui/textarea";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
 import { LogOut, Settings, Users, TrendingUp, AlertTriangle, Download, Filter, Search, Bell, ChevronRight, Award, Target, BookOpen, Briefcase, Calendar, TrendingDown, ArrowUpRight, ArrowDownRight, Eye, Upload, FileText, GraduationCap, Building2, BarChart3, Activity, Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram, ExternalLink, Clock, DollarSign, Users2, Plus, Edit, Trash2, MoreVertical, CheckCircle2, XCircle, RefreshCw, FileSpreadsheet, FileBarChart, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, TrendingDown as TrendingDownIcon, Rocket, Shield, Globe, Star, MessageSquare, ArrowLeft } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -32,6 +35,50 @@ export default function CollegeDashboard() {
     skills: ["React", "Node.js"]
   });
   const [newSkill, setNewSkill] = useState("");
+
+  // Create Drive (ticket) modal
+  const [createDriveOpen, setCreateDriveOpen] = useState(false);
+  const [createDriveForm, setCreateDriveForm] = useState({
+    companyName: "",
+    role: "",
+    description: "",
+    requirements: [] as string[],
+    minCgpa: 7.0,
+    maxBacklogs: 0,
+    applicationLink: "",
+    deadline: "",
+  });
+  const [driveReqSkill, setDriveReqSkill] = useState("");
+  const placementDrivesList = getPlacementDrives();
+
+  const handleCreateDriveSubmit = () => {
+    if (!createDriveForm.companyName.trim() || !createDriveForm.role.trim()) {
+      toast.error("Company name and role are required");
+      return;
+    }
+    savePlacementDrive({
+      companyName: createDriveForm.companyName.trim(),
+      role: createDriveForm.role.trim(),
+      description: createDriveForm.description.trim(),
+      requirements: createDriveForm.requirements,
+      minCgpa: createDriveForm.minCgpa,
+      maxBacklogs: createDriveForm.maxBacklogs,
+      applicationLink: createDriveForm.applicationLink.trim() || "#",
+      deadline: createDriveForm.deadline.trim() || "TBD",
+    });
+    toast.success("Drive created. Students will see it under Drives.");
+    setCreateDriveForm({
+      companyName: "",
+      role: "",
+      description: "",
+      requirements: [],
+      minCgpa: 7.0,
+      maxBacklogs: 0,
+      applicationLink: "",
+      deadline: "",
+    });
+    setCreateDriveOpen(false);
+  };
 
   const isMobile = useIsMobile();
   const mainContentRef = useRef<HTMLElement>(null);
@@ -554,37 +601,41 @@ export default function CollegeDashboard() {
                   <Button size="sm" variant="outline" className="h-8">View All</Button>
                 </div>
 
-                {[
-                  { name: "Google", role: "SDE Intern", date: "Apply by: 15 Feb", icon: Globe, color: "bg-red-500" },
-                  { name: "Microsoft", role: "Software Engineer", date: "Interview: 18 Feb", icon: LayoutDashboard, color: "bg-blue-500" },
-                  { name: "Deloitte", role: "Analyst", date: "Test: 20 Feb", icon: Shield, color: "bg-green-500" },
-                ].map((drive, i) => (
-                  <Card key={i} className="border-0 shadow-md hover:shadow-xl transition-all cursor-pointer group">
-                    <CardContent className="p-5">
-                      <div className="flex items-start gap-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${drive.color} text-white shadow-lg`}>
-                          <drive.icon className="w-6 h-6" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-lg truncate group-hover:text-blue-600 transition-colors">{drive.name}</h4>
-                          <p className="text-sm text-muted-foreground mb-2">{drive.role}</p>
-                          <div className="flex items-center gap-2 text-xs font-semibold bg-muted/50 px-2 py-1 rounded w-fit">
-                            <Calendar className="w-3 h-3" />
-                            {drive.date}
+                {placementDrivesList.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4">No drives yet. Create one below.</p>
+                ) : (
+                  placementDrivesList.map((drive, i) => {
+                    const colors = ["bg-red-500", "bg-blue-500", "bg-green-500", "bg-purple-500", "bg-orange-500"];
+                    const color = colors[i % colors.length];
+                    return (
+                      <Card key={drive.id} className="border-0 shadow-md hover:shadow-xl transition-all cursor-pointer group">
+                        <CardContent className="p-5">
+                          <div className="flex items-start gap-4">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${color} text-white shadow-lg font-black text-lg`}>
+                              {drive.companyName.charAt(0)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-lg truncate group-hover:text-blue-600 transition-colors">{drive.companyName}</h4>
+                              <p className="text-sm text-muted-foreground mb-2">{drive.role}</p>
+                              <div className="flex items-center gap-2 text-xs font-semibold bg-muted/50 px-2 py-1 rounded w-fit">
+                                <Calendar className="w-3 h-3" />
+                                {drive.deadline}
+                              </div>
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                           </div>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
 
                 <Card className="bg-gradient-to-br from-slate-900 to-slate-800 text-white border-0 shadow-lg mt-8">
                   <CardContent className="p-6 relative overflow-hidden">
                     <div className="relative z-10">
                       <h3 className="font-black text-xl mb-2">Post a New Drive</h3>
                       <p className="text-slate-300 text-sm mb-6">Create a new placement drive and notify students instantly.</p>
-                      <Button className="w-full bg-white text-slate-900 hover:bg-slate-100 font-bold">
+                      <Button className="w-full bg-white text-slate-900 hover:bg-slate-100 font-bold" onClick={() => setCreateDriveOpen(true)}>
                         <Plus className="w-4 h-4 mr-2" />
                         Create Drive
                       </Button>
@@ -592,6 +643,122 @@ export default function CollegeDashboard() {
                     <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-3xl"></div>
                   </CardContent>
                 </Card>
+
+                {/* Create Drive Dialog */}
+                <Dialog open={createDriveOpen} onOpenChange={setCreateDriveOpen}>
+                  <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Create placement drive</DialogTitle>
+                      <DialogDescription>Students will see this drive under Drives with JD, requirements, and match %.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                      <div>
+                        <Label>Company name</Label>
+                        <Input
+                          placeholder="e.g. Google, TCS"
+                          value={createDriveForm.companyName}
+                          onChange={(e) => setCreateDriveForm({ ...createDriveForm, companyName: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label>Role / designation</Label>
+                        <Input
+                          placeholder="e.g. SDE I, System Engineer"
+                          value={createDriveForm.role}
+                          onChange={(e) => setCreateDriveForm({ ...createDriveForm, role: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label>Job description (JD)</Label>
+                        <Textarea
+                          placeholder="Paste or type the full JD here..."
+                          value={createDriveForm.description}
+                          onChange={(e) => setCreateDriveForm({ ...createDriveForm, description: e.target.value })}
+                          className="mt-1 min-h-[100px]"
+                          rows={4}
+                        />
+                      </div>
+                      <div>
+                        <Label>Required skills (add one by one)</Label>
+                        <div className="flex flex-wrap gap-2 mt-1 mb-2">
+                          {createDriveForm.requirements.map((s) => (
+                            <Badge key={s} variant="secondary" className="gap-1">
+                              {s}
+                              <X className="w-3 h-3 cursor-pointer" onClick={() => setCreateDriveForm({ ...createDriveForm, requirements: createDriveForm.requirements.filter((r) => r !== s) })} />
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="e.g. DSA, React"
+                            value={driveReqSkill}
+                            onChange={(e) => setDriveReqSkill(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && driveReqSkill.trim()) {
+                                setCreateDriveForm({ ...createDriveForm, requirements: [...createDriveForm.requirements, driveReqSkill.trim()] });
+                                setDriveReqSkill("");
+                              }
+                            }}
+                          />
+                          <Button type="button" variant="secondary" onClick={() => {
+                            if (driveReqSkill.trim()) {
+                              setCreateDriveForm({ ...createDriveForm, requirements: [...createDriveForm.requirements, driveReqSkill.trim()] });
+                              setDriveReqSkill("");
+                            }
+                          }}>Add</Button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Min CGPA</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={10}
+                            step={0.1}
+                            value={createDriveForm.minCgpa}
+                            onChange={(e) => setCreateDriveForm({ ...createDriveForm, minCgpa: parseFloat(e.target.value) || 0 })}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Max backlogs allowed</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={createDriveForm.maxBacklogs}
+                            onChange={(e) => setCreateDriveForm({ ...createDriveForm, maxBacklogs: parseInt(e.target.value, 10) || 0 })}
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Application link (Google Form URL)</Label>
+                        <Input
+                          placeholder="https://forms.google.com/..."
+                          value={createDriveForm.applicationLink}
+                          onChange={(e) => setCreateDriveForm({ ...createDriveForm, applicationLink: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label>Deadline (e.g. Apply by: 15 Feb)</Label>
+                        <Input
+                          placeholder="Apply by: 15 Feb"
+                          value={createDriveForm.deadline}
+                          onChange={(e) => setCreateDriveForm({ ...createDriveForm, deadline: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setCreateDriveOpen(false)}>Cancel</Button>
+                      <Button onClick={handleCreateDriveSubmit}>Create drive</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </div>
