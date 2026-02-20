@@ -1,13 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
-const verifyToken = require('../src/middleware/verifyToken');
-const authorizeRole = require('../src/middleware/authorizeRole');
+const { protect, authorize } = require('../middleware/authMiddleware');
 
 // POST /dept-heads - Create a new Department Head
 router.post('/dept-heads',
-    verifyToken,
-    authorizeRole("TPO_ADMIN"),
+    protect,
+    authorize("TPO_ADMIN"),
     adminController.createDeptHead
 );
 

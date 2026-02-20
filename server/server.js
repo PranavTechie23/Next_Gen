@@ -6,7 +6,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 const app = express();
 const db = require('./config/db');
-const tpoRoutes = require('./src/routes/tpoRoutes');
+const tpoRoutes = require('./routes/tpoRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 
 // Load environment variables
