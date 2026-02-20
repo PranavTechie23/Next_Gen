@@ -6,7 +6,6 @@ const dotenv = require('dotenv');
 const path = require('path');
 const app = express();
 const db = require('./config/db');
-const tpoRoutes = require('./routes/tpoRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 
 // Load environment variables
@@ -39,9 +38,6 @@ app.use('/api/auth', authRoutes);
 app.get('/', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running', timestamp: new Date() });
 });
-
-
-app.use('/api/tpo', tpoRoutes);
 
 app.use('/api/admin', adminRoutes);
 
