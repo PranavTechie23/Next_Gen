@@ -1,9 +1,9 @@
 
 const express = require('express');
 const router = express.Router();
-const tpoController = require('../controllers/tpoController');
-const verifyToken = require('../middleware/verifyToken');
-const authorizeRole = require('../middleware/authorizeRole');
+const tpoController = require('../../controllers/tpoController');
+const verifyToken = require('../../src/middleware/verifyToken');
+const authorizeRole = require('../../src/middleware/authorizeRole');
 
 // GET /test    
 // Middleware: verifyToken, authorizeRole("TPO_ADMIN")
