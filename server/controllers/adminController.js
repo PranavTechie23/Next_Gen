@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const sendEmail = require('../utils/email');
 
 const createDeptHead = async (req, res) => {
     try {
@@ -53,11 +54,37 @@ const createDeptHead = async (req, res) => {
             await connection.commit();
             connection.release();
 
-            // 8. Return JSON
+            // 8. Send Email with Credentials
+            const emailSubject = 'Your Department Head Account Credentials';
+            const emailHtml = `
+                <h2>Welcome to Next Gen PBL System</h2>
+                <p>Hello ${name},</p>
+                <p>Your Department Head account has been successfully created.</p>
+                <p>Here are your login credentials:</p>
+                <ul>
+                    <li><strong>Email:</strong> ${email}</li>
+                    <li><strong>Temporary Password:</strong> ${temporaryPassword}</li>
+                </ul>
+                <p>Please log in and change your password as soon as possible.</p>
+                <p>Best regards,<br>Next Gen PBL Team</p>
+            `;
+
+            const emailSent = await sendEmail({
+                to: email,
+                subject: emailSubject,
+                html: emailHtml
+            });
+
+            if (!emailSent) {
+                console.warn("User created but failed to send email to:", email);
+            }
+
+            // 9. Return JSON
             res.status(201).json({
                 message: "Dept Head created successfully",
                 email: email,
-                temporary_password: temporaryPassword
+                email_sent: emailSent,
+                temporary_password: temporaryPassword // Still returning it for manual sharing in case email fails
             });
 
         } catch (err) {
