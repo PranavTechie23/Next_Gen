@@ -24,6 +24,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(require('cookie-parser')());
 
+// Debug Middleware: Log all requests
+app.use((req, res, next) => {
+    console.log(`[DEBUG] Incoming Request: ${req.method} ${req.url}`);
+    next();
+});
+
 // API Routes
 const authRoutes = require('./routes/authRoutes');
 

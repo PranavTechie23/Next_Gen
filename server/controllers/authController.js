@@ -6,10 +6,10 @@ const jwt = require('jsonwebtoken');
 
 // --- Register TPO Admin ---
 exports.registerAdmin = async (req, res) => {
-    const { 
-        name, email, password, phone, employee_code, 
-        institution_name, institution_code, institution_address, 
-        adminKey 
+    const {
+        name, email, password, phone, employee_code,
+        institution_name, institution_code, institution_address,
+        adminKey
     } = req.body;
 
 
@@ -60,26 +60,26 @@ exports.registerAdmin = async (req, res) => {
         if (existingInst.length > 0) {
             // Option A: Link to existing institution
             // institution_id = existingInst[0].id;
-             
+
             // Option B: Error out (Since we want 1 TPO Admin per institute, and usually 1 Registration creates the institute)
             // But what if TPO Admin implementation allows adding more admins later?
             // For now, let's assume we use the existing one if code matches, OR we can error.
             // Given "only one tpo admin registration allowed for one institute", if the institution exists, 
             // it likely already has an admin (or was created manually).
-            
+
             // Let's check if it has an admin
             institution_id = existingInst[0].id;
-            
+
             const [existingAdmin] = await connection.execute(
                 'SELECT * FROM users WHERE institution_id = ? AND role = "TPO_ADMIN"',
                 [institution_id]
             );
 
             if (existingAdmin.length > 0) {
-                 await connection.rollback();
-                 return res.status(400).json({ message: "Institution already has a TPO Admin registered." });
+                await connection.rollback();
+                return res.status(400).json({ message: "Institution already has a TPO Admin registered." });
             }
-            
+
         } else {
             // Create New Institution
             const [instResult] = await connection.execute(
@@ -178,11 +178,11 @@ exports.login = async (req, res) => {
             const [adminProfile] = await connection.execute('SELECT name FROM tpo_admins WHERE user_id = ?', [user.id]);
             if (adminProfile.length > 0) profile = adminProfile[0];
         } else if (user.role === 'TPO_HEAD') {
-             const [headProfile] = await connection.execute('SELECT name, department_id FROM tpo_heads WHERE user_id = ?', [user.id]);
-             if (headProfile.length > 0) profile = headProfile[0];
+            const [headProfile] = await connection.execute('SELECT name, department_id FROM tpo_heads WHERE user_id = ?', [user.id]);
+            if (headProfile.length > 0) profile = headProfile[0];
         } else if (user.role === 'STUDENT') {
-             const [studentProfile] = await connection.execute('SELECT roll_number, department_id, is_placed FROM students WHERE user_id = ?', [user.id]);
-             if (studentProfile.length > 0) profile = studentProfile[0];
+            const [studentProfile] = await connection.execute('SELECT roll_number, department_id, is_placed FROM students WHERE user_id = ?', [user.id]);
+            if (studentProfile.length > 0) profile = studentProfile[0];
         }
 
         // 8. Set Cookie
@@ -205,7 +205,9 @@ exports.login = async (req, res) => {
 
     } catch (error) {
         console.error("Error in login:", error);
-        res.status(500).json({ message: "Server Error during login." });
+        console.error("Error Message:", error.message);
+        console.error("Error Stack:", error.stack);
+        res.status(500).json({ message: "Server Error during login.", error: error.message });
     } finally {
         connection.release();
     }
@@ -213,7 +215,7 @@ exports.login = async (req, res) => {
 
 // --- Logout (Blacklist Token + Clear Cookie) ---
 exports.logout = async (req, res) => {
-    const token = req.token || req.cookies?.token; 
+    const token = req.token || req.cookies?.token;
 
     if (!token) {
         return res.status(400).json({ message: "No token provided." });
@@ -224,11 +226,11 @@ exports.logout = async (req, res) => {
     try {
         const decoded = jwt.decode(token);
         if (decoded) {
-            const expiry = new Date(decoded.exp * 1000); 
+            const expiry = new Date(decoded.exp * 1000);
 
             await connection.execute(
                 'INSERT INTO token_blacklist (user_id, token, expiry) VALUES (?, ?, ?)',
-                [req.user ? req.user.id : decoded.id, token, expiry] 
+                [req.user ? req.user.id : decoded.id, token, expiry]
             );
         }
 
@@ -307,15 +309,15 @@ exports.requestPasswordReset = async (req, res) => {
 
         try {
             if (process.env.SMTP_EMAIL && process.env.SMTP_PASSWORD) {
-                 await transporter.sendMail(mailOptions);
-                 res.json({ message: "Password reset link sent to your email." });
+                await transporter.sendMail(mailOptions);
+                res.json({ message: "Password reset link sent to your email." });
             } else {
-                 console.log(`[MOCK EMAIL] To: ${email}, OTP: ${otp}, Link: ${resetLink}`);
-                 res.json({ message: "Password reset generated. Check server logs." });
+                console.log(`[MOCK EMAIL] To: ${email}, OTP: ${otp}, Link: ${resetLink}`);
+                res.json({ message: "Password reset generated. Check server logs." });
             }
         } catch (emailError) {
-             console.error("Email sending failed:", emailError);
-             res.status(500).json({ message: "Error sending email." });
+            console.error("Email sending failed:", emailError);
+            res.status(500).json({ message: "Error sending email." });
         }
 
     } catch (error) {
