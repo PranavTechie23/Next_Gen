@@ -1,0 +1,11 @@
+roll_number,email,department_id,current_cgpa,active_backlogs,tenth_marks,twelfth_marks
+CSE26001,aditi.sharma@college.edu,1,8.8,0,92.5,89.0
+CSE26002,rahul.verma@college.edu,1,7.4,1,81.0,76.5
+CSE26003,priya.patel@college.edu,1,9.2,0,95.0,91.2
+IT26001,rohan.singh@college.edu,2,8.1,0,85.0,82.0
+IT26002,neha.gupta@college.edu,2,6.9,2,78.5,71.0
+ECE26001,karan.malhotra@college.edu,3,7.8,0,88.0,84.5
+ECE26002,sneha.joshi@college.edu,3,8.5,0,90.5,87.5
+EEE26001,vikram.rathore@college.edu,4,7.1,1,76.0,74.0
+ME26001,arjun.nair@college.edu,5,8.0,0,82.5,80.0
+CE26001,pooja.desai@college.edu,6,8.4,0,86.0,83.5
