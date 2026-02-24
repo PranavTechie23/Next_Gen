@@ -22,8 +22,12 @@ const uploadStudents = async (req, res) => {
         const sheetData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
         if (!sheetData || sheetData.length === 0) {
+            console.log("[DEV] Parsed Excel data is empty.");
             return res.status(400).json({ message: "The uploaded Excel file is empty." });
         }
+        
+        console.log(`[DEV] Parsed ${sheetData.length} rows from Excel file.`);
+        // console.log("[DEV] First row sample:", sheetData[0]); // Optional: log the first row to see headers
 
         let createdCount = 0;
         let updatedCount = 0;
@@ -31,6 +35,18 @@ const uploadStudents = async (req, res) => {
         
         // Fetch institution_id from the authenticated user (TPO_HEAD) if applicable, or fallback to null/1
         const institutionId = req.user && req.user.institution_id ? req.user.institution_id : null;
+
+        const userId = req.user.id;
+        const [headResult] = await db.execute(
+            'SELECT department_id FROM tpo_heads WHERE user_id = ?',
+            [userId]
+        );
+
+        if (headResult.length === 0) {
+            return res.status(403).json({ message: "Access denied. Not a valid department head." });
+        }
+
+        const headDeptId = headResult[0].department_id;
 
         // 2. Get DB connection for transactions to ensure atomicity
         const connection = await db.getConnection();
@@ -41,29 +57,19 @@ const uploadStudents = async (req, res) => {
             // 3. Loop through the parsed JSON data
             for (const row of sheetData) {
                 // Extract expected columns based on format
-                const {
-                    roll_number,
-                    email,
-                    department_id,
-                    current_cgpa,
-                    active_backlogs,
-                    tenth_marks,
-                    twelfth_marks
-                } = row;
+                const roll_number = row['roll_number'] || row['Roll Number'] || row['Roll_Number'];
+                const email = row['email'] || row['Email'];
+                const department_id = headDeptId; // Force to TPO_HEAD's department
+                const current_cgpa = row['current_cgpa'] || row['Current CGPA'] || row['CGPA'];
+                const active_backlogs = row['active_backlogs'] || row['Active Backlogs'] || row['Backlogs'];
+                const tenth_marks = row['tenth_marks'] || row['10th Marks'];
+                const twelfth_marks = row['twelfth_marks'] || row['12th Marks'];
 
-                if (!roll_number) continue; // Skip rows that don't have a roll number
+                console.log(`[DEV] Processing row -> Roll: ${roll_number}, Email: ${email}, Dept: ${department_id}`);
 
-                // 3.5 Check if department exists to avoid foreign key constraint errors
-                if (department_id) {
-                    const [existingDept] = await connection.execute(
-                        'SELECT id FROM departments WHERE id = ?',
-                        [department_id]
-                    );
-
-                    if (existingDept.length === 0) {
-                        console.warn(`Skipping row for roll_number ${roll_number} because department_id ${department_id} does not exist in the database.`);
-                        continue;
-                    }
+                if (!roll_number) {
+                    console.log("[DEV] Skipping row: Missing roll_number");
+                    continue; // Skip rows that don't have a roll number
                 }
 
                 // Check if student exists by roll_number
@@ -73,6 +79,7 @@ const uploadStudents = async (req, res) => {
                 );
 
                 if (existingStudent.length > 0) {
+                    console.log(`[DEV] Student ${roll_number} exists. Updating...`);
                     // Update existing student's academic data
                     await connection.execute(
                         `UPDATE students 
@@ -88,10 +95,12 @@ const uploadStudents = async (req, res) => {
                     );
                     updatedCount++;
                 } else {
+                    console.log(`[DEV] Creating new student: ${roll_number}`);
+                    
                     // Create new student
                     // Ensure email is provided for user creation
                     if (!email) {
-                        console.warn(`Skipping student creation for roll_number ${roll_number} because email is missing.`);
+                        console.warn(`[DEV] Skipping student creation for roll_number ${roll_number} because email is missing.`);
                         continue;
                     }
 
@@ -314,8 +323,281 @@ const getStudentDetails = async (req, res) => {
     }
 };
 
+/**
+ * Update student information (academic/admin only)
+ * PUT /api/dept/students/:id
+ */
+const updateStudent = async (req, res) => {
+    try {
+        const userId = req.user.id; // TPO_HEAD's user id
+        const studentId = req.params.id; // Student's user_id from path param
+
+        // 1. Get TPO_HEAD's department
+        const [headResult] = await db.execute(
+            'SELECT department_id FROM tpo_heads WHERE user_id = ?',
+            [userId]
+        );
+
+        if (headResult.length === 0) {
+            return res.status(403).json({ message: "Access denied. Not a valid department head." });
+        }
+
+        const deptId = headResult[0].department_id;
+
+        // 2. Check if the student belongs to this department
+        const [studentCheck] = await db.execute(
+            'SELECT user_id FROM students WHERE user_id = ? AND department_id = ?',
+            [studentId, deptId]
+        );
+
+        if (studentCheck.length === 0) {
+            return res.status(404).json({ message: "Student not found or does not belong to your department." });
+        }
+
+        // 3. Extract data to update (only non-subjective)
+        const { 
+            current_cgpa, 
+            active_backlogs, 
+            tenth_marks, 
+            twelfth_marks, 
+            is_academic_data_locked, 
+            is_placed, 
+            current_package_value, 
+            is_debarred, 
+            debar_reason, 
+            debar_lift_date 
+        } = req.body;
+
+        const updateFields = [];
+        const updateValues = [];
+
+        const addField = (fieldName, value) => {
+            if (value !== undefined) {
+                updateFields.push(`${fieldName} = ?`);
+                updateValues.push(value);
+            }
+        };
+
+        addField('current_cgpa', current_cgpa);
+        addField('active_backlogs', active_backlogs);
+        addField('tenth_marks', tenth_marks);
+        addField('twelfth_marks', twelfth_marks);
+        addField('is_academic_data_locked', is_academic_data_locked);
+        addField('is_placed', is_placed);
+        addField('current_package_value', current_package_value);
+        addField('is_debarred', is_debarred);
+        addField('debar_reason', debar_reason);
+        addField('debar_lift_date', debar_lift_date);
+
+        if (updateFields.length === 0) {
+            return res.status(400).json({ message: "No fields provided to update." });
+        }
+
+        updateValues.push(studentId);
+
+        // 4. Update the student record
+        await db.execute(
+            `UPDATE students SET ${updateFields.join(', ')} WHERE user_id = ?`,
+            updateValues
+        );
+
+        res.status(200).json({ message: "Student information updated successfully." });
+
+    } catch (error) {
+        console.error("Error updating student details:", error);
+        res.status(500).json({ message: "Internal server error while updating student details" });
+    }
+};
+
+/**
+ * Manually create single or bulk students via JSON body
+ * POST /api/dept/students
+ */
+const createStudentsManually = async (req, res) => {
+    try {
+        const { students } = req.body;
+
+        if (!students || !Array.isArray(students) || students.length === 0) {
+            return res.status(400).json({ message: "Please provide an array of students to create." });
+        }
+
+        let createdCount = 0;
+        let updatedCount = 0;
+        const emailsToSend = [];
+        const errors = [];
+        
+        // Fetch institution_id from the authenticated user (TPO_HEAD) if applicable, or fallback to null/1
+        const institutionId = req.user && req.user.institution_id ? req.user.institution_id : null;
+
+        const userId = req.user.id;
+        const [headResult] = await db.execute(
+            'SELECT department_id FROM tpo_heads WHERE user_id = ?',
+            [userId]
+        );
+
+        if (headResult.length === 0) {
+            return res.status(403).json({ message: "Access denied. Not a valid department head." });
+        }
+
+        const headDeptId = headResult[0].department_id;
+
+        // Get DB connection for transactions to ensure atomicity
+        const connection = await db.getConnection();
+        
+        try {
+            await connection.beginTransaction();
+
+            for (let i = 0; i < students.length; i++) {
+                const student = students[i];
+                const { 
+                    roll_number, 
+                    email, 
+                    current_cgpa, 
+                    active_backlogs, 
+                    tenth_marks, 
+                    twelfth_marks 
+                } = student;
+
+                if (!roll_number || !email) {
+                    errors.push({ index: i, error: "Missing required fields (roll_number or email) for this student." });
+                    continue;
+                }
+
+                // Force department to be the TPO_HEAD's department
+                const department_id = headDeptId;
+
+                // Check if student exists by roll_number
+                const [existingStudent] = await connection.execute(
+                    'SELECT user_id FROM students WHERE roll_number = ?',
+                    [roll_number]
+                );
+
+                if (existingStudent.length > 0) {
+                    // Update existing student's academic data
+                    await connection.execute(
+                        `UPDATE students 
+                         SET current_cgpa = ?, active_backlogs = ?, tenth_marks = ?, twelfth_marks = ?
+                         WHERE roll_number = ?`,
+                        [
+                            current_cgpa !== undefined ? current_cgpa : null, 
+                            active_backlogs !== undefined ? active_backlogs : 0, 
+                            tenth_marks !== undefined ? tenth_marks : null, 
+                            twelfth_marks !== undefined ? twelfth_marks : null, 
+                            roll_number
+                        ]
+                    );
+                    updatedCount++;
+                } else {
+                    // Create new student
+                    // A. Insert into users table
+                    const temporaryPassword = crypto.randomBytes(4).toString('hex');
+                    const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+
+                    // Ensure email is unique
+                    const [existingEmail] = await connection.execute(
+                        'SELECT id FROM users WHERE email = ?',
+                        [email]
+                    );
+
+                    if (existingEmail.length > 0) {
+                         errors.push({ index: i, email: email, error: "Email is already registered." });
+                         continue;
+                    }
+
+
+                    const [userResult] = await connection.execute(
+                        `INSERT INTO users (institution_id, email, password_hash, role) 
+                         VALUES (?, ?, ?, 'STUDENT')`,
+                        [institutionId, email, hashedPassword]
+                    );
+
+                    const newUserId = userResult.insertId;
+
+                    // B. Insert into students table
+                    await connection.execute(
+                        `INSERT INTO students (user_id, roll_number, department_id, current_cgpa, active_backlogs, tenth_marks, twelfth_marks)
+                         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                        [
+                            newUserId, 
+                            roll_number, 
+                            department_id, 
+                            current_cgpa !== undefined ? current_cgpa : null, 
+                            active_backlogs !== undefined ? active_backlogs : 0, 
+                            tenth_marks !== undefined ? tenth_marks : null, 
+                            twelfth_marks !== undefined ? twelfth_marks : null
+                        ]
+                    );
+
+                    // C. Insert empty student profile
+                    await connection.execute(
+                        `INSERT INTO student_profiles (student_id, resume_url, linkedin_url, github_url, address)
+                         VALUES (?, NULL, NULL, NULL, NULL)`,
+                        [newUserId]
+                    );
+
+                    emailsToSend.push({ email, roll_number, temporaryPassword });
+                    createdCount++;
+                }
+            }
+
+            // Commit transaction
+            await connection.commit();
+            
+            // Send emails
+            let emailsSentCount = 0;
+            for (const studentData of emailsToSend) {
+                const emailSubject = 'Your Next Gen PBL Student Account Credentials';
+                const emailHtml = `
+                    <h2>Welcome to Next Gen PBL System</h2>
+                    <p>Hello ${studentData.roll_number},</p>
+                    <p>Your Student account has been successfully created.</p>
+                    <p>Here are your login credentials:</p>
+                    <ul>
+                        <li><strong>Email:</strong> ${studentData.email}</li>
+                        <li><strong>Temporary Password:</strong> ${studentData.temporaryPassword}</li>
+                    </ul>
+                    <p>Please log in and change your password as soon as possible.</p>
+                    <p>Best regards,<br>Next Gen PBL Team</p>
+                `;
+
+                const emailSent = await sendEmail({
+                    to: studentData.email,
+                    subject: emailSubject,
+                    html: emailHtml
+                });
+
+                if (emailSent) {
+                    emailsSentCount++;
+                } else {
+                    console.warn("User created but failed to send email to:", studentData.email);
+                }
+            }
+
+            res.status(200).json({
+                message: "Manual student creation process completed",
+                created: createdCount,
+                updated: updatedCount,
+                emails_sent: emailsSentCount,
+                errors: errors.length > 0 ? errors : undefined
+            });
+
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+
+    } catch (error) {
+        console.error("Error in createStudentsManually:", error);
+        res.status(500).json({ message: "Internal server error during manual student creation" });
+    }
+};
+
 module.exports = {
     uploadStudents,
     getDepartmentStudents,
-    getStudentDetails
+    getStudentDetails,
+    updateStudent,
+    createStudentsManually
 };
