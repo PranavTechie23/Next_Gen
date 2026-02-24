@@ -104,3 +104,6 @@ temp/
 *.db
 *.sqlite
 *.sqlite3
+Contents/INVESTOR_README.md
+Contents/INVESTOR_PITCH.md
+Contents/BUSINESS_ROADMAP.md

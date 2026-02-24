@@ -56,13 +56,8 @@ export default function CookiePolicy() {
                 Back
               </button>
               <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
-              <div className="flex items-center gap-4">
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-orange-600 rounded-xl blur-xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
-                  <div className="relative w-12 h-12 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center shadow-lg border border-slate-200 dark:border-white/10">
-                    <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-8 h-8 object-contain" />
-                  </div>
-                </div>
+              <div className="flex items-center gap-0">
+                <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
                 <div className="hidden xs:flex flex-col">
                   <span className="font-black text-xl bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent leading-none">NextGen</span>
                   <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Cookie Policy</span>

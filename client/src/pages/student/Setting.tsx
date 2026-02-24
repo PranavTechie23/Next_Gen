@@ -620,13 +620,8 @@ export default function StudentSettings(props: any) {
                     Back
                   </button>
                   <div className={`h-10 w-px ${isDark ? 'bg-white/10' : 'bg-slate-300'} hidden sm:block`}></div>
-                  <div className="flex items-center gap-6">
-                    <div className="relative group">
-                      <div className="absolute inset-0 bg-blue-600 rounded-2xl blur-xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                      <div className={`relative w-12 h-12 ${isDark ? 'bg-white dark:bg-[#1a1a2e] border-white/10' : 'bg-white border-slate-200'} rounded-2xl flex items-center justify-center shadow-xl border group-hover:scale-110 transition-transform duration-500`}>
-                        <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-8 h-8 object-contain" />
-                      </div>
-                    </div>
+                  <div className="flex items-center gap-0">
+                    <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-14 w-14 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
                     <div className="flex flex-col -gap-1">
                       <span className="font-black text-2xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-tighter">NextGen</span>
                       <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Student Settings</span>

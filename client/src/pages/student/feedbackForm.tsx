@@ -143,7 +143,7 @@ export default function StudentFeedbackForm(props: any) {
 
         {/* Progress Steps */}
         <div className={`mb-8 p-6 rounded-[2rem] transition-all duration-300 ${darkMode
-          ? 'bg-gradient-to-r from-slate-900/50 to-slate-800/50 backdrop-blur-xl border-2 border-slate-700/50'
+          ? 'bg-gradient-to-r from-black/50 to-black/50 backdrop-blur-xl border-2 border-slate-700/50'
           : 'bg-white/80 backdrop-blur-3xl border-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.02)]'
           }`}>
           <div className="flex justify-between items-center">
@@ -152,7 +152,7 @@ export default function StudentFeedbackForm(props: any) {
                 <div className="flex flex-col items-center flex-1">
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${currentStep >= step.num
                     ? darkMode
-                      ? 'bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg shadow-blue-500/50'
+                      ? 'bg-gradient-to-br from-black to-black shadow-lg shadow-blue-500/50'
                       : 'bg-gradient-to-br from-blue-500 to-purple-500 shadow-lg'
                     : darkMode
                       ? 'bg-slate-800 border-2 border-slate-700'
@@ -174,7 +174,7 @@ export default function StudentFeedbackForm(props: any) {
                 {idx < steps.length - 1 && (
                   <div className={`h-1 flex-1 mx-2 rounded-full transition-all duration-300 ${currentStep > step.num
                     ? darkMode
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600'
+                      ? 'bg-gradient-to-r from-black to-black'
                       : 'bg-gradient-to-r from-blue-500 to-purple-500'
                     : darkMode
                       ? 'bg-slate-800'
@@ -188,7 +188,7 @@ export default function StudentFeedbackForm(props: any) {
 
         {/* Main Form Card */}
         <Card className={`transition-all duration-500 overflow-hidden rounded-[2.5rem] ${darkMode
-          ? 'bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-xl border-2 border-slate-700/50 shadow-2xl shadow-black/50'
+          ? 'bg-gradient-to-br from-black/80 to-black/80 backdrop-blur-xl border-2 border-slate-700/50 shadow-2xl shadow-black/50'
           : 'bg-white/80 backdrop-blur-3xl border-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.02)]'
           }`}>
           <CardContent className="p-6 sm:p-10 lg:p-12">
@@ -200,7 +200,7 @@ export default function StudentFeedbackForm(props: any) {
                   borderColor: darkMode ? 'rgb(51 65 85 / 0.5)' : 'rgb(229 231 235)'
                 }}>
                   <div className={`p-4 rounded-2xl ${darkMode
-                    ? 'bg-gradient-to-br from-blue-600 to-blue-700 shadow-xl shadow-blue-900/50'
+                    ? 'bg-gradient-to-br from-black to-black shadow-xl shadow-blue-900/50'
                     : 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg'
                     }`}>
                     <User className="w-7 h-7 text-white" />
@@ -222,8 +222,8 @@ export default function StudentFeedbackForm(props: any) {
                       value={formData.studentName}
                       onChange={(e) => handleChange("studentName", e.target.value)}
                       className={`h-14 text-lg font-black rounded-2xl transition-all ${darkMode
-                        ? 'bg-slate-800/50 border-2 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20'
-                        : 'bg-slate-50 border-2 border-slate-100 text-slate-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 shadow-sm'
+                        ? 'bg-slate-800/50 border-2 border-slate-700 text-white placeholder:text-slate-500 focus:border-black focus:ring-4 focus:ring-black/20'
+                        : 'bg-slate-50 border-2 border-slate-100 text-slate-900 focus:border-black focus:ring-4 focus:ring-black/20 shadow-sm'
                         }`}
                       placeholder="Enter your full name"
                     />
@@ -237,8 +237,8 @@ export default function StudentFeedbackForm(props: any) {
                       value={formData.studentId}
                       onChange={(e) => handleChange("studentId", e.target.value)}
                       className={`h-14 text-lg font-semibold rounded-xl transition-all ${darkMode
-                        ? 'bg-slate-800/50 border-2 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20'
-                        : 'bg-white border-2 border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20'
+                        ? 'bg-slate-800/50 border-2 border-slate-700 text-white placeholder:text-slate-500 focus:border-black focus:ring-4 focus:ring-black/20'
+                        : 'bg-white border-2 border-gray-300 text-gray-900 focus:border-black focus:ring-4 focus:ring-black/20'
                         }`}
                       placeholder="e.g., CSE-2021-001"
                     />
@@ -253,8 +253,8 @@ export default function StudentFeedbackForm(props: any) {
                       value={formData.email}
                       onChange={(e) => handleChange("email", e.target.value)}
                       className={`h-14 text-lg font-semibold rounded-xl transition-all ${darkMode
-                        ? 'bg-slate-800/50 border-2 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20'
-                        : 'bg-white border-2 border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20'
+                        ? 'bg-slate-800/50 border-2 border-slate-700 text-white placeholder:text-slate-500 focus:border-black focus:ring-4 focus:ring-black/20'
+                        : 'bg-white border-2 border-gray-300 text-gray-900 focus:border-black focus:ring-4 focus:ring-black/20'
                         }`}
                       placeholder="your.email@college.edu"
                     />
@@ -280,7 +280,7 @@ export default function StudentFeedbackForm(props: any) {
                         }`}>
                         <SelectValue placeholder="Select your branch" />
                       </SelectTrigger>
-                      <SelectContent className={darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}>
+                      <SelectContent className={darkMode ? 'bg-slate-800 border-black ' : 'bg-white border-gray-200'}>
                         {["Computer Science", "Electronics", "Mechanical", "Electrical", "IT", "Civil"].map(b => (
                           <SelectItem key={b} value={b} className={`text-lg font-semibold ${darkMode ? 'text-white hover:bg-slate-700 focus:bg-slate-700' : 'text-gray-900'}`}>{b}</SelectItem>
                         ))}
@@ -296,8 +296,8 @@ export default function StudentFeedbackForm(props: any) {
                       value={formData.cgpa}
                       onChange={(e) => handleChange("cgpa", e.target.value)}
                       className={`h-14 text-lg font-semibold rounded-xl transition-all ${darkMode
-                        ? 'bg-slate-800/50 border-2 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20'
-                        : 'bg-white border-2 border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20'
+                        ? 'bg-slate-800/50 border-2 border-black text-white placeholder:text-slate-500 focus:border-black focus:ring-4 focus:ring-black/20'
+                        : 'bg-white border-2 border-gray-300 text-gray-900 focus:border-black focus:ring-4 focus:ring-black/20'
                         }`}
                       placeholder="e.g., 8.5"
                     />
@@ -560,7 +560,7 @@ export default function StudentFeedbackForm(props: any) {
           </CardContent>
 
           {/* Navigation Buttons */}
-          <div className={`p-6 sm:p-8 border-t-2 flex justify-between items-center ${darkMode ? 'border-slate-800 bg-slate-900/50' : 'border-gray-200 bg-gray-50'
+          <div className={`p-6 sm:p-8 border-t-2 flex justify-between items-center ${darkMode ? 'border-black bg-black/50' : 'border-gray-200 bg-gray-50'
             }`}>
             <Button
               type="button"
@@ -569,8 +569,8 @@ export default function StudentFeedbackForm(props: any) {
               className={`h-14 px-8 text-lg font-bold rounded-xl transition-all ${currentStep === 1
                 ? 'opacity-50 cursor-not-allowed'
                 : darkMode
-                  ? 'bg-slate-800 hover:bg-slate-700 text-white border-2 border-slate-700'
-                  : 'bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300'
+                  ? 'bg-slate-800 hover:bg-slate-700 text-white border-2 border-slate-700 hover:bg-white hover:text-black'
+                  : 'bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 hover:bg-pink-500 hover:text-white'
                 }`}
             >
               <ArrowLeft className="w-5 h-5 mr-2" />

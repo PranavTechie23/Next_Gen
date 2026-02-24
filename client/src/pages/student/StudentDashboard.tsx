@@ -1,4 +1,5 @@
-import { useState, Fragment } from "react";
+import { useState, Fragment, useRef, useEffect } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,17 +8,27 @@ import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 // Import all student feature components
 import Careers from "@/pages/student/careers";
 import StudentWebinar from "@/pages/student/webinars";
 import BlogPage from "@/pages/student/blog";
-import FeaturesPage from "@/pages/student/features";
-import CaseStudiesPage from "@/pages/student/caseStudies";
 import CorporateNewsPage from "@/pages/student/CorporateNews";
-import WellbeingHub from "@/pages/student/wellBeing";
-import StudentPricing from "@/pages/student/pricing";
-import RefundPolicy from "@/pages/student/refundPolicy";
 import StudentFeedbackForm from "@/pages/student/feedbackForm";
+import AssessmentHub from "@/pages/student/AssessmentHub";
+import CompanyWiseKit from "@/pages/student/CompanyWiseKit";
+import { getPlacementDrives, computeDriveMatch } from "@/data/placementDrives";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -27,24 +38,53 @@ import {
   LogOut, Settings, TrendingUp, AlertCircle, CheckCircle, Target, Award, BookOpen,
   Briefcase, Code, GraduationCap, Zap, Star, Users, Shield, Globe, Cloud, Cpu,
   BarChart as BarChartIcon, Lock, Upload, Database, Terminal, Server, Palette,
-  Smartphone, Monitor, Clock, MessageSquare, ChevronRight, ExternalLink, Download,
+  Smartphone, Monitor, Clock, MessageSquare, ChevronRight, ChevronLeft, ExternalLink, Download,
   Bell, User, ArrowUpRight, ArrowDownRight, Rocket, Brain, Trophy, Building2,
   FileText, Activity, CheckSquare, Circle, Plus, Search, Filter, Eye, Play,
   CheckCircle2, XCircle, AlertTriangle, Flame, Mail, Phone, MapPin, Github,
   Linkedin, Twitter, Instagram, Share2, Bookmark, LineChart as LineChartIcon, Calendar,
   TrendingDown, Edit, Upload as UploadIcon, Download as DownloadIcon, LayoutDashboard,
   Users as UsersIcon, Briefcase as BriefcaseIcon, Palette as PaletteIcon,
-  Newspaper, Heart, DollarSign, FileCheck, Sparkles, HelpCircle
+  Newspaper, DollarSign, CreditCard, FileCheck, Sparkles, HelpCircle, Menu, PanelLeft
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function StudentDashboard() {
   const [, navigate] = useLocation();
   const { theme } = useTheme();
-  const [activeTab, setActiveTab] = useState("overview");
+  // Initialize tab from URL search secondary fallback to localStorage
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlTab = params.get("tab");
+    if (urlTab) return urlTab;
+    return localStorage.getItem("student-active-tab") || "overview";
+  });
+
+  // Sync tab state to URL and localStorage
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tab") !== activeTab) {
+      params.set("tab", activeTab);
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState({ ...window.history.state }, "", newUrl);
+    }
+    localStorage.setItem("student-active-tab", activeTab);
+  }, [activeTab]);
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState(null);
   const [viewMode, setViewMode] = useState("radar");
+  const [showProfileChecklist, setShowProfileChecklist] = useState(true);
   const isDark = theme === "dark";
+  const mainContentRef = useRef<HTMLElement>(null);
+
+  // Scroll to top when activeTab changes
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTo(0, 0);
+    }
+  }, [activeTab]);
 
   // Student Profile Data
   const studentProfile = {
@@ -53,10 +93,66 @@ export default function StudentDashboard() {
     email: "rahul.sharma@college.edu",
     phone: "+91 98765 43210",
     branch: "Computer Science & Engineering",
+    college: "Northeastern University",
+    bio: "Passionate about building scalable web applications and AI-driven solutions.",
     year: "Final Year",
     cgpa: 8.5,
-    avatar: "RS"
+    avatar: ""
   };
+
+  const resumeInputRef = useRef<HTMLInputElement>(null);
+
+  const handleResumeClick = () => {
+    resumeInputRef.current?.click();
+  };
+  interface UserProfile {
+    skills: string[];
+    interests: string[];
+    learningGoals: string[];
+  }
+  const onResumeFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== "application/pdf") {
+        toast.error("Please upload a PDF file");
+        return;
+      }
+      toast.success(`Resume "${file.name}" uploaded successfully!`);
+      // Here you would typically handle the actual file upload to a server
+    }
+  };
+  const MOCK_USER: UserProfile = {
+    skills: ['React', 'TypeScript', 'Node.js', 'Python', 'JavaScript'],
+    interests: ['Web Development', 'AI/ML', 'Cloud', 'DevOps'],
+    learningGoals: ['Next.js', 'Docker', 'AWS']
+  };
+  const profileChecklist = [
+    {
+      label: "Setup your profile",
+      completed: !!(studentProfile.name && studentProfile.phone),
+      path: "/student/setting"
+    },
+    {
+      label: "Add your profile photo",
+      completed: studentProfile.avatar.startsWith("/"),
+      path: "/student/setting"
+    },
+    {
+      label: "Add your Bio",
+      completed: !!studentProfile.bio,
+      path: "/student/setting"
+    },
+    {
+      label: "Add your College",
+      completed: !!studentProfile.college,
+      path: "/student/setting"
+    },
+    {
+      label: "Connect your first profile",
+      completed: true,
+      path: "/student/setting"
+    },
+  ];
 
   // Evolution Track Data
   const evolutionData = [
@@ -81,8 +177,8 @@ export default function StudentDashboard() {
     },
     {
       label: "Skills Mastered",
-      value: "12/18",
-      change: "+3",
+      value: "67%",
+      change: "+17%",
       trend: "up",
       icon: Award,
       color: "bg-gradient-to-br from-green-500 to-emerald-600",
@@ -386,45 +482,15 @@ export default function StudentDashboard() {
     }
   ];
 
-  // Enhanced Company Matches
-  const companyMatches = [
-    {
-      name: "Google",
-      match: 65,
-      level: "L3 SDE",
-      salary: "₹25-30 LPA",
-      requirements: ["System Design", "Advanced DSA"],
-      logo: "G",
-      color: "bg-gradient-to-br from-blue-500 to-green-500"
-    },
-    {
-      name: "Amazon",
-      match: 78,
-      level: "SDE I",
-      salary: "₹20-25 LPA",
-      requirements: ["DSA", "OOP", "Leadership"],
-      logo: "A",
-      color: "bg-gradient-to-br from-orange-500 to-yellow-500"
-    },
-    {
-      name: "Microsoft",
-      match: 72,
-      level: "SDE",
-      salary: "₹22-28 LPA",
-      requirements: ["Cloud", "Full Stack", "Problem Solving"],
-      logo: "M",
-      color: "bg-gradient-to-br from-blue-600 to-green-600"
-    },
-    {
-      name: "TCS",
-      match: 92,
-      level: "System Engineer",
-      salary: "₹4-7 LPA",
-      requirements: ["Communication", "Basic Coding"],
-      logo: "T",
-      color: "bg-gradient-to-br from-blue-400 to-blue-600"
-    }
-  ];
+  // Placement drives from TPO (ticket creation) — shown as "Drives" with match %
+  const placementDrives = getPlacementDrives();
+  const studentSkills = MOCK_USER?.skills ?? [];
+  const studentBacklogs = 0; // extend studentProfile if you track backlogs
+  const drivesWithMatch = placementDrives.map((d, idx) => ({
+    ...d,
+    match: computeDriveMatch(d, studentProfile.cgpa, studentSkills, studentBacklogs),
+    color: ["bg-gradient-to-br from-blue-500 to-green-500", "bg-gradient-to-br from-orange-500 to-yellow-500", "bg-gradient-to-br from-blue-600 to-green-600", "bg-gradient-to-br from-blue-400 to-blue-600", "bg-gradient-to-br from-purple-500 to-pink-500"][idx % 5],
+  }));
 
   // Achievements
   const achievements = [
@@ -553,7 +619,7 @@ export default function StudentDashboard() {
       description: "Solve coding problems",
       icon: Code,
       color: "from-blue-500 to-blue-600",
-      action: () => console.log("Practice")
+      action: () => setActiveTab("skills")
     },
     {
       title: "Mock Interview",
@@ -563,8 +629,8 @@ export default function StudentDashboard() {
       action: () => console.log("Mock Interview")
     },
     {
-      title: "View Jobs",
-      description: "Browse opportunities",
+      title: "View Drives",
+      description: "Placement drives from TPO",
       icon: Briefcase,
       color: "from-green-500 to-green-600",
       action: () => setActiveTab("opportunities")
@@ -629,126 +695,392 @@ export default function StudentDashboard() {
   const sidebarLinks = [
     { id: "overview", label: "Dashboard", icon: LayoutDashboard },
     { id: "skills", label: "Skills", icon: PaletteIcon },
-    { id: "opportunities", label: "Jobs", icon: BriefcaseIcon },
+    { id: "opportunities", label: "Drives", icon: BriefcaseIcon },
     { id: "learning", label: "Mentorship", icon: UsersIcon },
-    { id: "progress", label: "Profile", icon: User },
-    { id: "careers", label: "Careers", icon: Briefcase },
+    { id: "progress", label: "Progress", icon: TrendingUp },
+
     { id: "webinars", label: "Webinars", icon: Play },
     { id: "blog", label: "Blog", icon: BookOpen },
-    { id: "features", label: "Features", icon: Sparkles },
-    { id: "caseStudies", label: "Case Studies", icon: FileText },
+
+    { id: "careers", label: "Careers", icon: Briefcase },
     { id: "corporateNews", label: "Corporate News", icon: Newspaper },
-    { id: "wellbeing", label: "Wellbeing", icon: Heart },
-    { id: "pricing", label: "Pricing", icon: DollarSign },
-    { id: "refundPolicy", label: "Refund Policy", icon: FileCheck },
+
     { id: "feedback", label: "Feedback", icon: MessageSquare },
+    { id: "assessment-hub", label: "Assessment Hub", icon: Zap },
+    { id: "company-kit", label: "Company Wise Kit", icon: Building2 },
+  ];
+
+  const sidebarSections: Array<{ title: string; ids: Array<(typeof sidebarLinks)[number]["id"]> }> = [
+    { title: "PROFILE TRACKER", ids: ["overview", "skills"] },
+    { title: "QUESTION TRACKER", ids: ["opportunities", "learning"] },
+    { title: "RESOURCES", ids: ["progress", "careers", "webinars", "blog", "corporateNews"] },
+    { title: "COMMUNITY", ids: ["feedback"] },
+    { title: "PRACTICE & PREP", ids: ["assessment-hub", "company-kit"] },
   ];
 
   return (
-    <div className={`flex h-screen ${isDark ? "bg-black" : "bg-background"} text-foreground font-sans selection:bg-blue-500/30 overflow-hidden`}>
-      {/* Sleek Sidebar */}
-      <aside className={`sticky top-0 h-screen z-50 transition-all duration-500 ${isSidebarOpen ? "w-72" : "w-24"} p-6 flex flex-col shrink-0 bg-transparent`}>
-        <div className={`flex-1 ${isDark ? "bg-[#0c0c14]" : "bg-sidebar/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[2.5rem] flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.05)] overflow-hidden relative group`}>
-          <div className={`absolute inset-0 bg-gradient-to-b ${isDark ? "from-blue-500/5" : "from-blue-500/5"} via-transparent ${isDark ? "to-purple-500/5" : "to-purple-500/5"} opacity-50 pointer-events-none`}></div>
-
-          <div className="p-8 pb-10 flex items-center gap-4 relative z-10 transition-all">
-            <div
-              className="w-16 h-16 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0 cursor-pointer"
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            >
-              <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
-            </div>
-            {isSidebarOpen && (
-              <div className="animate-in fade-in slide-in-from-left-2 duration-500">
-                <h2 className={`font-black text-xl ${isDark ? "text-white" : "text-gray-900"} tracking-tighter leading-none`}>Student</h2>
-                <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest mt-1 opacity-80">Career Hub</p>
-              </div>
-            )}
-          </div>
-
-          <nav className="flex-1 px-4 space-y-2 relative z-10 overflow-y-auto custom-scrollbar">
-            {sidebarLinks.map((link) => (
-              <button
-                key={link.id}
-                onClick={() => setActiveTab(link.id)}
-                className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 relative group/nav ${activeTab === link.id
-                  ? `${isDark ? "bg-white/5" : "bg-blue-50/50"} text-blue-600 ${isDark ? "shadow-[inset_0_0_20px_rgba(59,130,246,0.05)]" : "shadow-sm shadow-blue-500/5"}`
-                  : `${isDark ? "text-muted-foreground/40 hover:text-white hover:bg-white/5" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"}`
-                  }`}
-              >
-                <link.icon className={`w-5 h-5 transition-colors ${activeTab === link.id ? "text-blue-600" : isDark ? "group-hover/nav:text-white" : "group-hover/nav:text-slate-700"}`} />
-                {isSidebarOpen && <span className={`font-bold text-sm tracking-wide ${activeTab === link.id ? "text-blue-600" : ""}`}>{link.label}</span>}
-                {activeTab === link.id && (
-                  <div className="absolute left-0 w-1.5 h-8 bg-blue-600 rounded-r-full shadow-[0_0_20px_rgba(59,130,246,0.5)]"></div>
-                )}
-              </button>
-            ))}
-          </nav>
-
-          {/* Sidebar Footer */}
-          <div className={`p-6 relative z-10 border-t ${isDark ? "border-white/5" : "border-gray-200"} space-y-4`}>
-            {isSidebarOpen && (
-              <div className={`p-4 ${isDark ? "bg-white/5" : "bg-slate-50/50"} rounded-2xl ${isDark ? "border-white/5" : "border-slate-100"} group/profile cursor-pointer ${isDark ? "hover:bg-white/10" : "hover:bg-slate-100/50"} transition-all mb-2`}>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center font-black text-white shadow-lg flex-shrink-0 group-hover/profile:rotate-3 transition-transform">{studentProfile.avatar}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`font-black text-[10px] ${isDark ? "text-white" : "text-slate-900"} truncate uppercase tracking-tight`}>{studentProfile.name}</p>
-                    <p className={`text-[9px] ${isDark ? "text-muted-foreground" : "text-slate-500"} truncate opacity-60 tracking-widest uppercase font-bold`}>{studentProfile.id}</p>
+    <div className={`flex h-screen ${isDark ? "bg-black" : "bg-background"} text-foreground font-manrope selection:bg-blue-500/30 overflow-hidden relative`}>
+      {/* Premium Background Glows */}
+      {isDark && (
+        <div className="premium-glow-bg">
+          <div className="premium-glow-1" />
+          <div className="premium-glow-2" />
+          <div className="premium-glow-3" />
+        </div>
+      )}
+      {/* Mobile sidebar (drawer) */}
+      <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+        <SheetContent side="left" className={`${isDark ? "bg-[#0c0c14]" : "bg-white"} p-0 w-72 [&>button]:hidden`}>
+          <div className="h-full flex flex-col">
+            {/* Brand */}
+            <div className={`px-5 py-5 border-b ${isDark ? "border-white/10" : "border-slate-200"} flex items-center justify-between`}>
+              <div className="flex items-center gap-0 group cursor-pointer" onClick={() => navigate("/")}>
+                <img
+                  src="/NG/NextGen_light.png"
+                  alt="NextGen Logo"
+                  className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="min-w-0 flex flex-col justify-center">
+                  <div className="font-black text-base bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
+                    NextGen
                   </div>
+                  <p className={`text-[9px] font-bold uppercase tracking-widest mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                    AI-Driven
+                  </p>
                 </div>
               </div>
-            )}
-
-            <div className="flex flex-col gap-2">
               <button
-                onClick={() => navigate("/student/setting")}
-                className={`w-full flex items-center gap-4 p-4 rounded-2xl text-muted-foreground/40 hover:text-blue-400 hover:bg-blue-400/5 transition-all group/settings ${!isSidebarOpen && 'justify-center'}`}
+                type="button"
+                onClick={() => setIsMobileSidebarOpen(false)}
+                className={`h-9 w-9 rounded-lg flex items-center justify-center transition-colors ${isDark ? "hover:bg-white/10 text-slate-200" : "hover:bg-slate-100 text-slate-700"}`}
+                aria-label="Close menu"
+                title="Close menu"
               >
-                <Settings className="w-5 h-5 group-hover/settings:rotate-90 transition-transform duration-700" />
-                {isSidebarOpen && <span className="font-black text-[11px] uppercase tracking-[0.2em]">Config System</span>}
+                <ChevronLeft className="w-5 h-5" strokeWidth={2.5} />
               </button>
+            </div>
 
-              <div className={`flex items-center gap-2 ${!isSidebarOpen ? 'flex-col' : 'justify-between px-2'}`}>
-                <ThemeToggle />
-                <button
-                  onClick={() => navigate("/")}
-                  className="p-3 rounded-xl text-red-400/40 hover:text-red-400 hover:bg-red-400/10 transition-all group/logout"
-                >
-                  <LogOut className="w-5 h-5 group-hover/logout:-translate-x-1 transition-transform" />
-                </button>
-              </div>
+            {/* Links (clean sections like reference) */}
+            <nav className="flex-1 overflow-y-auto sidebar-scrollbar px-3 py-4">
+              {sidebarSections.map((section) => (
+                <div key={section.title} className="mb-4 last:mb-0">
+                  <div className={`px-2 text-[11px] font-semibold tracking-widest uppercase ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                    {section.title}
+                  </div>
+                  <div className={`mt-2 mb-2 h-px ${isDark ? "bg-white/10" : "bg-slate-200"}`} />
+                  <div className="space-y-1">
+                    {section.ids.map((id) => {
+                      const link = sidebarLinks.find((l) => l.id === id);
+                      if (!link) return null;
+                      const Icon = link.icon;
+                      const isActive = activeTab === link.id;
+                      return (
+                        <button
+                          key={link.id}
+                          onClick={() => {
+                            setActiveTab(link.id);
+                            setIsMobileSidebarOpen(false);
+                            navigate(`/student/dashboard?tab=${link.id}`);
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${isActive
+                            ? isDark
+                              ? "bg-white/10 text-blue-300"
+                              : "bg-blue-50 text-blue-700"
+                            : isDark
+                              ? "text-slate-300 hover:bg-white/10"
+                              : "text-slate-700 hover:bg-slate-100"
+                            }`}
+                        >
+                          <Icon className={`w-5 h-5 ${isActive ? (isDark ? "text-blue-300" : "text-blue-700") : (isDark ? "text-slate-400" : "text-slate-500")}`} />
+                          <span className="font-semibold text-sm">{link.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </nav>
+
+            {/* Footer */}
+            <div className={`p-4 border-t ${isDark ? "border-white/10" : "border-slate-200"} flex items-center justify-between`}>
+              <ThemeToggle />
+              <button
+                onClick={() => {
+                  localStorage.removeItem("userRole");
+                  navigate("/");
+                }}
+                className={`p-3 rounded-xl transition-colors ${isDark ? "text-red-300 hover:bg-red-500/10" : "text-red-600 hover:bg-red-50"}`}
+                title="Log out"
+                aria-label="Log out"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
             </div>
           </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Desktop Sidebar - Left */}
+      <aside className={`hidden lg:flex sticky top-0 h-screen z-50 transition-all duration-500 relative overflow-visible ${isSidebarOpen ? "w-72" : "w-[6rem]"} ${isSidebarOpen ? "p-4 pr-2" : "p-3"} flex-col shrink-0 bg-transparent`}>
+        <div className={`flex-1 min-w-0 h-full ${isDark ? "bg-[#0c0c14]" : "bg-white"} ${isDark ? "border-white/10" : "border-slate-200"} rounded-[2.5rem] flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.05)] overflow-hidden relative`}>
+          <div className={`absolute inset-0 bg-gradient-to-b ${isDark ? "from-blue-500/5" : "from-blue-500/5"} via-transparent ${isDark ? "to-purple-500/5" : "to-purple-500/5"} opacity-50 pointer-events-none`}></div>
+
+          {/* Header: brand logo & name */}
+          <div className={`flex items-center gap-0 relative z-10 transition-all flex-shrink-0 ${isSidebarOpen ? "px-5 pt-6 pb-4" : "p-3 py-6 justify-center"}`}>
+            <div
+              className="group cursor-pointer flex items-center gap-0"
+              onClick={() => navigate("/")}
+              title="NextGen AI-Driven Career Hub"
+            >
+              <img
+                src="/NG/NextGen_light.png"
+                alt="NextGen Logo"
+                className={`${isSidebarOpen ? "h-14 w-14" : "h-12 w-12"} object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110`}
+              />
+              {isSidebarOpen && (
+                <div className="min-w-0 animate-fadeIn overflow-hidden flex flex-col justify-center">
+                  <div className="font-black text-2xl tracking-tighter leading-none bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    NextGen
+                  </div>
+                  <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"} opacity-80 whitespace-nowrap`}>
+                    AI-Driven
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <nav className={`flex-1 min-w-0 flex flex-col overflow-y-auto sidebar-scrollbar pt-1 ${isSidebarOpen ? "px-3 pr-2" : "px-1.5"}`}>
+            {sidebarSections.map((section) => (
+              <div key={section.title} className={`${isSidebarOpen ? "mb-4" : "mb-2"} last:mb-0`}>
+                {isSidebarOpen && (
+                  <>
+                    <div className={`px-2 text-[11px] font-semibold tracking-widest uppercase ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                      {section.title}
+                    </div>
+                    <div className={`mt-2 mb-2 h-px ${isDark ? "bg-white/10" : "bg-slate-200"}`} />
+                  </>
+                )}
+                <div className={`${isSidebarOpen ? "space-y-1" : "space-y-1"}`}>
+                  {section.ids.map((id) => {
+                    const link = sidebarLinks.find((l) => l.id === id);
+                    if (!link) return null;
+                    const Icon = link.icon;
+                    const isActive = activeTab === link.id;
+                    return (
+                      <button
+                        key={link.id}
+                        onClick={() => {
+                          setActiveTab(link.id);
+                          navigate(`/student/dashboard?tab=${link.id}`);
+                        }}
+                        title={link.label}
+                        className={`w-full flex items-center gap-3 sm:gap-4 rounded-xl transition-all duration-200 relative flex-shrink-0 ${!isSidebarOpen ? "justify-center p-3" : "px-3 py-3"} ${isActive
+                          ? isDark
+                            ? "bg-blue-500/20 ring-1 ring-blue-400/40 text-blue-200"
+                            : "bg-blue-100 ring-1 ring-blue-200 text-blue-800"
+                          : isDark
+                            ? "text-slate-300 hover:bg-white/10"
+                            : "text-slate-700 hover:bg-slate-100"
+                          }`}
+                      >
+                        <Icon className={`flex-shrink-0 transition-colors ${isSidebarOpen ? "w-5 h-5" : "w-6 h-6"} ${isActive ? (isDark ? "text-blue-300" : "text-blue-700") : (isDark ? "text-slate-400" : "text-slate-500")}`} />
+                        {isSidebarOpen && <span className="font-semibold text-sm truncate min-w-0">{link.label}</span>}
+                        {isSidebarOpen && isActive && (
+                          <div className={`absolute left-0 w-1 h-6 rounded-r-full ${isDark ? "bg-blue-400" : "bg-blue-600"}`} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </nav>
         </div>
+
+        {/* Floating Toggle Button - Attached to Right Edge */}
+        <button
+          type="button"
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className={`absolute top-6 -right-12 z-[60] h-12 w-12 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center ${isDark
+            ? "bg-[#0c0c14] border-white/20 text-slate-300 hover:text-white"
+            : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+            }`}
+          aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          <PanelLeft className={`w-6 h-6 transition-transform duration-500 ${isSidebarOpen ? "" : "rotate-180"}`} />
+        </button>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 p-8 overflow-y-auto custom-scrollbar relative bg-transparent">
-        <div className="max-w-[1400px] mx-auto space-y-10 pb-20">
+      <main
+        ref={mainContentRef}
+        data-scroll-container
+        className={`flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar relative bg-transparent ${activeTab === "company-kit" ? "flex flex-col" : "p-4 sm:p-6 lg:p-8"}`}
+      >
+        <div className={`${activeTab === "company-kit" ? "w-full px-4 sm:px-6 lg:px-8" : "max-w-[1400px] mx-auto"} ${activeTab === "company-kit" ? "flex flex-col space-y-6 sm:space-y-8 lg:space-y-10 min-h-0" : "space-y-6 sm:space-y-8 lg:space-y-10"}`}>
 
-          <header className={`${isSidebarOpen ? 'flex' : 'flex flex-col items-center'} items-end justify-between gap-6 mb-8 text-center sm:text-left`}>
-            <div className={`${!isSidebarOpen && 'flex flex-col items-center'}`}>
-              <h1 className={`text-6xl font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight capitalize mb-2`}>
+          <header className={`flex items-center justify-between gap-4 sm:gap-6 mb-6 sm:mb-8`}>
+            {/* Desktop header space reserved for toggle when floating nearby */}
+            <div className="hidden lg:block w-16" />
+
+            <div className={`flex-1 min-w-0`}>
+              {/* Mobile hamburger */}
+              <div className="flex items-center justify-between gap-3 lg:hidden mb-3">
+                <button
+                  type="button"
+                  onClick={() => setIsMobileSidebarOpen(true)}
+                  className={`h-11 w-11 rounded-2xl flex items-center justify-center transition-colors ${isDark ? "bg-white/5 hover:bg-white/10 text-slate-200" : "bg-slate-100 hover:bg-slate-200 text-slate-800"}`}
+                  aria-label="Open menu"
+                  title="Open menu"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+                <div className={`flex-1 h-px ${isDark ? "bg-white/5" : "bg-slate-200"}`} />
+              </div>
+              <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold ${isDark ? "text-white" : "text-slate-900"} tracking-tight capitalize`}>
                 {sidebarLinks.find(l => l.id === activeTab)?.label || activeTab}
               </h1>
-              <p className={`${isDark ? "text-blue-400" : "text-blue-600"} text-base font-bold uppercase tracking-widest opacity-90`}>
+              <p className={`${isDark ? "text-blue-400" : "text-blue-600"} text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] opacity-90 mt-1 border-b-0 no-underline`}>
                 {activeTab === "overview" ? "Career Readiness Dashboard" :
                   activeTab === "skills" ? "Skill Architecture Analysis" :
-                    activeTab === "opportunities" ? "Placement Opportunities" :
+                    activeTab === "opportunities" ? "Placement Drives" :
                       activeTab === "learning" ? "Learning & Development" :
                         activeTab === "progress" ? "Progress & Milestones" :
                           activeTab === "careers" ? "Career Opportunities & Resources" :
                             activeTab === "webinars" ? "Live Learning Sessions" :
-                              activeTab === "blog" ? "Career Insights & Articles" :
-                                activeTab === "features" ? "Platform Features & Capabilities" :
-                                  activeTab === "caseStudies" ? "Success Stories & Case Studies" :
-                                    activeTab === "corporateNews" ? "Industry News & Updates" :
-                                      activeTab === "wellbeing" ? "Student Wellbeing Hub" :
-                                        activeTab === "pricing" ? "Pricing Plans & Packages" :
-                                          activeTab === "refundPolicy" ? "Refund Policy & Terms" :
-                                            activeTab === "feedback" ? "Share Your Feedback" :
-                                              "Student Portal"}
+                              activeTab === "blog" ? "Personalized content" :
+                                activeTab === "corporateNews" ? "Industry News & Updates" :
+                                  activeTab === "feedback" ? "Share Your Feedback" :
+                                    activeTab === "assessment-hub" ? "Assessment Hub — End-to-End Prep" :
+                                      activeTab === "company-kit" ? "Company Wise Problems & Tracking" :
+                                        "Student Portal"}
               </p>
+            </div>
+
+            {/* Premium Header Controls - Relocated for better accessibility */}
+            <div className="flex items-center gap-3 sm:gap-4">
+              {/* Quick access button to open Company Wise Kit tab from anywhere */}
+              {activeTab !== "company-kit" && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setActiveTab("company-kit");
+                    const params = new URLSearchParams(window.location.search);
+                    params.set("tab", "company-kit");
+                    const newUrl = `${window.location.pathname}?${params.toString()}`;
+                    window.history.replaceState({ ...window.history.state }, "", newUrl);
+                  }}
+                  className={`hidden md:flex h-11 px-6 rounded-2xl font-bold text-xs uppercase tracking-widest gap-2 transform transition-all hover:scale-105 active:scale-95 ${isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}
+                >
+                  <span>Company Wise Kit</span>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                </Button>
+              )}
+
+              <div className={`h-11 w-11 flex items-center justify-center rounded-2xl border transition-all ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}>
+                <ThemeToggle className="!h-10 !w-10 !rounded-xl border-0 bg-transparent hover:bg-transparent" />
+              </div>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className={`h-11 w-11 flex items-center justify-center rounded-2xl border transition-all relative group ${isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-white border-slate-200 text-slate-900 shadow-sm hover:bg-slate-50"}`}>
+                    <Bell className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                    <div className="absolute top-2.5 right-2.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-background animate-pulse" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" sideOffset={12} className={`w-[380px] p-0 rounded-[2rem] overflow-hidden border-0 shadow-[0_20px_50px_rgba(0,0,0,0.3)] ${isDark ? "bg-[#0c0c14]" : "bg-white"}`}>
+                  <div className={`p-6 border-b ${isDark ? "border-white/5" : "border-slate-100"}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className={`text-lg font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight`}>Profile Checklist</h3>
+                      <div className={`w-10 h-10 rounded-xl ${isDark ? "bg-blue-500/10" : "bg-blue-50"} flex items-center justify-center border ${isDark ? "border-blue-500/20" : "border-blue-100"}`}>
+                        <CheckCircle2 className={`w-5 h-5 ${isDark ? "text-blue-400" : "text-blue-600"}`} />
+                      </div>
+                    </div>
+                    <p className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"} font-bold uppercase tracking-widest`}>Complete these to unlock premium features</p>
+                  </div>
+                  <div className="p-4 space-y-2">
+                    {profileChecklist.map((item, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => navigate(item.path)}
+                        className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-300 group/item cursor-pointer border ${isDark ? "border-white/5 hover:bg-white/5 hover:border-white/10" : "border-slate-100 hover:bg-slate-50 hover:border-slate-200"}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {item.completed ? (
+                            <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
+                              <CheckCircle2 className="w-4 h-4" />
+                            </div>
+                          ) : (
+                            <div className={`w-6 h-6 rounded-full border-2 ${isDark ? "border-white/20" : "border-slate-300"} flex items-center justify-center transition-colors group-hover/item:border-blue-500/50`}>
+                              <div className="w-4 h-4 rounded-full" />
+                            </div>
+                          )}
+                          <span className={`font-bold text-xs ${item.completed ? (isDark ? "text-slate-500 line-through decoration-slate-700" : "text-slate-400 line-through decoration-slate-200") : (isDark ? "text-slate-200" : "text-slate-700")} group-hover/item:text-blue-500 transition-colors uppercase tracking-tight`}>
+                            {item.label}
+                          </span>
+                        </div>
+                        {item.completed ? (
+                          <ChevronRight className={`w-3.5 h-3.5 ${isDark ? "text-slate-600" : "text-slate-400"} transition-all duration-300 group-hover/item:translate-x-1 group-hover/item:text-blue-500`} />
+                        ) : (
+                          <ExternalLink className={`w-3.5 h-3.5 text-blue-500 opacity-0 group-hover/item:opacity-100 transition-all duration-300 transform translate-x-1`} />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <div className={`p-4 bg-slate-500/5 ${isDark ? "bg-white/5" : "bg-slate-50"} flex items-center justify-center`}>
+                    <button className={`text-[9px] font-black uppercase tracking-[0.2em] ${isDark ? "text-slate-500 hover:text-white" : "text-slate-400 hover:text-slate-900"} transition-all`}>
+                      Dismiss all notifications
+                    </button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-3 focus:outline-none group">
+                    <div className="relative">
+                      <Avatar className={`w-11 h-11 rounded-2xl border-2 transition-all group-hover:border-blue-500/50 ${isDark ? "border-white/10" : "border-white shadow-md shadow-slate-200/50"}`}>
+                        <AvatarImage src={studentProfile.avatar} />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-sm">{studentProfile.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 ${isDark ? "border-[#0c0c14]" : "border-white"} bg-green-500 shadow-sm`} />
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" sideOffset={12} className={`w-64 p-2 rounded-2xl animate-in fade-in zoom-in-95 duration-200 ${isDark ? "bg-[#0c0c14] border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] text-white" : "bg-white border-slate-100 shadow-[0_10px_40px_rgba(0,0,0,0.1)] text-slate-900"}`}>
+                  <DropdownMenuLabel className="mb-2">
+                    <div className="flex items-center gap-3 px-2 py-2">
+                      <Avatar className="w-11 h-11 rounded-xl">
+                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-sm">{studentProfile.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col min-w-0 text-left">
+                        <span className={`font-black text-[11px] uppercase tracking-tight`}>{studentProfile.name}</span>
+                        <span className={`text-[9px] opacity-60 truncate max-w-[140px] font-bold uppercase tracking-widest`}>{studentProfile.email}</span>
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className={`${isDark ? "bg-white/5" : "bg-slate-100"} -mx-2 my-2`} />
+                  <DropdownMenuGroup className="p-1 space-y-1">
+                    <DropdownMenuItem onClick={() => navigate("/student/setting")} className={`rounded-xl flex items-center gap-3 p-3 transition-all cursor-pointer ${isDark ? "hover:bg-white/5" : "hover:bg-slate-50"}`}>
+                      <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                        <User className="w-4 h-4 text-indigo-500" />
+                      </div>
+                      <span className="font-bold text-[10px] uppercase tracking-widest text-inherit">Profile Setting</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator className={`${isDark ? "bg-white/5" : "bg-slate-100"} -mx-2 my-2`} />
+                  <DropdownMenuItem onClick={() => {
+                    localStorage.removeItem("userRole");
+                    navigate("/");
+                  }} className={`rounded-xl flex items-center gap-3 p-3 transition-all cursor-pointer group/signout ${isDark ? "hover:bg-red-500/10 text-red-400" : "hover:bg-red-50 text-red-500"}`}>
+                    <div className={`w-8 h-8 rounded-lg ${isDark ? "bg-red-500/10" : "bg-red-500/5"} flex items-center justify-center transition-colors group-hover/signout:bg-red-500/20`}>
+                      <LogOut className="w-4 h-4" />
+                    </div>
+                    <span className="font-black text-[10px] uppercase tracking-[0.15em]">Log Out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </header>
 
@@ -759,17 +1091,17 @@ export default function StudentDashboard() {
                 <div className={`absolute top-0 right-0 w-[600px] h-[600px] ${isDark ? "bg-blue-500/5" : "bg-blue-500/5"} rounded-full -mr-80 -mt-80 blur-[150px] pointer-events-none`}></div>
                 <div className={`absolute bottom-0 left-0 w-[400px] h-[400px] ${isDark ? "bg-purple-500/5" : "bg-purple-500/5"} rounded-full -ml-60 -mb-60 blur-[100px] pointer-events-none`}></div>
 
-                <CardContent className="p-12">
-                  <div className="flex flex-col lg:flex-row items-start justify-between gap-8 relative z-10">
+                <CardContent className="p-6 sm:p-8 lg:p-12">
+                  <div className="flex flex-col lg:flex-row items-start justify-between gap-6 sm:gap-8 relative z-10">
                     <div className="flex-1">
-                      <h2 className={`text-4xl font-black ${isDark ? "text-white" : "text-slate-900"} mb-4 tracking-tight leading-tight`}>
+                      <h2 className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold ${isDark ? "text-white" : "text-slate-900"} mb-3 sm:mb-4 tracking-tight leading-tight`}>
                         Welcome back,<br />
                         <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                           {studentProfile.name.split(' ')[0]}! 👋
                         </span>
                       </h2>
-                      <p className={`${isDark ? "text-blue-100/80" : "text-slate-600"} text-lg font-medium mb-8 max-w-2xl leading-relaxed`}>
-                        Your current readiness status is <span className={`${isDark ? "text-white" : "text-slate-900"} font-black underline decoration-green-500/30 decoration-4 underline-offset-4`}>EXCELLENT</span>.
+                      <p className={`${isDark ? "text-blue-100/80" : "text-slate-600"} text-base sm:text-lg font-medium mb-6 sm:mb-8 max-w-2xl leading-relaxed`}>
+                        Your current readiness status is <span className={`${isDark ? "text-white" : "text-slate-900"} font-extrabold px-3 py-1 rounded-lg ${isDark ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-green-50 text-green-700 border border-green-200"} transition-all`}>EXCELLENT</span>.
                         You're among the top 10% of students in your branch!
                       </p>
                       <div className="flex flex-wrap items-center gap-4">
@@ -787,12 +1119,16 @@ export default function StudentDashboard() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex flex-row lg:flex-col gap-4 w-full lg:w-fit">
-                      <Button className="h-14 px-8 bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:opacity-90 font-black text-lg rounded-2xl flex-1 shadow-xl shadow-blue-500/30 gap-3 ring-4 ring-blue-500/20">
+                    <div className="flex flex-col sm:flex-row lg:flex-col gap-3 sm:gap-4 w-full lg:w-fit">
+                      <Button
+                        onClick={() => setActiveTab("assessment-hub")}
+                        className="h-14 px-8 bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:opacity-90 font-black text-lg rounded-2xl flex-1 shadow-xl shadow-blue-500/30 gap-3 ring-4 ring-blue-500/20"
+                      >
                         <Rocket className="w-6 h-6" />
-                        Take Skill Test
+                        Assessment Hub
                       </Button>
                       <Button
+                        onClick={handleResumeClick}
                         className="
     h-14 px-8 flex-1 rounded-2xl gap-3
     bg-indigo-600 text-white
@@ -806,33 +1142,42 @@ export default function StudentDashboard() {
                         <UploadIcon className="w-6 h-6" />
                         Resume (PDF)
                       </Button>
+                      <input
+                        type="file"
+                        ref={resumeInputRef}
+                        onChange={onResumeFileChange}
+                        accept=".pdf"
+                        className="hidden"
+                      />
 
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
+
+
               {/* Quick Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
                 {quickStats.map((stat, idx) => {
                   const Icon = stat.icon;
                   return (
-                    <Card key={idx} className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[2rem] overflow-hidden group hover:scale-[1.02] transition-all duration-300`}>
-                      <CardContent className="p-8">
-                        <div className="flex items-center justify-between mb-6">
-                          <div className={`w-14 h-14 rounded-2xl ${stat.color} flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform duration-500`}>
-                            <Icon className="w-7 h-7 text-white" />
+                    <Card key={idx} className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-2xl xl:rounded-[2rem] overflow-hidden group hover:scale-[1.02] transition-all duration-300`}>
+                      <CardContent className="p-5 sm:p-6 lg:p-8">
+                        <div className="flex items-center justify-between mb-4 sm:mb-6">
+                          <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl ${stat.color} flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform duration-500`}>
+                            <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                           </div>
-                          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-black ${stat.trend === "up" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+                          <div className={`flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold ${stat.trend === "up" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
                             }`}>
-                            {stat.trend === "up" ? <ArrowUpRight className="w-4 h-4 font-black" /> : <ArrowDownRight className="w-4 h-4" />}
+                            {stat.trend === "up" ? <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <ArrowDownRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                             {stat.change}
                           </div>
                         </div>
                         <div className="space-y-1">
-                          <p className={`text-base font-bold ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-widest leading-none opacity-80`}>{stat.label}</p>
-                          <p className={`text-4xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tight py-1`}>{stat.value}</p>
-                          <p className={`text-sm font-semibold ${isDark ? "text-gray-400/60" : "text-gray-600/80"} tracking-wide`}>{stat.description}</p>
+                          <p className={`text-xs sm:text-sm font-semibold ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-wider leading-none opacity-80`}>{stat.label}</p>
+                          <p className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold ${isDark ? "text-white" : "text-gray-900"} tracking-tight py-1 tabular-nums`}>{stat.value}</p>
+                          <p className={`text-xs sm:text-sm font-medium ${isDark ? "text-gray-400/60" : "text-gray-600/80"} tracking-wide`}>{stat.description}</p>
                         </div>
                       </CardContent>
                     </Card>
@@ -890,120 +1235,37 @@ export default function StudentDashboard() {
                   </Card>
                 </div>
 
-                {/* Daily Streak */}
-                <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] overflow-hidden relative group`}>
-                  <div className={`absolute top-0 right-0 w-40 h-40 ${isDark ? "bg-amber-500/10" : "bg-amber-500/20"} rounded-full -mr-20 -mt-20 blur-2xl group-hover:scale-125 transition-transform duration-700`}></div>
-                  <CardContent className="p-12">
-                    <div className="text-center space-y-6">
-                      <div className="flex items-center justify-center gap-2  relative  z-10  w-full  h-full  flex-col  items-center    justify-center  ">
-                        <div className={`text-7xl font-black ${isDark ? "text-white" : "text-gray-900"} py-2 antialiased`}>12</div>
-                        <div className={`absolute -top-1 -right-4 w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center ${isDark ? "border-4 border-[#050509]" : "border-4 border-white"} animate-pulse`}>
-                          <Zap className="w-5 h-5 text-white" />
-                        </div>
-                      </div>
-                      <p className={`text-xl font-bold ${isDark ? "text-gray-400" : "text-gray-600"} -mt-3`}>DAYS IN A ROW! 🚀</p>
 
-                      <div className="flex gap-2 justify-center py-4">
-                        {Array.from({ length: 7 }).map((_, i) => (
-                          <div
-                            key={i}
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 transition-all ${i < 5 ? `${isDark ? "bg-amber-500/20 border-amber-500/50" : "bg-amber-100 border-amber-300"} scale-105` : isDark ? "bg-white/5 border-white/10" : "bg-gray-100 border-gray-200"
-                              }`}
+                {/* Quick Actions & Activity Feed */}
+                <div className="space-y-8">
+                  {/* Quick Actions */}
+                  <div>
+                    <h3 className={`text-xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tighter mb-4 px-2`}>Quick Actions</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {quickActions.map((action, idx) => {
+                        const Icon = action.icon;
+                        return (
+                          <button
+                            key={idx}
+                            onClick={action.action}
+                            className={`p-6 ${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-2xl group hover:scale-105 transition-all cursor-pointer text-left`}
                           >
-                            <CheckCircle2 className={`w-5 h-5 ${i < 5 ? "text-amber-400" : isDark ? "text-gray-400/30" : "text-gray-300"}`} />
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className={`p-4 ${isDark ? "bg-amber-500/5" : "bg-amber-50"} rounded-2xl ${isDark ? "border-amber-500/10" : "border-amber-200"}`}>
-                        <p className="text-sm font-black text-amber-400 tracking-wide uppercase">Bonus Reward Unlocks in 3 Days!</p>
-                      </div>
+                            <div className={`w-12 h-12 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center shadow-lg mb-3 group-hover:rotate-6 transition-transform`}>
+                              <Icon className="w-6 h-6 text-white" />
+                            </div>
+                            <h4 className={`text-base font-black ${isDark ? "text-white" : "text-gray-900"} mb-1`}>{action.title}</h4>
+                            <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"}`}>{action.description}</p>
+                          </button>
+                        );
+                      })}
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-              {/* Skill Progress Panels - Concentric Rings */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {[
-                  {
-                    title: "Skill Progress",
-                    label: "Data Science",
-                    ring1: 85,
-                    ring2: 65,
-                    ring3: 50,
-                    colors: ["#3b82f6", "#06b6d4", "#a855f7"]
-                  },
-                  {
-                    title: "Skill Progress",
-                    label: "Soft Skills",
-                    ring1: 90,
-                    ring2: 75,
-                    ring3: 80,
-                    colors: ["#ec4899", "#8b5cf6", "#3b82f6"]
-                  }
-                ].map((panel, idx) => (
-                  <Card key={idx} className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] p-12 overflow-hidden group`}>
-                    <h3 className={`text-sm font-black ${isDark ? "text-white/40" : "text-gray-600/60"} uppercase tracking-[0.2em] mb-12`}>{panel.title}</h3>
-                    <div className="flex items-center justify-center relative">
-                      <div className="w-[300px] h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            {/* Outer Ring (ring1) */}
-                            <Pie
-                              data={[{ value: panel.ring1 }, { value: 100 - panel.ring1 }]}
-                              innerRadius="88%"
-                              outerRadius="100%"
-                              paddingAngle={0}
-                              dataKey="value"
-                              startAngle={90}
-                              endAngle={-270}
-                              stroke="none"
-                            >
-                              <Cell fill={panel.colors[0]} />
-                              <Cell fill="rgba(255,255,255,0.03)" />
-                            </Pie>
+                  </div>
 
-                            {/* Middle Ring (ring2) */}
-                            <Pie
-                              data={[{ value: panel.ring2 }, { value: 100 - panel.ring2 }]}
-                              innerRadius="70%"
-                              outerRadius="82%"
-                              paddingAngle={0}
-                              dataKey="value"
-                              startAngle={90}
-                              endAngle={-270}
-                              stroke="none"
-                            >
-                              <Cell fill={panel.colors[1]} />
-                              <Cell fill="rgba(255,255,255,0.03)" />
-                            </Pie>
 
-                            {/* Inner Ring (ring3) */}
-                            <Pie
-                              data={[{ value: panel.ring3 }, { value: 100 - panel.ring3 }]}
-                              innerRadius="52%"
-                              outerRadius="64%"
-                              paddingAngle={0}
-                              dataKey="value"
-                              startAngle={90}
-                              endAngle={-270}
-                              stroke="none"
-                            >
-                              <Cell fill={panel.colors[2]} />
-                              <Cell fill="rgba(255,255,255,0.03)" />
-                            </Pie>
-                          </PieChart>
-                        </ResponsiveContainer>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-                          <span className={`text-3xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tighter leading-tight`}>
-                            {panel.label.split(' ')[0]}<br />{panel.label.split(' ')[1] || ""}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                </div>
               </div>
+
+
               {/* AI Recommendations - Top 3 */}
               <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] overflow-hidden shadow-2xl`}>
                 <CardContent className="p-12">
@@ -1084,201 +1346,8 @@ export default function StudentDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Daily Challenges & Quick Actions */}
-              <div className="grid lg:grid-cols-2 gap-8">
-                {/* Daily Challenges */}
-                <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] overflow-hidden shadow-2xl`}>
-                  <CardContent className="p-12">
-                    <div className="flex items-center justify-between mb-8">
-                      <div>
-                        <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-gray-900"} flex items-center gap-3`}>
-                          <Flame className="w-6 h-6 text-orange-500" />
-                          Daily Challenges
-                        </h3>
-                        <p className={`${isDark ? "text-gray-400" : "text-gray-600"} text-sm mt-1`}>Complete tasks to earn points</p>
-                      </div>
-                      <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">3 Active</Badge>
-                    </div>
-                    <div className="space-y-4">
-                      {dailyChallenges.map((challenge) => {
-                        const Icon = challenge.icon;
-                        const progressPercent = (challenge.progress / challenge.total) * 100;
-                        return (
-                          <div key={challenge.id} className={`p-6 ${isDark ? "bg-white/5" : "bg-gray-50"} rounded-2xl ${isDark ? "border-white/5" : "border-gray-200"} hover:border-orange-500/50 transition-all group`}>
-                            <div className="flex items-start gap-4 mb-4">
-                              <div className={`w-12 h-12 bg-gradient-to-br ${challenge.color} rounded-xl flex items-center justify-center shadow-lg`}>
-                                <Icon className="w-6 h-6 text-white" />
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex items-center justify-between mb-1">
-                                  <h4 className={`text-lg font-black ${isDark ? "text-white" : "text-gray-900"}`}>{challenge.title}</h4>
-                                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">{challenge.points} pts</Badge>
-                                </div>
-                                <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"} mb-3`}>{challenge.description}</p>
-                                <div className="space-y-2">
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className={isDark ? "text-gray-400" : "text-gray-600"}>Progress</span>
-                                    <span className="font-black text-blue-400">{challenge.progress}/{challenge.total}</span>
-                                  </div>
-                                  <div className={`h-2 ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-full overflow-hidden`}>
-                                    <div className={`h-full bg-gradient-to-r ${challenge.color} rounded-full transition-all duration-500`} style={{ width: `${progressPercent}%` }}></div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center justify-between mt-3">
-                                  <span className={`text-xs ${isDark ? "text-gray-500" : "text-gray-500"}`}>Due: {challenge.deadline}</span>
-                                  <Button size="sm" className="h-8 text-xs font-black bg-blue-500 hover:bg-blue-600 text-white">
-                                    Continue
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
 
-                {/* Quick Actions & Activity Feed */}
-                <div className="space-y-8">
-                  {/* Quick Actions */}
-                  <div>
-                    <h3 className={`text-xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tighter mb-4 px-2`}>Quick Actions</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      {quickActions.map((action, idx) => {
-                        const Icon = action.icon;
-                        return (
-                          <button
-                            key={idx}
-                            onClick={action.action}
-                            className={`p-6 ${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-2xl group hover:scale-105 transition-all cursor-pointer text-left`}
-                          >
-                            <div className={`w-12 h-12 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center shadow-lg mb-3 group-hover:rotate-6 transition-transform`}>
-                              <Icon className="w-6 h-6 text-white" />
-                            </div>
-                            <h4 className={`text-base font-black ${isDark ? "text-white" : "text-gray-900"} mb-1`}>{action.title}</h4>
-                            <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"}`}>{action.description}</p>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
 
-                  {/* Recent Activity Feed */}
-                  <div>
-                    <h3 className={`text-xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tighter mb-4 px-2 flex items-center gap-2`}>
-                      <Activity className="w-5 h-5" />
-                      Recent Activity
-                    </h3>
-                    <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-2xl overflow-hidden`}>
-                      <CardContent className="p-6">
-                        <div className="space-y-4">
-                          {recentActivity.map((activity) => {
-                            const Icon = activity.icon;
-                            return (
-                              <div key={activity.id} className={`flex items-start gap-4 p-4 ${isDark ? "bg-white/5" : "bg-gray-50"} rounded-xl hover:${isDark ? "bg-white/10" : "bg-gray-100"} transition-all group`}>
-                                <div className={`w-10 h-10 ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                                  <Icon className={`w-5 h-5 ${activity.color}`} />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h4 className={`text-sm font-black ${isDark ? "text-white" : "text-gray-900"} mb-1`}>{activity.title}</h4>
-                                  <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"} mb-1`}>{activity.description}</p>
-                                  <p className={`text-[10px] ${isDark ? "text-gray-500" : "text-gray-500"} uppercase tracking-wider`}>{activity.time}</p>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <Button variant="ghost" className="w-full mt-4 text-lg font-black text-blue-400 hover:bg-blue-500/10">
-                          View All Activity
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-              </div>
-
-              {/* Notifications & Company Match */}
-              <div className="grid lg:grid-cols-2 gap-8">
-                {/* Notifications */}
-                <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                  <CardContent className="p-12">
-                    <div className="flex items-center justify-between mb-8">
-                      <div className="flex items-center gap-3">
-                        <Bell className="w-6 h-6 text-blue-500" />
-                        <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-gray-900"}`}>Notifications</h3>
-                      </div>
-                      <Badge className="bg-red-500/20 text-red-400 border-red-500/30">2 New</Badge>
-                    </div>
-                    <div className="space-y-4">
-                      {notifications.map((notif) => (
-                        <div key={notif.id} className={`p-6 ${isDark ? "bg-white/5" : "bg-slate-50/50"} rounded-2xl ${isDark ? "border-white/5" : "border-slate-100"} ${notif.unread ? (isDark ? "border-blue-500/50 bg-blue-500/5" : "border-blue-200 bg-blue-50/50") : ""} transition-all group`}>
-                          <div className="flex items-start gap-4">
-                            <div className={`w-3 h-3 rounded-full mt-2 flex-shrink-0 ${notif.unread ? "bg-blue-500 animate-pulse" : "bg-transparent"}`}></div>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-2">
-                                <h4 className={`text-base font-black ${isDark ? "text-white" : "text-gray-900"}`}>{notif.title}</h4>
-                                <Badge className={
-                                  notif.type === "warning" ? "bg-orange-500/20 text-orange-400 border-orange-500/30" :
-                                    notif.type === "success" ? "bg-green-500/20 text-green-400 border-green-500/30" :
-                                      "bg-blue-500/20 text-blue-400 border-blue-500/30"
-                                }>
-                                  {notif.type}
-                                </Badge>
-                              </div>
-                              <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"} mb-2`}>{notif.message}</p>
-                              <p className={`text-xs ${isDark ? "text-gray-500" : "text-gray-500"} uppercase tracking-wider`}>{notif.time}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <Button variant="ghost" className="w-full mt-6 text-lg font-black text-blue-400 hover:bg-blue-500/10">
-                      View All Notifications
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                {/* Company Match Grid */}
-                <div className="space-y-8">
-                  <h3 className={`text-xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tighter px-2`}>Top Company Matches</h3>
-                  <div className="grid grid-cols-1 gap-6">
-                    {companyMatches.slice(0, 2).map((company) => (
-                      <Card key={company.name} className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[2rem] p-8 group hover:${isDark ? "bg-white/5" : "bg-slate-50/50"} transition-all cursor-pointer shadow-sm`}>
-                        <div className="flex items-center gap-6 mb-8">
-                          <div className={`w-16 h-16 ${company.color} rounded-[1.5rem] flex items-center justify-center shadow-2xl transition-transform group-hover:scale-105`}>
-                            <span className="text-2xl font-black text-white">{company.logo}</span>
-                          </div>
-                          <div className="flex-1">
-                            <h4 className={`text-2xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tighter`}>{company.name}</h4>
-                            <p className="text-[10px] font-black text-blue-400 uppercase opacity-60 tracking-[0.1em]">{company.level} • {company.salary}</p>
-                          </div>
-                          <div className="flex items-baseline gap-3">
-                            <span className="text-4xl font-black text-blue-400">{company.match}%</span>
-                          </div>
-                        </div>
-                        <div className={`mt-6 h-1.5 w-full ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-full overflow-hidden`}>
-                          <div
-                            className={`h-full transition-all duration-1000 ${company.match > 50 ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-red-500'}`}
-                            style={{ width: `${company.match}%` }}
-                          ></div>
-                        </div>
-                        <div className="flex flex-wrap gap-2 mt-4">
-                          {company.requirements.map((req, rIdx) => (
-                            <Badge key={rIdx} variant="outline" className={`text-[10px] font-black uppercase ${isDark ? "text-gray-400 border-white/10" : "text-gray-600 border-gray-300"}`}>
-                              {req}
-                            </Badge>
-                          ))}
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                  <Button variant="outline" className="w-full h-12 rounded-xl font-black text-sm uppercase tracking-widest" onClick={() => setActiveTab("opportunities")}>
-                    View All Companies
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
-              </div>
             </div>
           )}
 
@@ -1315,7 +1384,88 @@ export default function StudentDashboard() {
                       </Button>
                     </div>
                   </div>
+                  {/* Skill Progress Panels - Concentric Rings */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {[
+                      {
+                        title: "Skill Progress",
+                        label: "Data Science",
+                        ring1: 85,
+                        ring2: 65,
+                        ring3: 50,
+                        colors: ["#3b82f6", "#06b6d4", "#a855f7"]
+                      },
+                      {
+                        title: "Skill Progress",
+                        label: "Soft Skills",
+                        ring1: 90,
+                        ring2: 75,
+                        ring3: 80,
+                        colors: ["#ec4899", "#8b5cf6", "#3b82f6"]
+                      }
+                    ].map((panel, idx) => (
+                      <Card key={idx} className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] p-12 overflow-hidden group`}>
+                        <h3 className={`text-sm font-black ${isDark ? "text-white/40" : "text-gray-600/60"} uppercase tracking-[0.2em] mb-12`}>{panel.title}</h3>
+                        <div className="flex items-center justify-center relative">
+                          <div className="w-[300px] h-[300px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                {/* Outer Ring (ring1) */}
+                                <Pie
+                                  data={[{ value: panel.ring1 }, { value: 100 - panel.ring1 }]}
+                                  innerRadius="88%"
+                                  outerRadius="100%"
+                                  paddingAngle={0}
+                                  dataKey="value"
+                                  startAngle={90}
+                                  endAngle={-270}
+                                  stroke="none"
+                                >
+                                  <Cell fill={panel.colors[0]} />
+                                  <Cell fill="rgba(255,255,255,0.03)" />
+                                </Pie>
 
+                                {/* Middle Ring (ring2) */}
+                                <Pie
+                                  data={[{ value: panel.ring2 }, { value: 100 - panel.ring2 }]}
+                                  innerRadius="70%"
+                                  outerRadius="82%"
+                                  paddingAngle={0}
+                                  dataKey="value"
+                                  startAngle={90}
+                                  endAngle={-270}
+                                  stroke="none"
+                                >
+                                  <Cell fill={panel.colors[1]} />
+                                  <Cell fill="rgba(255,255,255,0.03)" />
+                                </Pie>
+
+                                {/* Inner Ring (ring3) */}
+                                <Pie
+                                  data={[{ value: panel.ring3 }, { value: 100 - panel.ring3 }]}
+                                  innerRadius="52%"
+                                  outerRadius="64%"
+                                  paddingAngle={0}
+                                  dataKey="value"
+                                  startAngle={90}
+                                  endAngle={-270}
+                                  stroke="none"
+                                >
+                                  <Cell fill={panel.colors[2]} />
+                                  <Cell fill="rgba(255,255,255,0.03)" />
+                                </Pie>
+                              </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                              <span className={`text-3xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tighter leading-tight`}>
+                                {panel.label.split(' ')[0]}<br />{panel.label.split(' ')[1] || ""}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
                   <div className="h-96">
                     {viewMode === "radar" ? (
                       <ResponsiveContainer width="100%" height="100%">
@@ -1450,52 +1600,60 @@ export default function StudentDashboard() {
                   <div className="flex items-center gap-4 mb-10">
                     <Building2 className="w-8 h-8 text-blue-400" />
                     <div>
-                      <h3 className={`text-3xl font-black ${isDark ? "text-white" : "text-gray-900"}`}>Career Alignment</h3>
-                      <p className={`text-lg font-bold ${isDark ? "text-gray-400" : "text-gray-600"}`}>Companies matching your profile</p>
+                      <h3 className={`text-3xl font-black ${isDark ? "text-white" : "text-gray-900"}`}>Placement Drives</h3>
+                      <p className={`text-lg font-bold ${isDark ? "text-gray-400" : "text-gray-600"}`}>Drives created by your TPO — match % based on your profile</p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {companyMatches.map((company, idx) => (
-                      <div key={idx} className={`group p-8 ${isDark ? "border-white/5 bg-white/5" : "border-slate-100 bg-slate-50/50"} rounded-[2rem] hover:border-blue-500/50 transition-all shadow-sm`}>
-                        <div className="flex items-center justify-between mb-8">
-                          <div className="flex items-center gap-5">
-                            <div className={`w-16 h-16 ${company.color} rounded-2xl flex items-center justify-center shadow-lg`}>
-                              <span className="text-2xl font-black text-white">{company.name.charAt(0)}</span>
+                  {drivesWithMatch.length === 0 ? (
+                    <p className={`text-center py-12 ${isDark ? "text-gray-400" : "text-gray-600"}`}>No drives yet. When your TPO creates a drive, it will appear here with JD, requirements, and your match %.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {drivesWithMatch.map((drive, idx) => (
+                        <div key={drive.id} className={`group p-8 ${isDark ? "border-white/5 bg-white/5" : "border-slate-100 bg-slate-50/50"} rounded-[2rem] hover:border-blue-500/50 transition-all shadow-sm`}>
+                          <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-5">
+                              <div className={`w-16 h-16 ${drive.color} rounded-2xl flex items-center justify-center shadow-lg`}>
+                                <span className="text-2xl font-black text-white">{drive.companyName.charAt(0)}</span>
+                              </div>
+                              <div>
+                                <h4 className={`text-2xl font-black ${isDark ? "text-white" : "text-gray-900"}`}>{drive.companyName}</h4>
+                                <p className="text-xs font-black text-blue-400 uppercase tracking-widest">{drive.role}</p>
+                              </div>
                             </div>
-                            <div>
-                              <h4 className={`text-2xl font-black ${isDark ? "text-white" : "text-gray-900"}`}>{company.name}</h4>
-                              <p className="text-xs font-black text-blue-400 uppercase tracking-widest">{company.level}</p>
+                            <div className={`px-4 py-2 rounded-xl font-black text-sm ${isDark ? "bg-blue-500/10" : "bg-blue-50"} text-blue-400`}>
+                              {drive.match}% match
                             </div>
                           </div>
-                          <div className={`px-4 py-2 rounded-xl font-black text-sm ${isDark ? "bg-blue-500/10" : "bg-blue-50"} text-blue-400`}>
-                            {company.match}%
-                          </div>
-                        </div>
-                        <div className="space-y-6">
-                          <div className="flex flex-wrap gap-2">
-                            {company.requirements.map((req, rIdx) => (
+                          {drive.description ? (
+                            <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"} mb-4 line-clamp-3`}>{drive.description}</p>
+                          ) : null}
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {drive.requirements.map((req, rIdx) => (
                               <Badge key={rIdx} variant="outline" className={`text-[10px] font-black uppercase ${isDark ? "text-gray-400 border-white/10" : "text-gray-600 border-gray-300"}`}>
                                 {req}
                               </Badge>
                             ))}
                           </div>
-                          <div className={`h-2 ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-full overflow-hidden`}>
+                          <div className={`h-2 ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-full overflow-hidden mb-4`}>
                             <div
                               className="h-full bg-blue-500 rounded-full transition-all duration-1000"
-                              style={{ width: `${company.match}%` }}
-                            ></div>
+                              style={{ width: `${drive.match}%` }}
+                            />
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className={`text-sm font-black ${isDark ? "text-gray-400" : "text-gray-600"}`}>{company.salary}</span>
-                            <Button className="h-12 px-6 rounded-xl font-black text-sm uppercase bg-blue-500 hover:bg-blue-600 text-white">
-                              Apply Now
+                            <span className={`text-sm font-black ${isDark ? "text-gray-400" : "text-gray-600"}`}>Deadline: {drive.deadline}</span>
+                            <Button
+                              className="h-12 px-6 rounded-xl font-black text-sm uppercase bg-blue-500 hover:bg-blue-600 text-white"
+                              onClick={() => drive.applicationLink && drive.applicationLink !== "#" && window.open(drive.applicationLink, "_blank")}
+                            >
+                              Apply now
                             </Button>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -1597,45 +1755,6 @@ export default function StudentDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Weekly Goals */}
-              <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                <CardContent className="p-12">
-                  <div className="flex items-center gap-4 mb-10">
-                    <Flame className={`w-8 h-8 ${isDark ? "text-amber-400" : "text-amber-600"}`} />
-                    <div>
-                      <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Weekly Goals</h3>
-                      <p className={`text-lg font-bold ${isDark ? "text-gray-400" : "text-slate-600"}`}>Track your weekly learning objectives</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    {weeklyGoals.map((g, i) => (
-                      <div key={i} className={`p-6 ${isDark ? "border-white/5 bg-white/5" : "border-slate-100 bg-slate-50/50"} rounded-2xl hover:border-blue-500/30 transition-all shadow-sm`}>
-                        <div className="flex justify-between text-base font-bold mb-3">
-                          <span className={`${isDark ? "text-white" : "text-slate-900"}`}>{g.task}</span>
-                          <span className="text-blue-400">{g.completed}/{g.total}</span>
-                        </div>
-                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-blue-500 to-green-500 rounded-full transition-all duration-1000"
-                            style={{ width: `${(g.completed / g.total) * 100}%` }}
-                          ></div>
-                        </div>
-                        <div className="flex justify-between items-center mt-3">
-                          <Badge className={
-                            g.priority === 'high' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-                          }>
-                            {g.priority === 'high' ? 'High Priority' : 'Medium Priority'}
-                          </Badge>
-                          <Button variant="ghost" size="sm" className="text-xs font-black text-blue-400 hover:bg-blue-500/10">
-                            Update Progress
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           )}
 
@@ -1841,7 +1960,7 @@ export default function StudentDashboard() {
           {/* Careers Tab */}
           {activeTab === "careers" && (
             <div className="space-y-10">
-              <Careers isDashboard={true} />
+              <Careers />
             </div>
           )}
 
@@ -1859,45 +1978,10 @@ export default function StudentDashboard() {
             </div>
           )}
 
-          {/* Features Tab */}
-          {activeTab === "features" && (
-            <div className="space-y-10">
-              <FeaturesPage isDashboard={true} />
-            </div>
-          )}
-
-          {/* Case Studies Tab */}
-          {activeTab === "caseStudies" && (
-            <div className="space-y-10">
-              <CaseStudiesPage isDashboard={true} />
-            </div>
-          )}
-
           {/* Corporate News Tab */}
           {activeTab === "corporateNews" && (
             <div className="space-y-10">
               <CorporateNewsPage isDashboard={true} />
-            </div>
-          )}
-
-          {/* Wellbeing Tab */}
-          {activeTab === "wellbeing" && (
-            <div className="space-y-10">
-              <WellbeingHub isDashboard={true} />
-            </div>
-          )}
-
-          {/* Pricing Tab */}
-          {activeTab === "pricing" && (
-            <div className="space-y-10">
-              <StudentPricing isDashboard={true} />
-            </div>
-          )}
-
-          {/* Refund Policy Tab */}
-          {activeTab === "refundPolicy" && (
-            <div className="space-y-10">
-              <RefundPolicy isDashboard={true} />
             </div>
           )}
 
@@ -1908,9 +1992,21 @@ export default function StudentDashboard() {
             </div>
           )}
 
+          {/* Assessment Hub Tab */}
+          {activeTab === "assessment-hub" && (
+            <div className="space-y-10">
+              <AssessmentHub isDashboard={true} onBack={() => setActiveTab("feedback")} />
+            </div>
+          )}
+
+          {/* Company Wise Kit Tab - fill viewport so list covers entire page */}
+          {activeTab === "company-kit" && (
+            <CompanyWiseKit isDashboard={true} />
+          )}
+
           {/* CTA Footer - Only show on overview tab */}
           {activeTab === "overview" && (
-            <div className={`bg-gradient-to-r ${isDark ? "from-blue-500/10 via-purple-500/10 to-blue-500/10" : "from-blue-50 via-purple-50 to-blue-50"} ${isDark ? "border-white/5" : "border-gray-200"} p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group mt-12`}>
+            <div className={`bg-gradient-to-r ${isDark ? "from-blue-500/10 via-purple-500/10 to-blue-500/10" : "from-blue-50 via-purple-50 to-blue-50"} ${isDark ? "border-white/5" : "border-gray-200"} p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group mt-12 mb-4`}>
               <div className={`absolute top-0 right-0 w-96 h-96 ${isDark ? "bg-blue-500/5" : "bg-blue-500/5"} rounded-full -mr-48 -mt-48 blur-3xl group-hover:scale-110 transition-all duration-700`}></div>
               <div className="flex flex-col lg:flex-row items-center justify-between gap-8 relative z-10">
                 <div>

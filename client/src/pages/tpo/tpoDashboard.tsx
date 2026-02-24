@@ -1,14 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
+import { getPlacementDrives, savePlacementDrive, type PlacementDrive } from "@/data/placementDrives";
+import { Textarea } from "@/components/ui/textarea";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
 import { LogOut, Settings, Users, TrendingUp, AlertTriangle, Download, Filter, Search, Bell, ChevronRight, Award, Target, BookOpen, Briefcase, Calendar, TrendingDown, ArrowUpRight, ArrowDownRight, Eye, Upload, FileText, GraduationCap, Building2, BarChart3, Activity, Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram, ExternalLink, Clock, DollarSign, Users2, Plus, Edit, Trash2, MoreVertical, CheckCircle2, XCircle, RefreshCw, FileSpreadsheet, FileBarChart, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, TrendingDown as TrendingDownIcon, Rocket, Shield, Globe, Star, MessageSquare, ArrowLeft } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useIsMobile } from "@/hooks/useMobile";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Menu, Filter as FilterIcon, X, Sparkles, LayoutDashboard } from "lucide-react";
 
 export default function CollegeDashboard() {
   const { theme } = useTheme();
@@ -18,7 +26,70 @@ export default function CollegeDashboard() {
   const [selectedBranch, setSelectedBranch] = useState("all");
   const [timeRange, setTimeRange] = useState("year");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Smart JD Filter State
+  const [jdFilters, setJdFilters] = useState({
+    cgpa: 7.0,
+    backlogs: 0,
+    branches: ["CSE", "ECE", "Mechanical"],
+    skills: ["React", "Node.js"]
+  });
+  const [newSkill, setNewSkill] = useState("");
+
+  // Create Drive (ticket) modal
+  const [createDriveOpen, setCreateDriveOpen] = useState(false);
+  const [createDriveForm, setCreateDriveForm] = useState({
+    companyName: "",
+    role: "",
+    description: "",
+    requirements: [] as string[],
+    minCgpa: 7.0,
+    maxBacklogs: 0,
+    applicationLink: "",
+    deadline: "",
+  });
+  const [driveReqSkill, setDriveReqSkill] = useState("");
+  const placementDrivesList = getPlacementDrives();
+
+  const handleCreateDriveSubmit = () => {
+    if (!createDriveForm.companyName.trim() || !createDriveForm.role.trim()) {
+      toast.error("Company name and role are required");
+      return;
+    }
+    savePlacementDrive({
+      companyName: createDriveForm.companyName.trim(),
+      role: createDriveForm.role.trim(),
+      description: createDriveForm.description.trim(),
+      requirements: createDriveForm.requirements,
+      minCgpa: createDriveForm.minCgpa,
+      maxBacklogs: createDriveForm.maxBacklogs,
+      applicationLink: createDriveForm.applicationLink.trim() || "#",
+      deadline: createDriveForm.deadline.trim() || "TBD",
+    });
+    toast.success("Drive created. Students will see it under Drives.");
+    setCreateDriveForm({
+      companyName: "",
+      role: "",
+      description: "",
+      requirements: [],
+      minCgpa: 7.0,
+      maxBacklogs: 0,
+      applicationLink: "",
+      deadline: "",
+    });
+    setCreateDriveOpen(false);
+  };
+
   const isMobile = useIsMobile();
+  const mainContentRef = useRef<HTMLElement>(null);
+
+  // Scroll to top when selectedView changes
+  useEffect(() => {
+    window.scrollTo(0, 0); // For mobile/desktop where window might scroll
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTo(0, 0); // For specific scrollable container
+    }
+  }, [selectedView]);
 
   const collegeStats = [
     { label: "Total Students", value: "1,240", change: "+5%", trend: "up", icon: Users, color: "bg-blue-500" },
@@ -151,13 +222,11 @@ export default function CollegeDashboard() {
       {/* Enhanced Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border shadow-sm">
         <div className="container flex items-center justify-between h-16 px-6">
-          <div className="flex items-center gap-3">
-            <div className="w-14 h-14 flex items-center justify-center">
-              <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
-            </div>
-            <div>
-              <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">NextGen</span>
-              <p className="text-xs text-muted-foreground">College Portal</p>
+          <div className="flex items-center gap-0 group cursor-pointer" onClick={() => navigate("/")}>
+            <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
+            <div className="flex flex-col">
+              <span className="font-black text-xl bg-gradient-to-r from-pink-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">NextGen</span>
+              <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-80">TPO Admin Portal</p>
             </div>
           </div>
 
@@ -180,11 +249,11 @@ export default function CollegeDashboard() {
 
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-white font-black text-xs">DA</span>
+                <span className="text-white font-black text-xs">TP</span>
               </div>
               <div className="text-left hidden md:block">
-                <p className="text-sm font-black text-foreground">Dept Admin</p>
-                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">admin@college.edu</p>
+                <p className="text-sm font-black text-foreground">TPO Admin</p>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">admin@tpo.edu</p>
               </div>
             </div>
 
@@ -216,7 +285,7 @@ export default function CollegeDashboard() {
             )}
             {/* Desktop Tabs */}
             <div className={`${isMobile ? 'hidden' : 'flex'} gap-1 overflow-x-auto`}>
-              {["overview", "analytics", "students", "reports"].map((view) => (
+              {["overview", "drives", "analytics", "students", "reports"].map((view) => (
                 <button
                   key={view}
                   onClick={() => setSelectedView(view)}
@@ -238,7 +307,7 @@ export default function CollegeDashboard() {
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetContent side="left" className="w-64">
               <div className="space-y-2 mt-8">
-                {["overview", "analytics", "students", "reports"].map((view) => (
+                {["overview", "drives", "analytics", "students", "reports"].map((view) => (
                   <button
                     key={view}
                     onClick={() => {
@@ -246,8 +315,8 @@ export default function CollegeDashboard() {
                       setMobileMenuOpen(false);
                     }}
                     className={`w-full text-left px-4 py-3 rounded-lg font-bold capitalize transition-all ${selectedView === view
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-muted/50"
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted/50"
                       }`}
                   >
                     {view}
@@ -259,12 +328,16 @@ export default function CollegeDashboard() {
         </div>
       </header>
 
-      <main className="container py-6 md:py-12 px-4 sm:px-6 max-w-7xl mx-auto">
+      <main
+        ref={mainContentRef}
+        data-scroll-container
+        className="container py-6 md:py-12 px-4 sm:px-6 max-w-7xl mx-auto"
+      >
         {/* Welcome Section with Actions */}
         <div className="mb-12 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="space-y-3">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-foreground leading-tight">
-              {selectedView === "overview" && "College Overview"}
+              {selectedView === "overview" && "TPO Overview"}
               {selectedView === "analytics" && "Analytics & Insights"}
               {selectedView === "students" && "Student Management"}
               {selectedView === "reports" && "Reports & Exports"}
@@ -272,6 +345,7 @@ export default function CollegeDashboard() {
             <p className="text-lg text-muted-foreground flex items-center gap-3 font-medium">
               <Calendar className="w-5 h-5" />
               {selectedView === "overview" && "Quick glance at key metrics and urgent alerts"}
+              {selectedView === "drives" && "Manage placement drives and shortlist students via JD"}
               {selectedView === "analytics" && "Detailed analytics and performance insights"}
               {selectedView === "students" && "Manage and track student progress"}
               {selectedView === "reports" && "Generate and export comprehensive reports"}
@@ -305,6 +379,390 @@ export default function CollegeDashboard() {
             )}
           </div>
         </div>
+
+
+
+        {/* DRIVES TAB - Smart JD Filter & Management */}
+        {selectedView === "drives" && (
+          <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+            {/* Top Stats for Drives */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white border-0 shadow-lg">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-white/10 rounded-xl">
+                      <Briefcase className="w-8 h-8 text-white" />
+                    </div>
+                    <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-bold">+2 this week</span>
+                  </div>
+                  <h3 className="text-3xl font-black mb-1">12</h3>
+                  <p className="text-blue-100 font-medium">Active Drives</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-white dark:bg-slate-900 border-l-4 border-l-green-500 shadow-md">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-green-500/10 rounded-xl">
+                      <CheckCircle2 className="w-8 h-8 text-green-500" />
+                    </div>
+                  </div>
+                  <h3 className="text-3xl font-black mb-1 text-slate-900 dark:text-white">892</h3>
+                  <p className="text-muted-foreground font-medium">Eligible Students (Avg)</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-white dark:bg-slate-900 border-l-4 border-l-purple-500 shadow-md">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-purple-500/10 rounded-xl">
+                      <Zap className="w-8 h-8 text-purple-500" />
+                    </div>
+                  </div>
+                  <h3 className="text-3xl font-black mb-1 text-slate-900 dark:text-white">45</h3>
+                  <p className="text-muted-foreground font-medium">JDs Processed</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-8">
+              {/* Smart JD Shortlisting Tool */}
+              <div className="lg:col-span-2 space-y-6">
+                <Card className="border-0 shadow-xl overflow-hidden">
+                  <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-6 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-white font-black text-xl flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-yellow-400" />
+                        Smart JD Shortlister
+                      </h3>
+                      <p className="text-slate-400 text-sm mt-1">Automatically filter students based on company criteria</p>
+                    </div>
+                    <Button variant="secondary" size="sm" className="font-bold">
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload JD PDF
+                    </Button>
+                  </div>
+                  <CardContent className="p-6 bg-white dark:bg-slate-950">
+                    <div className="grid md:grid-cols-2 gap-8">
+                      {/* Filter Inputs */}
+                      <div className="space-y-6">
+                        <div className="space-y-4">
+                          <Label className="text-base font-bold">Minimum CGPA (Current: {jdFilters.cgpa})</Label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="10"
+                            step="0.1"
+                            value={jdFilters.cgpa}
+                            onChange={(e) => setJdFilters({ ...jdFilters, cgpa: parseFloat(e.target.value) })}
+                            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                          />
+                          <div className="flex justify-between text-xs text-muted-foreground font-bold">
+                            <span>0.0</span>
+                            <span>5.0</span>
+                            <span>10.0</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-base font-bold">Allowed Active Backlogs</Label>
+                          <div className="flex gap-2">
+                            {[0, 1, 2, "3+"].map((num) => (
+                              <button
+                                key={num}
+                                onClick={() => setJdFilters({ ...jdFilters, backlogs: num === "3+" ? 3 : Number(num) })}
+                                className={`flex-1 py-2 rounded-lg font-bold border-2 transition-all ${(num === "3+" ? 3 : Number(num)) === jdFilters.backlogs
+                                  ? "border-blue-600 bg-blue-50 text-blue-600 dark:bg-blue-900/20"
+                                  : "border-slate-200 dark:border-slate-800 text-muted-foreground hover:border-blue-400"
+                                  }`}
+                              >
+                                {num}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-base font-bold">Required Skills</Label>
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {jdFilters.skills.map(skill => (
+                              <Badge key={skill} variant="secondary" className="px-3 py-1 text-sm gap-2">
+                                {skill}
+                                <X
+                                  className="w-3 h-3 cursor-pointer hover:text-red-500"
+                                  onClick={() => setJdFilters({ ...jdFilters, skills: jdFilters.skills.filter(s => s !== skill) })}
+                                />
+                              </Badge>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Add a skill (e.g. Java)"
+                              value={newSkill}
+                              onChange={(e) => setNewSkill(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && newSkill) {
+                                  setJdFilters({ ...jdFilters, skills: [...jdFilters.skills, newSkill] });
+                                  setNewSkill("");
+                                }
+                              }}
+                            />
+                            <Button
+                              onClick={() => {
+                                if (newSkill) {
+                                  setJdFilters({ ...jdFilters, skills: [...jdFilters.skills, newSkill] });
+                                  setNewSkill("");
+                                }
+                              }}
+                            >Add</Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Live Results Preview */}
+                      <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center">
+                        <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4 relative">
+                          <Users className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+                          <div className="absolute -top-1 -right-1 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-xs ring-4 ring-white dark:ring-slate-950">
+                            92%
+                          </div>
+                        </div>
+                        <h4 className="text-4xl font-black text-slate-900 dark:text-white mb-2">142</h4>
+                        <p className="text-muted-foreground font-bold uppercase tracking-widest text-sm mb-6">Students Eligible</p>
+
+                        <div className="w-full space-y-3">
+                          <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-12 shadow-lg shadow-blue-500/20">
+                            Notify Eligible Students
+                          </Button>
+                          <Button variant="outline" className="w-full h-12 font-bold">
+                            <Download className="w-4 h-4 mr-2" />
+                            Export List to Excel
+                          </Button>
+                        </div>
+
+                        <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 w-full text-left">
+                          <p className="text-xs font-bold text-muted-foreground uppercase mb-2">Filters Applied:</p>
+                          <ul className="text-sm space-y-1 text-slate-600 dark:text-slate-400">
+                            <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-500" /> CGPA &gt; {jdFilters.cgpa}</li>
+                            <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-500" /> Max {jdFilters.backlogs} Backlogs</li>
+                            <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-500" /> Skills match ({jdFilters.skills.length})</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Recent Drive Activity Data Table */}
+                <Card className="border-0 shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="font-black text-xl">Recent Drive Performance</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead className="bg-muted/50 text-muted-foreground uppercase font-bold text-xs">
+                          <tr>
+                            <th className="px-4 py-3 rounded-l-lg">Company</th>
+                            <th className="px-4 py-3">Role</th>
+                            <th className="px-4 py-3">Eligible</th>
+                            <th className="px-4 py-3">Applied</th>
+                            <th className="px-4 py-3 text-right rounded-r-lg">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {[
+                            { company: "TCS", role: "System Engineer", eligible: 450, applied: 380, status: "Ongoing" },
+                            { company: "Infosys", role: "Power Programmer", eligible: 120, applied: 95, status: "Interview" },
+                            { company: "Amazon", role: "SDE I", eligible: 85, applied: 82, status: "Completed" },
+                            { company: "Wipro", role: "Project Engineer", eligible: 310, applied: 200, status: "Registration" },
+                          ].map((drive, i) => (
+                            <tr key={i} className="hover:bg-muted/20 transition-colors">
+                              <td className="px-4 py-4 font-bold">{drive.company}</td>
+                              <td className="px-4 py-4 text-muted-foreground">{drive.role}</td>
+                              <td className="px-4 py-4 font-semibold">{drive.eligible}</td>
+                              <td className="px-4 py-4 font-semibold">{drive.applied}</td>
+                              <td className="px-4 py-4 text-right">
+                                <Badge variant={drive.status === "Completed" ? "secondary" : "default"} className={drive.status === "Ongoing" ? "bg-green-500 text-white" : ""}>
+                                  {drive.status}
+                                </Badge>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Active Drives Sidebar */}
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-black text-xl">Active Drives</h3>
+                  <Button size="sm" variant="outline" className="h-8">View All</Button>
+                </div>
+
+                {placementDrivesList.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4">No drives yet. Create one below.</p>
+                ) : (
+                  placementDrivesList.map((drive, i) => {
+                    const colors = ["bg-red-500", "bg-blue-500", "bg-green-500", "bg-purple-500", "bg-orange-500"];
+                    const color = colors[i % colors.length];
+                    return (
+                      <Card key={drive.id} className="border-0 shadow-md hover:shadow-xl transition-all cursor-pointer group">
+                        <CardContent className="p-5">
+                          <div className="flex items-start gap-4">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${color} text-white shadow-lg font-black text-lg`}>
+                              {drive.companyName.charAt(0)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-lg truncate group-hover:text-blue-600 transition-colors">{drive.companyName}</h4>
+                              <p className="text-sm text-muted-foreground mb-2">{drive.role}</p>
+                              <div className="flex items-center gap-2 text-xs font-semibold bg-muted/50 px-2 py-1 rounded w-fit">
+                                <Calendar className="w-3 h-3" />
+                                {drive.deadline}
+                              </div>
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
+
+                <Card className="bg-gradient-to-br from-slate-900 to-slate-800 text-white border-0 shadow-lg mt-8">
+                  <CardContent className="p-6 relative overflow-hidden">
+                    <div className="relative z-10">
+                      <h3 className="font-black text-xl mb-2">Post a New Drive</h3>
+                      <p className="text-slate-300 text-sm mb-6">Create a new placement drive and notify students instantly.</p>
+                      <Button className="w-full bg-white text-slate-900 hover:bg-slate-100 font-bold" onClick={() => setCreateDriveOpen(true)}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Drive
+                      </Button>
+                    </div>
+                    <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-3xl"></div>
+                  </CardContent>
+                </Card>
+
+                {/* Create Drive Dialog */}
+                <Dialog open={createDriveOpen} onOpenChange={setCreateDriveOpen}>
+                  <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Create placement drive</DialogTitle>
+                      <DialogDescription>Students will see this drive under Drives with JD, requirements, and match %.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                      <div>
+                        <Label>Company name</Label>
+                        <Input
+                          placeholder="e.g. Google, TCS"
+                          value={createDriveForm.companyName}
+                          onChange={(e) => setCreateDriveForm({ ...createDriveForm, companyName: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label>Role / designation</Label>
+                        <Input
+                          placeholder="e.g. SDE I, System Engineer"
+                          value={createDriveForm.role}
+                          onChange={(e) => setCreateDriveForm({ ...createDriveForm, role: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label>Job description (JD)</Label>
+                        <Textarea
+                          placeholder="Paste or type the full JD here..."
+                          value={createDriveForm.description}
+                          onChange={(e) => setCreateDriveForm({ ...createDriveForm, description: e.target.value })}
+                          className="mt-1 min-h-[100px]"
+                          rows={4}
+                        />
+                      </div>
+                      <div>
+                        <Label>Required skills (add one by one)</Label>
+                        <div className="flex flex-wrap gap-2 mt-1 mb-2">
+                          {createDriveForm.requirements.map((s) => (
+                            <Badge key={s} variant="secondary" className="gap-1">
+                              {s}
+                              <X className="w-3 h-3 cursor-pointer" onClick={() => setCreateDriveForm({ ...createDriveForm, requirements: createDriveForm.requirements.filter((r) => r !== s) })} />
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="e.g. DSA, React"
+                            value={driveReqSkill}
+                            onChange={(e) => setDriveReqSkill(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && driveReqSkill.trim()) {
+                                setCreateDriveForm({ ...createDriveForm, requirements: [...createDriveForm.requirements, driveReqSkill.trim()] });
+                                setDriveReqSkill("");
+                              }
+                            }}
+                          />
+                          <Button type="button" variant="secondary" onClick={() => {
+                            if (driveReqSkill.trim()) {
+                              setCreateDriveForm({ ...createDriveForm, requirements: [...createDriveForm.requirements, driveReqSkill.trim()] });
+                              setDriveReqSkill("");
+                            }
+                          }}>Add</Button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Min CGPA</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={10}
+                            step={0.1}
+                            value={createDriveForm.minCgpa}
+                            onChange={(e) => setCreateDriveForm({ ...createDriveForm, minCgpa: parseFloat(e.target.value) || 0 })}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Max backlogs allowed</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={createDriveForm.maxBacklogs}
+                            onChange={(e) => setCreateDriveForm({ ...createDriveForm, maxBacklogs: parseInt(e.target.value, 10) || 0 })}
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Application link (Google Form URL)</Label>
+                        <Input
+                          placeholder="https://forms.google.com/..."
+                          value={createDriveForm.applicationLink}
+                          onChange={(e) => setCreateDriveForm({ ...createDriveForm, applicationLink: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label>Deadline (e.g. Apply by: 15 Feb)</Label>
+                        <Input
+                          placeholder="Apply by: 15 Feb"
+                          value={createDriveForm.deadline}
+                          onChange={(e) => setCreateDriveForm({ ...createDriveForm, deadline: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setCreateDriveOpen(false)}>Cancel</Button>
+                      <Button onClick={handleCreateDriveSubmit}>Create drive</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* OVERVIEW TAB - Quick Glance Only */}
         {selectedView === "overview" && (
@@ -1113,14 +1571,16 @@ export default function CollegeDashboard() {
         <div className="container px-6 py-16 max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
             {/* Company Info */}
-            <div className="space-y-5">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg">
-                  <GraduationCap className="w-7 h-7 text-white" />
-                </div>
-                <div>
-                  <span className="font-black text-xl bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">Campus Career</span>
-                  <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">College Portal</p>
+            <div className="space-y-6">
+              <div className="flex items-center gap-0 group cursor-pointer" onClick={() => navigate("/")}>
+                <img
+                  src="/NG/NextGen_light.png"
+                  alt="NextGen Logo"
+                  className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="flex flex-col">
+                  <span className="font-black text-xl bg-gradient-to-r from-pink-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">NextGen</span>
+                  <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-80">AI-Driven</p>
                 </div>
               </div>
               <p className="text-base text-muted-foreground leading-relaxed">

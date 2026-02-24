@@ -86,7 +86,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 py-12 md:py-4 relative overflow-x-hidden transition-colors duration-300">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/10 dark:from-primary/10 dark:via-background dark:to-accent/10" />
       {/* Theme Toggle */}
       <div className="absolute top-4 right-4 z-20">
@@ -122,19 +122,19 @@ export default function SignupPage() {
         }
       `}</style>
 
-      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-8 items-center relative z-10">
+      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-8 items-center relative z-10 my-auto">
         {/* Left side - Branding */}
         <div className="hidden md:block space-y-8 slide-in">
           <div className="float">
-            <div className="inline-flex items-center gap-3 mb-6">
-              <div className="w-24 h-24 flex items-center justify-center">
-                <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+            <div className="flex items-center gap-0 mb-6 group cursor-pointer transition-all duration-300" onClick={() => window.location.href = "/"}>
+              <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-24 w-24 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
+              <div className="flex flex-col justify-center leading-tight">
+                <h1 className="text-4xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
                   NextGen
                 </h1>
-                <p className="text-muted-foreground text-sm font-medium">Start Your Journey Today</p>
+                <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest mt-0.5 opacity-80">
+                  AI-Driven
+                </p>
               </div>
             </div>
           </div>
@@ -175,25 +175,28 @@ export default function SignupPage() {
         </div>
 
         {/* Right side - Signup Form */}
-        <Card className="shadow-2xl border border-border bg-card/80 backdrop-blur-xl slide-in overflow-hidden" style={{ animationDelay: '0.2s' }}>
-          <CardContent className="p-8 md:p-10">
+        <Card className="shadow-xl border border-border bg-white dark:bg-slate-900 rounded-2xl slide-in overflow-hidden w-full max-w-md mx-auto md:max-w-none" style={{ animationDelay: '0.2s' }}>
+          <CardContent className="p-6 sm:p-8 md:p-10">
             {/* Mobile Logo */}
-            <div className="md:hidden text-center mb-8">
-              <div className="w-24 h-24 flex items-center justify-center mx-auto mb-4">
-                <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-full h-full object-contain scale-125" />
+            <div className="md:hidden text-center mb-8 flex flex-col items-center">
+              <div className="flex items-center gap-0 justify-center mb-4 transition-transform hover:scale-105 cursor-pointer" onClick={() => window.location.href = "/"}>
+                <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-16 w-16 object-contain flex-shrink-0" />
+                <div className="flex flex-col items-start">
+                  <h1 className="text-2xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
+                    NextGen
+                  </h1>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">AI-Driven</p>
+                </div>
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-                NextGen
-              </h1>
             </div>
 
             {/* Progress Bar */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-foreground/80">Step {step} of 2</span>
-                <span className="text-sm text-muted-foreground">{step === 1 ? "Personal Info" : "Academic Info"}</span>
+                <span className="text-xs sm:text-sm font-semibold text-foreground/80">Step {step} of 2</span>
+                <span className="text-xs sm:text-sm text-muted-foreground">{step === 1 ? "Personal Info" : "Academic Info"}</span>
               </div>
-              <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div className="h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden">
                 <div
                   className={`h-full bg-gradient-to-r from-violet-600 to-purple-600 progress-animate`}
                   style={{ width: `${(step / 2) * 100}%` }}
@@ -202,14 +205,14 @@ export default function SignupPage() {
             </div>
 
             <div className="mb-6">
-              <h2 className="text-3xl font-bold text-foreground mb-2">Create Account</h2>
-              <p className="text-muted-foreground">Fill in your details to get started</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">Create Account</h2>
+              <p className="text-sm text-muted-foreground">Fill in your details to get started</p>
             </div>
 
             {step === 1 ? (
-              <div className="space-y-5">
+              <div className="space-y-4 sm:space-y-5">
                 {/* Full Name */}
-                <div className="space-y-2">
+                <div className="space-y-1.5 sm:space-y-2">
                   <label className="text-sm font-semibold text-foreground/80">Full Name</label>
                   <div className="relative group">
                     <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -218,13 +221,13 @@ export default function SignupPage() {
                       placeholder="John Doe"
                       value={formData.fullName}
                       onChange={(e) => handleInputChange("fullName", e.target.value)}
-                      className="w-full pl-12 pr-4 py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                      className="w-full pl-12 pr-4 py-3 sm:py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm sm:text-base"
                     />
                   </div>
                 </div>
 
                 {/* Email */}
-                <div className="space-y-2">
+                <div className="space-y-1.5 sm:space-y-2">
                   <label className="text-sm font-semibold text-foreground/80">Email Address</label>
                   <div className="relative group">
                     <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -233,13 +236,13 @@ export default function SignupPage() {
                       placeholder="you@example.com"
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
-                      className="w-full pl-12 pr-4 py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                      className="w-full pl-12 pr-4 py-3 sm:py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm sm:text-base"
                     />
                   </div>
                 </div>
 
                 {/* Phone */}
-                <div className="space-y-2">
+                <div className="space-y-1.5 sm:space-y-2">
                   <label className="text-sm font-semibold text-foreground/80">Phone Number</label>
                   <div className="relative group">
                     <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -248,7 +251,7 @@ export default function SignupPage() {
                       placeholder="+91-9876543210"
                       value={formData.phone}
                       onChange={(e) => handleInputChange("phone", e.target.value)}
-                      className="w-full pl-12 pr-4 py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                      className="w-full pl-12 pr-4 py-3 sm:py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm sm:text-base"
                     />
                   </div>
                 </div>
@@ -257,7 +260,7 @@ export default function SignupPage() {
                 <Button
                   onClick={handleNextStep}
                   disabled={!formData.fullName || !formData.email || !formData.phone}
-                  className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                  className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white py-4 rounded-xl font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
                 >
                   <span className="flex items-center justify-center gap-2">
                     Continue
@@ -266,9 +269,9 @@ export default function SignupPage() {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-5">
+              <div className="space-y-4 sm:space-y-5">
                 {/* College */}
-                <div className="space-y-2">
+                <div className="space-y-1.5 sm:space-y-2">
                   <label className="text-sm font-semibold text-foreground/80">College/University</label>
                   <div className="relative group">
                     <Building2 className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -277,20 +280,20 @@ export default function SignupPage() {
                       placeholder="IIT Delhi"
                       value={formData.college}
                       onChange={(e) => handleInputChange("college", e.target.value)}
-                      className="w-full pl-12 pr-4 py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                      className="w-full pl-12 pr-4 py-3 sm:py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm sm:text-base"
                     />
                   </div>
                 </div>
 
                 {/* Branch */}
-                <div className="space-y-2">
+                <div className="space-y-1.5 sm:space-y-2">
                   <label className="text-sm font-semibold text-foreground/80">Branch/Stream</label>
                   <div className="relative group">
                     <GraduationCap className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <select
                       value={formData.branch}
                       onChange={(e) => handleInputChange("branch", e.target.value)}
-                      className="w-full pl-12 pr-4 py-3.5 border-2 border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer"
+                      className="w-full pl-12 pr-4 py-3 sm:py-3.5 border-2 border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer text-sm sm:text-base"
                     >
                       <option value="" className="bg-card">Select your branch</option>
                       <option className="bg-card">Computer Science</option>
@@ -304,12 +307,12 @@ export default function SignupPage() {
                 </div>
 
                 {/* Year */}
-                <div className="space-y-2">
+                <div className="space-y-1.5 sm:space-y-2">
                   <label className="text-sm font-semibold text-foreground/80">Current Year</label>
                   <select
                     value={formData.year}
                     onChange={(e) => handleInputChange("year", e.target.value)}
-                    className="w-full px-4 py-3.5 border-2 border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer"
+                    className="w-full px-4 py-3 sm:py-3.5 border-2 border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer text-sm sm:text-base"
                   >
                     <option value="" className="bg-card">Select your year</option>
                     <option className="bg-card">First Year</option>
@@ -320,7 +323,7 @@ export default function SignupPage() {
                 </div>
 
                 {/* Password */}
-                <div className="space-y-2">
+                <div className="space-y-1.5 sm:space-y-2">
                   <label className="text-sm font-semibold text-foreground/80">Password</label>
                   <div className="relative group">
                     <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -329,7 +332,7 @@ export default function SignupPage() {
                       placeholder="••••••••"
                       value={formData.password}
                       onChange={(e) => handleInputChange("password", e.target.value)}
-                      className="w-full pl-12 pr-12 py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                      className="w-full pl-12 pr-12 py-3 sm:py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm sm:text-base"
                     />
                     <button
                       type="button"
@@ -351,7 +354,7 @@ export default function SignupPage() {
                         ))}
                       </div>
                       {passwordStrength > 0 && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">
                           Password strength: <span className="font-semibold text-foreground">{getPasswordStrengthText()}</span>
                         </p>
                       )}
@@ -360,7 +363,7 @@ export default function SignupPage() {
                 </div>
 
                 {/* Confirm Password */}
-                <div className="space-y-2">
+                <div className="space-y-1.5 sm:space-y-2">
                   <label className="text-sm font-semibold text-foreground/80">Confirm Password</label>
                   <div className="relative group">
                     <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -369,7 +372,7 @@ export default function SignupPage() {
                       placeholder="••••••••"
                       value={formData.confirmPassword}
                       onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                      className="w-full pl-12 pr-12 py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                      className="w-full pl-12 pr-12 py-3 sm:py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm sm:text-base"
                     />
                     <button
                       type="button"
@@ -380,7 +383,7 @@ export default function SignupPage() {
                     </button>
                   </div>
                   {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                    <p className="text-xs text-red-600">Passwords do not match</p>
+                    <p className="text-[10px] sm:text-xs text-red-600">Passwords do not match</p>
                   )}
                 </div>
 
@@ -392,7 +395,7 @@ export default function SignupPage() {
                     onChange={(e) => handleInputChange("agreeToTerms", e.target.checked)}
                     className="mt-1 w-5 h-5 text-primary border-border bg-background rounded focus:ring-primary cursor-pointer"
                   />
-                  <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+                  <span className="text-[11px] sm:text-sm text-muted-foreground group-hover:text-foreground transition-colors leading-tight">
                     I agree to the{" "}
                     <a href="/terms_and_condition" className="text-primary font-bold hover:underline">
                       Terms & Conditions
@@ -405,11 +408,11 @@ export default function SignupPage() {
                 </label>
 
                 {/* Buttons */}
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <Button
                     onClick={handlePrevStep}
                     variant="outline"
-                    className="flex-1 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 py-3 rounded-xl font-semibold transition-all"
+                    className="w-full sm:flex-1 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 py-3 rounded-xl font-semibold transition-all text-sm sm:text-base order-2 sm:order-1"
                   >
                     Back
                   </Button>
@@ -424,7 +427,7 @@ export default function SignupPage() {
                       formData.password !== formData.confirmPassword ||
                       !formData.agreeToTerms
                     }
-                    className="flex-[2] bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white py-3 rounded-xl font-semibold shadow-lg shadow-primary/20 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:flex-[2] bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white py-3 rounded-xl font-semibold shadow-lg shadow-primary/20 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base order-1 sm:order-2"
                   >
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
@@ -447,16 +450,16 @@ export default function SignupPage() {
                     <div className="w-full border-t border-border"></div>
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-card text-muted-foreground font-medium">Or sign up with</span>
+                    <span className="px-4 bg-white dark:bg-slate-900 text-muted-foreground font-medium">Or sign up with</span>
                   </div>
                 </div>
 
                 {/* Social Signup */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Button
                     onClick={() => handleSocialSignup('google')}
                     variant="outline"
-                    className="border-2 border-border hover:border-muted hover:bg-muted py-3 rounded-xl font-semibold transition-all"
+                    className="w-full border-2 border-border hover:border-muted hover:bg-muted py-3 rounded-xl font-semibold transition-all flex items-center justify-center text-sm sm:text-base"
                   >
                     <Chrome className="w-5 h-5 mr-2 text-red-500" />
                     Google
@@ -464,7 +467,7 @@ export default function SignupPage() {
                   <Button
                     onClick={() => handleSocialSignup('github')}
                     variant="outline"
-                    className="border-2 border-border hover:border-muted hover:bg-muted py-3 rounded-xl font-semibold transition-all"
+                    className="w-full border-2 border-border hover:border-muted hover:bg-muted py-3 rounded-xl font-semibold transition-all flex items-center justify-center text-sm sm:text-base"
                   >
                     <Github className="w-5 h-5 mr-2" />
                     GitHub
@@ -485,8 +488,8 @@ export default function SignupPage() {
       </div>
 
       {/* Bottom Info */}
-      <div className="absolute bottom-4 left-0 right-0 text-center text-sm text-muted-foreground font-medium">
-        <p>© 2026 NextGen Platform. All rights reserved.</p>
+      <div className="mt-8 text-center text-sm text-muted-foreground font-medium relative z-10">
+        <p>© {new Date().getFullYear()} NextGen Platform. All rights reserved.</p>
       </div>
     </div>
   );

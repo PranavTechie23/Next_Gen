@@ -705,115 +705,74 @@ export default function AdminSettings() {
   };
 
   return (
-    <div className="min-h-screen bg-background transition-colors duration-300">
+    <div className="min-h-screen bg-background transition-colors duration-300 relative overflow-hidden">
+      {/* Premium Background Glows */}
+      {isDark && (
+        <div className="premium-glow-bg">
+          <div className="premium-glow-1" />
+          <div className="premium-glow-2" />
+          <div className="premium-glow-3" />
+        </div>
+      )}
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl border-b border-slate-200 dark:border-white/5 transition-all duration-500">
-        <div className="max-w-[1700px] mx-auto px-6 sm:px-10">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border transition-all duration-500">
+        <div className="max-w-[1700px] mx-auto px-6 lg:px-12">
           <div className="flex items-center justify-between h-20">
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-8">
               <button
                 onClick={() => window.history.back()}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white rounded-xl font-black text-sm tracking-tight hover:shadow-[0_10px_30_rgba(37,99,235,0.4)] transition-all flex items-center gap-2 hover:scale-105 active:scale-95 group"
+                className="px-5 py-2.5 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-xl font-bold text-sm transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-95 group border border-border"
               >
-                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                 Back
               </button>
-              <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
-              <div className="flex items-center gap-6">
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-blue-600 rounded-2xl blur-xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                  <div className="relative w-12 h-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center shadow-xl border border-slate-200 dark:border-white/10 group-hover:scale-110 transition-transform duration-500">
-                    <img src={isDark ? "/NG/NextGen_dark.png" : "/NG/NextGen_light.png"} alt="NextGen Logo" className="w-8 h-8 object-contain" />
-                  </div>
-                </div>
-                <div className="flex flex-col -gap-1">
-                  <span className="font-black text-2xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-tighter">NextGen</span>
-                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Admin Settings</span>
+              <div className="h-8 w-px bg-border hidden sm:block"></div>
+              <div className="flex items-center gap-3">
+                <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-10 w-10 object-contain flex-shrink-0" />
+                <div className="flex flex-col">
+                  <span className="font-black text-xl bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent tracking-tight">NextGen</span>
+                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Admin Settings</span>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <ThemeToggle className="!h-12 !w-12 bg-slate-100 dark:bg-white/5 backdrop-blur-md border border-slate-200 dark:border-white/10 hover:border-blue-500/30 !rounded-xl transition-all flex items-center justify-center shadow-lg hover:scale-110 text-slate-600 dark:text-white" />
+              <ThemeToggle />
             </div>
           </div>
         </div>
       </header>
 
       {/* Navigation Tabs */}
-      <div className="bg-card border-b border-border sticky top-20 z-40 shadow-sm transition-colors duration-300">
-        <div className="container">
-          <div className="flex space-x-1 overflow-x-auto">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`py-4 px-6 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'overview'
-                ? 'border-primary text-primary bg-primary/5'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                }`}
-            >
-              <div className="flex items-center gap-2">
-                <BarChart3 className="w-4 h-4" />
-                <span>Overview</span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('profile')}
-              className={`py-4 px-6 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'profile'
-                ? 'border-primary text-primary bg-primary/5'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                }`}
-            >
-              <div className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                <span>Profile</span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('notifications')}
-              className={`py-4 px-6 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'notifications'
-                ? 'border-primary text-primary bg-primary/5'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                }`}
-            >
-              <div className="flex items-center gap-2">
-                <Bell className="w-4 h-4" />
-                <span>Notifications</span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('security')}
-              className={`py-4 px-6 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'security'
-                ? 'border-primary text-primary bg-primary/5'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                }`}
-            >
-              <div className="flex items-center gap-2">
-                <Lock className="w-4 h-4" />
-                <span>Security</span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('data')}
-              className={`py-4 px-6 border-b-2 font-bold transition-all whitespace-nowrap ${activeTab === 'data'
-                ? 'border-primary text-primary bg-primary/5'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                }`}
-            >
-              <div className="flex items-center gap-2">
-                <Database className="w-4 h-4" />
-                <span>Data & Privacy</span>
-              </div>
-            </button>
+      <div className="bg-card/50 backdrop-blur-md border-b border-border sticky top-20 z-40 shadow-sm transition-colors duration-300">
+        <div className="container mx-auto">
+          <div className="flex justify-center space-x-2 overflow-x-auto py-2">
+            {[
+              { id: 'overview', icon: BarChart3, label: 'Overview' },
+              { id: 'profile', icon: User, label: 'Profile' },
+              { id: 'notifications', icon: Bell, label: 'Notifications' },
+              { id: 'security', icon: Lock, label: 'Security' },
+              { id: 'data', icon: Database, label: 'Data & Privacy' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`py-3 px-6 rounded-xl font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === tab.id
+                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                <span>{tab.label}</span>
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <main className="container py-8">
-        {renderContent()}
+      <main className="container mx-auto py-12 px-6 max-w-7xl">
+        <div className="animate-fadeIn">
+          {renderContent()}
+        </div>
       </main>
     </div>
   );

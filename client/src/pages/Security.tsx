@@ -76,16 +76,15 @@ export default function Security() {
                 Back
               </button>
               <div className="h-12 w-px bg-slate-200 dark:bg-white/10"></div>
-              <div className="flex items-center gap-8">
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-blue-600 rounded-3xl blur-2xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                  <div className="relative w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-3xl flex items-center justify-center shadow-2xl border border-white/20">
-                    <Shield className="w-12 h-12 text-white animate-pulse" />
-                  </div>
-                </div>
+              <div className="flex items-center gap-0 group cursor-pointer" onClick={() => window.location.href = "/"}>
+                <img
+                  src="/NG/NextGen_light.png"
+                  alt="NextGen Logo"
+                  className="h-14 w-14 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110"
+                />
                 <div>
-                  <h1 className="text-4xl font-black bg-gradient-to-r from-slate-900 via-blue-600 to-slate-900 dark:from-white dark:via-blue-100 dark:to-white bg-clip-text text-transparent tracking-tight">Security & Guidelines</h1>
-                  <p className="text-blue-600 dark:text-blue-300 text-lg font-bold mt-1 opacity-80">Institutional safety & data protection standards</p>
+                  <h1 className="text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">NextGen</h1>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] mt-1 opacity-80">Security & Guidelines</p>
                 </div>
               </div>
             </div>
