@@ -16,7 +16,10 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(helmet());
 app.use(cors({
-    origin: 'http://localhost:5173', // Adjust to your frontend URL
+    origin: function(origin, callback) {
+        // Allow any request to pass through during development
+        callback(null, true); 
+    },
     credentials: true // Allow cookies to be sent
 }));
 app.use(morgan('dev'));

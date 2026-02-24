@@ -1,779 +1,1391 @@
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Mail, Phone, MapPin, Building, Calendar, Edit, Save, X, Shield, Bell, Lock, Users, GraduationCap, Briefcase, TrendingUp, Activity, BarChart3, Settings, Eye, Clock, CheckCircle, AlertCircle, Camera, Award, Target, Zap, Database, Download, Globe, Smartphone, Laptop, Key, UserCheck, RefreshCw, LogOut, ArrowLeft, ChevronRight, Trash2, Plus, ArrowRight, Moon, Sun } from "lucide-react";
-import { useTheme } from "@/contexts/ThemeContext";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  GraduationCap,
+  MapPin,
+  Globe,
+  Phone,
+  Mail,
+  Building,
+  Award,
+  Camera,
+  Save,
+  X,
+  Upload,
+  Image as ImageIcon,
+  CheckCircle,
+  Info,
+  AlertCircle,
+  Settings,
+  Users,
+  Briefcase,
+  FileText,
+  Link as LinkIcon,
+  Facebook,
+  Twitter,
+  Linkedin,
+  Instagram,
+  Youtube,
+  Calendar,
+  Clock,
+  DollarSign,
+  Percent,
+  TrendingUp,
+  Shield,
+  Bell,
+  Eye,
+  EyeOff,
+  Copy,
+  Check,
+  RefreshCw,
+  Download,
+  Trash2,
+  Plus,
+  Minus,
+  ChevronRight,
+  ChevronDown,
+  Edit2,
+  Lock,
+  Unlock,
+  Star,
+  Flag,
+  Hash,
+  AtSign,
+  Smartphone,
+  Laptop,
+  BookOpen,
+  Target,
+  Zap,
+  Heart,
+  Share2,
+  MessageSquare,
+  HelpCircle,
+  LogOut,
+  Home,
+  BarChart3,
+  PieChart,
+  Activity,
+  Layers,
+  Package,
+  Cpu,
+  Database,
+  Server,
+  Code,
+  Terminal,
+  GitBranch,
+  Folder,
+  FilePlus,
+  FileCheck,
+  ArrowLeft
+} from 'lucide-react';
 import { useLocation } from 'wouter';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
-export default function AdminSettings() {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+export default function CollegeSettings() {
   const [, navigate] = useLocation();
-  const [isEditing, setIsEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
-  const [adminData, setAdminData] = useState({
-    name: 'Admin User',
-    email: 'admin@campuscareer.edu',
-    phone: '+91 98765 43210',
-    role: 'System Administrator',
-    department: 'Platform Management',
-    institution: 'Campus Career HQ',
-    location: 'Mumbai, Maharashtra',
-    joinDate: 'Jan 2022',
-    avatar: ''
+  const [activeSection, setActiveSection] = useState('basic');
+  const [hasChanges, setHasChanges] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({
+    basic: true,
+    contact: false,
+    social: false,
+    placement: false,
+    branding: false,
+    notifications: false
   });
 
-  const [notifications, setNotifications] = useState({
-    newCollege: true,
-    systemAlerts: true,
-    emailDigest: true,
-    paymentAlerts: true,
-    supportTickets: true,
-    weeklyReports: false
+  // College Basic Information
+  const [basicInfo, setBasicInfo] = useState({
+    collegeName: 'Tech University',
+    shortName: 'TechU',
+    tagline: 'Leading Innovation in Technology Education',
+    type: 'Private University',
+    established: '1995',
+    affiliatedTo: 'State Technical Board',
+    accreditation: 'ABET',
+    ranking: '#12',
+    naacGrade: 'A++',
+    totalStudents: '15420',
+    facultyCount: '850',
+    campusArea: '250 acres'
   });
 
+  // Contact Information
+  const [contactInfo, setContactInfo] = useState({
+    address: '123 Tech Street, Innovation Park',
+    city: 'San Francisco',
+    state: 'California',
+    country: 'United States',
+    pincode: '94105',
+    phone: '+1 (555) 987-6543',
+    alternatePhone: '+1 (555) 987-6544',
+    email: 'info@techuniversity.edu',
+    admissionEmail: 'admissions@techuniversity.edu',
+    placementEmail: 'placements@techuniversity.edu',
+    website: 'www.techuniversity.edu'
+  });
 
+  // Social Media Links
+  const [socialLinks, setSocialLinks] = useState({
+    facebook: 'https://facebook.com/techuniversity',
+    twitter: 'https://twitter.com/techuniversity',
+    linkedin: 'https://linkedin.com/company/techuniversity',
+    instagram: 'https://instagram.com/techuniversity',
+    youtube: 'https://youtube.com/techuniversity'
+  });
 
-  const recentActivities = [
-    { id: 1, type: 'login', action: 'Logged in from Mumbai', device: 'Chrome on Windows', time: '2 hours ago', status: 'success' },
-    { id: 2, type: 'college', action: 'Added new college', detail: 'IIT Madras', time: '5 hours ago', status: 'info' },
-    { id: 3, type: 'settings', action: 'Updated notification settings', detail: 'Email preferences', time: '1 day ago', status: 'info' },
-    { id: 4, type: 'security', action: 'Password changed', detail: 'Security update', time: '2 days ago', status: 'warning' },
-    { id: 5, type: 'system', action: 'System maintenance completed', detail: 'Database optimization', time: '3 days ago', status: 'success' }
-  ];
+  // Placement Settings
+  const [placementSettings, setPlacementSettings] = useState({
+    placementCell: 'Tech University Career Services',
+    tpoName: 'Dr. Sarah Johnson',
+    tpoEmail: 'tpo@techuniversity.edu',
+    tpoPhone: '+1 (555) 987-6545',
+    minCGPA: '7.0',
+    allowBacklogs: true,
+    maxBacklogs: '3',
+    placementStartDate: '2024-08-01',
+    enableOnCampusDrives: true,
+    enableOffCampusApplications: true,
+    autoApproveApplications: false
+  });
 
-  const activeSessions = [
-    { id: 1, device: 'Chrome on Windows', location: 'Mumbai, India', ip: '192.168.1.1', lastActive: 'Active now', current: true },
-    { id: 2, device: 'Safari on iPhone', location: 'Delhi, India', ip: '192.168.1.2', lastActive: '2 hours ago', current: false },
-    { id: 3, device: 'Edge on Windows', location: 'Bangalore, India', ip: '192.168.1.3', lastActive: '1 day ago', current: false }
-  ];
+  // Branding Settings
+  const [brandingSettings, setBrandingSettings] = useState({
+    primaryColor: '#3B82F6',
+    secondaryColor: '#8B5CF6',
+    accentColor: '#10B981',
+    logoUrl: '',
+    coverImageUrl: '',
+    faviconUrl: ''
+  });
 
-  const securityLogs = [
-    { id: 1, event: 'Successful login', location: 'Mumbai, India', time: '2 hours ago', status: 'success' },
-    { id: 2, event: 'Password changed', location: 'Mumbai, India', time: '2 days ago', status: 'info' },
-    { id: 3, event: 'Failed login attempt', location: 'Unknown', time: '5 days ago', status: 'warning' },
-    { id: 4, event: '2FA enabled', location: 'Mumbai, India', time: '1 week ago', status: 'success' }
-  ];
+  // Notification Settings
+  const [notificationSettings, setNotificationSettings] = useState({
+    emailNotifications: true,
+    smsNotifications: true,
+    pushNotifications: true,
+    placementUpdates: true,
+    driveReminders: true,
+    applicationStatus: true,
+    weeklyReports: true,
+    monthlyAnalytics: true
+  });
 
-  const apiKeys = [
-    { id: 1, name: 'Production API Key', key: 'pk_live_**********************', created: 'Jan 15, 2026', lastUsed: '2 hours ago', status: 'active' },
-    { id: 2, name: 'Development API Key', key: 'pk_test_**********************', created: 'Dec 20, 2025', lastUsed: '1 day ago', status: 'active' },
-    { id: 3, name: 'Legacy API Key', key: 'pk_old_***********************', created: 'Nov 10, 2025', lastUsed: 'Never', status: 'inactive' }
-  ];
+  const [copied, setCopied] = useState('');
+
+  const handleCopy = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(field);
+    setTimeout(() => setCopied(''), 2000);
+  };
 
   const handleSave = () => {
-    setIsEditing(false);
+    setHasChanges(false);
+    setShowSuccessMessage(true);
+    setTimeout(() => setShowSuccessMessage(false), 3000);
   };
 
-  const handleCancel = () => {
-    setIsEditing(false);
+  const handleReset = () => {
+    // Reset to default values
+    setHasChanges(false);
   };
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'overview':
-        return (
-          <div className="space-y-6">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections({
+      ...expandedSections,
+      [section]: !expandedSections[section]
+    });
+  };
 
+  const updateBasicInfo = (field: keyof typeof basicInfo, value: string) => {
+    setBasicInfo({ ...basicInfo, [field]: value });
+    setHasChanges(true);
+  };
+
+  const updateContactInfo = (field: keyof typeof contactInfo, value: string) => {
+    setContactInfo({ ...contactInfo, [field]: value });
+    setHasChanges(true);
+  };
+
+  const updateSocialLinks = (field: keyof typeof socialLinks, value: string) => {
+    setSocialLinks({ ...socialLinks, [field]: value });
+    setHasChanges(true);
+  };
+
+  const updatePlacementSettings = (field: keyof typeof placementSettings, value: string | boolean) => {
+    setPlacementSettings({ ...placementSettings, [field]: value });
+    setHasChanges(true);
+  };
+
+  const updateBrandingSettings = (field: keyof typeof brandingSettings, value: string) => {
+    setBrandingSettings({ ...brandingSettings, [field]: value });
+    setHasChanges(true);
+  };
+
+  const updateNotificationSettings = (field: keyof typeof notificationSettings, value: boolean) => {
+    setNotificationSettings({ ...notificationSettings, [field]: value });
+    setHasChanges(true);
+  };
+
+  type IconComponent = React.ComponentType<{ className?: string }>;
+
+  const renderInputField = (
+    label: string,
+    value: string,
+    onChange: (value: string) => void,
+    type: string = 'text',
+    placeholder: string = '',
+    icon: IconComponent | null = null,
+    helper: string = ''
+  ) => {
+    const Icon = icon;
+    return (
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+          {Icon && <Icon className="w-4 h-4 text-blue-600" />}
+          {label}
+        </label>
+        <div className="relative">
+          <input
+            type={type}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className="w-full px-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all font-medium"
+          />
+        </div>
+        {helper && (
+          <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+            <Info className="w-3 h-3" />
+            {helper}
+          </p>
+        )}
+      </div>
+    );
+  };
+
+  const renderTextArea = (
+    label: string,
+    value: string,
+    onChange: (value: string) => void,
+    rows: number = 4,
+    placeholder: string = '',
+    helper: string = ''
+  ) => {
+    return (
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+          {label}
+        </label>
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          rows={rows}
+          className="w-full px-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all resize-none font-medium"
+        />
+        {helper && (
+          <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+            <Info className="w-3 h-3" />
+            {helper}
+          </p>
+        )}
+      </div>
+    );
+  };
+
+  const renderToggle = (
+    label: string,
+    checked: boolean,
+    onChange: (value: boolean) => void,
+    description: string = ''
+  ) => {
+    return (
+      <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-blue-500 transition-all">
+        <div className="flex-1">
+          <p className="font-bold text-slate-900 dark:text-white">{label}</p>
+          {description && (
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{description}</p>
+          )}
+        </div>
+        <button
+          onClick={() => onChange(!checked)}
+          className={`relative w-14 h-8 rounded-full transition-all ${checked ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'
+            }`}
+        >
+          <div
+            className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-lg transition-all ${checked ? 'left-7' : 'left-1'
+              }`}
+          />
+        </button>
+      </div>
+    );
+  };
+
+  interface SelectOption {
+    value: string;
+    label: string;
+  }
+
+  const renderSelectField = (
+    label: string,
+    value: string,
+    onChange: (value: string) => void,
+    options: SelectOption[],
+    icon: IconComponent | null = null
+  ) => {
+    const Icon = icon;
+    return (
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+          {Icon && <Icon className="w-4 h-4 text-blue-600" />}
+          {label}
+        </label>
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full px-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all font-medium"
+        >
+          {options.map((option: SelectOption) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  };
+
+  const renderSectionHeader = (
+    title: string,
+    description: string,
+    icon: IconComponent,
+    sectionKey: keyof typeof expandedSections
+  ) => {
+    const Icon = icon;
+    const isExpanded = expandedSections[sectionKey];
+
+    return (
+      <div className="w-full flex items-center justify-between p-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-lg text-white group relative overflow-hidden">
+        <div
+          className="flex items-center gap-4 cursor-pointer flex-1"
+          onClick={() => toggleSection(sectionKey)}
+        >
+          <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Icon className="w-7 h-7" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black">{title}</h2>
+            <p className="text-blue-100 text-sm mt-1">{description}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 z-10">
+          <button
+            className="flex items-center gap-2 px-6 py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl border border-white/30 transition-all font-bold text-sm shadow-lg hover:scale-105"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isExpanded) toggleSection(sectionKey);
+            }}
+          >
+            <Edit2 className="w-4 h-4" />
+            EDIT
+          </button>
+          <button
+            onClick={() => toggleSection(sectionKey)}
+            className={`w-10 h-10 flex items-center justify-center hover:bg-white/10 rounded-full transition-all ${isExpanded ? 'rotate-180' : ''}`}
+          >
+            <ChevronDown className="w-6 h-6" />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderFileUpload = (
+    label: string,
+    currentUrl: string,
+    onChange: (value: string) => void,
+    acceptedFormats: string = 'image/*'
+  ) => {
+    return (
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+          <ImageIcon className="w-4 h-4 text-blue-600" />
+          {label}
+        </label>
+        <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 hover:border-blue-500 transition-all bg-slate-50 dark:bg-slate-800/50">
+          {currentUrl ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-20 h-20 bg-slate-200 dark:bg-slate-700 rounded-xl overflow-hidden">
+                  <img src={currentUrl} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-900 dark:text-white">Current Image</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Click to change</p>
+                </div>
+              </div>
+              <button
+                onClick={() => onChange('')}
+                className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-all"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
             </div>
-
-            {/* Quick Actions */}
-            <Card className="border-border bg-card shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-purple-600" />
-                  Quick Actions
-                </CardTitle>
-                <CardDescription>Frequently accessed settings and tools</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <button className="p-4 bg-primary/5 border border-primary/10 rounded-xl hover:shadow-lg transition-all text-left group">
-                    <Shield className="w-8 h-8 text-primary mb-3 group-hover:scale-110 transition-transform" />
-                    <h3 className="font-semibold text-foreground mb-1">Security Settings</h3>
-                    <p className="text-xs text-muted-foreground">Manage passwords & 2FA</p>
-                  </button>
-                  <button className="p-4 bg-purple-500/5 border border-purple-500/10 rounded-xl hover:shadow-lg transition-all text-left group">
-                    <Bell className="w-8 h-8 text-purple-600 mb-3 group-hover:scale-110 transition-transform" />
-                    <h3 className="font-semibold text-foreground mb-1">Notifications</h3>
-                    <p className="text-xs text-muted-foreground">Configure alerts</p>
-                  </button>
-                  <button className="p-4 bg-green-500/5 border border-green-500/10 rounded-xl hover:shadow-lg transition-all text-left group">
-                    <Database className="w-8 h-8 text-green-600 mb-3 group-hover:scale-110 transition-transform" />
-                    <h3 className="font-semibold text-foreground mb-1">Backup & Export</h3>
-                    <p className="text-xs text-muted-foreground">Data management</p>
-                  </button>
-                  <button className="p-4 bg-orange-500/5 border border-orange-500/10 rounded-xl hover:shadow-lg transition-all text-left group">
-                    <Key className="w-8 h-8 text-orange-600 mb-3 group-hover:scale-110 transition-transform" />
-                    <h3 className="font-semibold text-foreground mb-1">API Keys</h3>
-                    <p className="text-xs text-muted-foreground">Manage integrations</p>
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Activities & Active Sessions */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Recent Activities */}
-              <Card className="border-border bg-card shadow-lg">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-xl flex items-center gap-2">
-                        <Activity className="w-5 h-5 text-blue-600" />
-                        Recent Activities
-                      </CardTitle>
-                      <CardDescription>Your latest actions on the platform</CardDescription>
-                    </div>
-                    <Button variant="ghost" size="sm">View All</Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {recentActivities.map((activity) => (
-                      <div key={activity.id} className="flex items-start gap-3 p-3 hover:bg-muted/50 rounded-lg transition-colors border border-transparent hover:border-border">
-                        <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${activity.status === 'success' ? 'bg-green-500' :
-                          activity.status === 'warning' ? 'bg-orange-500' :
-                            'bg-primary'
-                          }`} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground">{activity.action}</p>
-                          <p className="text-xs text-muted-foreground">{activity.detail}</p>
-                          <p className="text-xs text-muted-foreground/60 mt-1">{activity.time}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Active Sessions */}
-              <Card className="border-slate-200 shadow-lg">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-xl flex items-center gap-2">
-                        <Laptop className="w-5 h-5 text-purple-600" />
-                        Active Sessions
-                      </CardTitle>
-                      <CardDescription className="text-muted-foreground">Devices currently signed in</CardDescription>
-                    </div>
-                    <Button variant="ghost" size="sm" className="hover:bg-muted">
-                      <RefreshCw className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {activeSessions.map((session) => (
-                      <div key={session.id} className="flex items-start justify-between p-3 hover:bg-muted/50 rounded-lg transition-colors border border-border">
-                        <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Smartphone className="w-5 h-5 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-foreground">{session.device}</p>
-                            <p className="text-xs text-muted-foreground">{session.location}</p>
-                            <p className="text-xs text-muted-foreground/60 mt-1">
-                              {session.current ? (
-                                <span className="inline-flex items-center gap-1 text-green-500 font-medium">
-                                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                                  {session.lastActive}
-                                </span>
-                              ) : session.lastActive}
-                            </p>
-                          </div>
-                        </div>
-                        {!session.current && (
-                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                            <X className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+          ) : (
+            <div className="text-center">
+              <Upload className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+              <p className="font-bold text-slate-900 dark:text-white mb-2">Upload Image</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                Drag and drop or click to browse
+              </p>
+              <button className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all">
+                Choose File
+              </button>
             </div>
-          </div>
-        );
-
-      case 'profile':
-        return (
-          <div className="space-y-6">
-            <Card className="border-slate-200 shadow-lg">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-2xl">Profile Information</CardTitle>
-                    <CardDescription>Manage your personal details and preferences</CardDescription>
-                  </div>
-                  {!isEditing ? (
-                    <Button onClick={() => setIsEditing(true)} className="bg-gradient-to-r from-primary to-blue-600 shadow-md shadow-primary/20">
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Profile
-                    </Button>
-                  ) : (
-                    <div className="flex gap-2">
-                      <Button onClick={handleSave} className="bg-gradient-to-r from-green-600 to-green-700">
-                        <Save className="w-4 h-4 mr-2" />
-                        Save
-                      </Button>
-                      <Button onClick={handleCancel} variant="outline">
-                        <X className="w-4 h-4 mr-2" />
-                        Cancel
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {/* Avatar Section */}
-                <div className="flex items-center gap-6 mb-8 p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-border">
-                  <div className="relative">
-                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white text-4xl font-bold shadow-lg shadow-primary/30">
-                      {adminData.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    {isEditing && (
-                      <button className="absolute bottom-0 right-0 w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors shadow-lg">
-                        <Camera className="w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-foreground">{adminData.name}</h3>
-                    <p className="text-muted-foreground mb-2">{adminData.role}</p>
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 bg-green-500/10 text-green-500 rounded-full text-sm font-semibold inline-flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                        Active
-                      </span>
-                      <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-semibold inline-flex items-center gap-1.5">
-                        <Shield className="w-3 h-3" />
-                        Verified
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Form Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-semibold text-muted-foreground mb-2">Full Name</label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground/60 w-5 h-5" />
-                      <input
-                        type="text"
-                        value={adminData.name}
-                        onChange={(e) => setAdminData({ ...adminData, name: e.target.value })}
-                        disabled={!isEditing}
-                        className="w-full pl-11 pr-4 py-3 border border-border bg-background text-foreground rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-muted/50 disabled:text-muted-foreground transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-muted-foreground mb-2">Email Address</label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground/60 w-5 h-5" />
-                      <input
-                        type="email"
-                        value={adminData.email}
-                        onChange={(e) => setAdminData({ ...adminData, email: e.target.value })}
-                        disabled={!isEditing}
-                        className="w-full pl-11 pr-4 py-3 border border-border bg-background text-foreground rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-muted/50 disabled:text-muted-foreground transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-muted-foreground mb-2">Phone Number</label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground/60 w-5 h-5" />
-                      <input
-                        type="tel"
-                        value={adminData.phone}
-                        onChange={(e) => setAdminData({ ...adminData, phone: e.target.value })}
-                        disabled={!isEditing}
-                        className="w-full pl-11 pr-4 py-3 border border-border bg-background text-foreground rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-muted/50 disabled:text-muted-foreground transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-muted-foreground mb-2">Role</label>
-                    <div className="relative">
-                      <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground/60 w-5 h-5" />
-                      <input
-                        type="text"
-                        value={adminData.role}
-                        disabled
-                        className="w-full pl-11 pr-4 py-3 border border-border bg-muted/30 text-muted-foreground rounded-lg"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-muted-foreground mb-2">Department</label>
-                    <div className="relative">
-                      <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground/60 w-5 h-5" />
-                      <input
-                        type="text"
-                        value={adminData.department}
-                        onChange={(e) => setAdminData({ ...adminData, department: e.target.value })}
-                        disabled={!isEditing}
-                        className="w-full pl-11 pr-4 py-3 border border-border bg-background text-foreground rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-muted/50 disabled:text-muted-foreground transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-muted-foreground mb-2">Institution</label>
-                    <div className="relative">
-                      <GraduationCap className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground/60 w-5 h-5" />
-                      <input
-                        type="text"
-                        value={adminData.institution}
-                        onChange={(e) => setAdminData({ ...adminData, institution: e.target.value })}
-                        disabled={!isEditing}
-                        className="w-full pl-11 pr-4 py-3 border border-border bg-background text-foreground rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-muted/50 disabled:text-muted-foreground transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-muted-foreground mb-2">Location</label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground/60 w-5 h-5" />
-                      <input
-                        type="text"
-                        value={adminData.location}
-                        onChange={(e) => setAdminData({ ...adminData, location: e.target.value })}
-                        disabled={!isEditing}
-                        className="w-full pl-11 pr-4 py-3 border border-border bg-background text-foreground rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-muted/50 disabled:text-muted-foreground transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-muted-foreground mb-2">Member Since</label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground/60 w-5 h-5" />
-                      <input
-                        type="text"
-                        value={adminData.joinDate}
-                        disabled
-                        className="w-full pl-11 pr-4 py-3 border border-border bg-muted/30 text-muted-foreground rounded-lg"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
-
-      case 'notifications':
-        return (
-          <div className="space-y-6">
-            <Card className="border-slate-200 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-2xl flex items-center gap-2">
-                  <Bell className="w-6 h-6 text-blue-600" />
-                  Notification Preferences
-                </CardTitle>
-                <CardDescription>Manage how and when you receive notifications</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {Object.entries(notifications).map(([key, value]) => (
-                    <div key={key} className="flex items-center justify-between p-4 hover:bg-muted/50 rounded-lg border border-border transition-colors">
-                      <div>
-                        <h3 className="font-semibold text-foreground">
-                          {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {key === 'newCollege' && 'Get notified when new colleges join the platform'}
-                          {key === 'systemAlerts' && 'Receive alerts about system status and updates'}
-                          {key === 'emailDigest' && 'Daily summary of platform activities'}
-                          {key === 'paymentAlerts' && 'Notifications for payment and billing'}
-                          {key === 'supportTickets' && 'New support ticket notifications'}
-                          {key === 'weeklyReports' && 'Weekly performance and analytics reports'}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setNotifications({ ...notifications, [key]: !value })}
-                        className={`relative w-14 h-7 rounded-full transition-colors ${value ? 'bg-primary' : 'bg-muted'
-                          }`}
-                      >
-                        <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform shadow-sm ${value ? 'transform translate-x-7' : ''
-                          }`} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
-
-      case 'security':
-        return (
-          <div className="space-y-6">
-            {/* Security Settings */}
-            <Card className="border-border bg-card shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-2xl flex items-center gap-2">
-                  <Lock className="w-6 h-6 text-red-600" />
-                  Security Settings
-                </CardTitle>
-                <CardDescription>Manage your account security and authentication</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <button className="w-full text-left p-4 hover:bg-muted/50 rounded-lg flex items-center justify-between border border-border transition-all hover:border-primary/50 group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Key className="w-6 h-6 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground">Change Password</h3>
-                        <p className="text-sm text-muted-foreground">Update your account password</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground/50" />
-                  </button>
-
-                  <button className="w-full text-left p-4 hover:bg-muted/50 rounded-lg flex items-center justify-between border border-border transition-all hover:border-primary/50 group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Shield className="w-6 h-6 text-green-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground">Two-Factor Authentication</h3>
-                        <p className="text-sm text-muted-foreground">Add an extra layer of security</p>
-                      </div>
-                    </div>
-                    <span className="px-3 py-1 bg-green-500/10 text-green-500 rounded-full text-xs font-bold">Enabled</span>
-                  </button>
-
-                  <button className="w-full text-left p-4 hover:bg-muted/50 rounded-lg flex items-center justify-between border border-border transition-all hover:border-primary/50 group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Laptop className="w-6 h-6 text-purple-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground">Active Sessions</h3>
-                        <p className="text-sm text-muted-foreground">Manage your logged in devices</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground/50" />
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Security Logs */}
-            <Card className="border-border bg-card shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <Eye className="w-5 h-5 text-blue-600" />
-                  Security Activity Log
-                </CardTitle>
-                <CardDescription>Recent security events and login history</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {securityLogs.map((log) => (
-                    <div key={log.id} className="flex items-start justify-between p-3 hover:bg-muted/50 rounded-lg border border-border transition-colors">
-                      <div className="flex items-start gap-3">
-                        <div className={`w-2 h-2 rounded-full mt-2 ${log.status === 'success' ? 'bg-green-500' :
-                          log.status === 'warning' ? 'bg-orange-500' : 'bg-primary'
-                          }`} />
-                        <div>
-                          <p className="text-sm font-semibold text-foreground">{log.event}</p>
-                          <p className="text-xs text-muted-foreground">{log.location}</p>
-                          <p className="text-xs text-muted-foreground/60 mt-1">{log.time}</p>
-                        </div>
-                      </div>
-                      <span className={`text-xs px-2.5 py-1 rounded-md font-bold ${log.status === 'success' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' :
-                        log.status === 'warning' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400' :
-                          'bg-primary/10 text-primary'
-                        }`}>
-                        {log.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* API Keys */}
-            <Card className="border-border bg-card shadow-lg">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl flex items-center gap-2">
-                      <Key className="w-5 h-5 text-orange-600" />
-                      API Keys
-                    </CardTitle>
-                    <CardDescription>Manage your API keys for integrations</CardDescription>
-                  </div>
-                  <Button size="sm" className="bg-gradient-to-r from-blue-600 to-blue-700">
-                    <Plus className="w-4 h-4 mr-2" />
-                    New Key
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {apiKeys.map((key) => (
-                    <div key={key.id} className="flex items-center justify-between p-4 hover:bg-muted/50 rounded-lg border border-border transition-colors">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold text-foreground">{key.name}</h3>
-                          <span className={`text-xs px-2.5 py-1 rounded-md font-bold ${key.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' : 'bg-muted text-muted-foreground'
-                            }`}>
-                            {key.status}
-                          </span>
-                        </div>
-                        <p className="text-sm text-primary font-mono mb-1 bg-primary/5 p-2 rounded border border-primary/10 inline-block">{key.key}</p>
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2 font-medium">
-                          <span>Created: {key.created}</span>
-                          <span>Last used: {key.lastUsed}</span>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" className="hover:bg-muted">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
-
-      case 'data':
-        return (
-          <div className="space-y-6">
-            {/* Data Management */}
-            <Card className="border-border bg-card shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-2xl flex items-center gap-2">
-                  <Database className="w-6 h-6 text-green-600" />
-                  Data Management
-                </CardTitle>
-                <CardDescription>Export, backup, and manage your platform data</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <button className="w-full text-left p-4 hover:bg-muted/50 rounded-lg flex items-center justify-between border border-border transition-all hover:border-primary/50 group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Download className="w-6 h-6 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground">Export All Data</h3>
-                        <p className="text-sm text-muted-foreground">Download a complete copy of your platform data</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground/50" />
-                  </button>
-
-                  <button className="w-full text-left p-4 hover:bg-muted/50 rounded-lg flex items-center justify-between border border-border transition-all hover:border-primary/50 group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Database className="w-6 h-6 text-green-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground">Backup Database</h3>
-                        <p className="text-sm text-muted-foreground">Create a backup of your database</p>
-                        <p className="text-xs text-green-600 mt-1 font-medium">Last backup: 2 hours ago</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground/50" />
-                  </button>
-
-                  <button className="w-full text-left p-4 hover:bg-muted/50 rounded-lg flex items-center justify-between border border-border transition-all hover:border-primary/50 group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <BarChart3 className="w-6 h-6 text-purple-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground">Analytics Export</h3>
-                        <p className="text-sm text-muted-foreground">Export analytics and reports</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground/50" />
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Storage Usage */}
-            <Card className="border-border bg-card shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <Database className="w-5 h-5 text-blue-600" />
-                  Storage Usage
-                </CardTitle>
-                <CardDescription>Monitor your storage consumption</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-semibold text-muted-foreground">Total Storage</span>
-                      <span className="text-sm font-black text-foreground">45.2 GB / 100 GB</span>
-                    </div>
-                    <div className="h-4 bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-primary to-blue-400 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.4)]" style={{ width: '45%' }}></div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
-                      <p className="text-sm text-primary mb-1 font-semibold uppercase tracking-wider">Database</p>
-                      <p className="text-3xl font-black text-foreground">18.5 GB</p>
-                      <p className="text-xs text-primary mt-1 font-bold">41% of total</p>
-                    </div>
-                    <div className="p-4 bg-purple-500/5 border border-purple-500/20 rounded-xl">
-                      <p className="text-sm text-purple-600 mb-1 font-semibold uppercase tracking-wider">Files</p>
-                      <p className="text-3xl font-black text-foreground">22.8 GB</p>
-                      <p className="text-xs text-purple-600 mt-1 font-bold">50% of total</p>
-                    </div>
-                    <div className="p-4 bg-green-500/5 border border-green-500/20 rounded-xl">
-                      <p className="text-sm text-green-600 mb-1 font-semibold uppercase tracking-wider">Backups</p>
-                      <p className="text-3xl font-black text-foreground">3.9 GB</p>
-                      <p className="text-xs text-green-600 mt-1 font-bold">9% of total</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Danger Zone */}
-            <Card className="border-red-500/50 bg-red-500/5 shadow-xl shadow-red-500/10">
-              <CardHeader>
-                <CardTitle className="text-2xl text-red-600 flex items-center gap-2 font-black">
-                  <AlertCircle className="w-6 h-6" />
-                  Danger Zone
-                </CardTitle>
-                <CardDescription className="text-red-500 font-semibold italic">Irreversible actions - proceed with extreme caution</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="p-4 bg-background border border-red-500/20 rounded-xl">
-                    <h3 className="font-bold text-foreground mb-2">Clear All Cache</h3>
-                    <p className="text-sm text-muted-foreground mb-4">Remove all cached data to free up space</p>
-                    <Button variant="outline" className="border-red-500/50 text-red-600 hover:bg-red-500 hover:text-white transition-all font-bold">
-                      Clear Cache
-                    </Button>
-                  </div>
-                  <div className="p-4 bg-background border border-red-500/20 rounded-xl">
-                    <h3 className="font-bold text-foreground mb-2">Reset All Settings</h3>
-                    <p className="text-sm text-muted-foreground mb-4">Restore all settings to default values</p>
-                    <Button variant="outline" className="border-red-500/50 text-red-600 hover:bg-red-500 hover:text-white transition-all font-bold">
-                      Reset Settings
-                    </Button>
-                  </div>
-                  <div className="p-4 bg-background border border-red-500/40 rounded-xl ring-2 ring-red-500/10">
-                    <h3 className="font-bold text-red-600 mb-2">Delete Account</h3>
-                    <p className="text-sm text-red-500 mb-4 font-medium">Permanently delete your account and all associated data. This action cannot be undone.</p>
-                    <Button className="bg-red-600 hover:bg-red-700 text-white font-black shadow-lg shadow-red-600/30">
-                      Delete Account
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
-
-      default:
-        return null;
-    }
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div className="min-h-screen bg-background transition-colors duration-300 relative overflow-hidden">
-      {/* Premium Background Glows */}
-      {isDark && (
-        <div className="premium-glow-bg">
-          <div className="premium-glow-1" />
-          <div className="premium-glow-2" />
-          <div className="premium-glow-3" />
-        </div>
-      )}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border transition-all duration-500">
-        <div className="max-w-[1700px] mx-auto px-6 lg:px-12">
+      <header className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl border-b border-slate-200 dark:border-white/5 transition-all duration-500">
+        <div className="max-w-[1700px] mx-auto px-6 sm:px-10">
           <div className="flex items-center justify-between h-20">
-            <div className="flex items-center gap-8">
+            <div className="flex items-center gap-6">
               <button
-                onClick={() => window.history.back()}
-                className="px-5 py-2.5 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-xl font-bold text-sm transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-95 group border border-border"
+                onClick={() => navigate('/college/dashboard')}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white rounded-xl font-black text-sm tracking-tight hover:shadow-[0_10px_30_rgba(37,99,235,0.4)] transition-all flex items-center gap-2 hover:scale-105 active:scale-95 group"
               >
-                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                 Back
               </button>
-              <div className="h-8 w-px bg-border hidden sm:block"></div>
-              <div className="flex items-center gap-3">
-                <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-10 w-10 object-contain flex-shrink-0" />
-                <div className="flex flex-col">
-                  <span className="font-black text-xl bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent tracking-tight">NextGen</span>
-                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Admin Settings</span>
+              <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
+              <div className="flex items-center gap-0">
+                <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-14 w-14 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
+                <div className="flex flex-col -gap-1">
+                  <span className="font-black text-2xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-tighter">NextGen</span>
+                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">College Settings</span>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <ThemeToggle />
+              <ThemeToggle className="!h-12 !w-12 bg-slate-100 dark:bg-white/5 backdrop-blur-md border border-slate-200 dark:border-white/10 hover:border-blue-500/30 !rounded-xl transition-all flex items-center justify-center shadow-lg hover:scale-110 text-slate-600 dark:text-white" />
             </div>
           </div>
         </div>
       </header>
 
-      {/* Navigation Tabs */}
-      <div className="bg-card/50 backdrop-blur-md border-b border-border sticky top-20 z-40 shadow-sm transition-colors duration-300">
-        <div className="container mx-auto">
-          <div className="flex justify-center space-x-2 overflow-x-auto py-2">
-            {[
-              { id: 'overview', icon: BarChart3, label: 'Overview' },
-              { id: 'profile', icon: User, label: 'Profile' },
-              { id: 'notifications', icon: Bell, label: 'Notifications' },
-              { id: 'security', icon: Lock, label: 'Security' },
-              { id: 'data', icon: Database, label: 'Data & Privacy' }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`py-3 px-6 rounded-xl font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === tab.id
-                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                  }`}
-              >
-                <tab.icon className="w-4 h-4" />
-                <span>{tab.label}</span>
-              </button>
-            ))}
+      {/* Success Message */}
+      {showSuccessMessage && (
+        <div className="fixed top-24 right-6 z-50 animate-in slide-in-from-right">
+          <div className="bg-green-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
+            <CheckCircle className="w-6 h-6" />
+            <div>
+              <p className="font-bold">Settings Saved Successfully!</p>
+              <p className="text-sm text-green-100">Your changes have been applied</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      <main className="container mx-auto py-12 px-6 max-w-7xl">
-        <div className="animate-fadeIn">
-          {renderContent()}
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border-2 border-blue-200 dark:border-blue-900 hover:shadow-xl transition-all">
+            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-xl flex items-center justify-center mb-4">
+              <Building className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <p className="text-3xl font-black text-slate-900 dark:text-white mb-1">95%</p>
+            <p className="text-sm font-bold text-slate-600 dark:text-slate-400">Profile Complete</p>
+          </div>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border-2 border-green-200 dark:border-green-900 hover:shadow-xl transition-all">
+            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/50 rounded-xl flex items-center justify-center mb-4">
+              <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+            </div>
+            <p className="text-3xl font-black text-slate-900 dark:text-white mb-1">Active</p>
+            <p className="text-sm font-bold text-slate-600 dark:text-slate-400">Account Status</p>
+          </div>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border-2 border-purple-200 dark:border-purple-900 hover:shadow-xl transition-all">
+            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-xl flex items-center justify-center mb-4">
+              <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            </div>
+            <p className="text-3xl font-black text-slate-900 dark:text-white mb-1">15.4K</p>
+            <p className="text-sm font-bold text-slate-600 dark:text-slate-400">Total Students</p>
+          </div>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border-2 border-orange-200 dark:border-orange-900 hover:shadow-xl transition-all">
+            <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/50 rounded-xl flex items-center justify-center mb-4">
+              <Clock className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+            </div>
+            <p className="text-3xl font-black text-slate-900 dark:text-white mb-1">2 min</p>
+            <p className="text-sm font-bold text-slate-600 dark:text-slate-400">Last Updated</p>
+          </div>
         </div>
-      </main>
+
+        <div className="space-y-8">
+          {/* Basic Information Section */}
+          <div>
+            {renderSectionHeader(
+              'Basic Information',
+              'Essential details about your institution',
+              Building,
+              'basic'
+            )}
+
+            {expandedSections.basic && (
+              <div className="mt-6 bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-lg border-2 border-slate-200 dark:border-slate-700">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {renderInputField(
+                    'College Name',
+                    basicInfo.collegeName,
+                    (value) => updateBasicInfo('collegeName', value),
+                    'text',
+                    'Enter official college name',
+                    Building,
+                    'This will be displayed on certificates and official documents'
+                  )}
+                  {renderInputField(
+                    'Short Name',
+                    basicInfo.shortName,
+                    (value) => updateBasicInfo('shortName', value),
+                    'text',
+                    'e.g., MIT, UCLA',
+                    Hash,
+                    'Used for quick identification'
+                  )}
+                  <div className="md:col-span-2">
+                    {renderInputField(
+                      'Tagline',
+                      basicInfo.tagline,
+                      (value) => updateBasicInfo('tagline', value),
+                      'text',
+                      'A short description of your institution',
+                      Target,
+                      'Appears below college name on public profiles'
+                    )}
+                  </div>
+                  {renderSelectField(
+                    'Institution Type',
+                    basicInfo.type,
+                    (value) => updateBasicInfo('type', value),
+                    [
+                      { value: 'Private University', label: 'Private University' },
+                      { value: 'Public University', label: 'Public University' },
+                      { value: 'Autonomous College', label: 'Autonomous College' },
+                      { value: 'Deemed University', label: 'Deemed University' },
+                      { value: 'Technical Institute', label: 'Technical Institute' }
+                    ],
+                    Building
+                  )}
+                  {renderInputField(
+                    'Year Established',
+                    basicInfo.established,
+                    (value) => updateBasicInfo('established', value),
+                    'text',
+                    'YYYY',
+                    Calendar
+                  )}
+                  {renderInputField(
+                    'Affiliated To',
+                    basicInfo.affiliatedTo,
+                    (value) => updateBasicInfo('affiliatedTo', value),
+                    'text',
+                    'University/Board name',
+                    Award
+                  )}
+                  {renderInputField(
+                    'Accreditation',
+                    basicInfo.accreditation,
+                    (value) => updateBasicInfo('accreditation', value),
+                    'text',
+                    'e.g., ABET, NAAC',
+                    Shield
+                  )}
+                  {renderInputField(
+                    'National Ranking',
+                    basicInfo.ranking,
+                    (value) => updateBasicInfo('ranking', value),
+                    'text',
+                    'e.g., #12',
+                    Star
+                  )}
+                  {renderSelectField(
+                    'NAAC Grade',
+                    basicInfo.naacGrade,
+                    (value) => updateBasicInfo('naacGrade', value),
+                    [
+                      { value: 'A++', label: 'A++' },
+                      { value: 'A+', label: 'A+' },
+                      { value: 'A', label: 'A' },
+                      { value: 'B++', label: 'B++' },
+                      { value: 'B+', label: 'B+' },
+                      { value: 'B', label: 'B' }
+                    ],
+                    Award
+                  )}
+                  {renderInputField(
+                    'Total Students',
+                    basicInfo.totalStudents,
+                    (value) => updateBasicInfo('totalStudents', value),
+                    'number',
+                    '0',
+                    Users
+                  )}
+                  {renderInputField(
+                    'Faculty Count',
+                    basicInfo.facultyCount,
+                    (value) => updateBasicInfo('facultyCount', value),
+                    'number',
+                    '0',
+                    Users
+                  )}
+                  {renderInputField(
+                    'Campus Area',
+                    basicInfo.campusArea,
+                    (value) => updateBasicInfo('campusArea', value),
+                    'text',
+                    'e.g., 250 acres',
+                    MapPin
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Contact Information Section */}
+          <div>
+            {renderSectionHeader(
+              'Contact Information',
+              'How people can reach your institution',
+              Phone,
+              'contact'
+            )}
+
+            {expandedSections.contact && (
+              <div className="mt-6 bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-lg border-2 border-slate-200 dark:border-slate-700">
+                <div className="space-y-6">
+                  <div>
+                    {renderTextArea(
+                      'Complete Address',
+                      contactInfo.address,
+                      (value) => updateContactInfo('address', value),
+                      3,
+                      'Street address, Building name, Landmark',
+                      'This appears on official correspondence'
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {renderInputField(
+                      'City',
+                      contactInfo.city,
+                      (value) => updateContactInfo('city', value),
+                      'text',
+                      'City name',
+                      MapPin
+                    )}
+                    {renderInputField(
+                      'State/Province',
+                      contactInfo.state,
+                      (value) => updateContactInfo('state', value),
+                      'text',
+                      'State name',
+                      Flag
+                    )}
+                    {renderInputField(
+                      'Country',
+                      contactInfo.country,
+                      (value) => updateContactInfo('country', value),
+                      'text',
+                      'Country name',
+                      Globe
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {renderInputField(
+                      'Postal/ZIP Code',
+                      contactInfo.pincode,
+                      (value) => updateContactInfo('pincode', value),
+                      'text',
+                      'Enter postal code',
+                      Hash
+                    )}
+                    {renderInputField(
+                      'Primary Phone',
+                      contactInfo.phone,
+                      (value) => updateContactInfo('phone', value),
+                      'tel',
+                      '+1 (xxx) xxx-xxxx',
+                      Phone
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {renderInputField(
+                      'Alternate Phone',
+                      contactInfo.alternatePhone,
+                      (value) => updateContactInfo('alternatePhone', value),
+                      'tel',
+                      '+1 (xxx) xxx-xxxx',
+                      Phone
+                    )}
+                    {renderInputField(
+                      'General Email',
+                      contactInfo.email,
+                      (value) => updateContactInfo('email', value),
+                      'email',
+                      'info@college.edu',
+                      Mail
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {renderInputField(
+                      'Admissions Email',
+                      contactInfo.admissionEmail,
+                      (value) => updateContactInfo('admissionEmail', value),
+                      'email',
+                      'admissions@college.edu',
+                      Mail
+                    )}
+                    {renderInputField(
+                      'Placements Email',
+                      contactInfo.placementEmail,
+                      (value) => updateContactInfo('placementEmail', value),
+                      'email',
+                      'placements@college.edu',
+                      Briefcase
+                    )}
+                  </div>
+
+                  {renderInputField(
+                    'Website URL',
+                    contactInfo.website,
+                    (value) => updateContactInfo('website', value),
+                    'url',
+                    'www.college.edu',
+                    Globe,
+                    'Your official website address'
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Social Media Section */}
+          <div>
+            {renderSectionHeader(
+              'Social Media Links',
+              'Connect with students on social platforms',
+              Share2,
+              'social'
+            )}
+
+            {expandedSections.social && (
+              <div className="mt-6 bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-lg border-2 border-slate-200 dark:border-slate-700">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {renderInputField(
+                    'Facebook Page',
+                    socialLinks.facebook,
+                    (value) => updateSocialLinks('facebook', value),
+                    'url',
+                    'https://facebook.com/yourpage',
+                    Facebook
+                  )}
+                  {renderInputField(
+                    'Twitter Profile',
+                    socialLinks.twitter,
+                    (value) => updateSocialLinks('twitter', value),
+                    'url',
+                    'https://twitter.com/yourprofile',
+                    Twitter
+                  )}
+                  {renderInputField(
+                    'LinkedIn Company Page',
+                    socialLinks.linkedin,
+                    (value) => updateSocialLinks('linkedin', value),
+                    'url',
+                    'https://linkedin.com/company/yourcompany',
+                    Linkedin
+                  )}
+                  {renderInputField(
+                    'Instagram Profile',
+                    socialLinks.instagram,
+                    (value) => updateSocialLinks('instagram', value),
+                    'url',
+                    'https://instagram.com/yourprofile',
+                    Instagram
+                  )}
+                  <div className="md:col-span-2">
+                    {renderInputField(
+                      'YouTube Channel',
+                      socialLinks.youtube,
+                      (value) => updateSocialLinks('youtube', value),
+                      'url',
+                      'https://youtube.com/yourchannel',
+                      Youtube
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl border-2 border-blue-200 dark:border-blue-800">
+                  <div className="flex items-start gap-3">
+                    <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-bold text-blue-900 dark:text-blue-100 mb-2">Social Media Tips</p>
+                      <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                        <li>• Use complete URLs including https://</li>
+                        <li>• Ensure all profiles are public and active</li>
+                        <li>• These links will appear on your public profile</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Placement Settings Section */}
+          <div>
+            {renderSectionHeader(
+              'Placement Settings',
+              'Configure placement and recruitment preferences',
+              Briefcase,
+              'placement'
+            )}
+
+            {expandedSections.placement && (
+              <div className="mt-6 bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-lg border-2 border-slate-200 dark:border-slate-700">
+                <div className="space-y-8">
+                  {/* TPO Information */}
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-xl flex items-center justify-center">
+                        <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      Training & Placement Officer
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {renderInputField(
+                        'Placement Cell Name',
+                        placementSettings.placementCell,
+                        (value) => updatePlacementSettings('placementCell', value),
+                        'text',
+                        'Career Services Department',
+                        Building
+                      )}
+                      {renderInputField(
+                        'TPO Name',
+                        placementSettings.tpoName,
+                        (value) => updatePlacementSettings('tpoName', value),
+                        'text',
+                        'Dr. John Doe',
+                        Users
+                      )}
+                      {renderInputField(
+                        'TPO Email',
+                        placementSettings.tpoEmail,
+                        (value) => updatePlacementSettings('tpoEmail', value),
+                        'email',
+                        'tpo@college.edu',
+                        Mail
+                      )}
+                      {renderInputField(
+                        'TPO Phone',
+                        placementSettings.tpoPhone,
+                        (value) => updatePlacementSettings('tpoPhone', value),
+                        'tel',
+                        '+1 (xxx) xxx-xxxx',
+                        Phone
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Eligibility Criteria */}
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                      <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/50 rounded-xl flex items-center justify-center">
+                        <Target className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      Student Eligibility Criteria
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {renderInputField(
+                        'Minimum CGPA Required',
+                        placementSettings.minCGPA,
+                        (value) => updatePlacementSettings('minCGPA', value),
+                        'number',
+                        '7.0',
+                        Percent,
+                        'Students below this CGPA cannot apply for placements'
+                      )}
+                      {renderInputField(
+                        'Maximum Backlogs Allowed',
+                        placementSettings.maxBacklogs,
+                        (value) => updatePlacementSettings('maxBacklogs', value),
+                        'number',
+                        '3',
+                        AlertCircle,
+                        'Maximum number of pending backlogs'
+                      )}
+                    </div>
+
+                    <div className="mt-6">
+                      {renderToggle(
+                        'Allow Students with Backlogs',
+                        placementSettings.allowBacklogs,
+                        (value) => updatePlacementSettings('allowBacklogs', value),
+                        'Students with active backlogs can apply for placements'
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Placement Configuration */}
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-100 dark:bg-green-900/50 rounded-xl flex items-center justify-center">
+                        <Settings className="w-5 h-5 text-green-600 dark:text-green-400" />
+                      </div>
+                      Placement Drive Configuration
+                    </h3>
+
+                    <div className="space-y-4">
+                      {renderInputField(
+                        'Placement Season Start Date',
+                        placementSettings.placementStartDate,
+                        (value) => updatePlacementSettings('placementStartDate', value),
+                        'date',
+                        '',
+                        Calendar,
+                        'When does your placement season typically begin?'
+                      )}
+
+                      {renderToggle(
+                        'Enable On-Campus Drives',
+                        placementSettings.enableOnCampusDrives,
+                        (value) => updatePlacementSettings('enableOnCampusDrives', value),
+                        'Allow companies to schedule on-campus recruitment drives'
+                      )}
+
+                      {renderToggle(
+                        'Enable Off-Campus Applications',
+                        placementSettings.enableOffCampusApplications,
+                        (value) => updatePlacementSettings('enableOffCampusApplications', value),
+                        'Students can apply to off-campus opportunities'
+                      )}
+
+                      {renderToggle(
+                        'Auto-Approve Student Applications',
+                        placementSettings.autoApproveApplications,
+                        (value) => updatePlacementSettings('autoApproveApplications', value),
+                        'Applications are automatically approved if eligibility criteria is met'
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Helpful Info Box */}
+                  <div className="p-6 bg-amber-50 dark:bg-amber-900/20 rounded-xl border-2 border-amber-200 dark:border-amber-800">
+                    <div className="flex items-start gap-3">
+                      <HelpCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-bold text-amber-900 dark:text-amber-100 mb-2">Placement Settings Guide</p>
+                        <ul className="text-sm text-amber-800 dark:text-amber-200 space-y-1">
+                          <li>• TPO details are visible to recruiters on the platform</li>
+                          <li>• Eligibility criteria applies to all placement drives</li>
+                          <li>• Auto-approval speeds up the application process</li>
+                          <li>• You can always manually review and approve applications</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Branding Section */}
+          <div>
+            {renderSectionHeader(
+              'Branding & Theme',
+              'Customize colors and upload institution logos',
+              ImageIcon,
+              'branding'
+            )}
+
+            {expandedSections.branding && (
+              <div className="mt-6 bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-lg border-2 border-slate-200 dark:border-slate-700">
+                <div className="space-y-8">
+                  {/* Color Scheme */}
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                      <div className="w-10 h-10 bg-pink-100 dark:bg-pink-900/50 rounded-xl flex items-center justify-center">
+                        <Zap className="w-5 h-5 text-pink-600 dark:text-pink-400" />
+                      </div>
+                      Color Scheme
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-3">
+                        <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                          Primary Color
+                        </label>
+                        <div className="flex items-center gap-4">
+                          <input
+                            type="color"
+                            value={brandingSettings.primaryColor}
+                            onChange={(e) => updateBrandingSettings('primaryColor', e.target.value)}
+                            className="w-20 h-20 rounded-xl cursor-pointer border-4 border-slate-200 dark:border-slate-700"
+                          />
+                          <div className="flex-1">
+                            <input
+                              type="text"
+                              value={brandingSettings.primaryColor}
+                              onChange={(e) => updateBrandingSettings('primaryColor', e.target.value)}
+                              className="w-full px-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:border-blue-500"
+                            />
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">Main brand color</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                          Secondary Color
+                        </label>
+                        <div className="flex items-center gap-4">
+                          <input
+                            type="color"
+                            value={brandingSettings.secondaryColor}
+                            onChange={(e) => updateBrandingSettings('secondaryColor', e.target.value)}
+                            className="w-20 h-20 rounded-xl cursor-pointer border-4 border-slate-200 dark:border-slate-700"
+                          />
+                          <div className="flex-1">
+                            <input
+                              type="text"
+                              value={brandingSettings.secondaryColor}
+                              onChange={(e) => updateBrandingSettings('secondaryColor', e.target.value)}
+                              className="w-full px-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:border-blue-500"
+                            />
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">Complementary color</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                          Accent Color
+                        </label>
+                        <div className="flex items-center gap-4">
+                          <input
+                            type="color"
+                            value={brandingSettings.accentColor}
+                            onChange={(e) => updateBrandingSettings('accentColor', e.target.value)}
+                            className="w-20 h-20 rounded-xl cursor-pointer border-4 border-slate-200 dark:border-slate-700"
+                          />
+                          <div className="flex-1">
+                            <input
+                              type="text"
+                              value={brandingSettings.accentColor}
+                              onChange={(e) => updateBrandingSettings('accentColor', e.target.value)}
+                              className="w-full px-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:border-blue-500"
+                            />
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">Highlight color</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Color Preview */}
+                    <div className="mt-8 p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-700">
+                      <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4">Preview</p>
+                      <div className="flex items-center gap-4">
+                        <button
+                          style={{ backgroundColor: brandingSettings.primaryColor }}
+                          className="px-6 py-3 text-white rounded-xl font-bold shadow-lg"
+                        >
+                          Primary Button
+                        </button>
+                        <button
+                          style={{ backgroundColor: brandingSettings.secondaryColor }}
+                          className="px-6 py-3 text-white rounded-xl font-bold shadow-lg"
+                        >
+                          Secondary Button
+                        </button>
+                        <button
+                          style={{ backgroundColor: brandingSettings.accentColor }}
+                          className="px-6 py-3 text-white rounded-xl font-bold shadow-lg"
+                        >
+                          Accent Button
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Image Uploads */}
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                      <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center">
+                        <ImageIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                      </div>
+                      Institution Images
+                    </h3>
+
+                    <div className="space-y-6">
+                      {renderFileUpload(
+                        'College Logo',
+                        brandingSettings.logoUrl,
+                        (value) => updateBrandingSettings('logoUrl', value)
+                      )}
+
+                      {renderFileUpload(
+                        'Cover Image',
+                        brandingSettings.coverImageUrl,
+                        (value) => updateBrandingSettings('coverImageUrl', value)
+                      )}
+
+                      {renderFileUpload(
+                        'Favicon',
+                        brandingSettings.faviconUrl,
+                        (value) => updateBrandingSettings('faviconUrl', value)
+                      )}
+                    </div>
+
+                    {/* Image Guidelines */}
+                    <div className="mt-8 p-6 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border-2 border-indigo-200 dark:border-indigo-800">
+                      <div className="flex items-start gap-3">
+                        <Info className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="font-bold text-indigo-900 dark:text-indigo-100 mb-2">Image Requirements</p>
+                          <ul className="text-sm text-indigo-800 dark:text-indigo-200 space-y-1">
+                            <li>• <strong>Logo:</strong> Square format, 500x500px minimum, PNG with transparent background</li>
+                            <li>• <strong>Cover Image:</strong> 1920x600px recommended, JPG or PNG</li>
+                            <li>• <strong>Favicon:</strong> 32x32px or 64x64px, ICO or PNG format</li>
+                            <li>• Maximum file size: 5MB per image</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Notification Settings Section */}
+          <div>
+            {renderSectionHeader(
+              'Notification Preferences',
+              'Control how and when you receive updates',
+              Bell,
+              'notifications'
+            )}
+
+            {expandedSections.notifications && (
+              <div className="mt-6 bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-lg border-2 border-slate-200 dark:border-slate-700">
+                <div className="space-y-6">
+                  {/* Communication Channels */}
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                      <div className="w-10 h-10 bg-cyan-100 dark:bg-cyan-900/50 rounded-xl flex items-center justify-center">
+                        <MessageSquare className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+                      </div>
+                      Communication Channels
+                    </h3>
+
+                    <div className="space-y-4">
+                      {renderToggle(
+                        'Email Notifications',
+                        notificationSettings.emailNotifications,
+                        (value) => updateNotificationSettings('emailNotifications', value),
+                        'Receive updates via email'
+                      )}
+
+                      {renderToggle(
+                        'SMS Notifications',
+                        notificationSettings.smsNotifications,
+                        (value) => updateNotificationSettings('smsNotifications', value),
+                        'Receive urgent updates via text message'
+                      )}
+
+                      {renderToggle(
+                        'Push Notifications',
+                        notificationSettings.pushNotifications,
+                        (value) => updateNotificationSettings('pushNotifications', value),
+                        'Browser and mobile app notifications'
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Notification Types */}
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                      <div className="w-10 h-10 bg-teal-100 dark:bg-teal-900/50 rounded-xl flex items-center justify-center">
+                        <Bell className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                      </div>
+                      What You'll Receive
+                    </h3>
+
+                    <div className="space-y-4">
+                      {renderToggle(
+                        'Placement Updates',
+                        notificationSettings.placementUpdates,
+                        (value) => updateNotificationSettings('placementUpdates', value),
+                        'New placements, offers, and recruitment updates'
+                      )}
+
+                      {renderToggle(
+                        'Drive Reminders',
+                        notificationSettings.driveReminders,
+                        (value) => updateNotificationSettings('driveReminders', value),
+                        'Upcoming placement drives and deadlines'
+                      )}
+
+                      {renderToggle(
+                        'Application Status',
+                        notificationSettings.applicationStatus,
+                        (value) => updateNotificationSettings('applicationStatus', value),
+                        'Student application approvals and updates'
+                      )}
+
+                      {renderToggle(
+                        'Weekly Reports',
+                        notificationSettings.weeklyReports,
+                        (value) => updateNotificationSettings('weeklyReports', value),
+                        'Summary of weekly placement activities'
+                      )}
+
+                      {renderToggle(
+                        'Monthly Analytics',
+                        notificationSettings.monthlyAnalytics,
+                        (value) => updateNotificationSettings('monthlyAnalytics', value),
+                        'Detailed monthly performance reports'
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Notification Info */}
+                  <div className="p-6 bg-teal-50 dark:bg-teal-900/20 rounded-xl border-2 border-teal-200 dark:border-teal-800">
+                    <div className="flex items-start gap-3">
+                      <Info className="w-5 h-5 text-teal-600 dark:text-teal-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-bold text-teal-900 dark:text-teal-100 mb-2">Notification Management</p>
+                        <ul className="text-sm text-teal-800 dark:text-teal-200 space-y-1">
+                          <li>• Critical system alerts cannot be disabled</li>
+                          <li>• You can change these preferences anytime</li>
+                          <li>• Email digests are sent based on your timezone</li>
+                          <li>• SMS charges may apply based on your region</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Action Buttons - Fixed Bottom Bar */}
+        {hasChanges && (
+          <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t-2 border-slate-200 dark:border-slate-700 shadow-2xl z-50">
+            <div className="max-w-7xl mx-auto px-6 py-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/50 rounded-xl flex items-center justify-center">
+                    <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900 dark:text-white">You have unsaved changes</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Save your changes or discard them</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={handleReset}
+                    className="px-8 py-4 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-xl font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition-all flex items-center gap-2 shadow-lg"
+                  >
+                    <X className="w-5 h-5" />
+                    Discard Changes
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold hover:from-green-700 hover:to-emerald-700 transition-all flex items-center gap-2 shadow-lg shadow-green-500/30"
+                  >
+                    <Save className="w-5 h-5" />
+                    Save All Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Quick Actions Footer */}
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-8 text-white shadow-xl hover:shadow-2xl transition-all cursor-pointer group">
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Download className="w-7 h-7" />
+            </div>
+            <h3 className="text-xl font-black mb-2">Export Settings</h3>
+            <p className="text-blue-100 text-sm">Download your configuration as backup</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-8 text-white shadow-xl hover:shadow-2xl transition-all cursor-pointer group">
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Eye className="w-7 h-7" />
+            </div>
+            <h3 className="text-xl font-black mb-2">Preview Profile</h3>
+            <p className="text-purple-100 text-sm">See how your profile looks to students</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-8 text-white shadow-xl hover:shadow-2xl transition-all cursor-pointer group">
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <HelpCircle className="w-7 h-7" />
+            </div>
+            <h3 className="text-xl font-black mb-2">Get Help</h3>
+            <p className="text-green-100 text-sm">Contact support for assistance</p>
+          </div>
+        </div>
+
+        {/* Additional Information */}
+        <div className="mt-12 p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border-2 border-slate-200 dark:border-slate-700">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Shield className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white mb-3">Data Privacy & Security</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
+                All information you provide is encrypted and stored securely. Your contact details are only visible to verified recruiters
+                and placement partners. We comply with data protection regulations and never share your information with third parties
+                without explicit consent.
+              </p>
+              <div className="flex items-center gap-4">
+                <button className="text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-2" onClick={() => navigate('/PrivacyPage')}>
+                  <FileText className="w-4 h-4" />
+                  Privacy Policy
+                </button>
+                <button className="text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-2" onClick={() => navigate('/SecurityGuidelines')}>
+                  <Shield className="w-4 h-4" />
+                  Security Guidelines
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Last Updated Info */}
+        <div className="mt-8 text-center">
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            Last updated: <span className="font-bold">2 minutes ago</span> by <span className="font-bold">Admin</span>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

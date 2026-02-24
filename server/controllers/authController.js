@@ -199,6 +199,7 @@ exports.login = async (req, res) => {
                 id: user.id,
                 email: user.email,
                 role: user.role,
+                must_change_password: user.must_change_password,
                 ...profile
             }
         });
@@ -295,7 +296,8 @@ exports.requestPasswordReset = async (req, res) => {
             }
         });
 
-        const resetLink = `http://localhost:5173/reset-password?token=${resetToken}&email=${email}`;
+        const frontendUrl = req.headers.origin || 'http://localhost:3001';
+        const resetLink = `${frontendUrl}/forgot-password?token=${resetToken}&email=${email}`;
 
         const mailOptions = {
             from: process.env.SMTP_EMAIL || 'noreply@placement-cell.com',
@@ -322,6 +324,68 @@ exports.requestPasswordReset = async (req, res) => {
         await connection.rollback();
         console.error("Error in requestPasswordReset:", error);
         res.status(500).json({ message: "Server Error." });
+    } finally {
+        connection.release();
+    }
+};
+
+// --- Verify OTP and Reset Password ---
+exports.verifyAndResetPassword = async (req, res) => {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+        return res.status(400).json({ message: "Please provide email, otp, and newPassword." });
+    }
+
+    const connection = await db.getConnection();
+
+    try {
+        // 1. Check if the reset request exists and is valid
+        const [resets] = await connection.execute(
+            'SELECT * FROM password_resets WHERE email = ? AND otp = ?',
+            [email, otp]
+        );
+
+        if (resets.length === 0) {
+            return res.status(400).json({ message: "Invalid OTP or Email." });
+        }
+
+        const resetRecord = resets[0];
+
+        // 2. Check Expiry
+        if (new Date() > new Date(resetRecord.expires_at)) {
+            // Cleanup expired token
+            await connection.execute('DELETE FROM password_resets WHERE email = ?', [email]);
+            return res.status(400).json({ message: "OTP has expired. Please request a new one." });
+        }
+
+        await connection.beginTransaction();
+
+        // 3. Hash the new password
+        const salt = await bcrypt.genSalt(10);
+        const newPasswordHash = await bcrypt.hash(newPassword, salt);
+
+        // 4. Update the user record
+        const [updateResult] = await connection.execute(
+            'UPDATE users SET password_hash = ?, must_change_password = FALSE WHERE email = ?',
+            [newPasswordHash, email]
+        );
+
+        if (updateResult.affectedRows === 0) {
+            await connection.rollback();
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        // 5. Cleanup the used OTP
+        await connection.execute('DELETE FROM password_resets WHERE email = ?', [email]);
+
+        await connection.commit();
+        res.json({ message: "Password reset successfully. You can now login." });
+
+    } catch (error) {
+        await connection.rollback();
+        console.error("Error in verifyAndResetPassword:", error);
+        res.status(500).json({ message: "Server Error during password reset." });
     } finally {
         connection.release();
     }
