@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 
 type Theme = "light" | "dark";
 
@@ -29,6 +29,8 @@ export function ThemeProvider({
     return defaultTheme;
   });
 
+  const isTogglingRef = useRef(false);
+
   useEffect(() => {
     const root = document.documentElement;
     if (theme === "dark") {
@@ -40,12 +42,24 @@ export function ThemeProvider({
     if (switchable) {
       localStorage.setItem("theme", theme);
     }
+
+    // Remove the disable-transition class if we were toggling
+    if (isTogglingRef.current) {
+      // Use a small timeout to ensure the paint cycle has finished with the new theme
+      const timer = setTimeout(() => {
+        root.classList.remove("disable-transitions");
+        isTogglingRef.current = false;
+      }, 10); // 10ms buffer
+      return () => clearTimeout(timer);
+    }
   }, [theme, switchable]);
 
   const toggleTheme = switchable
     ? () => {
-        setTheme(prev => (prev === "light" ? "dark" : "light"));
-      }
+      isTogglingRef.current = true;
+      document.documentElement.classList.add("disable-transitions");
+      setTheme(prev => (prev === "light" ? "dark" : "light"));
+    }
     : undefined;
 
   return (
@@ -62,3 +76,4 @@ export function useTheme() {
   }
   return context;
 }
+

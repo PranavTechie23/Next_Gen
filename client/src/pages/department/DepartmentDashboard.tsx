@@ -100,7 +100,7 @@ export default function DepartmentDashboard() {
                         <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
                         <div className="flex flex-col">
                             <span className="font-black text-xl bg-gradient-to-r from-pink-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">NextGen</span>
-                            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-80">Department Portal</p>
+                            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-80">TPO Dept Head Portal</p>
                         </div>
                     </div>
 
@@ -123,11 +123,11 @@ export default function DepartmentDashboard() {
 
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-                                <span className="text-white font-black text-xs">CS</span>
+                                <span className="text-white font-black text-xs">DH</span>
                             </div>
                             <div className="text-left hidden md:block">
-                                <p className="text-sm font-black text-foreground">CSE Head</p>
-                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">hod.cse@college.edu</p>
+                                <p className="text-sm font-black text-foreground">TPO Dept Head (CSE)</p>
+                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">head.cse@tpo.edu</p>
                             </div>
                         </div>
 
@@ -206,7 +206,7 @@ export default function DepartmentDashboard() {
                 <div className="mb-12 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
                     <div className="space-y-3">
                         <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-foreground leading-tight">
-                            {selectedView === "overview" && "Department Overview"}
+                            {selectedView === "overview" && "TPO Dept Overview"}
                             {selectedView === "analytics" && "Dept Analytics"}
                             {selectedView === "students" && "Dept Students"}
                             {selectedView === "reports" && "Dept Reports"}

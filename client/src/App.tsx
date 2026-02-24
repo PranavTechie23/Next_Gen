@@ -23,10 +23,10 @@ import Webinar from "./pages/student/webinars";
 import StudentFeedback from "./pages/student/feedbackForm";
 import StudentInfo from "./pages/student/student_info";
 
-import CollegeDashboard from "./pages/college/CollegeDashboard";
-import CollegeSetting from "./pages/college/Setting";
-import CollegeFeedback from "./pages/college/feedbackForm";
-import CollegeInfo from "./pages/college/college_info";
+import CollegeDashboard from "./pages/tpo/tpoDashboard";
+import CollegeSetting from "./pages/tpo/Setting";
+import CollegeFeedback from "./pages/tpo/feedbackForm";
+import CollegeInfo from "./pages/tpo/college_info";
 
 import DepartmentDashboard from "./pages/department/DepartmentDashboard";
 
