@@ -100,6 +100,257 @@ const createDeptHead = async (req, res) => {
     }
 };
 
+/**
+ * Get all Department Heads
+ * GET /api/admin/dept-heads
+ */
+const getDeptHeads = async (req, res) => {
+    try {
+        const [deptHeads] = await db.query(`
+            SELECT 
+                u.id AS user_id,
+                h.name,
+                u.email,
+                h.department_id,
+                d.name AS department_name,
+                u.is_active
+            FROM users u
+            JOIN tpo_heads h ON u.id = h.user_id
+            JOIN departments d ON h.department_id = d.id
+            WHERE u.role = 'TPO_HEAD'
+        `);
+
+        res.status(200).json({
+            count: deptHeads.length,
+            dept_heads: deptHeads
+        });
+
+    } catch (error) {
+        console.error("Error fetching dept heads:", error);
+        res.status(500).json({ message: "Internal Server Error while fetching Department Heads" });
+    }
+};
+
+/**
+ * Get Audit Logs
+ * GET /api/admin/audit-logs
+ */
+const getAuditLogs = async (req, res) => {
+    try {
+        const [logs] = await db.query(`
+            SELECT 
+                id,
+                actor_user_id,
+                action_type,
+                target_table,
+                target_id,
+                timestamp
+            FROM audit_logs
+            ORDER BY timestamp DESC
+            LIMIT 100
+        `);
+
+        res.status(200).json({
+            count: logs.length,
+            logs: logs
+        });
+
+    } catch (error) {
+        console.error("Error fetching audit logs:", error);
+        res.status(500).json({ message: "Internal Server Error while fetching Audit Logs" });
+    }
+};
+
+/**
+ * Create a new Company (Recruiter Profile)
+ * POST /api/admin/companies
+ */
+const createCompany = async (req, res) => {
+    try {
+        const { name, hr_email } = req.body;
+
+        // 1. Validate Input
+        if (!name) {
+            return res.status(400).json({ message: "Company name is required" });
+        }
+
+        // 2. Insert into recruiters table
+        // Mapping 'name' to 'company_name' and 'hr_email' to 'contact_email'
+        const [result] = await db.query(
+            'INSERT INTO recruiters (company_name, contact_email) VALUES (?, ?)',
+            [name, hr_email || null]
+        );
+
+        res.status(201).json({
+            message: "Company created successfully",
+            company_id: result.insertId
+        });
+
+    } catch (error) {
+        console.error("Error creating company:", error);
+        res.status(500).json({ message: "Internal Server Error while creating company" });
+    }
+};
+
+/**
+ * Create a new Recruitment Drive
+ * POST /api/admin/drives
+ */
+const createDrive = async (req, res) => {
+    try {
+        const { recruiter_id, drive_name, description, start_date, end_date } = req.body;
+
+        // 1. Validate Required Fields
+        if (!recruiter_id || !drive_name) {
+            return res.status(400).json({ message: "recruiter_id and drive_name are required" });
+        }
+
+        // 2. Insert into recruitment_drives
+        const [result] = await db.query(
+            `INSERT INTO recruitment_drives 
+            (recruiter_id, drive_name, description, start_date, end_date, status) 
+            VALUES (?, ?, ?, ?, ?, 'OPEN')`,
+            [recruiter_id, drive_name, description || null, start_date || null, end_date || null]
+        );
+
+        res.status(201).json({
+            message: "Drive created successfully",
+            drive_id: result.insertId
+        });
+
+    } catch (error) {
+        console.error("Error creating drive:", error);
+        res.status(500).json({ message: "Internal Server Error while creating recruitment drive" });
+    }
+};
+
+/**
+ * Add a Job Posting to a Recruitment Drive
+ * POST /api/admin/drives/:id/jobs
+ */
+const addJobToDrive = async (req, res) => {
+    try {
+        const driveId = req.params.id;
+        const {
+            job_title,
+            job_description,
+            location,
+            package_value,
+            min_cgpa,
+            max_backlogs_allowed,
+            eligible_branches
+        } = req.body;
+
+        // 1. Validate Required Fields
+        if (!job_title || !package_value) {
+            return res.status(400).json({ message: "job_title and package_value are required" });
+        }
+
+        // 2. Insert into job_postings
+        const [result] = await db.query(
+            `INSERT INTO job_postings 
+            (drive_id, job_title, job_description, location, 
+             package_value, min_cgpa, max_backlogs_allowed, 
+             eligible_branches, is_active) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
+            [
+                driveId,
+                job_title,
+                job_description || null,
+                location || null,
+                package_value,
+                min_cgpa || 0.00,
+                max_backlogs_allowed || 0,
+                eligible_branches ? JSON.stringify(eligible_branches) : null
+            ]
+        );
+
+        res.status(201).json({
+            message: "Job added to drive successfully",
+            job_id: result.insertId
+        });
+
+    } catch (error) {
+        console.error("Error adding job to drive:", error);
+        res.status(500).json({ message: "Internal Server Error while adding job to drive" });
+    }
+};
+
+/**
+ * Get all Recruitment Drives with Company Info and Job Count
+ * GET /api/admin/drives
+ */
+const getAllDrives = async (req, res) => {
+    try {
+        const [drives] = await db.query(`
+            SELECT 
+                d.id,
+                d.drive_name,
+                r.company_name,
+                d.status,
+                d.start_date,
+                d.end_date,
+                COUNT(j.id) AS job_count
+            FROM recruitment_drives d
+            JOIN recruiters r ON d.recruiter_id = r.id
+            LEFT JOIN job_postings j ON d.id = j.drive_id
+            GROUP BY d.id
+            ORDER BY d.created_at DESC
+        `);
+
+        res.status(200).json({
+            count: drives.length,
+            drives: drives
+        });
+
+    } catch (error) {
+        console.error("Error fetching all drives:", error);
+        res.status(500).json({ message: "Internal Server Error while fetching recruitment drives" });
+    }
+};
+
+/**
+ * Update Recruitment Drive Status
+ * PUT /api/admin/drives/:id/status
+ */
+const updateDriveStatus = async (req, res) => {
+    try {
+        const driveId = req.params.id;
+        const { status } = req.body;
+
+        // 1. Validate Status
+        const validStatuses = ['OPEN', 'ONGOING', 'COMPLETED', 'CANCELLED'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ message: "Invalid status. Must be one of: OPEN, ONGOING, COMPLETED, CANCELLED" });
+        }
+
+        // 2. Update status in recruitment_drives
+        const [result] = await db.query(
+            'UPDATE recruitment_drives SET status = ? WHERE id = ?',
+            [status, driveId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Recruitment drive not found" });
+        }
+
+        res.status(200).json({
+            message: "Drive status updated successfully"
+        });
+
+    } catch (error) {
+        console.error("Error updating drive status:", error);
+        res.status(500).json({ message: "Internal Server Error while updating recruitment drive status" });
+    }
+};
+
 module.exports = {
-    createDeptHead
+    createDeptHead,
+    getDeptHeads,
+    getAuditLogs,
+    createCompany,
+    createDrive,
+    addJobToDrive,
+    getAllDrives,
+    updateDriveStatus
 };
