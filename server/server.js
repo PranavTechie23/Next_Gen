@@ -8,6 +8,7 @@ const app = express();
 const db = require('./config/db');
 const adminRoutes = require('./routes/adminRoutes');
 const deptRoutes = require('./routes/deptRoutes');
+const studentRoutes = require('./routes/studentRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -36,6 +37,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/admin', adminRoutes);
 app.use('/api/dept', deptRoutes);
+app.use('/api/student', studentRoutes);
 
 
 
