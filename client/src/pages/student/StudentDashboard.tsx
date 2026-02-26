@@ -28,6 +28,7 @@ import CorporateNewsPage from "@/pages/student/CorporateNews";
 import StudentFeedbackForm from "@/pages/student/feedbackForm";
 import AssessmentHub from "@/pages/student/AssessmentHub";
 import CompanyWiseKit from "@/pages/student/CompanyWiseKit";
+import { getPlacementDrives, computeDriveMatch } from "@/data/placementDrives";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -481,45 +482,15 @@ export default function StudentDashboard() {
     }
   ];
 
-  // Enhanced Company Matches
-  const companyMatches = [
-    {
-      name: "Google",
-      match: 65,
-      level: "L3 SDE",
-      salary: "₹25-30 LPA",
-      requirements: ["System Design", "Advanced DSA"],
-      logo: "G",
-      color: "bg-gradient-to-br from-blue-500 to-green-500"
-    },
-    {
-      name: "Amazon",
-      match: 78,
-      level: "SDE I",
-      salary: "₹20-25 LPA",
-      requirements: ["DSA", "OOP", "Leadership"],
-      logo: "A",
-      color: "bg-gradient-to-br from-orange-500 to-yellow-500"
-    },
-    {
-      name: "Microsoft",
-      match: 72,
-      level: "SDE",
-      salary: "₹22-28 LPA",
-      requirements: ["Cloud", "Full Stack", "Problem Solving"],
-      logo: "M",
-      color: "bg-gradient-to-br from-blue-600 to-green-600"
-    },
-    {
-      name: "TCS",
-      match: 92,
-      level: "System Engineer",
-      salary: "₹4-7 LPA",
-      requirements: ["Communication", "Basic Coding"],
-      logo: "T",
-      color: "bg-gradient-to-br from-blue-400 to-blue-600"
-    }
-  ];
+  // Placement drives from TPO (ticket creation) — shown as "Drives" with match %
+  const placementDrives = getPlacementDrives();
+  const studentSkills = MOCK_USER?.skills ?? [];
+  const studentBacklogs = 0; // extend studentProfile if you track backlogs
+  const drivesWithMatch = placementDrives.map((d, idx) => ({
+    ...d,
+    match: computeDriveMatch(d, studentProfile.cgpa, studentSkills, studentBacklogs),
+    color: ["bg-gradient-to-br from-blue-500 to-green-500", "bg-gradient-to-br from-orange-500 to-yellow-500", "bg-gradient-to-br from-blue-600 to-green-600", "bg-gradient-to-br from-blue-400 to-blue-600", "bg-gradient-to-br from-purple-500 to-pink-500"][idx % 5],
+  }));
 
   // Achievements
   const achievements = [
@@ -658,8 +629,8 @@ export default function StudentDashboard() {
       action: () => console.log("Mock Interview")
     },
     {
-      title: "View Jobs",
-      description: "Browse opportunities",
+      title: "View Drives",
+      description: "Placement drives from TPO",
       icon: Briefcase,
       color: "from-green-500 to-green-600",
       action: () => setActiveTab("opportunities")
@@ -724,7 +695,7 @@ export default function StudentDashboard() {
   const sidebarLinks = [
     { id: "overview", label: "Dashboard", icon: LayoutDashboard },
     { id: "skills", label: "Skills", icon: PaletteIcon },
-    { id: "opportunities", label: "Jobs", icon: BriefcaseIcon },
+    { id: "opportunities", label: "Drives", icon: BriefcaseIcon },
     { id: "learning", label: "Mentorship", icon: UsersIcon },
     { id: "progress", label: "Progress", icon: TrendingUp },
 
@@ -851,7 +822,7 @@ export default function StudentDashboard() {
 
       {/* Desktop Sidebar - Left */}
       <aside className={`hidden lg:flex sticky top-0 h-screen z-50 transition-all duration-500 relative overflow-visible ${isSidebarOpen ? "w-72" : "w-[6rem]"} ${isSidebarOpen ? "p-4 pr-2" : "p-3"} flex-col shrink-0 bg-transparent`}>
-        <div className={`flex-1 min-w-0 ${isDark ? "bg-[#0c0c14]" : "bg-white"} ${isDark ? "border-white/10" : "border-slate-200"} rounded-[2.5rem] flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.05)] overflow-hidden relative`}>
+        <div className={`flex-1 min-w-0 h-full ${isDark ? "bg-[#0c0c14]" : "bg-white"} ${isDark ? "border-white/10" : "border-slate-200"} rounded-[2.5rem] flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.05)] overflow-hidden relative`}>
           <div className={`absolute inset-0 bg-gradient-to-b ${isDark ? "from-blue-500/5" : "from-blue-500/5"} via-transparent ${isDark ? "to-purple-500/5" : "to-purple-500/5"} opacity-50 pointer-events-none`}></div>
 
           {/* Header: brand logo & name */}
@@ -945,9 +916,9 @@ export default function StudentDashboard() {
       <main
         ref={mainContentRef}
         data-scroll-container
-        className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto overflow-x-hidden custom-scrollbar relative bg-transparent"
+        className={`flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar relative bg-transparent ${activeTab === "company-kit" ? "flex flex-col" : "p-4 sm:p-6 lg:p-8"}`}
       >
-        <div className="max-w-[1400px] mx-auto space-y-6 sm:space-y-8 lg:space-y-10 pb-16 sm:pb-20">
+        <div className={`${activeTab === "company-kit" ? "w-full px-4 sm:px-6 lg:px-8" : "max-w-[1400px] mx-auto"} ${activeTab === "company-kit" ? "flex flex-col space-y-6 sm:space-y-8 lg:space-y-10 min-h-0" : "space-y-6 sm:space-y-8 lg:space-y-10"}`}>
 
           <header className={`flex items-center justify-between gap-4 sm:gap-6 mb-6 sm:mb-8`}>
             {/* Desktop header space reserved for toggle when floating nearby */}
@@ -973,7 +944,7 @@ export default function StudentDashboard() {
               <p className={`${isDark ? "text-blue-400" : "text-blue-600"} text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] opacity-90 mt-1 border-b-0 no-underline`}>
                 {activeTab === "overview" ? "Career Readiness Dashboard" :
                   activeTab === "skills" ? "Skill Architecture Analysis" :
-                    activeTab === "opportunities" ? "Placement Opportunities" :
+                    activeTab === "opportunities" ? "Placement Drives" :
                       activeTab === "learning" ? "Learning & Development" :
                         activeTab === "progress" ? "Progress & Milestones" :
                           activeTab === "careers" ? "Career Opportunities & Resources" :
@@ -1629,52 +1600,60 @@ export default function StudentDashboard() {
                   <div className="flex items-center gap-4 mb-10">
                     <Building2 className="w-8 h-8 text-blue-400" />
                     <div>
-                      <h3 className={`text-3xl font-black ${isDark ? "text-white" : "text-gray-900"}`}>Career Alignment</h3>
-                      <p className={`text-lg font-bold ${isDark ? "text-gray-400" : "text-gray-600"}`}>Companies matching your profile</p>
+                      <h3 className={`text-3xl font-black ${isDark ? "text-white" : "text-gray-900"}`}>Placement Drives</h3>
+                      <p className={`text-lg font-bold ${isDark ? "text-gray-400" : "text-gray-600"}`}>Drives created by your TPO — match % based on your profile</p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {companyMatches.map((company, idx) => (
-                      <div key={idx} className={`group p-8 ${isDark ? "border-white/5 bg-white/5" : "border-slate-100 bg-slate-50/50"} rounded-[2rem] hover:border-blue-500/50 transition-all shadow-sm`}>
-                        <div className="flex items-center justify-between mb-8">
-                          <div className="flex items-center gap-5">
-                            <div className={`w-16 h-16 ${company.color} rounded-2xl flex items-center justify-center shadow-lg`}>
-                              <span className="text-2xl font-black text-white">{company.name.charAt(0)}</span>
+                  {drivesWithMatch.length === 0 ? (
+                    <p className={`text-center py-12 ${isDark ? "text-gray-400" : "text-gray-600"}`}>No drives yet. When your TPO creates a drive, it will appear here with JD, requirements, and your match %.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {drivesWithMatch.map((drive, idx) => (
+                        <div key={drive.id} className={`group p-8 ${isDark ? "border-white/5 bg-white/5" : "border-slate-100 bg-slate-50/50"} rounded-[2rem] hover:border-blue-500/50 transition-all shadow-sm`}>
+                          <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-5">
+                              <div className={`w-16 h-16 ${drive.color} rounded-2xl flex items-center justify-center shadow-lg`}>
+                                <span className="text-2xl font-black text-white">{drive.companyName.charAt(0)}</span>
+                              </div>
+                              <div>
+                                <h4 className={`text-2xl font-black ${isDark ? "text-white" : "text-gray-900"}`}>{drive.companyName}</h4>
+                                <p className="text-xs font-black text-blue-400 uppercase tracking-widest">{drive.role}</p>
+                              </div>
                             </div>
-                            <div>
-                              <h4 className={`text-2xl font-black ${isDark ? "text-white" : "text-gray-900"}`}>{company.name}</h4>
-                              <p className="text-xs font-black text-blue-400 uppercase tracking-widest">{company.level}</p>
+                            <div className={`px-4 py-2 rounded-xl font-black text-sm ${isDark ? "bg-blue-500/10" : "bg-blue-50"} text-blue-400`}>
+                              {drive.match}% match
                             </div>
                           </div>
-                          <div className={`px-4 py-2 rounded-xl font-black text-sm ${isDark ? "bg-blue-500/10" : "bg-blue-50"} text-blue-400`}>
-                            {company.match}%
-                          </div>
-                        </div>
-                        <div className="space-y-6">
-                          <div className="flex flex-wrap gap-2">
-                            {company.requirements.map((req, rIdx) => (
+                          {drive.description ? (
+                            <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"} mb-4 line-clamp-3`}>{drive.description}</p>
+                          ) : null}
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {drive.requirements.map((req, rIdx) => (
                               <Badge key={rIdx} variant="outline" className={`text-[10px] font-black uppercase ${isDark ? "text-gray-400 border-white/10" : "text-gray-600 border-gray-300"}`}>
                                 {req}
                               </Badge>
                             ))}
                           </div>
-                          <div className={`h-2 ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-full overflow-hidden`}>
+                          <div className={`h-2 ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-full overflow-hidden mb-4`}>
                             <div
                               className="h-full bg-blue-500 rounded-full transition-all duration-1000"
-                              style={{ width: `${company.match}%` }}
-                            ></div>
+                              style={{ width: `${drive.match}%` }}
+                            />
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className={`text-sm font-black ${isDark ? "text-gray-400" : "text-gray-600"}`}>{company.salary}</span>
-                            <Button className="h-12 px-6 rounded-xl font-black text-sm uppercase bg-blue-500 hover:bg-blue-600 text-white">
-                              Apply Now
+                            <span className={`text-sm font-black ${isDark ? "text-gray-400" : "text-gray-600"}`}>Deadline: {drive.deadline}</span>
+                            <Button
+                              className="h-12 px-6 rounded-xl font-black text-sm uppercase bg-blue-500 hover:bg-blue-600 text-white"
+                              onClick={() => drive.applicationLink && drive.applicationLink !== "#" && window.open(drive.applicationLink, "_blank")}
+                            >
+                              Apply now
                             </Button>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -2020,16 +1999,14 @@ export default function StudentDashboard() {
             </div>
           )}
 
-          {/* Company Wise Kit Tab */}
+          {/* Company Wise Kit Tab - fill viewport so list covers entire page */}
           {activeTab === "company-kit" && (
-            <div className="space-y-10">
-              <CompanyWiseKit isDashboard={true} />
-            </div>
-          )} 
+            <CompanyWiseKit isDashboard={true} />
+          )}
 
           {/* CTA Footer - Only show on overview tab */}
           {activeTab === "overview" && (
-            <div className={`bg-gradient-to-r ${isDark ? "from-blue-500/10 via-purple-500/10 to-blue-500/10" : "from-blue-50 via-purple-50 to-blue-50"} ${isDark ? "border-white/5" : "border-gray-200"} p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group mt-12`}>
+            <div className={`bg-gradient-to-r ${isDark ? "from-blue-500/10 via-purple-500/10 to-blue-500/10" : "from-blue-50 via-purple-50 to-blue-50"} ${isDark ? "border-white/5" : "border-gray-200"} p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group mt-12 mb-4`}>
               <div className={`absolute top-0 right-0 w-96 h-96 ${isDark ? "bg-blue-500/5" : "bg-blue-500/5"} rounded-full -mr-48 -mt-48 blur-3xl group-hover:scale-110 transition-all duration-700`}></div>
               <div className="flex flex-col lg:flex-row items-center justify-between gap-8 relative z-10">
                 <div>
@@ -2050,7 +2027,7 @@ export default function StudentDashboard() {
             </div>
           )}
         </div>
-      </main >
-    </div >
+      </main>
+    </div>
   );
 }

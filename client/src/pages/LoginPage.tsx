@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, Shield, CheckCircle, Github, Chrome, GithubIcon, TwitterIcon, InstagramIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
+import axios from "axios";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const { theme } = useTheme();
@@ -14,60 +16,55 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  useEffect(() => {
-    const role = localStorage.getItem("userRole");
-    if (role === "student") {
-      window.location.href = "/student/dashboard";
-    } else if (role === "college") {
-      window.location.href = "/college/dashboard";
-    } else if (role === "department") {
-      window.location.href = "/department/dashboard";
-    } else if (role === "admin") {
-      window.location.href = "/admin/dashboard";
-    }
-  }, []);
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      const response = await axios.post("http://localhost:5000/api/auth/login", {
+        email,
+        password,
+      }, { withCredentials: true });
 
-    // Auto-detect user type from email or redirect to appropriate dashboard
-    if (email.includes("student") || email.includes("demo")) {
-      localStorage.setItem("userRole", "student");
-      window.location.href = "/student/dashboard";
-    } else if (email.includes("tpo")) {
-      localStorage.setItem("userRole", "college");
-      window.location.href = "/college/dashboard";
-    } else if (email.includes("dept")) {
-      localStorage.setItem("userRole", "department");
-      window.location.href = "/department/dashboard";
-    } else if (email.includes("admin")) {
-      localStorage.setItem("userRole", "admin");
-      window.location.href = "/admin/dashboard";
-    } else {
-      localStorage.setItem("userRole", "student");
-      window.location.href = "/student/dashboard"; // Default
+      const { user, message } = response.data;
+      if (user) {
+        toast.success(message || "Login successful!");
+        localStorage.setItem("userRole", user.role);
+        
+        // INTERCEPT: If they must change password (first login), redirect them immediately
+        if (user.must_change_password) {
+          toast("Please change your default password to continue", { icon: "🔒" });
+          window.location.href = "/change-password";
+          return;
+        }
+
+        // Ensure consistent role mapping between backend roles and frontend redirects
+        switch (user.role) {
+          case 'STUDENT':
+            window.location.href = "/student/dashboard";
+            break;
+          case 'TPO_ADMIN':
+            window.location.href = "/admin/dashboard";
+            break;
+          case 'TPO_HEAD':
+            window.location.href = "/department/dashboard";
+            break;
+          default:
+            window.location.href = "/student/dashboard";
+        }
+      }
+    } catch (error: any) {
+      console.error("Login Error:", error);
+      toast.error(error.response?.data?.message || "An error occurred during login.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleDemoLogin = () => {
-    setEmail("demo@student.com");
-    setPassword("demo123");
-  };
-
-  const handleSocialLogin = (provider: string) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      localStorage.setItem("userRole", "student");
-      window.location.href = "/student/dashboard";
-    }, 1000);
-  };
-
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 py-12 md:py-4 relative overflow-x-hidden transition-colors duration-300">
+    <div className="min-h-screen h-screen bg-background flex flex-col items-center justify-center p-4 py-12 md:py-4 relative overflow-x-hidden transition-colors duration-300">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/10 dark:from-primary/10 dark:via-background dark:to-accent/10" />
       {/* Theme Toggle */}
       <div className="absolute top-4 right-4 z-20">
@@ -116,17 +113,17 @@ export default function LoginPage() {
 
           <div className="space-y-6">
             <h2 className="text-3xl font-bold text-foreground leading-tight">
-              Welcome Back! 👋
+              Welcome to the NextGen Portal 👋
             </h2>
             <p className="text-lg text-muted-foreground leading-relaxed">
-              Sign in to access your personalized career dashboard and continue your journey to success.
+              Sign in to your account. Whether you are a student exploring placements, a department head managing batches, or a TPO admin directing the campus drive, everything you need is right here.
             </p>
 
             <div className="space-y-4 pt-4">
               {[
-                { icon: Sparkles, text: "AI-Powered Career Insights", color: "blue" },
-                { icon: Shield, text: "Secure & Private", color: "green" },
-                { icon: CheckCircle, text: "Track Your Progress", color: "purple" }
+                { icon: Sparkles, text: "Centralized Placement Drives", color: "blue" },
+                { icon: Shield, text: "Role-Based Secure Access", color: "green" },
+                { icon: CheckCircle, text: "Comprehensive Analytics & Tracking", color: "purple" }
               ].map((feature, idx) => (
                 <div key={idx} className="flex items-center gap-4 p-4 bg-card/60 backdrop-blur-md rounded-xl border border-border shadow-sm hover:shadow-md transition-all group">
                   <div className={`w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
@@ -156,8 +153,8 @@ export default function LoginPage() {
             </div>
 
             <div className="mb-8">
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Sign In</h2>
-              <p className="text-sm sm:text-base text-muted-foreground">Enter your credentials to access your account</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Portal Login</h2>
+              <p className="text-sm sm:text-base text-muted-foreground">Use your registered email and password to securely log in.</p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-5 sm:space-y-6">
@@ -211,7 +208,7 @@ export default function LoginPage() {
                   />
                   <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Remember me</span>
                 </label>
-                <a href="#forgot" className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
+                <a href="/forgot-password" className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
                   Forgot password?
                 </a>
               </div>
@@ -236,43 +233,10 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            {/* Divider */}
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white dark:bg-slate-900 text-muted-foreground font-medium">Or continue with</span>
-              </div>
-            </div>
-
-            {/* Social Login */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Button
-                type="button"
-                onClick={() => handleSocialLogin('google')}
-                variant="outline"
-                className="w-full border-2 border-border hover:border-muted hover:bg-muted py-3 rounded-xl font-semibold text-foreground transition-all flex items-center justify-center"
-              >
-                <Chrome className="w-5 h-5 mr-2 text-red-500" />
-                Google
-              </Button>
-              <Button
-                type="button"
-                onClick={() => handleSocialLogin('github')}
-                variant="outline"
-                className="w-full border-2 border-border hover:border-muted hover:bg-muted py-3 rounded-xl font-semibold text-foreground transition-all flex items-center justify-center"
-              >
-                <GithubIcon className="w-5 h-5 mr-2" />
-                GitHub
-              </Button>
-            </div>
-
-            {/* Sign Up Link */}
             <p className="text-center text-sm text-muted-foreground mt-8 font-medium">
-              Don't have an account?{" "}
+              Is your institution not registered yet?{" "}
               <a href="/signup" className="font-bold text-primary hover:text-primary/80 transition-colors">
-                Create an account
+                Register as TPO Admin
               </a>
             </p>
 

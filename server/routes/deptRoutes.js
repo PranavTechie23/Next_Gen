@@ -33,4 +33,18 @@ router.get('/students/:id',
     deptController.getStudentDetails
 );
 
+// PUT /api/dept/students/:id - Update student information (academic/admin)
+router.put('/students/:id',
+    protect,
+    authorize('TPO_HEAD'),
+    deptController.updateStudent
+);
+
+// POST /api/dept/students - Create single or bulk students manually
+router.post('/students',
+    protect,
+    authorize('TPO_HEAD'),
+    deptController.createStudentsManually
+);
+
 module.exports = router;

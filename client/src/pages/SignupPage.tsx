@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Building2, GraduationCap, Phone, CheckCircle, Github, Chrome, Sparkles, Shield, Zap } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Building2, Phone, CheckCircle, Shield, Key, MapPin, Hash, Briefcase } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
+import axios from "axios";
+import { toast } from "sonner";
 
 export default function SignupPage() {
   const { theme } = useTheme();
@@ -17,11 +19,13 @@ export default function SignupPage() {
     fullName: "",
     email: "",
     phone: "",
+    employeeCode: "",
+    institutionName: "",
+    institutionCode: "",
+    institutionAddress: "",
+    adminKey: "",
     password: "",
     confirmPassword: "",
-    college: "",
-    branch: "",
-    year: "",
     agreeToTerms: false
   });
 
@@ -58,15 +62,29 @@ export default function SignupPage() {
 
   const handleSignup = async () => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    window.location.href = "/student/dashboard";
-  };
+    try {
+      const response = await axios.post("/api/auth/register-admin", {
+        name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        employee_code: formData.employeeCode,
+        institution_name: formData.institutionName,
+        institution_code: formData.institutionCode,
+        institution_address: formData.institutionAddress,
+        adminKey: formData.adminKey,
+      });
 
-  const handleSocialSignup = (provider: string) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      window.location.href = "/student/dashboard";
-    }, 1000);
+      toast.success(response.data.message || "Admin registered successfully!");
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 1500);
+    } catch (error: any) {
+      console.error("Signup Error:", error);
+      toast.error(error.response?.data?.message || "Registration failed.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getPasswordStrengthColor = () => {
@@ -141,17 +159,17 @@ export default function SignupPage() {
 
           <div className="space-y-6">
             <h2 className="text-3xl font-bold text-foreground leading-tight">
-              Join Thousands of Students! 🚀
+              TPO Admin Portal 🚀
             </h2>
             <p className="text-lg text-muted-foreground leading-relaxed">
-              Create your account and unlock AI-powered career guidance tailored just for you.
+              Register your institution and gain access to powerful placement management tools.
             </p>
 
             <div className="space-y-4 pt-4">
               {[
-                { icon: Sparkles, text: "AI-Powered Skill Assessment", color: "from-violet-500 to-purple-500", bg: "bg-violet-100", textColor: "text-violet-600" },
-                { icon: Shield, text: "Personalized Career Roadmap", color: "from-pink-500 to-rose-500", bg: "bg-pink-100", textColor: "text-pink-600" },
-                { icon: Zap, text: "Placement Probability Insights", color: "from-purple-500 to-indigo-500", bg: "bg-purple-100", textColor: "text-purple-600" }
+                { icon: Building2, text: "Manage Departments & Students", color: "from-violet-500 to-purple-500", bg: "bg-violet-100", textColor: "text-violet-600" },
+                { icon: Shield, text: "Secure Institutional Data", color: "from-pink-500 to-rose-500", bg: "bg-pink-100", textColor: "text-pink-600" },
+                { icon: CheckCircle, text: "Track Placement Drives", color: "from-purple-500 to-indigo-500", bg: "bg-purple-100", textColor: "text-purple-600" }
               ].map((feature, idx) => (
                 <div key={idx} className="flex items-center gap-4 p-4 bg-card/60 backdrop-blur-md rounded-xl border border-border shadow-sm hover:shadow-md transition-all group">
                   <div className={`w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
@@ -164,11 +182,11 @@ export default function SignupPage() {
 
             <div className="mt-8 p-6 bg-gradient-to-r from-primary to-blue-600 rounded-2xl shadow-xl">
               <div className="flex items-center gap-3 mb-3">
-                <CheckCircle className="w-6 h-6 text-white" />
-                <p className="text-white font-bold text-lg">Free Forever</p>
+                <Shield className="w-6 h-6 text-white" />
+                <p className="text-white font-bold text-lg">Admin Access Only</p>
               </div>
               <p className="text-white/80 text-sm">
-                No credit card required. Start tracking your career progress today!
+                This registration is exclusively for TPO Admins. Please ensure you have your admin key ready.
               </p>
             </div>
           </div>
@@ -185,7 +203,7 @@ export default function SignupPage() {
                   <h1 className="text-2xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
                     NextGen
                   </h1>
-                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">AI-Driven</p>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">Admin Registration</p>
                 </div>
               </div>
             </div>
@@ -194,7 +212,7 @@ export default function SignupPage() {
             <div className="mb-8">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs sm:text-sm font-semibold text-foreground/80">Step {step} of 2</span>
-                <span className="text-xs sm:text-sm text-muted-foreground">{step === 1 ? "Personal Info" : "Academic Info"}</span>
+                <span className="text-xs sm:text-sm text-muted-foreground">{step === 1 ? "Personal Info" : "Institution Info"}</span>
               </div>
               <div className="h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden">
                 <div
@@ -205,8 +223,8 @@ export default function SignupPage() {
             </div>
 
             <div className="mb-6">
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">Create Account</h2>
-              <p className="text-sm text-muted-foreground">Fill in your details to get started</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">Admin Account</h2>
+              <p className="text-sm text-muted-foreground">Register your institution details</p>
             </div>
 
             {step === 1 ? (
@@ -218,7 +236,7 @@ export default function SignupPage() {
                     <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <input
                       type="text"
-                      placeholder="John Doe"
+                      placeholder="Admin Name"
                       value={formData.fullName}
                       onChange={(e) => handleInputChange("fullName", e.target.value)}
                       className="w-full pl-12 pr-4 py-3 sm:py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm sm:text-base"
@@ -228,12 +246,12 @@ export default function SignupPage() {
 
                 {/* Email */}
                 <div className="space-y-1.5 sm:space-y-2">
-                  <label className="text-sm font-semibold text-foreground/80">Email Address</label>
+                  <label className="text-sm font-semibold text-foreground/80">Email Address (Official)</label>
                   <div className="relative group">
                     <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <input
                       type="email"
-                      placeholder="you@example.com"
+                      placeholder="admin@college.edu"
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       className="w-full pl-12 pr-4 py-3 sm:py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm sm:text-base"
@@ -263,63 +281,86 @@ export default function SignupPage() {
                   className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white py-4 rounded-xl font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
                 >
                   <span className="flex items-center justify-center gap-2">
-                    Continue
+                    Continue to Institution Details
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </span>
                 </Button>
               </div>
             ) : (
-              <div className="space-y-4 sm:space-y-5">
-                {/* College */}
+              <div className="space-y-4 sm:space-y-5 max-h-[60vh] overflow-y-auto px-1 -mx-1 pb-2">
+                 {/* Institution Name */}
                 <div className="space-y-1.5 sm:space-y-2">
-                  <label className="text-sm font-semibold text-foreground/80">College/University</label>
+                  <label className="text-sm font-semibold text-foreground/80">Institution Name</label>
                   <div className="relative group">
                     <Building2 className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <input
                       type="text"
-                      placeholder="IIT Delhi"
-                      value={formData.college}
-                      onChange={(e) => handleInputChange("college", e.target.value)}
+                      placeholder="e.g. Stanford University"
+                      value={formData.institutionName}
+                      onChange={(e) => handleInputChange("institutionName", e.target.value)}
                       className="w-full pl-12 pr-4 py-3 sm:py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm sm:text-base"
                     />
                   </div>
                 </div>
 
-                {/* Branch */}
+                {/* Institution Code */}
                 <div className="space-y-1.5 sm:space-y-2">
-                  <label className="text-sm font-semibold text-foreground/80">Branch/Stream</label>
+                  <label className="text-sm font-semibold text-foreground/80">Institution Code</label>
                   <div className="relative group">
-                    <GraduationCap className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                    <select
-                      value={formData.branch}
-                      onChange={(e) => handleInputChange("branch", e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 sm:py-3.5 border-2 border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer text-sm sm:text-base"
-                    >
-                      <option value="" className="bg-card">Select your branch</option>
-                      <option className="bg-card">Computer Science</option>
-                      <option className="bg-card">Information Technology</option>
-                      <option className="bg-card">Electronics</option>
-                      <option className="bg-card">Mechanical</option>
-                      <option className="bg-card">Civil</option>
-                      <option className="bg-card">Electrical</option>
-                    </select>
+                    <Hash className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <input
+                      type="text"
+                      placeholder="e.g. SU001"
+                      value={formData.institutionCode}
+                      onChange={(e) => handleInputChange("institutionCode", e.target.value)}
+                      className="w-full pl-12 pr-4 py-3 sm:py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm sm:text-base"
+                    />
+                  </div>
+                </div>
+                
+                {/* Institution Address */}
+                <div className="space-y-1.5 sm:space-y-2">
+                  <label className="text-sm font-semibold text-foreground/80">Institution Address</label>
+                  <div className="relative group">
+                    <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <input
+                      type="text"
+                      placeholder="City, State, Country"
+                      value={formData.institutionAddress}
+                      onChange={(e) => handleInputChange("institutionAddress", e.target.value)}
+                      className="w-full pl-12 pr-4 py-3 sm:py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm sm:text-base"
+                    />
                   </div>
                 </div>
 
-                {/* Year */}
+                {/* Employee Code */}
+                 <div className="space-y-1.5 sm:space-y-2">
+                  <label className="text-sm font-semibold text-foreground/80">Your Employee Code</label>
+                  <div className="relative group">
+                    <Briefcase className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <input
+                      type="text"
+                      placeholder="e.g. EMP1234"
+                      value={formData.employeeCode}
+                      onChange={(e) => handleInputChange("employeeCode", e.target.value)}
+                      className="w-full pl-12 pr-4 py-3 sm:py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm sm:text-base"
+                    />
+                  </div>
+                </div>
+
+                {/* Admin Key */}
                 <div className="space-y-1.5 sm:space-y-2">
-                  <label className="text-sm font-semibold text-foreground/80">Current Year</label>
-                  <select
-                    value={formData.year}
-                    onChange={(e) => handleInputChange("year", e.target.value)}
-                    className="w-full px-4 py-3 sm:py-3.5 border-2 border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer text-sm sm:text-base"
-                  >
-                    <option value="" className="bg-card">Select your year</option>
-                    <option className="bg-card">First Year</option>
-                    <option className="bg-card">Second Year</option>
-                    <option className="bg-card">Third Year</option>
-                    <option className="bg-card">Final Year</option>
-                  </select>
+                  <label className="text-sm font-semibold text-foreground/80">Admin Registration Key</label>
+                  <div className="relative group">
+                    <Key className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <input
+                      type="text"
+                      placeholder="Provided by platform"
+                      value={formData.adminKey}
+                      onChange={(e) => handleInputChange("adminKey", e.target.value)}
+                      className="w-full pl-12 pr-4 py-3 sm:py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm sm:text-base"
+                    />
+                  </div>
                 </div>
 
                 {/* Password */}
@@ -388,7 +429,7 @@ export default function SignupPage() {
                 </div>
 
                 {/* Terms & Conditions */}
-                <label className="flex items-start gap-3 cursor-pointer group">
+                <label className="flex items-start gap-3 cursor-pointer group mt-2">
                   <input
                     type="checkbox"
                     checked={formData.agreeToTerms}
@@ -408,11 +449,11 @@ export default function SignupPage() {
                 </label>
 
                 {/* Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <Button
                     onClick={handlePrevStep}
                     variant="outline"
-                    className="w-full sm:flex-1 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 py-3 rounded-xl font-semibold transition-all text-sm sm:text-base order-2 sm:order-1"
+                    className="w-full sm:flex-1 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 dark:border-gray-700 dark:hover:border-gray-600 dark:hover:bg-gray-800 py-3 rounded-xl font-semibold transition-all text-sm sm:text-base order-2 sm:order-1"
                   >
                     Back
                   </Button>
@@ -420,9 +461,9 @@ export default function SignupPage() {
                     onClick={handleSignup}
                     disabled={
                       isLoading ||
-                      !formData.college ||
-                      !formData.branch ||
-                      !formData.year ||
+                      !formData.institutionName ||
+                      !formData.institutionCode ||
+                      !formData.adminKey ||
                       !formData.password ||
                       formData.password !== formData.confirmPassword ||
                       !formData.agreeToTerms
@@ -432,53 +473,19 @@ export default function SignupPage() {
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        Creating...
+                        Registering...
                       </span>
                     ) : (
-                      "Create Account"
+                      "Register Admin"
                     )}
                   </Button>
                 </div>
               </div>
             )}
 
-            {/* Divider - Only on step 1 */}
-            {step === 1 && (
-              <>
-                <div className="relative my-8">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white dark:bg-slate-900 text-muted-foreground font-medium">Or sign up with</span>
-                  </div>
-                </div>
-
-                {/* Social Signup */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Button
-                    onClick={() => handleSocialSignup('google')}
-                    variant="outline"
-                    className="w-full border-2 border-border hover:border-muted hover:bg-muted py-3 rounded-xl font-semibold transition-all flex items-center justify-center text-sm sm:text-base"
-                  >
-                    <Chrome className="w-5 h-5 mr-2 text-red-500" />
-                    Google
-                  </Button>
-                  <Button
-                    onClick={() => handleSocialSignup('github')}
-                    variant="outline"
-                    className="w-full border-2 border-border hover:border-muted hover:bg-muted py-3 rounded-xl font-semibold transition-all flex items-center justify-center text-sm sm:text-base"
-                  >
-                    <Github className="w-5 h-5 mr-2" />
-                    GitHub
-                  </Button>
-                </div>
-              </>
-            )}
-
             {/* Sign In Link */}
             <p className="text-center text-sm text-muted-foreground mt-8 font-medium">
-              Already have an account?{" "}
+              Already have an admin account?{" "}
               <a href="/login" className="font-bold text-primary hover:text-primary/80 transition-colors">
                 Sign In
               </a>
