@@ -47,4 +47,18 @@ router.post('/students',
     deptController.createStudentsManually
 );
 
+// GET /api/dept/approvals/resumes - List students who updated their Resume/Skills
+router.get('/approvals/resumes',
+    protect,
+    authorize('TPO_HEAD'),
+    deptController.getRecentlyUpdatedProfiles
+);
+
+// PUT /api/dept/approvals/resumes/:id - Approve/Reject subjective profile changes
+router.put('/approvals/resumes/:id',
+    protect,
+    authorize('TPO_HEAD'),
+    deptController.reviewStudentProfile
+);
+
 module.exports = router;

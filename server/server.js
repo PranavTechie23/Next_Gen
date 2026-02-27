@@ -6,8 +6,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 const app = express();
 const db = require('./config/db');
-const adminRoutes = require('./routes/adminRoutes');
-const deptRoutes = require('./routes/deptRoutes');
+
 
 // Load environment variables
 dotenv.config();
@@ -37,8 +36,16 @@ app.get('/', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running', timestamp: new Date() });
 });
 
+const adminRoutes = require('./routes/adminRoutes');
+const deptRoutes = require('./routes/deptRoutes');
+const newsRoutes = require('./routes/newsRoutes');
+
 app.use('/api/admin', adminRoutes);
 app.use('/api/dept', deptRoutes);
+app.use('/api', newsRoutes);
+
+const studentRoutes = require('./routes/studentRoutes');
+app.use('/api/student', studentRoutes);
 
 
 

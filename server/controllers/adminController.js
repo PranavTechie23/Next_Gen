@@ -52,7 +52,6 @@ const createDeptHead = async (req, res) => {
             );
 
             await connection.commit();
-            connection.release();
 
             // 8. Send Email with Credentials
             const emailSubject = 'Your Department Head Account Credentials';
@@ -89,9 +88,10 @@ const createDeptHead = async (req, res) => {
 
         } catch (err) {
             await connection.rollback();
-            connection.release();
             console.error("Transaction Error:", err);
             res.status(500).json({ message: "Failed to create Dept Head due to server error" });
+        } finally {
+            if (connection) connection.release();
         }
 
     } catch (error) {

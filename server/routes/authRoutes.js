@@ -14,9 +14,6 @@ router.post('/reset-password', authController.requestPasswordReset);
 // POST /api/auth/verify-reset
 router.post('/verify-reset', authController.verifyAndResetPassword);
 
-// POST /api/auth/verify-reset
-router.post('/verify-reset', authController.verifyAndResetPassword);
-
 // POST /api/auth/change-password
 const { protect } = require('../middleware/authMiddleware');
 router.post('/change-password', protect, authController.changePassword);

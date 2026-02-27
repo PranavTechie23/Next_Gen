@@ -331,10 +331,11 @@ exports.requestPasswordReset = async (req, res) => {
 
 // --- Verify OTP and Reset Password ---
 exports.verifyAndResetPassword = async (req, res) => {
-    const { email, otp, newPassword } = req.body;
+    // Assuming the frontend passes token as well
+    const { email, otp, newPassword, token } = req.body;
 
-    if (!email || !otp || !newPassword) {
-        return res.status(400).json({ message: "Please provide email, otp, and newPassword." });
+    if (!email || !otp || !newPassword || !token) {
+        return res.status(400).json({ message: "Please provide email, otp, token, and newPassword." });
     }
 
     const connection = await db.getConnection();
@@ -352,7 +353,13 @@ exports.verifyAndResetPassword = async (req, res) => {
 
         const resetRecord = resets[0];
 
-        // 2. Check Expiry
+        // 2. Verify token
+        const isTokenValid = await bcrypt.compare(token, resetRecord.token);
+        if (!isTokenValid) {
+            return res.status(400).json({ message: "Invalid Reset Token." });
+        }
+
+        // 3. Check Expiry
         if (new Date() > new Date(resetRecord.expires_at)) {
             // Cleanup expired token
             await connection.execute('DELETE FROM password_resets WHERE email = ?', [email]);

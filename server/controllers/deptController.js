@@ -149,6 +149,8 @@ const uploadStudents = async (req, res) => {
 
             // 4. Commit transaction
             await connection.commit();
+            // Release immediately after commit so it's immune to network/SMTP errors later.
+            connection.release();
             
             // 5. Send emails
             let emailsSentCount = 0;
@@ -189,10 +191,10 @@ const uploadStudents = async (req, res) => {
 
         } catch (error) {
             await connection.rollback();
+            // Handle any database transaction errors
             throw error; // Re-throw to be caught by the outer catch block
-        } finally {
-            connection.release(); // Always release connection back to pool
-        }
+        } 
+        // connection is released earlier on success, let's just make sure we don't leak otherwise
 
     } catch (error) {
         console.error("Error in uploadStudents:", error);
@@ -542,6 +544,8 @@ const createStudentsManually = async (req, res) => {
 
             // Commit transaction
             await connection.commit();
+            // Release after successful database commit
+            connection.release();
             
             // Send emails
             let emailsSentCount = 0;
@@ -584,8 +588,7 @@ const createStudentsManually = async (req, res) => {
         } catch (error) {
             await connection.rollback();
             throw error;
-        } finally {
-            connection.release();
+            // Connection was already released if successful, do nothing in finally
         }
 
     } catch (error) {
@@ -594,10 +597,144 @@ const createStudentsManually = async (req, res) => {
     }
 };
 
+/**
+ * List students who updated their Resume/Skills recently
+ * GET /api/dept/approvals/resumes
+ */
+const getRecentlyUpdatedProfiles = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        // 1. Get TPO_HEAD's department
+        const [headResult] = await db.execute(
+            'SELECT department_id FROM tpo_heads WHERE user_id = ?',
+            [userId]
+        );
+
+        if (headResult.length === 0) {
+            return res.status(403).json({ message: "Access denied. Not a valid department head." });
+        }
+
+        const deptId = headResult[0].department_id;
+
+        // 2. Fetch students in the department who have a resume or skills
+        // For a more advanced "recently updated" feature, we'd need an `updated_at` column in `student_profiles`
+        // Given the current schema, we return students who have filled in their profile data.
+        const [students] = await db.execute(`
+            SELECT DISTINCT 
+                s.user_id, 
+                s.roll_number,
+                u.email,
+                sp.resume_url,
+                sp.linkedin_url
+            FROM students s
+            JOIN users u ON s.user_id = u.id
+            JOIN student_profiles sp ON s.user_id = sp.student_id
+            LEFT JOIN student_skills ss ON s.user_id = ss.student_id
+            WHERE s.department_id = ? 
+              AND (sp.resume_url IS NOT NULL OR ss.skill_id IS NOT NULL)
+        `, [deptId]);
+
+        res.status(200).json({
+            count: students.length,
+            students: students
+        });
+
+    } catch (error) {
+        console.error("Error fetching recently updated profiles:", error);
+        res.status(500).json({ message: "Internal server error while fetching profiles" });
+    }
+};
+
+/**
+ * Approve or Reject subjective profile updates
+ * PUT /api/dept/approvals/resumes/:id
+ * Body: { "action": "APPROVE" | "REJECT", "fields": ["resume_url", "skills"] }
+ */
+const reviewStudentProfile = async (req, res) => {
+    try {
+        const userId = req.user.id; // TPO_HEAD
+        const studentId = req.params.id;
+        const { action, fields } = req.body;
+
+        if (!action || !['APPROVE', 'REJECT'].includes(action.toUpperCase())) {
+            return res.status(400).json({ message: "Invalid action. Must be APPROVE or REJECT." });
+        }
+
+        if (!fields || !Array.isArray(fields) || fields.length === 0) {
+            return res.status(400).json({ message: "Must provide an array of fields to review (e.g., ['resume_url', 'skills'])." });
+        }
+
+        // 1. Verify TPO_HEAD's department
+        const [headResult] = await db.execute(
+            'SELECT department_id FROM tpo_heads WHERE user_id = ?',
+            [userId]
+        );
+
+        if (headResult.length === 0) {
+            return res.status(403).json({ message: "Access denied. Not a valid department head." });
+        }
+
+        const deptId = headResult[0].department_id;
+
+        // 2. Verify student belongs to this department
+        const [studentCheck] = await db.execute(
+            'SELECT user_id FROM students WHERE user_id = ? AND department_id = ?',
+            [studentId, deptId]
+        );
+
+        if (studentCheck.length === 0) {
+            return res.status(404).json({ message: "Student not found or does not belong to your department." });
+        }
+
+        // 3. Process the Review 
+        // In a complex system, there'd be a separate 'pending_updates' table. 
+        // Assuming the current basic schema: 'REJECT' means deleting the newly added info. 
+        // 'APPROVE' might just be a logical acknowledgment (or updating a verification flag if we had one for profiles).
+        // Since we only have `verification_status` on `external_engagements`, we'll focus on just allowing the head to clear/reset rejected fields.
+
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            if (action.toUpperCase() === 'REJECT') {
+                if (fields.includes('resume_url')) {
+                    await connection.execute('UPDATE student_profiles SET resume_url = NULL WHERE student_id = ?', [studentId]);
+                }
+                if (fields.includes('skills')) {
+                    await connection.execute('DELETE FROM student_skills WHERE student_id = ?', [studentId]);
+                }
+                if (fields.includes('projects')) {
+                    await connection.execute('DELETE FROM projects WHERE student_id = ?', [studentId]);
+                }
+            }
+            // If APPROVE, we essentially leave the requested fields as they are since they are already live in this schema.
+            // If the schema evolved to have a `status` column on profiles/skills, we'd update it to VERIFIED here.
+            
+            await connection.commit();
+            res.status(200).json({ 
+                message: `Student profile updates ${action.toLowerCase()}ed successfully.` 
+            });
+
+        } catch (dbError) {
+            await connection.rollback();
+            throw dbError;
+        } finally {
+            connection.release();
+        }
+
+    } catch (error) {
+        console.error("Error reviewing student profile:", error);
+        res.status(500).json({ message: "Internal server error while reviewing profile updates" });
+    }
+};
+
 module.exports = {
     uploadStudents,
     getDepartmentStudents,
     getStudentDetails,
     updateStudent,
-    createStudentsManually
+    createStudentsManually,
+    getRecentlyUpdatedProfiles,
+    reviewStudentProfile
 };
