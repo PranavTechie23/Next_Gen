@@ -14,7 +14,6 @@ import Careers from "./pages/student/careers";
 import AboutUs from "./pages/AboutUs";
 import CorporateNews from "./pages/student/CorporateNews";
 
-import StudentBlog from "./pages/student/blog";
 
 
 import Webinar from "./pages/student/webinars";
@@ -61,7 +60,6 @@ function Router() {
       <Route path="/contact" component={ContactUs} />
 
 
-      <Route path="/blog" component={StudentBlog} />
 
       <Route path="/webinars" component={Webinar} />
 
