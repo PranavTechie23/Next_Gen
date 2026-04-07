@@ -45,4 +45,11 @@ router.get('/applications',
     studentController.getApplications
 );
 
+// DELETE /api/student/applications/:id - Withdraw application
+router.delete('/applications/:id',
+    protect,
+    authorize('STUDENT'),
+    studentController.withdrawApplication
+);
+
 module.exports = router;

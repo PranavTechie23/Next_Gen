@@ -59,4 +59,18 @@ router.put('/drives/:id/status',
     adminController.updateDriveStatus
 );
 
+// GET /applications - Get all applications
+router.get('/applications',
+    protect,
+    authorize("TPO_ADMIN"),
+    adminController.getAllApplications
+);
+
+// PUT /applications/:id/status - Update application status
+router.put('/applications/:id/status',
+    protect,
+    authorize("TPO_ADMIN"),
+    adminController.updateApplicationStatus
+);
+
 module.exports = router;
