@@ -13,35 +13,30 @@ import StudentSetting from "./pages/student/Setting";
 import Careers from "./pages/student/careers";
 import AboutUs from "./pages/AboutUs";
 import CorporateNews from "./pages/student/CorporateNews";
-import StudentBlog from "./pages/student/blog";
+
+
+
 import Webinar from "./pages/student/webinars";
+
+
 import StudentFeedback from "./pages/student/feedbackForm";
 import StudentInfo from "./pages/student/student_info";
 
-import CollegeDashboard from "./pages/tpo/tpoDashboard";
-import CollegeSetting from "./pages/tpo/Setting";
-import CollegeFeedback from "./pages/tpo/feedbackForm";
-import CollegeInfo from "./pages/tpo/college_info";
-
-import DepartmentDashboard from "./pages/department/DepartmentDashboard";
-
-
-
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminSetting from "./pages/admin/Setting";
-import AdminFeedback from "./pages/admin/Feedback";
-import AdminInstitutions from "./pages/admin/Institutions";
-import AdminStudents from "./pages/admin/Students";
-import AdminAssessments from "./pages/admin/Assessments";
-import AdminReports from "./pages/admin/Reports";
-import AdminIntegrations from "./pages/admin/Integration";
-import AdminAnalytics from "./pages/admin/Analytics";
+import AdminFeedback from "./pages/admin/feedbackForm";
+import AdminInfo from "./pages/admin/college_info";
+
+import DepartmentDashboard from "./pages/department/DepartmentDashboard";
 
 import PrivacyPage from "./pages/PrivacyPage";
 import SignupPage from "./pages/SignupPage";
 import TermsAndCondition from "./pages/TermsAndCondition";
 import HelpCenter from "./pages/HelpCenter";
 import ContactUs from "./pages/ContactUs";
+
+import ForgotPassword from "./pages/ForgotPassword";
+import ChangePassword from "./pages/ChangePassword";
 import CookiePolicy from "./pages/Cookie";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
@@ -65,23 +60,17 @@ function Router() {
       <Route path="/contact" component={ContactUs} />
 
 
-      <Route path="/blog" component={StudentBlog} />
 
       <Route path="/webinars" component={Webinar} />
 
 
       <Route path="/privacy" component={PrivacyPage} />
 
-      {/* Admin Routes */}
+      {/* Admin Routes (TPO Admin) */}
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/setting" component={AdminSetting} />
-      <Route path="/admin/Feedback" component={AdminFeedback} />
-      <Route path="/admin/institutions" component={AdminInstitutions} />
-      <Route path="/admin/students" component={AdminStudents} />
-      <Route path="/admin/assessments" component={AdminAssessments} />
-      <Route path="/admin/reports" component={AdminReports} />
-      <Route path="/admin/integrations" component={AdminIntegrations} />
-      <Route path="/admin/analytics" component={AdminAnalytics} />
+      <Route path="/admin/feedbackForm" component={AdminFeedback} />
+      <Route path="/admin/college_info" component={AdminInfo} />
 
       {/* Student Routes */}
       <Route path="/student/dashboard" component={StudentDashboard} />
@@ -89,13 +78,7 @@ function Router() {
       <Route path="/student/feedbackForm" component={StudentFeedback} />
       <Route path="/student/student_info" component={StudentInfo} />
 
-      {/* College Routes */}
-      <Route path="/college/dashboard" component={CollegeDashboard} />
-      <Route path="/college/setting" component={CollegeSetting} />
-      <Route path="/college/feedbackForm" component={CollegeFeedback} />
-      <Route path="/college/college_info" component={CollegeInfo} />
-
-      {/* Department Routes */}
+      {/* Department Routes (TPO Head) */}
       <Route path="/department/dashboard" component={DepartmentDashboard} />
 
       {/* Additional Pages & Aliases */}
@@ -116,6 +99,8 @@ function Router() {
       <Route path="/TermsAndCondition" component={TermsAndCondition} />
       <Route path="/HelpCenter" component={HelpCenter} />
       <Route path="/ContactUs" component={ContactUs} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/change-password" component={ChangePassword} />
 
       {/* Final fallback route */}
       <Route component={NotFound} />

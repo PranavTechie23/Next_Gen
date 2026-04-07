@@ -1,0 +1,4 @@
+ca.pem
+.env
+node_modules/
+/src/generated/prisma

@@ -23,11 +23,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 // Import all student feature components
 import Careers from "@/pages/student/careers";
 import StudentWebinar from "@/pages/student/webinars";
-import BlogPage from "@/pages/student/blog";
 import CorporateNewsPage from "@/pages/student/CorporateNews";
 import StudentFeedbackForm from "@/pages/student/feedbackForm";
 import AssessmentHub from "@/pages/student/AssessmentHub";
 import CompanyWiseKit from "@/pages/student/CompanyWiseKit";
+import { studentApi } from "@/services/studentApi";
 import { getPlacementDrives, computeDriveMatch } from "@/data/placementDrives";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -86,18 +86,36 @@ export default function StudentDashboard() {
     }
   }, [activeTab]);
 
-  // Student Profile Data
+  const [backendProfile, setBackendProfile] = useState<any>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoadingProfile(true);
+        const data = await studentApi.getProfile();
+        setBackendProfile(data);
+      } catch (error) {
+        console.error("Failed to fetch student profile", error);
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  // Student Profile Data (Merged with Backend)
   const studentProfile = {
-    name: "Rahul Sharma",
-    id: "CSE-2021-001",
-    email: "rahul.sharma@college.edu",
-    phone: "+91 98765 43210",
-    branch: "Computer Science & Engineering",
-    college: "Northeastern University",
-    bio: "Passionate about building scalable web applications and AI-driven solutions.",
-    year: "Final Year",
-    cgpa: 8.5,
-    avatar: ""
+    name: backendProfile?.user?.email?.split('@')[0] || "Student",
+    id: backendProfile?.student?.roll_number || "N/A",
+    email: backendProfile?.user?.email || "student@college.edu",
+    phone: backendProfile?.profile?.phone || "+91 00000 00000",
+    branch: backendProfile?.department?.name || "Engineering",
+    college: "NextGen University", // Assuming static or from institution table
+    bio: backendProfile?.profile?.bio || "No bio added yet.",
+    year: "Final Year", // This would ideally be calculated based on batch/admission year
+    cgpa: backendProfile?.student?.current_cgpa || 0,
+    avatar: backendProfile?.profile?.avatar_url || ""
   };
 
   const resumeInputRef = useRef<HTMLInputElement>(null);
@@ -700,7 +718,6 @@ export default function StudentDashboard() {
     { id: "progress", label: "Progress", icon: TrendingUp },
 
     { id: "webinars", label: "Webinars", icon: Play },
-    { id: "blog", label: "Blog", icon: BookOpen },
 
     { id: "careers", label: "Careers", icon: Briefcase },
     { id: "corporateNews", label: "Corporate News", icon: Newspaper },
@@ -713,7 +730,7 @@ export default function StudentDashboard() {
   const sidebarSections: Array<{ title: string; ids: Array<(typeof sidebarLinks)[number]["id"]> }> = [
     { title: "PROFILE TRACKER", ids: ["overview", "skills"] },
     { title: "QUESTION TRACKER", ids: ["opportunities", "learning"] },
-    { title: "RESOURCES", ids: ["progress", "careers", "webinars", "blog", "corporateNews"] },
+    { title: "RESOURCES", ids: ["progress", "careers", "webinars", "corporateNews"] },
     { title: "COMMUNITY", ids: ["feedback"] },
     { title: "PRACTICE & PREP", ids: ["assessment-hub", "company-kit"] },
   ];
@@ -949,7 +966,6 @@ export default function StudentDashboard() {
                         activeTab === "progress" ? "Progress & Milestones" :
                           activeTab === "careers" ? "Career Opportunities & Resources" :
                             activeTab === "webinars" ? "Live Learning Sessions" :
-                              activeTab === "blog" ? "Personalized content" :
                                 activeTab === "corporateNews" ? "Industry News & Updates" :
                                   activeTab === "feedback" ? "Share Your Feedback" :
                                     activeTab === "assessment-hub" ? "Assessment Hub — End-to-End Prep" :
@@ -1971,17 +1987,10 @@ export default function StudentDashboard() {
             </div>
           )}
 
-          {/* Blog Tab */}
-          {activeTab === "blog" && (
-            <div className="space-y-10">
-              <BlogPage isDashboard={true} />
-            </div>
-          )}
-
           {/* Corporate News Tab */}
           {activeTab === "corporateNews" && (
             <div className="space-y-10">
-              <CorporateNewsPage isDashboard={true} />
+              <CorporateNewsPage />
             </div>
           )}
 

@@ -8,6 +8,9 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useIsMobile } from "@/hooks/useMobile";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { StudentManagement } from "./StudentManagement";
+import { ApprovalsHub } from "./ApprovalsHub";
+import { deptApi } from "@/services/deptApi";
 
 export default function DepartmentDashboard() {
     const { theme } = useTheme();
@@ -26,12 +29,32 @@ export default function DepartmentDashboard() {
         }
     }, [selectedView]);
 
-    // Department specific stats (e.g., CSE)
-    const deptStats = [
-        { label: "Dept Students", value: "320", change: "+2%", trend: "up", icon: Users, color: "bg-blue-500" },
-        { label: "Placement Ready", value: "285", change: "+15%", trend: "up", icon: Target, color: "bg-green-500" },
-        { label: "Avg Readiness", value: "74%", change: "+5%", trend: "up", icon: Award, color: "bg-purple-500" },
-        { label: "Placed (YoY)", value: "84%", change: "+10%", trend: "up", icon: TrendingUp, color: "bg-orange-500" },
+    const [dashboardData, setDashboardData] = useState<any>(null);
+    const [loadingStats, setLoadingStats] = useState(true);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                setLoadingStats(true);
+                const data = await deptApi.getDashboardStats();
+                setDashboardData(data);
+            } catch (error) {
+                console.error("Failed to fetch dashboard stats", error);
+            } finally {
+                setLoadingStats(false);
+            }
+        };
+        fetchStats();
+    }, []);
+
+    const stats = dashboardData?.stats || { totalStudents: 0, placedStudents: 0, avgPackage: 0, atRiskStudents: 0 };
+
+    // Department specific stats (Dynamic)
+    const dynamicDeptStats = [
+        { label: "Dept Students", value: stats.totalStudents, change: "+5%", trend: "up", icon: Users, color: "bg-blue-500" },
+        { label: "Placed Students", value: stats.placedStudents, change: "+12%", trend: "up", icon: Award, color: "bg-green-500" },
+        { label: "Avg Package", value: `${stats.avgPackage} LPA`, change: "+8%", trend: "up", icon: DollarSign, color: "bg-purple-500" },
+        { label: "At Risk", value: stats.atRiskStudents, change: "-2%", trend: "down", icon: AlertTriangle, color: "bg-red-500" },
     ];
 
     const additionalMetrics = [
@@ -42,20 +65,13 @@ export default function DepartmentDashboard() {
     ];
 
     // Comparisons: Dept vs College Average
-    const comparisonData = [
-        { metric: "Placement Rate", dept: 84, collegeAvg: 78 },
-        { metric: "Avg Package", dept: 8.2, collegeAvg: 6.5 },
-        { metric: "Readiness", dept: 74, collegeAvg: 68 },
-        { metric: "Internships", dept: 65, collegeAvg: 45 },
+    const comparisonData = dashboardData?.comparisonData || [
+        { metric: "Placement %", dept: 0, collegeAvg: 0 },
+        { metric: "Avg Package (LPA)", dept: 0, collegeAvg: 0 },
+        { metric: "Highest Package (LPA)", dept: 0, collegeAvg: 0 },
     ];
 
-    const yearTrend = [
-        { year: "2020", placements: 82, avg_salary: 6.5 },
-        { year: "2021", placements: 85, avg_salary: 7.2 },
-        { year: "2022", placements: 88, avg_salary: 7.8 },
-        { year: "2023", placements: 91, avg_salary: 8.5 },
-        { year: "2024", placements: 94, avg_salary: 9.2 },
-    ];
+    const yearTrend = dashboardData?.yearTrend || [];
 
     const skillsRadarData = [
         { skill: "Coding", dept: 85, collegeAvg: 70 },
@@ -65,12 +81,7 @@ export default function DepartmentDashboard() {
         { skill: "Projects", dept: 82, collegeAvg: 65 },
     ];
 
-    const placementDistribution = [
-        { name: "Product Based", value: 45, color: "#1e3a8a" },
-        { name: "Service Based", value: 35, color: "#3b82f6" },
-        { name: "Startups", value: 15, color: "#60a5fa" },
-        { name: "Core", value: 5, color: "#93c5fd" },
-    ];
+    const placementDistribution = dashboardData?.placementDistribution || [];
 
     const atRiskStudents = [
         { id: "CSE001", name: "Priya Sharma", readiness: 35, status: "Critical", issues: ["Low DSA Score", "No Projects"], lastActivity: "2 days ago" },
@@ -156,7 +167,7 @@ export default function DepartmentDashboard() {
                             </Button>
                         )}
                         <div className={`${isMobile ? 'hidden' : 'flex'} gap-1 overflow-x-auto`}>
-                            {["overview", "analytics", "students", "reports"].map((view) => (
+                            {["overview", "analytics", "students", "approvals", "reports"].map((view) => (
                                 <button
                                     key={view}
                                     onClick={() => setSelectedView(view)}
@@ -177,7 +188,7 @@ export default function DepartmentDashboard() {
                     <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                         <SheetContent side="left" className="w-64">
                             <div className="space-y-2 mt-8">
-                                {["overview", "analytics", "students", "reports"].map((view) => (
+                                {["overview", "analytics", "students", "approvals", "reports"].map((view) => (
                                     <button
                                         key={view}
                                         onClick={() => {
@@ -229,7 +240,7 @@ export default function DepartmentDashboard() {
                 {selectedView === "overview" && (
                     <>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8 mb-8 md:mb-12">
-                            {deptStats.map((stat, idx) => {
+                            {dynamicDeptStats.map((stat, idx) => {
                                 const Icon = stat.icon;
                                 return (
                                     <Card key={idx} className="relative overflow-hidden shadow-lg border-0 hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer">
@@ -342,30 +353,12 @@ export default function DepartmentDashboard() {
                 )}
 
                 {selectedView === "students" && (
-                    <div className="space-y-6">
-                        <div className="flex gap-4">
-                            <input type="text" placeholder="Search student..." className="flex-1 p-3 rounded-xl border border-border bg-background" />
-                            <select className="p-3 rounded-xl border border-border bg-background">
-                                <option>All Status</option>
-                                <option>Placed</option>
-                                <option>Unplaced</option>
-                            </select>
-                        </div>
-                        <div className="grid gap-4">
-                            {/* Mock student list */}
-                            {[1, 2, 3, 4, 5].map((i) => (
-                                <div key={i} className="p-4 border border-border rounded-xl flex items-center justify-between bg-card text-card-foreground">
-                                    <div>
-                                        <h4 className="font-bold">Student Name {i}</h4>
-                                        <p className="text-sm text-muted-foreground">CSE • {i}23456</p>
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <span className="px-3 py-1 rounded-full bg-green-500/10 text-green-500 text-xs font-bold">Ready</span>
-                                        <Button size="sm" variant="outline">View Profile</Button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                    <StudentManagement />
+                )}
+
+                {selectedView === "approvals" && (
+                    <div className="container px-0 sm:px-4 py-6">
+                        <ApprovalsHub />
                     </div>
                 )}
 

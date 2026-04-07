@@ -43,9 +43,11 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
+import { studentApi } from "@/services/studentApi";
+import { toast } from "sonner";
 
 export default function StudentSettings(props: any) {
   const isDashboard = props?.isDashboard || false;
@@ -56,20 +58,55 @@ export default function StudentSettings(props: any) {
   const [isEditing, setIsEditing] = useState(false);
 
   const [formData, setFormData] = useState({
-    fullName: "Rahul Kumar",
-    email: "rahul.kumar@example.com",
-    phone: "+91-9876543210",
+    fullName: "",
+    email: "",
+    phone: "",
     location: "Mumbai, Maharashtra",
-    college: "IIT Delhi",
-    branch: "Computer Science",
+    college: "NextGen University",
+    branch: "",
     year: "Final Year",
-    cgpa: "8.5",
+    cgpa: "0",
     graduationYear: "2026",
     targetRole: "Senior Software Engineer",
-    linkedIn: "linkedin.com/in/rahulkumar",
-    github: "github.com/rahulkumar",
-    portfolio: "rahulkumar.dev",
+    linkedIn: "",
+    github: "",
+    portfolio: "",
+    bio: ""
   });
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch student profile on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setIsLoading(true);
+        const data = await studentApi.getProfile();
+        setFormData({
+            fullName: data?.user?.email?.split('@')[0] || "Student",
+            email: data?.user?.email || "",
+            phone: data?.profile?.phone || "",
+            location: data?.profile?.address || "Address Not Available",
+            college: "NextGen University", // Assuming static or from institution table
+            branch: data?.department?.name || "Engineering",
+            year: "Final Year",
+            cgpa: data?.student?.current_cgpa || "0",
+            graduationYear: data?.student?.expected_graduation_year || "2025",
+            targetRole: "Software Engineer",
+            linkedIn: data?.profile?.linkedin_url || "",
+            github: data?.profile?.github_url || "",
+            portfolio: "",
+            bio: data?.profile?.bio || ""
+        });
+      } catch (error) {
+        console.error("Failed to fetch profile settings", error);
+        toast.error("Failed to load profile data.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const [privacySettings, setPrivacySettings] = useState({
     analyzeLearning: true,
@@ -126,10 +163,28 @@ export default function StudentSettings(props: any) {
     }));
   };
 
-  const handleSave = () => {
-    setSaved(true);
-    setIsEditing(false);
-    setTimeout(() => setSaved(false), 3000);
+  const handleSave = async () => {
+    try {
+      // Build subjective profile payload
+      const subjectiveData = {
+        phone: formData.phone,
+        address: formData.location,
+        bio: formData.bio,
+        linkedin: formData.linkedIn,
+        github: formData.github
+        // Add resume/portfolio mapping logic when supported by backend
+      };
+      
+      await studentApi.updateSubjectiveProfile(subjectiveData);
+      
+      setSaved(true);
+      setIsEditing(false);
+      toast.success("Profile updated successfully");
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      console.error("Failed to update profile", error);
+      toast.error("Failed to save changes.");
+    }
   };
 
   const handleBack = () => {
@@ -315,10 +370,13 @@ export default function StudentSettings(props: any) {
 
                 <div className="space-y-5">
                   {[
-                    { label: "Full Name", name: "fullName", icon: User },
-                    { label: "Email Address", name: "email", icon: Mail },
+                    { label: "Full Name", name: "fullName", icon: User, readOnly: true },
+                    { label: "Email Address", name: "email", icon: Mail, readOnly: true },
                     { label: "Phone Number", name: "phone", icon: Phone },
-                    { label: "Location", name: "location", icon: MapPin }
+                    { label: "Location", name: "location", icon: MapPin },
+                    { label: "Bio / Summary", name: "bio", icon: FileText },
+                    { label: "LinkedIn URL", name: "linkedIn", icon: Linkedin },
+                    { label: "GitHub URL", name: "github", icon: Github }
                   ].map((field) => (
                     <div key={field.name} className="space-y-2">
                       <label className={`text-xs font-semibold ${isDark ? 'text-white/70' : 'text-slate-700'}`}>{field.label}</label>
@@ -329,7 +387,7 @@ export default function StudentSettings(props: any) {
                           name={field.name}
                           value={(formData as any)[field.name]}
                           onChange={handleChange}
-                          disabled={!isEditing}
+                          disabled={!isEditing || field.readOnly}
                           className={`w-full ${isDark ? 'bg-white/5 border-white/10 text-white placeholder:text-white/30' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400'} border rounded-xl py-3 pl-10 pr-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
                         />
                       </div>

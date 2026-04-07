@@ -1,4 +1,3 @@
-import { jsxLocPlugin } from "@builder.io/vite-plugin-jsx-loc";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import fs from "node:fs";
@@ -10,7 +9,7 @@ const plugins = [
   react(),
   tailwindcss(),
   // Dev-only plugins
-  ...(process.env.NODE_ENV !== "production" ? [jsxLocPlugin(), vitePluginManusRuntime()] : []),
+  ...(process.env.NODE_ENV !== "production" ? [vitePluginManusRuntime()] : []),
 ];
 
 export default defineConfig({
@@ -48,5 +47,12 @@ export default defineConfig({
       strict: true,
       deny: ["**/.*"],
     },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
   },
 });
