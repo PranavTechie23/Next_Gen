@@ -67,7 +67,7 @@ export function computeDriveMatch(
   if (required.length === 0) {
     score += weights.skills;
   } else {
-    const matchCount = required.filter((r) => student.has(r) || [...student].some((s) => s.includes(r) || r.includes(s))).length;
+    const matchCount = required.filter((r) => student.has(r) || Array.from(student).some((s) => s.includes(r) || r.includes(s))).length;
     score += weights.skills * (matchCount / required.length);
   }
 

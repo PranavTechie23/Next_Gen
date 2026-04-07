@@ -26,6 +26,13 @@ router.get('/students',
     deptController.getDepartmentStudents
 );
 
+// GET /api/dept/dashboard/stats - Get dashboard statistics
+router.get('/dashboard/stats',
+    protect,
+    authorize('TPO_HEAD'),
+    deptController.getDashboardStats
+);
+
 // GET /api/dept/students/:id - View full details of a specific student
 router.get('/students/:id',
     protect,

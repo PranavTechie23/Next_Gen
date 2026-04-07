@@ -39,12 +39,11 @@ app.get('/', (req, res) => {
 const adminRoutes = require('./routes/adminRoutes');
 const deptRoutes = require('./routes/deptRoutes');
 const newsRoutes = require('./routes/newsRoutes');
+const studentRoutes = require('./routes/studentRoutes');
 
 app.use('/api/admin', adminRoutes);
 app.use('/api/dept', deptRoutes);
 app.use('/api', newsRoutes);
-
-const studentRoutes = require('./routes/studentRoutes');
 app.use('/api/student', studentRoutes);
 
 

@@ -27,6 +27,7 @@ import CorporateNewsPage from "@/pages/student/CorporateNews";
 import StudentFeedbackForm from "@/pages/student/feedbackForm";
 import AssessmentHub from "@/pages/student/AssessmentHub";
 import CompanyWiseKit from "@/pages/student/CompanyWiseKit";
+import { studentApi } from "@/services/studentApi";
 import { getPlacementDrives, computeDriveMatch } from "@/data/placementDrives";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -85,18 +86,36 @@ export default function StudentDashboard() {
     }
   }, [activeTab]);
 
-  // Student Profile Data
+  const [backendProfile, setBackendProfile] = useState<any>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoadingProfile(true);
+        const data = await studentApi.getProfile();
+        setBackendProfile(data);
+      } catch (error) {
+        console.error("Failed to fetch student profile", error);
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  // Student Profile Data (Merged with Backend)
   const studentProfile = {
-    name: "Rahul Sharma",
-    id: "CSE-2021-001",
-    email: "rahul.sharma@college.edu",
-    phone: "+91 98765 43210",
-    branch: "Computer Science & Engineering",
-    college: "Northeastern University",
-    bio: "Passionate about building scalable web applications and AI-driven solutions.",
-    year: "Final Year",
-    cgpa: 8.5,
-    avatar: ""
+    name: backendProfile?.user?.email?.split('@')[0] || "Student",
+    id: backendProfile?.student?.roll_number || "N/A",
+    email: backendProfile?.user?.email || "student@college.edu",
+    phone: backendProfile?.profile?.phone || "+91 00000 00000",
+    branch: backendProfile?.department?.name || "Engineering",
+    college: "NextGen University", // Assuming static or from institution table
+    bio: backendProfile?.profile?.bio || "No bio added yet.",
+    year: "Final Year", // This would ideally be calculated based on batch/admission year
+    cgpa: backendProfile?.student?.current_cgpa || 0,
+    avatar: backendProfile?.profile?.avatar_url || ""
   };
 
   const resumeInputRef = useRef<HTMLInputElement>(null);

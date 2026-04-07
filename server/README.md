@@ -176,6 +176,24 @@ List students belonging to the Department Head's respective department who have 
   }
   ```
 
+### 6. Approve or Reject Profile Changes
+Approve or reject a student's subjective profile updates.
+- **URL:** `/approvals/resumes/:id`
+- **Method:** `PUT`
+- **Request Body:**
+  ```json
+  {
+    "action": "APPROVE"
+  }
+  ```
+- **Success Response:** `200 OK`
+
+### 7. Get Dashboard Statistics
+Get dynamic overview and analytics statistics for the Department Head's dashboard.
+- **URL:** `/dashboard/stats`
+- **Method:** `GET`
+- **Success Response:** `200 OK`
+
 ---
 
 ## Student Module Endpoints (Read-Only)
@@ -203,6 +221,22 @@ View full read-only profile data, including academic data (such as CGPA, which c
     "projects": []
   }
   ```
+
+### 2. Update Subjective Profile
+Update subjective fields in the student's profile (e.g. phone, address, bio, linkedin, github).
+- **URL:** `/profile/subjective`
+- **Method:** `PUT`
+- **Request Body:**
+  ```json
+  {
+    "phone": "+91 9876543210",
+    "address": "Mumbai, Maharashtra",
+    "bio": "Passionate developer",
+    "linkedin": "https://linkedin.com/in/student",
+    "github": "https://github.com/student"
+  }
+  ```
+- **Success Response:** `200 OK`
 
 ### 3. List Eligible Jobs
 Lists active job postings from "OPEN" recruitment drives where the student meets the minimum CGPA and maximum backlogs requirements setup by the recruiter.
