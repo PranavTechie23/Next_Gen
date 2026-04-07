@@ -28,11 +28,20 @@ import {
   Loader2,
   Hash,
   Award,
-  BookOpen
+  BookOpen,
+  X as XIcon
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from '@/components/ui/dialog';
 
 // Types for Dev.to API
 interface Article {
@@ -63,9 +72,10 @@ interface Article {
 interface BlogPostProps {
   article: Article;
   variant?: 'default' | 'compact' | 'featured';
+  onClick?: (id: number) => void;
 }
 
-const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default' }) => {
+const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default', onClick }) => {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [likes, setLikes] = useState(article.public_reactions_count);
   const [isLiked, setIsLiked] = useState(false);
@@ -100,18 +110,16 @@ const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default' }) => 
         <CardContent className="p-5">
           <div className="flex gap-4">
             {article.cover_image && (
-              <a
-                href={article.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 block"
-              >
-                <img
-                  src={coverImage}
-                  alt={article.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                />
-              </a>
+                <button
+                  onClick={() => onClick?.(article.id)}
+                  className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 block"
+                >
+                  <img
+                    src={coverImage}
+                    alt={article.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
+                </button>
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2">
@@ -125,16 +133,14 @@ const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default' }) => 
                   </Badge>
                 ))}
               </div>
-              <a
-                href={article.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block group/title"
+              <button
+                onClick={() => onClick?.(article.id)}
+                className="block text-left group/title"
               >
                 <h3 className="font-bold text-foreground group-hover/title:text-purple-600 dark:group-hover/title:text-purple-400 transition-colors line-clamp-2 mb-2 text-lg">
                   {article.title}
                 </h3>
-              </a>
+              </button>
               <div className="flex items-center gap-3 text-sm text-muted-foreground mb-3">
                 <span className="flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" />
@@ -233,15 +239,13 @@ const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default' }) => 
                   <p className="text-sm text-white/70">{getTimeAgo(article.published_at)}</p>
                 </div>
               </div>
-              <a
-                href={article.url}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={() => onClick?.(article.id)}
                 className="flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-white hover:bg-white/30 transition-all border border-white/30"
               >
                 Read More
                 <ExternalLink className="w-4 h-4" />
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -252,10 +256,8 @@ const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default' }) => 
   return (
     <Card className="group hover:shadow-xl transition-all duration-500 bg-gradient-to-br from-white/90 to-white/60 dark:from-slate-900/90 dark:to-slate-900/60 border-white/30 dark:border-slate-700/50 backdrop-blur-2xl overflow-hidden hover:-translate-y-1">
       <div className="relative h-52 overflow-hidden">
-        <a
-          href={article.url}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={() => onClick?.(article.id)}
           className="block w-full h-full"
         >
           <img
@@ -263,7 +265,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default' }) => 
             alt={article.title}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
           />
-        </a>
+        </button>
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
         <div className="absolute top-3 right-3">
           <button
@@ -322,15 +324,13 @@ const BlogPost: React.FC<BlogPostProps> = ({ article, variant = 'default' }) => 
               <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
               <span className="font-medium">{likes}</span>
             </button>
-            <a
-              href={article.url}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => onClick?.(article.id)}
               className="flex items-center gap-1 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors font-bold ml-2"
             >
               Read
               <ExternalLink className="w-3.5 h-3.5" />
-            </a>
+            </button>
           </div>
         </div>
       </CardContent>
@@ -372,6 +372,10 @@ const BlogPage: React.FC<any> = (props: any) => {
   const [selectedTag, setSelectedTag] = useState<string>('');
   const [sortBy, setSortBy] = useState<'recent' | 'popular'>('recent');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loadingArticle, setLoadingArticle] = useState(false);
+  const [fullArticle, setFullArticle] = useState<any>(null);
 
   const popularTags = [
     { name: 'webdev', icon: Globe, color: 'from-blue-500 to-cyan-500' },
@@ -409,6 +413,25 @@ const BlogPage: React.FC<any> = (props: any) => {
     }
   };
 
+  const handleOpenArticle = async (id: number) => {
+    const brief = articles.find(a => a.id === id);
+    if (!brief) return;
+
+    setSelectedArticle(brief);
+    setIsModalOpen(true);
+    setLoadingArticle(true);
+
+    try {
+      const response = await fetch(`https://dev.to/api/articles/${id}`);
+      const data = await response.json();
+      setFullArticle(data);
+    } catch (error) {
+      console.error('Error fetching full article:', error);
+    } finally {
+      setLoadingArticle(false);
+    }
+  };
+
   const filteredArticles = useMemo(() => {
     return articles.filter(article => {
       const matchesSearch = searchQuery === '' ||
@@ -443,7 +466,7 @@ const BlogPage: React.FC<any> = (props: any) => {
 
       {/* Hero Section */}
       {!isDashboard && (
-        <div className="relative bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white overflow-hidden">
+        <div className="relative bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 dark:from-slate-950 dark:via-purple-950/40 dark:to-slate-950 text-white overflow-hidden">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxIDEuNzktNCA0LTRzNCAxLjc5IDQgNC0xLjc5IDQtNCA0LTQtMS43OS00LTR6bTAtMjBjMC0yLjIxIDEuNzktNCA0LTRzNCAxLjc5IDQgNC0xLjc5IDQtNCA0LTQtMS43OS00LTR6TTE2IDM0YzAtMi4yMSAxLjc5LTQgNC00czQgMS43OSA0IDQtMS43OSA0LTQgNC00LTEuNzktNC00em0wLTIwYzAtMi4yMSAxLjc5LTQgNC00czQgMS43OSA0IDQtMS43OSA0LTQgNC00LTEuNzktNC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-20" />
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
             <div className="flex items-center justify-between mb-8">
@@ -665,7 +688,7 @@ const BlogPage: React.FC<any> = (props: any) => {
                     </div>
                     <div className="grid md:grid-cols-2 gap-6 mb-10">
                       {featuredArticles.map((article) => (
-                        <BlogPost key={article.id} article={article} variant="featured" />
+                        <BlogPost key={article.id} article={article} variant="featured" onClick={handleOpenArticle} />
                       ))}
                     </div>
                   </div>
@@ -685,13 +708,13 @@ const BlogPage: React.FC<any> = (props: any) => {
                   {viewMode === 'grid' ? (
                     <div className="grid md:grid-cols-2 gap-6">
                       {regularArticles.map((article) => (
-                        <BlogPost key={article.id} article={article} />
+                        <BlogPost key={article.id} article={article} onClick={handleOpenArticle} />
                       ))}
                     </div>
                   ) : (
                     <div className="space-y-4">
                       {regularArticles.map((article) => (
-                        <BlogPost key={article.id} article={article} variant="compact" />
+                        <BlogPost key={article.id} article={article} variant="compact" onClick={handleOpenArticle} />
                       ))}
                     </div>
                   )}
@@ -701,6 +724,113 @@ const BlogPage: React.FC<any> = (props: any) => {
           </div>
         </div>
       </div>
+
+      {/* Article Preview Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-7xl w-[98vw] h-screen overflow-hidden flex flex-col p-0 bg-white/95 dark:bg-slate-950/95 border-x border-white/20 dark:border-slate-800 rounded-none shadow-none transition-all duration-500 backdrop-blur-3xl">
+          <div className="overflow-y-auto flex-1 custom-scrollbar scroll-smooth bg-white dark:bg-slate-950">
+            <div className="fixed top-8 right-12 z-[100]">
+              <DialogClose className="p-4 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-700 rounded-full backdrop-blur-2xl transition-all border border-slate-200/50 dark:border-white/10 group shadow-2xl">
+                <XIcon className="w-6 h-6 text-slate-900 dark:text-white group-hover:rotate-180 transition-transform duration-500" />
+              </DialogClose>
+            </div>
+            {loadingArticle ? (
+              <div className="p-12 space-y-6">
+                <Skeleton className="h-12 w-3/4 mb-8" />
+                <Skeleton className="h-64 w-full rounded-2xl mb-8" />
+                <div className="space-y-4">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+              </div>
+            ) : selectedArticle && (
+              <div className="relative min-h-full">
+                {/* Hero Gradient Background */}
+                <div className="absolute top-0 left-0 right-0 h-[600px] bg-gradient-to-b from-purple-500/10 via-blue-500/5 to-transparent dark:from-purple-500/20 pointer-events-none" />
+
+                <div className="max-w-5xl mx-auto p-10 md:p-24 relative z-10">
+                  <DialogHeader className="mb-12 space-y-6">
+                    <div className="flex items-center gap-3">
+                      {selectedArticle.tag_list.map(tag => (
+                        <Badge key={tag} className="bg-purple-600/10 dark:bg-purple-600/20 text-purple-600 dark:text-purple-300 border-purple-600/20 px-4 py-1 font-bold rounded-full">
+                          #{tag}
+                        </Badge>
+                      ))}
+                    </div>
+                    <DialogTitle className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white leading-[1.1] tracking-tight">
+                      {selectedArticle.title}
+                    </DialogTitle>
+                    <div className="flex items-center gap-6 pt-4">
+                      <div className="flex items-center gap-4">
+                        <div className="p-1 rounded-full bg-gradient-to-r from-purple-500 to-pink-500">
+                          <Avatar className="w-14 h-14 border-4 border-white dark:border-slate-950">
+                            <AvatarImage src={selectedArticle.user.profile_image} />
+                            <AvatarFallback className="text-xl font-bold">{selectedArticle.user.name[0]}</AvatarFallback>
+                          </Avatar>
+                        </div>
+                        <div>
+                          <p className="text-lg font-black text-slate-900 dark:text-white leading-tight">{selectedArticle.user.name}</p>
+                          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                            {new Date(selectedArticle.published_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="h-10 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
+                      <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-bold">
+                        <Clock className="w-4 h-4" />
+                        <span>{selectedArticle.reading_time_minutes} min read</span>
+                      </div>
+                    </div>
+                  </DialogHeader>
+
+                  {selectedArticle.cover_image && (
+                    <div className="w-full aspect-[21/9] rounded-[2rem] overflow-hidden mb-16 shadow-2xl relative group">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      <img
+                        src={selectedArticle.cover_image}
+                        alt={selectedArticle.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                    </div>
+                  )}
+
+                  <div
+                    className="prose prose-xl dark:prose-invert max-w-none prose-slate dark:prose-slate prose-headings:font-black prose-headings:tracking-tight prose-a:text-purple-600 dark:prose-a:text-purple-400 prose-img:rounded-3xl prose-pre:bg-slate-900 dark:prose-pre:bg-black/50 prose-pre:rounded-2xl"
+                    dangerouslySetInnerHTML={{ __html: fullArticle?.body_html || '' }}
+                  />
+
+                  <div className="mt-20 pt-10 border-t border-slate-100 dark:border-slate-900 flex flex-col sm:flex-row justify-between items-center gap-8">
+                    <div className="flex gap-6">
+                      <div className="flex flex-col items-center">
+                        <Button variant="ghost" className="w-16 h-16 rounded-3xl bg-slate-50 dark:bg-white/5 hover:bg-red-50 dark:hover:bg-red-500/10 group transition-all">
+                          <Heart className="w-6 h-6 text-slate-600 group-hover:text-red-500 group-hover:fill-current transition-colors" />
+                        </Button>
+                        <span className="text-sm font-bold text-slate-600 dark:text-slate-400 mt-2">{selectedArticle.public_reactions_count} reactions</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <Button variant="ghost" className="w-16 h-16 rounded-3xl bg-slate-50 dark:bg-white/5 hover:bg-blue-50 dark:hover:bg-blue-500/10 group transition-all">
+                          <MessageCircle className="w-6 h-6 text-slate-600 group-hover:text-blue-500 transition-colors" />
+                        </Button>
+                        <span className="text-sm font-bold text-slate-600 dark:text-slate-400 mt-2">{selectedArticle.comments_count} comments</span>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => window.open(selectedArticle.url, '_blank')}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:scale-105 transition-all text-white rounded-[1.5rem] px-10 py-8 text-lg font-black shadow-xl shadow-purple-500/20 h-auto"
+                    >
+                      Read full discussion on Dev.to
+                      <ExternalLink className="w-5 h-5 ml-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

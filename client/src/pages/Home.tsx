@@ -754,8 +754,9 @@ export default function PremiumLandingPage() {
             >
               <div className="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-slate-900 dark:to-indigo-950/40 p-6 sm:p-12 rounded-[2.5rem] sm:rounded-[3.5rem] border-2 border-indigo-200 dark:border-blue-500/20 shadow-2xl h-full">
                 <div className="flex flex-col sm:flex-row items-center gap-6 mb-12">
-                  <div className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center border border-white/20">
-                    <Zap className="w-10 h-10 text-white" />
+                  <div className="w-20 h-20 relative flex items-center justify-center">
+                    <div className="absolute inset-0 bg-blue-500/20 rounded-3xl blur-xl"></div>
+                    <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="w-24 h-24 object-contain relative z-10 scale-125" />
                   </div>
                   <div className="text-center sm:text-left">
                     <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">NextGen AI</h3>
