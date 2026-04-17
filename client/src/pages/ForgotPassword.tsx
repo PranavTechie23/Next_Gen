@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { buildApiUrl } from "@/lib/api";
 import { useState } from "react";
 import { Mail, ShieldCheck, ArrowRight, ArrowLeft } from "lucide-react";
 import axios from "axios";
@@ -18,7 +19,7 @@ export default function ForgotPassword() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const res = await axios.post("/api/auth/reset-password", { email });
+      const res = await axios.post(buildApiUrl("/auth/reset-password"), { email });
       toast.success(res.data.message || "OTP sent to your email!");
       setStep(2);
     } catch (error: any) {
@@ -32,7 +33,7 @@ export default function ForgotPassword() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const res = await axios.post("/api/auth/verify-reset", { email, otp, newPassword });
+      const res = await axios.post(buildApiUrl("/auth/verify-reset"), { email, otp, newPassword });
       toast.success(res.data.message || "Password reset successfully!");
       navigate("/login");
     } catch (error: any) {

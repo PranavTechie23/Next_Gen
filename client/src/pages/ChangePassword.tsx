@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { buildApiUrl } from "@/lib/api";
 import { useState } from "react";
 import { Lock, ArrowLeft } from "lucide-react";
 import axios from "axios";
@@ -22,7 +23,7 @@ export default function ChangePassword() {
     
     setIsLoading(true);
     try {
-      const res = await axios.post("/api/auth/change-password", { currentPassword, newPassword }, { withCredentials: true });
+      const res = await axios.post(buildApiUrl("/auth/change-password"), { currentPassword, newPassword }, { withCredentials: true });
       toast.success(res.data.message || "Password changed successfully!");
       
       const role = localStorage.getItem("userRole");

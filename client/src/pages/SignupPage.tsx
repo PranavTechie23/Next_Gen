@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Building2, Phone, CheckCircle, Shield, Key, MapPin, Hash, Briefcase, ArrowLeft } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
+import { buildApiUrl } from "@/lib/api";
 import axios from "axios";
 import { toast } from "sonner";
 
@@ -63,7 +64,7 @@ export default function SignupPage() {
   const handleSignup = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.post("/api/auth/register-admin", {
+      const response = await axios.post(buildApiUrl("/auth/register-admin"), {
         name: formData.fullName,
         email: formData.email,
         phone: formData.phone,

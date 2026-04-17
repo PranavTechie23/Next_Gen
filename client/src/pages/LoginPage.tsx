@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Sparkles, Shield, CheckCircle, Github, Chrome, GithubIcon, TwitterIcon, InstagramIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
+import { buildApiUrl } from "@/lib/api";
 import axios from "axios";
 import { toast } from "sonner";
 
@@ -33,7 +34,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post("/api/auth/login", {
+      const response = await axios.post(buildApiUrl("/auth/login"), {
         email,
         password,
         rememberMe,
