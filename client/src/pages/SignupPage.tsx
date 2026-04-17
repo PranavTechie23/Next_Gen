@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Building2, Phone, CheckCircle, Shield, Key, MapPin, Hash, Briefcase } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Building2, Phone, CheckCircle, Shield, Key, MapPin, Hash, Briefcase, ArrowLeft } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
 import axios from "axios";
@@ -109,6 +109,18 @@ export default function SignupPage() {
       {/* Theme Toggle */}
       <div className="absolute top-4 right-4 z-20">
         <ThemeToggle />
+      </div>
+
+      {/* Back Button */}
+      <div className="absolute top-4 left-4 z-20">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => window.location.href = "/"}
+          className="rounded-full bg-background/50 backdrop-blur-sm border shadow-sm hover:bg-muted transition-all"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
       </div>
       {/* Animated background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">

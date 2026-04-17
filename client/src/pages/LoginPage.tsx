@@ -1,11 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, Shield, CheckCircle, Github, Chrome, GithubIcon, TwitterIcon, InstagramIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Sparkles, Shield, CheckCircle, Github, Chrome, GithubIcon, TwitterIcon, InstagramIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
 import axios from "axios";
 import { toast } from "sonner";
+
+const REMEMBERED_EMAIL_KEY = "rememberedEmail";
 
 export default function LoginPage() {
   const { theme } = useTheme();
@@ -15,6 +17,14 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem(REMEMBERED_EMAIL_KEY);
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
 
 
@@ -26,12 +36,18 @@ export default function LoginPage() {
       const response = await axios.post("http://localhost:5000/api/auth/login", {
         email,
         password,
+        rememberMe,
       }, { withCredentials: true });
 
       const { user, message } = response.data;
       if (user) {
         toast.success(message || "Login successful!");
         localStorage.setItem("userRole", user.role);
+        if (rememberMe) {
+          localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
+        } else {
+          localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+        }
         
         // INTERCEPT: If they must change password (first login), redirect them immediately
         if (user.must_change_password) {
@@ -69,6 +85,18 @@ export default function LoginPage() {
       {/* Theme Toggle */}
       <div className="absolute top-4 right-4 z-20">
         <ThemeToggle />
+      </div>
+      
+      {/* Back Button */}
+      <div className="absolute top-4 left-4 z-20">
+        <Button 
+          variant="ghost" 
+          onClick={() => window.location.href = "/"} 
+          className="text-muted-foreground hover:text-foreground bg-background/50 backdrop-blur-sm"
+        >
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Back to Home
+        </Button>
       </div>
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">

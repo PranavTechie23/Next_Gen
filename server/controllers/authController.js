@@ -122,16 +122,17 @@ exports.registerAdmin = async (req, res) => {
 
 // --- Generic Login (Admin, Head, Student) ---
 exports.login = async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
 
     // 1. Validate Input
     if (!email || !password) {
         return res.status(400).json({ message: "Please provide email and password." });
     }
 
-    const connection = await db.getConnection();
+    let connection;
 
     try {
+        connection = await db.getConnection();
         // 2. Find User by Email
         const [users] = await connection.execute(
             'SELECT * FROM users WHERE email = ?',
@@ -162,8 +163,11 @@ exports.login = async (req, res) => {
             institution_id: user.institution_id
         };
 
+        const defaultTokenExpiry = process.env.JWT_EXPIRE || '1d';
+        const rememberTokenExpiry = process.env.JWT_REMEMBER_EXPIRE || '30d';
+        const tokenExpiry = rememberMe ? rememberTokenExpiry : defaultTokenExpiry;
         const token = jwt.sign(payload, process.env.JWT_SECRET, {
-            expiresIn: process.env.JWT_EXPIRE
+            expiresIn: tokenExpiry
         });
 
         // 6. Update Last Login
@@ -190,7 +194,7 @@ exports.login = async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
-            maxAge: 24 * 60 * 60 * 1000 // 1 day
+            maxAge: rememberMe ? (30 * 24 * 60 * 60 * 1000) : (24 * 60 * 60 * 1000)
         });
 
         res.json({
@@ -206,9 +210,21 @@ exports.login = async (req, res) => {
 
     } catch (error) {
         console.error("Error in login:", error);
+        if (
+            error &&
+            (
+                error.code === 'ER_ACCESS_DENIED_ERROR' ||
+                error.code === 'ECONNREFUSED' ||
+                error.code === 'ENOTFOUND'
+            )
+        ) {
+            return res.status(503).json({
+                message: "Database connection failed. Please check backend DB environment variables."
+            });
+        }
         res.status(500).json({ message: "Server Error during login." });
     } finally {
-        connection.release();
+        if (connection) connection.release();
     }
 };
 
