@@ -1,0 +1,28 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  validate-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure PR has description
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          if [ -z "$PR_BODY" ] || [ "$PR_BODY" = "null" ]; then
+            echo "PR description is required."
+            exit 1
+          fi
+
+      - name: Enforce source branch is not main
+        run: |
+          if [ "${{ github.head_ref }}" = "main" ]; then
+            echo "PR cannot come from main branch."
+            exit 1
+          fi

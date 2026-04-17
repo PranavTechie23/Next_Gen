@@ -4,6 +4,20 @@ const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+function getCookieConfig() {
+    const envSameSite = process.env.COOKIE_SAMESITE?.toLowerCase();
+    const sameSite = ['lax', 'strict', 'none'].includes(envSameSite) ? envSameSite : 'lax';
+    const secure = process.env.COOKIE_SECURE
+        ? process.env.COOKIE_SECURE === 'true'
+        : sameSite === 'none' || process.env.NODE_ENV === 'production';
+
+    return {
+        httpOnly: true,
+        secure,
+        sameSite
+    };
+}
+
 // --- Register TPO Admin ---
 exports.registerAdmin = async (req, res) => {
     const { 
@@ -191,9 +205,7 @@ exports.login = async (req, res) => {
 
         // 8. Set Cookie
         res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            ...getCookieConfig(),
             maxAge: rememberMe ? (30 * 24 * 60 * 60 * 1000) : (24 * 60 * 60 * 1000)
         });
 
@@ -249,7 +261,7 @@ exports.logout = async (req, res) => {
             );
         }
 
-        res.clearCookie('token');
+        res.clearCookie('token', getCookieConfig());
         res.json({ message: "Logout successful. Cookie cleared." });
 
     } catch (error) {

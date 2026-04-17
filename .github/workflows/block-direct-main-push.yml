@@ -1,0 +1,15 @@
+name: Block Direct Push To Main
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  reject-direct-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail and instruct contributors
+        run: |
+          echo "Direct pushes to main are not allowed. Open a PR to main instead."
+          echo "Actor: ${{ github.actor }}"
+          exit 1

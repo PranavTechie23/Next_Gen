@@ -12,12 +12,31 @@ const db = require('./config/db');
 dotenv.config();
 const PORT = process.env.PORT || 5000;
 
+const parseAllowedOrigins = () => {
+    const raw = process.env.CORS_ORIGIN || process.env.FRONTEND_URL || '';
+    return raw
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean);
+};
+
+const allowedOrigins = parseAllowedOrigins();
+
 // Middleware
 app.use(helmet());
 app.use(cors({
     origin: function(origin, callback) {
-        // Allow any request to pass through during development
-        callback(null, true); 
+        // Allow server-to-server and health-check requests without origin header.
+        if (!origin) return callback(null, true);
+
+        // If no explicit allow-list is provided, allow all origins (backward compatible).
+        if (allowedOrigins.length === 0) return callback(null, true);
+
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        return callback(new Error(`CORS blocked for origin: ${origin}`), false);
     },
     credentials: true // Allow cookies to be sent
 }));
