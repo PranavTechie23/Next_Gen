@@ -2,6 +2,7 @@ const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const sendEmail = require('../utils/email');
+const { createNotification } = require('./notificationController');
 
 const createDeptHead = async (req, res) => {
     try {
@@ -344,6 +345,123 @@ const updateDriveStatus = async (req, res) => {
     }
 };
 
+/**
+ * Update Application Status
+ * PUT /api/admin/applications/:id/status
+ */
+const updateApplicationStatus = async (req, res) => {
+    try {
+        const applicationId = req.params.id;
+        const { status, current_round } = req.body;
+
+        const validStatuses = ['APPLIED', 'SHORTLISTED', 'INTERVIEW_SCHEDULED', 'SELECTED', 'REJECTED'];
+        if (status && !validStatuses.includes(status)) {
+            return res.status(400).json({ message: "Invalid status." });
+        }
+
+        const updates = [];
+        const values = [];
+
+        if (status) {
+            updates.push('status = ?');
+            values.push(status);
+        }
+        if (current_round !== undefined) {
+            updates.push('current_round = ?');
+            values.push(current_round);
+        }
+
+        if (updates.length === 0) {
+            return res.status(400).json({ message: "No fields provided to update." });
+        }
+
+        values.push(applicationId);
+
+        const [result] = await db.query(
+            `UPDATE applications SET ${updates.join(', ')} WHERE id = ?`,
+            values
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Application not found." });
+        }
+
+        // --- Trigger Notification ---
+        if (status) {
+            try {
+                // Get student_id of the application
+                const [appResult] = await db.query(
+                  'SELECT student_id FROM applications WHERE id = ?',
+                  [applicationId]
+                );
+
+                if (appResult.length > 0) {
+                    const studentId = appResult[0].student_id;
+                    const notifyMessage = current_round 
+                        ? `Your application status is now ${status} (${current_round})` 
+                        : `Your application status is now ${status}`;
+
+                    // Create Notification
+                    await createNotification(
+                      studentId,
+                      "Application Update",
+                      notifyMessage
+                    );
+                }
+            } catch (notifErr) {
+                console.error("Error creating notification: ", notifErr);
+            }
+        }
+        // ----------------------------
+
+        res.status(200).json({ message: "Application status updated successfully." });
+
+    } catch (error) {
+        console.error("Error updating application status:", error);
+        res.status(500).json({ message: "Internal server error while updating application status" });
+    }
+};
+
+/**
+ * Get all applications (Admin View)
+ * GET /api/admin/applications
+ */
+const getAllApplications = async (req, res) => {
+    try {
+        const [applications] = await db.query(`
+            SELECT 
+                a.id AS application_id,
+                a.status,
+                a.current_round,
+                a.applied_at,
+                s.user_id AS student_id,
+                s.roll_number,
+                u.email AS student_email,
+                sp.resume_url,
+                j.job_title,
+                d.drive_name,
+                r.company_name
+            FROM applications a
+            JOIN students s ON a.student_id = s.user_id
+            JOIN users u ON s.user_id = u.id
+            LEFT JOIN student_profiles sp ON s.user_id = sp.student_id
+            JOIN job_postings j ON a.job_id = j.id
+            JOIN recruitment_drives d ON j.drive_id = d.id
+            JOIN recruiters r ON d.recruiter_id = r.id
+            ORDER BY a.applied_at DESC
+        `);
+
+        res.status(200).json({
+            count: applications.length,
+            applications: applications
+        });
+
+    } catch (error) {
+        console.error("Error fetching admin applications:", error);
+        res.status(500).json({ message: "Internal server error while fetching all applications" });
+    }
+};
+
 module.exports = {
     createDeptHead,
     getDeptHeads,
@@ -352,5 +470,7 @@ module.exports = {
     createDrive,
     addJobToDrive,
     getAllDrives,
-    updateDriveStatus
+    updateDriveStatus,
+    updateApplicationStatus,
+    getAllApplications
 };

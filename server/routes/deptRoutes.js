@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const deptController = require('../controllers/deptController');
+const analyticsController = require('../controllers/analyticsController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // Configure multer to use memory storage so the file isn't saved to disk
@@ -66,6 +67,13 @@ router.put('/approvals/resumes/:id',
     protect,
     authorize('TPO_HEAD'),
     deptController.reviewStudentProfile
+);
+
+// GET /api/dept/analytics/department-stats - Department Analytics
+router.get('/analytics/department-stats',
+    protect,
+    authorize("TPO_ADMIN", "TPO_HEAD"),
+    analyticsController.getDepartmentStats
 );
 
 module.exports = router;

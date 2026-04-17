@@ -1,16 +1,41 @@
 const express = require('express');
 const router = express.Router();
 const studentController = require('../controllers/studentController');
+const studentProfileController = require('../controllers/studentProfileController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+
+// --------------------------------------------------
+// NEW STUDENT PROFILE MODULE ROUTES
+// --------------------------------------------------
 
 // GET /api/student/profile - Get logged-in student's profile
 router.get('/profile',
     protect,
     authorize('STUDENT'),
-    studentController.getStudentProfile
+    studentProfileController.getProfile
 );
 
-// PUT /api/student/profile/subjective - Update logged-in student's subjective profile info
+// PUT /api/student/profile - Create or Update logged-in student's profile
+router.put('/profile',
+    protect,
+    authorize('STUDENT'),
+    studentProfileController.upsertProfile
+);
+
+// POST /api/student/profile/resume - Upload Resume (PDF only)
+router.post('/profile/resume',
+    protect,
+    authorize('STUDENT'),
+    studentProfileController.resumeUploadMiddleware,
+    studentProfileController.uploadResume,
+    studentProfileController.uploadErrorHandler
+);
+
+// --------------------------------------------------
+// OLD / OTHER STUDENT ROUTES
+// --------------------------------------------------
+
+// (Optional) Kept the old subjective profile update if still needed by frontend
 router.put('/profile/subjective',
     protect,
     authorize('STUDENT'),
@@ -43,6 +68,13 @@ router.get('/applications',
     protect,
     authorize('STUDENT'),
     studentController.getApplications
+);
+
+// DELETE /api/student/applications/:id - Withdraw application
+router.delete('/applications/:id',
+    protect,
+    authorize('STUDENT'),
+    studentController.withdrawApplication
 );
 
 module.exports = router;

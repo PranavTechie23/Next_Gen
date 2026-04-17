@@ -409,12 +409,42 @@ const getApplications = async (req, res) => {
     }
 };
 
+/**
+ * Withdraw an application
+ * DELETE /api/student/applications/:id
+ */
+const withdrawApplication = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const applicationId = req.params.id;
+
+        // Ensure the application belongs to the logged-in student
+        const [application] = await db.execute(
+            'SELECT id FROM applications WHERE id = ? AND student_id = ?',
+            [applicationId, userId]
+        );
+
+        if (application.length === 0) {
+            return res.status(404).json({ message: "Application not found or unauthorized to withdraw." });
+        }
+
+        await db.execute('DELETE FROM applications WHERE id = ?', [applicationId]);
+
+        res.status(200).json({ message: "Application withdrawn successfully." });
+
+    } catch (error) {
+        console.error("Error withdrawing application:", error);
+        res.status(500).json({ message: "Internal server error while withdrawing application" });
+    }
+};
+
 module.exports = {
     getStudentProfile,
     updateStudentSubjectiveProfile,
     getEligibleJobs,
     getJobDetails,
     applyForJob,
-    getApplications
+    getApplications,
+    withdrawApplication
 };
 
