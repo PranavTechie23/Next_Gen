@@ -75,7 +75,7 @@ app.use('/api/notifications', notificationRoutes);
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, '../client/dist')));
 
-    app.get('*', (req, res) => {
+    app.get('/{*path}', (req, res) => {
         res.sendFile(path.resolve(__dirname, '../client', 'dist', 'index.html'));
     });
 }
