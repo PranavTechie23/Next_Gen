@@ -22,7 +22,7 @@ export default function ChangePassword() {
     
     setIsLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/change-password", { currentPassword, newPassword }, { withCredentials: true });
+      const res = await axios.post("/api/auth/change-password", { currentPassword, newPassword }, { withCredentials: true });
       toast.success(res.data.message || "Password changed successfully!");
       
       const role = localStorage.getItem("userRole");

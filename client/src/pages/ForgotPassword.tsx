@@ -18,7 +18,7 @@ export default function ForgotPassword() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/reset-password", { email });
+      const res = await axios.post("/api/auth/reset-password", { email });
       toast.success(res.data.message || "OTP sent to your email!");
       setStep(2);
     } catch (error: any) {
@@ -32,7 +32,7 @@ export default function ForgotPassword() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/verify-reset", { email, otp, newPassword });
+      const res = await axios.post("/api/auth/verify-reset", { email, otp, newPassword });
       toast.success(res.data.message || "Password reset successfully!");
       navigate("/login");
     } catch (error: any) {

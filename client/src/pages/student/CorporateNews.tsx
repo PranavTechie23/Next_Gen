@@ -27,7 +27,7 @@ export default function CorporateNews({ isDashboard }: CorporateNewsProps = {}) 
       setLoading(true);
       setError(null);
       // Using explicit URL based on user backend requirements
-      const response = await axios.get("http://localhost:5000/api/tech-news");
+      const response = await axios.get("/api/tech-news");
       setNews(response.data.articles || []);
     } catch (err: any) {
       console.error("Failed to fetch news:", err);
