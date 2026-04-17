@@ -40,11 +40,13 @@ const adminRoutes = require('./routes/adminRoutes');
 const deptRoutes = require('./routes/deptRoutes');
 const newsRoutes = require('./routes/newsRoutes');
 const studentRoutes = require('./routes/studentRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 app.use('/api/admin', adminRoutes);
 app.use('/api/dept', deptRoutes);
 app.use('/api', newsRoutes);
 app.use('/api/student', studentRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 
 

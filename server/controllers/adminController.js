@@ -2,6 +2,7 @@ const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const sendEmail = require('../utils/email');
+const { createNotification } = require('./notificationController');
 
 const createDeptHead = async (req, res) => {
     try {
@@ -384,6 +385,34 @@ const updateApplicationStatus = async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: "Application not found." });
         }
+
+        // --- Trigger Notification ---
+        if (status) {
+            try {
+                // Get student_id of the application
+                const [appResult] = await db.query(
+                  'SELECT student_id FROM applications WHERE id = ?',
+                  [applicationId]
+                );
+
+                if (appResult.length > 0) {
+                    const studentId = appResult[0].student_id;
+                    const notifyMessage = current_round 
+                        ? `Your application status is now ${status} (${current_round})` 
+                        : `Your application status is now ${status}`;
+
+                    // Create Notification
+                    await createNotification(
+                      studentId,
+                      "Application Update",
+                      notifyMessage
+                    );
+                }
+            } catch (notifErr) {
+                console.error("Error creating notification: ", notifErr);
+            }
+        }
+        // ----------------------------
 
         res.status(200).json({ message: "Application status updated successfully." });
 

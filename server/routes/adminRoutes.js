@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
+const analyticsController = require('../controllers/analyticsController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // POST /dept-heads - Create a new Department Head
@@ -71,6 +72,13 @@ router.put('/applications/:id/status',
     protect,
     authorize("TPO_ADMIN"),
     adminController.updateApplicationStatus
+);
+
+// GET /analytics/placement-stats - Admin Analytics
+router.get('/analytics/placement-stats',
+    protect,
+    authorize("TPO_ADMIN", "TPO_HEAD"),
+    analyticsController.getPlacementStats
 );
 
 module.exports = router;
