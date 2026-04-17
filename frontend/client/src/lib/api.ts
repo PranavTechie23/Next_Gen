@@ -1,7 +1,14 @@
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim() ?? "";
+const fallbackProductionApiBaseUrl = "https://next-gen-s7fa.onrender.com/api";
 
-const normalizedApiBaseUrl = configuredApiBaseUrl
-  ? configuredApiBaseUrl.replace(/\/+$/, "")
+const resolvedApiBaseUrl = configuredApiBaseUrl
+  ? configuredApiBaseUrl
+  : import.meta.env.PROD
+    ? fallbackProductionApiBaseUrl
+    : "";
+
+const normalizedApiBaseUrl = resolvedApiBaseUrl
+  ? resolvedApiBaseUrl.replace(/\/+$/, "")
   : "";
 
 export function buildApiUrl(path: string): string {
