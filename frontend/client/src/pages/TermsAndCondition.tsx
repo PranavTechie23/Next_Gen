@@ -166,7 +166,7 @@ export default function TermsAndConditions() {
   );
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+    <div className="min-h-dvh overflow-x-hidden bg-background text-foreground transition-colors duration-300">
       {/* Progress Bar */}
       <div className="fixed top-0 left-0 w-full h-1 bg-gray-800 z-50">
         <div

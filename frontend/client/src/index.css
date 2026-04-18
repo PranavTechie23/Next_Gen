@@ -197,6 +197,17 @@
     outline-color: var(--ring);
   }
 
+  html {
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  #root {
+    min-height: 100dvh;
+    min-width: 0;
+  }
+
   body {
     background-color: var(--background);
     color: var(--foreground);
@@ -204,6 +215,8 @@
     transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 300ms;
+    overflow-x: hidden;
+    min-height: 100dvh;
   }
 
   h1,

@@ -550,7 +550,7 @@ export default function StudentWebinar(props: any) {
   ];
 
   return (
-    <div className={`${!isDashboard ? "min-h-screen bg-transparent relative overflow-hidden" : "bg-transparent"} transition-colors duration-300`}>
+    <div className={`${!isDashboard ? "relative min-h-dvh overflow-x-hidden bg-transparent" : "bg-transparent"} transition-colors duration-300`}>
       {/* Premium Background Glows */}
       {!isDashboard && (
         <div className="premium-glow-bg">

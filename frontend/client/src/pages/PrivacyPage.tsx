@@ -32,7 +32,7 @@ export default function PrivacyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+    <div className="min-h-dvh overflow-x-hidden bg-background text-foreground transition-colors duration-300">
       <header className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl border-b border-slate-200 dark:border-white/5 transition-all duration-500">
         <div className="max-w-[1700px] mx-auto px-6 sm:px-10">
           <div className="flex items-center justify-between h-20">

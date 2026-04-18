@@ -63,7 +63,7 @@ export default function Security() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300">
+    <div className="min-h-dvh overflow-x-hidden bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 transition-colors duration-300 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       <header className="bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl sticky top-0 z-50 border-b border-slate-200 dark:border-white/5 transition-all duration-500">
         <div className="max-w-[1700px] mx-auto px-10 py-6">
           <div className="flex items-center justify-between">

@@ -105,15 +105,15 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 py-12 md:py-4 relative overflow-x-hidden transition-colors duration-300">
+    <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-x-hidden bg-background p-4 py-12 transition-colors duration-300 md:py-4">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/10 dark:from-primary/10 dark:via-background dark:to-accent/10" />
       {/* Theme Toggle */}
-      <div className="absolute top-4 right-4 z-20">
+      <div className="absolute right-3 top-3 z-20 sm:right-4 sm:top-4">
         <ThemeToggle />
       </div>
 
       {/* Back Button */}
-      <div className="absolute top-4 left-4 z-20">
+      <div className="absolute left-3 top-3 z-20 sm:left-4 sm:top-4">
         <Button
           variant="ghost"
           size="icon"

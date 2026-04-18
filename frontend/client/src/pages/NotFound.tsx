@@ -95,7 +95,7 @@ export default function NotFound() {
   const currentMemeData = memes[currentMeme];
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-background transition-colors duration-300 overflow-hidden relative">
+    <div className="relative flex min-h-dvh w-full min-w-0 items-center justify-center overflow-x-hidden bg-background transition-colors duration-300">
       {/* Theme Toggle */}
       <div className="absolute top-4 right-4 z-50">
         <ThemeToggle />

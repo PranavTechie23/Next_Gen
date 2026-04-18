@@ -728,7 +728,7 @@ const AssessmentHub: React.FC<AssessmentHubProps> = ({ isDashboard = false, onBa
     });
 
     return (
-        <div className={`${isDashboard ? "" : "min-h-screen"} ${isDark ? "" : ""}`}>
+        <div className={`${isDashboard ? "" : "min-h-dvh overflow-x-hidden"} ${isDark ? "" : ""}`}>
             {/* Hero / Header */}
             <div className="mb-12 flex flex-col items-center justify-center gap-6 text-center overflow-hidden">
                 <motion.div

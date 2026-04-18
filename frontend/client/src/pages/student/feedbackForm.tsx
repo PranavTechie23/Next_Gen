@@ -97,7 +97,7 @@ export default function StudentFeedbackForm(props: any) {
   ];
 
   return (
-    <div className={`${!isDashboard ? "min-h-screen" : "bg-transparent"} transition-all duration-500 ${!isDashboard ? (darkMode
+    <div className={`${!isDashboard ? "min-h-dvh overflow-x-hidden" : "bg-transparent"} transition-all duration-500 ${!isDashboard ? (darkMode
       ? 'bg-gradient-to-br from-gray-950 via-slate-900 to-gray-950 shadow-inner'
       : 'bg-background'
     ) : "bg-transparent"}`}>

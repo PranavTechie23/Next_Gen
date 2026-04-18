@@ -613,14 +613,14 @@ export default function Careers(props: any) {
   };
 
   return (
-    <div className="min-h-screen bg-black-to-br from-black-50 via-black-50 to-black-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-6">
+    <div className="min-h-dvh overflow-x-hidden bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 px-4 py-6 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 sm:p-6">
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* Header Section */}
         <div className="text-center space-y-4">
 
 
-          <h1 className="text-6xl md:text-6xl font-black">
+          <h1 className="text-3xl font-black sm:text-5xl md:text-6xl">
             <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
               Find Your Perfect
             </span>
