@@ -8,8 +8,32 @@ jobs:
   reject-direct-push:
     runs-on: ubuntu-latest
     steps:
-      - name: Fail and instruct contributors
+      - name: Check merge vs direct push
+        env:
+          HEAD_MSG: ${{ github.event.head_commit.message }}
+          # Comma-separated GitHub usernames allowed to push directly to main (no PR required for CI).
+          # Edit this list if maintainers change. Teammates not listed here still need PR merges.
+          # Comma-separated GitHub usernames (exact match) who may push to main without a PR for this check.
+          TRUSTED_DIRECT_PUSH_ACTORS: PranavTechie23
         run: |
-          echo "Direct pushes to main are not allowed. Open a PR to main instead."
+          set -e
           echo "Actor: ${{ github.actor }}"
+          # Trusted maintainers: green check on direct push to main (teammates still need PR + merge patterns below).
+          for actor in ${TRUSTED_DIRECT_PUSH_ACTORS//,/ }; do
+            if [ "${{ github.actor }}" = "$actor" ]; then
+              echo "Trusted actor '$actor' — direct push to main allowed."
+              exit 0
+            fi
+          done
+          # Merges completed through GitHub UI (merge commit) always include this prefix.
+          if printf '%s' "$HEAD_MSG" | grep -q '^Merge pull request '; then
+            echo "Merge commit detected — this push came from a merged pull request. OK."
+            exit 0
+          fi
+          # Squash/rebase merges often still reference the PR number in the subject line.
+          if printf '%s' "$HEAD_MSG" | grep -qE '\(#[0-9]+\)'; then
+            echo "Squash-style merge message detected (contains PR reference). OK."
+            exit 0
+          fi
+          echo "Direct pushes to main are not allowed. Open a pull request and merge it instead of pushing straight to main."
           exit 1
