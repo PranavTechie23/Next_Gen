@@ -1,0 +1,9 @@
+{
+  "name": "campus_career_platform",
+  "private": true,
+  "description": "Run frontend + backend together from the repo root",
+  "scripts": {
+    "install:all": "npm install --prefix frontend && npm install --prefix backend/server",
+    "dev": "npx --yes concurrently@9.1.2 -k -n frontend,backend -c cyan,magenta \"npm run dev --prefix frontend\" \"npm run dev --prefix backend/server\""
+  }
+}

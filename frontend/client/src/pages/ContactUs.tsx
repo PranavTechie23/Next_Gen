@@ -427,7 +427,7 @@ const ContactUsPage: React.FC = () => {
   ];
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-slate-900 text-white' : 'bg-gradient-to-br from-slate-50 via-white to-purple-50'}`}>
+    <div className={`min-h-dvh overflow-x-hidden transition-colors duration-300 ${darkMode ? 'bg-slate-900 text-white' : 'bg-gradient-to-br from-slate-50 via-white to-purple-50'}`}>
       {/* Floating Chat Widget */}
       {chatOpen && (
         <div className="fixed bottom-24 right-6 w-96 h-[500px] bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 flex flex-col">

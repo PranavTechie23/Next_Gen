@@ -75,7 +75,7 @@ export default function TPOFeedbackForm() {
   };
 
   return (
-    <div className={`min-h-screen transition-all duration-500 ${darkMode
+    <div className={`min-h-dvh overflow-x-hidden transition-all duration-500 ${darkMode
       ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950'
       : 'bg-gradient-to-br from-gray-50 via-white to-gray-100'
       }`}>

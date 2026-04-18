@@ -115,7 +115,9 @@ function App() {
         <TooltipProvider>
           <ScrollToTop />
           <Toaster />
-          <Router />
+          <div className="min-h-dvh w-full min-w-0 overflow-x-hidden">
+            <Router />
+          </div>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

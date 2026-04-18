@@ -60,16 +60,16 @@ export default function LoginPage() {
         // Ensure consistent role mapping between backend roles and frontend redirects
         switch (user.role) {
           case 'STUDENT':
-            window.location.href = "/student/dashboard";
+            window.location.href = "/student/dashboard?tab=overview";
             break;
           case 'TPO_ADMIN':
-            window.location.href = "/admin/dashboard";
+            window.location.href = "/admin/dashboard?tab=overview";
             break;
           case 'TPO_HEAD':
-            window.location.href = "/department/dashboard";
+            window.location.href = "/department/dashboard?tab=overview";
             break;
           default:
-            window.location.href = "/student/dashboard";
+            window.location.href = "/student/dashboard?tab=overview";
         }
       }
     } catch (error: any) {
@@ -81,7 +81,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen h-screen bg-background flex flex-col items-center justify-center p-4 py-12 md:py-4 relative overflow-x-hidden transition-colors duration-300">
+    <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-x-hidden bg-background p-4 py-12 transition-colors duration-300 md:py-4">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/10 dark:from-primary/10 dark:via-background dark:to-accent/10" />
       {/* Theme Toggle */}
       <div className="absolute top-4 right-4 z-20">
@@ -89,14 +89,15 @@ export default function LoginPage() {
       </div>
       
       {/* Back Button */}
-      <div className="absolute top-4 left-4 z-20">
+      <div className="absolute left-2 top-3 z-20 max-w-[calc(100%-5rem)] sm:left-4 sm:top-4">
         <Button 
           variant="ghost" 
           onClick={() => window.location.href = "/"} 
-          className="text-muted-foreground hover:text-foreground bg-background/50 backdrop-blur-sm"
+          className="h-10 max-w-full truncate bg-background/50 px-2 text-muted-foreground backdrop-blur-sm hover:text-foreground sm:h-11 sm:px-4"
         >
-          <ArrowLeft className="w-5 h-5 mr-2" />
-          Back to Home
+          <ArrowLeft className="mr-1 h-4 w-4 shrink-0 sm:mr-2 sm:h-5 sm:w-5" />
+          <span className="inline sm:hidden">Home</span>
+          <span className="hidden sm:inline">Back to Home</span>
         </Button>
       </div>
       {/* Animated background elements */}

@@ -52,15 +52,15 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function StudentDashboard() {
   const [, navigate] = useLocation();
   const { theme } = useTheme();
-  // Initialize tab from URL search secondary fallback to localStorage
+  // Tab from URL only; default to overview (fresh sessions / login should not restore an old tab)
   const [activeTab, setActiveTab] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const urlTab = params.get("tab");
     if (urlTab) return urlTab;
-    return localStorage.getItem("student-active-tab") || "overview";
+    return "overview";
   });
 
-  // Sync tab state to URL and localStorage
+  // Keep URL in sync with the active tab (bookmarkable / shareable)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("tab") !== activeTab) {
@@ -68,7 +68,6 @@ export default function StudentDashboard() {
       const newUrl = `${window.location.pathname}?${params.toString()}`;
       window.history.replaceState({ ...window.history.state }, "", newUrl);
     }
-    localStorage.setItem("student-active-tab", activeTab);
   }, [activeTab]);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -736,7 +735,7 @@ export default function StudentDashboard() {
   ];
 
   return (
-    <div className={`flex h-screen ${isDark ? "bg-black" : "bg-background"} text-foreground font-manrope selection:bg-blue-500/30 overflow-hidden relative`}>
+    <div className={`relative flex h-dvh max-h-dvh min-h-0 overflow-hidden ${isDark ? "bg-black" : "bg-background"} font-manrope text-foreground selection:bg-blue-500/30`}>
       {/* Premium Background Glows */}
       {isDark && (
         <div className="premium-glow-bg">
@@ -747,7 +746,7 @@ export default function StudentDashboard() {
       )}
       {/* Mobile sidebar (drawer) */}
       <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
-        <SheetContent side="left" className={`${isDark ? "bg-[#0c0c14]" : "bg-white"} p-0 w-72 [&>button]:hidden`}>
+        <SheetContent side="left" className={`${isDark ? "bg-[#0c0c14]" : "bg-white"} w-[min(18rem,calc(100vw-1rem))] max-w-full p-0 [&>button]:hidden`}>
           <div className="h-full flex flex-col">
             {/* Brand */}
             <div className={`px-5 py-5 border-b ${isDark ? "border-white/10" : "border-slate-200"} flex items-center justify-between`}>
@@ -838,7 +837,7 @@ export default function StudentDashboard() {
       </Sheet>
 
       {/* Desktop Sidebar - Left */}
-      <aside className={`hidden lg:flex sticky top-0 h-screen z-50 transition-all duration-500 relative overflow-visible ${isSidebarOpen ? "w-72" : "w-[6rem]"} ${isSidebarOpen ? "p-4 pr-2" : "p-3"} flex-col shrink-0 bg-transparent`}>
+      <aside className={`relative z-50 hidden h-dvh max-h-dvh shrink-0 flex-col overflow-visible transition-all duration-500 lg:sticky lg:top-0 lg:flex ${isSidebarOpen ? "w-72" : "w-[6rem]"} ${isSidebarOpen ? "p-4 pr-2" : "p-3"} bg-transparent`}>
         <div className={`flex-1 min-w-0 h-full ${isDark ? "bg-[#0c0c14]" : "bg-white"} ${isDark ? "border-white/10" : "border-slate-200"} rounded-[2.5rem] flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.05)] overflow-hidden relative`}>
           <div className={`absolute inset-0 bg-gradient-to-b ${isDark ? "from-blue-500/5" : "from-blue-500/5"} via-transparent ${isDark ? "to-purple-500/5" : "to-purple-500/5"} opacity-50 pointer-events-none`}></div>
 
@@ -1005,7 +1004,7 @@ export default function StudentDashboard() {
                     <div className="absolute top-2.5 right-2.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-background animate-pulse" />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent align="end" sideOffset={12} className={`w-[380px] p-0 rounded-[2rem] overflow-hidden border-0 shadow-[0_20px_50px_rgba(0,0,0,0.3)] ${isDark ? "bg-[#0c0c14]" : "bg-white"}`}>
+                <PopoverContent align="end" sideOffset={12} className={`w-[min(22rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] p-0 rounded-[2rem] overflow-hidden border-0 shadow-[0_20px_50px_rgba(0,0,0,0.3)] sm:w-[380px] sm:max-w-none ${isDark ? "bg-[#0c0c14]" : "bg-white"}`}>
                   <div className={`p-6 border-b ${isDark ? "border-white/5" : "border-slate-100"}`}>
                     <div className="flex items-center justify-between mb-1">
                       <h3 className={`text-lg font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight`}>Profile Checklist</h3>
@@ -1423,7 +1422,7 @@ export default function StudentDashboard() {
                       <Card key={idx} className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] p-12 overflow-hidden group`}>
                         <h3 className={`text-sm font-black ${isDark ? "text-white/40" : "text-gray-600/60"} uppercase tracking-[0.2em] mb-12`}>{panel.title}</h3>
                         <div className="flex items-center justify-center relative">
-                          <div className="w-[300px] h-[300px]">
+                          <div className="mx-auto h-[min(300px,85vw)] w-full max-w-[300px]">
                             <ResponsiveContainer width="100%" height="100%">
                               <PieChart>
                                 {/* Outer Ring (ring1) */}

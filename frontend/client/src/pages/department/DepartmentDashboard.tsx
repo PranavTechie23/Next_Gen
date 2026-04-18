@@ -12,14 +12,35 @@ import { StudentManagement } from "./StudentManagement";
 import { ApprovalsHub } from "./ApprovalsHub";
 import { deptApi } from "@/services/deptApi";
 
+const DEPT_TABS = ["overview", "analytics", "students", "approvals", "reports"] as const;
+type DeptTab = (typeof DEPT_TABS)[number];
+
+function initialDeptTabFromUrl(): DeptTab {
+    const raw = new URLSearchParams(window.location.search).get("tab");
+    if (raw && (DEPT_TABS as readonly string[]).includes(raw)) {
+        return raw as DeptTab;
+    }
+    return "overview";
+}
+
 export default function DepartmentDashboard() {
     const { theme } = useTheme();
     const isDark = theme === "dark";
     const [, navigate] = useLocation();
-    const [selectedView, setSelectedView] = useState("overview");
+    const [selectedView, setSelectedView] = useState<DeptTab>(() => initialDeptTabFromUrl());
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const isMobile = useIsMobile();
     const mainContentRef = useRef<HTMLElement>(null);
+
+    // Keep ?tab= in sync (login lands on ?tab=overview)
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("tab") !== selectedView) {
+            params.set("tab", selectedView);
+            const newUrl = `${window.location.pathname}?${params.toString()}`;
+            window.history.replaceState({ ...window.history.state }, "", newUrl);
+        }
+    }, [selectedView]);
 
     // Scroll to top when selectedView changes
     useEffect(() => {
@@ -103,53 +124,55 @@ export default function DepartmentDashboard() {
     const COLORS = ['#1e3a8a', '#3b82f6', '#60a5fa', '#93c5fd'];
 
     return (
-        <div className="min-h-screen bg-background transition-colors duration-300">
+        <div className="min-h-dvh bg-background transition-colors duration-300">
             {/* Header */}
             <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border shadow-sm">
-                <div className="container flex items-center justify-between h-16 px-6">
-                    <div className="flex items-center gap-0 group cursor-pointer" onClick={() => navigate("/")}>
-                        <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
-                        <div className="flex flex-col">
-                            <span className="font-black text-xl bg-gradient-to-r from-pink-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">NextGen</span>
-                            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-80">TPO Dept Head Portal</p>
+                <div className="container flex min-h-16 min-w-0 flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                    <div className="flex min-w-0 flex-shrink-0 cursor-pointer items-center gap-0 group" onClick={() => navigate("/")}>
+                        <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-10 w-10 flex-shrink-0 object-contain transition-transform duration-500 group-hover:scale-110 sm:h-12 sm:w-12" />
+                        <div className="flex min-w-0 flex-col">
+                            <span className="truncate bg-gradient-to-r from-pink-600 via-purple-600 to-pink-600 bg-clip-text font-black text-lg leading-none text-transparent sm:text-xl">NextGen</span>
+                            <p className="mt-0.5 truncate text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-80 sm:text-[10px]">TPO Dept Head Portal</p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <div className="relative group">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-end sm:gap-3 md:gap-4">
+                        <div className="relative order-2 w-full min-w-0 group sm:order-none sm:max-w-xs sm:flex-initial md:max-w-md">
+                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                             <input
                                 type="text"
                                 placeholder="Search dept students..."
-                                className="pl-10 pr-4 py-2 border border-border bg-muted/30 rounded-lg text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary w-64 transition-all"
+                                className="w-full rounded-lg border border-border bg-muted/30 py-2 pl-10 pr-4 text-sm text-foreground transition-all focus:outline-none focus:ring-2 focus:ring-primary sm:max-w-xs md:w-64 md:max-w-none"
                             />
                         </div>
 
-                        <Button variant="ghost" size="sm" className="relative">
-                            <Bell className="w-4 h-4" />
-                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">2</span>
-                        </Button>
+                        <div className="order-1 flex min-w-0 items-center justify-between gap-2 sm:order-none sm:justify-end sm:gap-2 md:gap-4">
+                            <Button variant="ghost" size="sm" className="relative shrink-0 touch-manipulation">
+                                <Bell className="h-4 w-4" />
+                                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">2</span>
+                            </Button>
 
-                        <div className="h-8 w-px bg-border"></div>
+                            <div className="hidden h-8 w-px bg-border sm:block" />
 
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-                                <span className="text-white font-black text-xs">DH</span>
+                            <div className="flex min-w-0 items-center gap-2">
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-purple-600 shadow-lg">
+                                    <span className="text-[10px] font-black text-white">DH</span>
+                                </div>
+                                <div className="hidden text-left md:block">
+                                    <p className="text-sm font-black text-foreground">TPO Dept Head (CSE)</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">head.cse@tpo.edu</p>
+                                </div>
                             </div>
-                            <div className="text-left hidden md:block">
-                                <p className="text-sm font-black text-foreground">TPO Dept Head (CSE)</p>
-                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">head.cse@tpo.edu</p>
-                            </div>
+
+                            <ThemeToggle />
+
+                            <Button variant="ghost" size="sm" className="shrink-0 touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => {
+                                localStorage.removeItem("userRole");
+                                navigate("/");
+                            }}>
+                                <LogOut className="h-4 w-4" />
+                            </Button>
                         </div>
-
-                        <ThemeToggle />
-
-                        <Button variant="ghost" size="sm" onClick={() => {
-                            localStorage.removeItem("userRole");
-                            navigate("/");
-                        }} className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                            <LogOut className="w-4 h-4" />
-                        </Button>
                     </div>
                 </div>
 
@@ -167,7 +190,7 @@ export default function DepartmentDashboard() {
                             </Button>
                         )}
                         <div className={`${isMobile ? 'hidden' : 'flex'} gap-1 overflow-x-auto`}>
-                            {["overview", "analytics", "students", "approvals", "reports"].map((view) => (
+                            {DEPT_TABS.map((view) => (
                                 <button
                                     key={view}
                                     onClick={() => setSelectedView(view)}
@@ -186,9 +209,9 @@ export default function DepartmentDashboard() {
                     </div>
                     {/* Mobile Menu Sheet */}
                     <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-                        <SheetContent side="left" className="w-64">
+                        <SheetContent side="left" className="max-w-full w-[min(20rem,calc(100vw-1rem))] px-4">
                             <div className="space-y-2 mt-8">
-                                {["overview", "analytics", "students", "approvals", "reports"].map((view) => (
+                                {DEPT_TABS.map((view) => (
                                     <button
                                         key={view}
                                         onClick={() => {
@@ -275,13 +298,13 @@ export default function DepartmentDashboard() {
                                 <CardContent>
                                     <div className="space-y-4">
                                         {atRiskStudents.map((student) => (
-                                            <div key={student.id} className="p-6 border border-border bg-muted/20 rounded-xl flex items-center justify-between">
-                                                <div>
-                                                    <h4 className="font-bold text-lg">{student.name}</h4>
-                                                    <p className="text-xs text-muted-foreground uppercase">{student.id}</p>
+                                            <div key={student.id} className="flex flex-col gap-3 rounded-xl border border-border bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                                                <div className="min-w-0">
+                                                    <h4 className="text-lg font-bold">{student.name}</h4>
+                                                    <p className="text-xs uppercase text-muted-foreground">{student.id}</p>
                                                 </div>
-                                                <div className="text-right">
-                                                    <span className="text-red-500 font-bold block">{student.readiness}% Ready</span>
+                                                <div className="text-left sm:text-right">
+                                                    <span className="block font-bold text-red-500">{student.readiness}% Ready</span>
                                                     <span className="text-xs text-muted-foreground">{student.issues[0]}</span>
                                                 </div>
                                             </div>
@@ -297,14 +320,14 @@ export default function DepartmentDashboard() {
                                 <CardContent>
                                     <div className="space-y-4">
                                         {upcomingEvents.map((event, idx) => (
-                                            <div key={idx} className="p-6 border border-border bg-muted/20 rounded-xl flex items-center justify-between">
-                                                <div>
-                                                    <h4 className="font-bold text-lg">{event.title}</h4>
+                                            <div key={idx} className="flex flex-col gap-3 rounded-xl border border-border bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                                                <div className="min-w-0">
+                                                    <h4 className="text-lg font-bold">{event.title}</h4>
                                                     <p className="text-xs text-muted-foreground">{event.date}</p>
                                                 </div>
-                                                <div className="text-right">
-                                                    <span className="font-bold text-xl block">{event.attendees}</span>
-                                                    <span className="text-xs text-muted-foreground uppercase">Attendees</span>
+                                                <div className="text-left sm:text-right">
+                                                    <span className="block text-xl font-bold">{event.attendees}</span>
+                                                    <span className="text-xs uppercase text-muted-foreground">Attendees</span>
                                                 </div>
                                             </div>
                                         ))}

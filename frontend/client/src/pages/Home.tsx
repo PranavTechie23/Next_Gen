@@ -27,10 +27,10 @@ import { useLocation } from "wouter";
 function Footer({ role }: { role?: string }) {
   const { theme } = useTheme();
   return (
-    <footer className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-white/10 pt-16 pb-8 px-6">
+    <footer className="border-t border-slate-200 bg-white px-4 pb-8 pt-12 dark:border-white/10 dark:bg-slate-950 sm:px-6 sm:pt-16">
       <div className="container mx-auto max-w-7xl">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
-          <div className="col-span-2 lg:col-span-2">
+        <div className="mb-12 grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
+          <div className="sm:col-span-2 lg:col-span-2">
             <div className="flex items-center gap-0 mb-6 group cursor-pointer" onClick={() => window.location.href = "/"}>
               <img
                 src="/NG/NextGen_light.png"
@@ -413,7 +413,7 @@ export default function PremiumLandingPage() {
   const mobilePathDefinition = "M 300 0 C 300 200 330 400 330 700 C 330 1000 270 1000 270 1300 C 270 1600 330 1600 330 1900 C 330 2200 270 2200 270 2500 C 270 2800 300 2900 300 3100 L 300 3600";
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white overflow-x-hidden transition-colors duration-200 grainy-bg">
+    <div ref={containerRef} className="min-h-dvh overflow-x-hidden bg-slate-50 text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-white grainy-bg">
       {/* Animated Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div
@@ -429,14 +429,14 @@ export default function PremiumLandingPage() {
       </div>
 
       {/* Navigation */}
-      <nav className={`fixed top-4 left-1/2 -translate-x-1/2 w-[95%] max-w-7xl z-50 transition-all duration-300 ${scrolled || mobileMenuOpen
-        ? 'bg-white/90 dark:bg-slate-950/90 backdrop-blur-3xl border border-slate-200/50 dark:border-white/10 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] rounded-3xl py-2'
-        : 'bg-transparent py-4'
+      <nav className={`fixed top-2 left-1/2 z-50 w-[min(95%,calc(100vw-0.75rem))] max-w-7xl -translate-x-1/2 transition-all duration-300 sm:top-4 ${scrolled || mobileMenuOpen
+        ? 'bg-white/90 dark:bg-slate-950/90 backdrop-blur-3xl border border-slate-200/50 dark:border-white/10 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] rounded-2xl py-1.5 sm:rounded-3xl sm:py-2'
+        : 'bg-transparent py-2 sm:py-4'
         }`}>
-        <div className="container mx-auto px-4 sm:px-6">
-          <div className="flex items-center h-20">
+        <div className="container mx-auto max-w-full px-3 sm:px-6">
+          <div className="flex h-16 min-w-0 items-center gap-2 sm:h-20">
             {/* Logo Section */}
-            <div className="flex-1 flex justify-start">
+            <div className="flex min-w-0 flex-1 justify-start">
               <div className="flex items-center gap-0 group cursor-pointer" onClick={() => navigate("/")}>
                 <img
                   src="/NG/NextGen_light.png"
@@ -453,7 +453,7 @@ export default function PremiumLandingPage() {
             </div>
 
             {/* Navigation Links - Dead Center */}
-            <div className="hidden lg:flex items-center justify-center gap-12 flex-1">
+            <div className="hidden min-w-0 flex-1 items-center justify-center gap-12 lg:flex">
               <a href="#features" className="text-lg font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-all hover:scale-110">Features</a>
               <a href="#how-it-works" className="text-lg font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-all hover:scale-110">How It Works</a>
               <a href="#testimonials" className="text-lg font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-all hover:scale-110">Students</a>
@@ -461,7 +461,7 @@ export default function PremiumLandingPage() {
             </div>
 
             {/* Right Side Actions */}
-            <div className="hidden lg:flex items-center justify-end gap-x-4 flex-1">
+            <div className="hidden min-w-0 flex-1 items-center justify-end gap-x-4 lg:flex">
               <ThemeToggle />
               <Button variant="ghost" className="text-lg font-bold text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10" onClick={() => navigate("/login")}>Login</Button>
               <Button className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:scale-105 transition-transform text-lg text-white font-bold px-8 py-6 rounded-2xl" onClick={() => navigate("/signup")}>
@@ -471,7 +471,7 @@ export default function PremiumLandingPage() {
             </div>
 
             {/* Mobile Menu Toggle */}
-            <div className="lg:hidden flex items-center justify-end flex-1 gap-2">
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-2 lg:hidden">
               <ThemeToggle />
               <button className="p-2 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-colors" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                 {mobileMenuOpen ? <X className="w-6 h-6 text-blue-600" /> : <Menu className="w-6 h-6" />}
@@ -546,7 +546,7 @@ export default function PremiumLandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-40 pb-20 px-4 sm:px-6 overflow-hidden">
+      <section className="relative overflow-hidden px-4 pb-16 pt-28 sm:px-6 sm:pb-20 sm:pt-36 lg:pt-40">
         <div className="container mx-auto max-w-7xl relative z-10 text-center">
 
           <motion.div
@@ -717,9 +717,9 @@ export default function PremiumLandingPage() {
                 filter: comparisonView === "before" ? "grayscale(0%)" : "grayscale(100%)",
               }}
               onClick={() => setComparisonView("before")}
-              className={`cursor-pointer ${comparisonView === "before" ? "block relative z-10" : "hidden lg:block lg:opacity-40"}`}
+              className={`cursor-pointer ${comparisonView === "before" ? "relative z-10 block" : "relative z-0 block"}`}
             >
-              <div className="bg-slate-50 dark:bg-slate-900/40 p-6 sm:p-12 rounded-[2.5rem] sm:rounded-[3.5rem] border-2 border-slate-200 dark:border-white/5 shadow-2xl h-full ">
+              <div className="h-full rounded-[2rem] border-2 border-slate-200 bg-slate-50 p-5 shadow-2xl dark:border-white/5 dark:bg-slate-900/40 sm:rounded-[2.5rem] sm:p-8 md:rounded-[3.5rem] md:p-12">
                 <div className="flex flex-col sm:flex-row items-center gap-6 mb-12">
                   <div className="w-20 h-20 bg-red-500/10 rounded-3xl flex items-center justify-center border border-red-500/20">
                     <XCircle className="w-10 h-10 text-red-500" />
@@ -750,9 +750,9 @@ export default function PremiumLandingPage() {
                 filter: comparisonView === "after" ? "grayscale(0%)" : "grayscale(100%)",
               }}
               onClick={() => setComparisonView("after")}
-              className={`cursor-pointer ${comparisonView === "after" ? "block relative z-10" : "hidden lg:block lg:opacity-40"}`}
+              className={`cursor-pointer ${comparisonView === "after" ? "relative z-10 block" : "relative z-0 block"}`}
             >
-              <div className="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-slate-900 dark:to-indigo-950/40 p-6 sm:p-12 rounded-[2.5rem] sm:rounded-[3.5rem] border-2 border-indigo-200 dark:border-blue-500/20 shadow-2xl h-full">
+              <div className="h-full rounded-[2rem] border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-blue-50 p-5 shadow-2xl dark:border-blue-500/20 dark:from-slate-900 dark:to-indigo-950/40 sm:rounded-[2.5rem] sm:p-8 md:rounded-[3.5rem] md:p-12">
                 <div className="flex flex-col sm:flex-row items-center gap-6 mb-12">
                   <div className="w-20 h-20 relative flex items-center justify-center">
                     <div className="absolute inset-0 bg-blue-500/20 rounded-3xl blur-xl"></div>
@@ -783,22 +783,22 @@ export default function PremiumLandingPage() {
             </motion.div>
           </div>
         </div>
-      </section >
+      </section>
 
       {/* How it Works / Scroll Journey */}
-      < section className="py-32 px-4 sm:px-6 relative overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-50" id="how-it-works" ref={journeySectionRef} >
+      <section className="relative overflow-hidden bg-slate-50 px-4 py-20 transition-colors duration-50 dark:bg-slate-950 sm:px-6 sm:py-28 md:py-32" id="how-it-works" ref={journeySectionRef}>
 
         {/* Background Decorative Blurs */}
-        < div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-blue-600/5 dark:bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-blue-600/5 dark:bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
 
         <div className="container mx-auto max-w-7xl relative">
-          <div className="text-center mb-24 px-4">
+          <div className="mb-16 px-2 text-center sm:mb-24 sm:px-4">
             <Badge className="px-4 py-2 bg-blue-600/10 text-blue-600 dark:bg-blue-600/20 dark:text-blue-300 font-bold mb-6">The Journey to Success</Badge>
-            <h2 className="text-3xl sm:text-7xl font-black mb-8 tracking-tighter text-slate-900 dark:text-white leading-tight">Your Path to Excellence</h2>
+            <h2 className="mb-6 text-3xl font-black leading-tight tracking-tighter text-slate-900 dark:text-white sm:mb-8 sm:text-5xl md:text-7xl">Your Path to Excellence</h2>
             <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed">Watch your career trajectory transform from a student to a professional with AI at every turn.</p>
           </div>
 
-          <div className="relative min-h-[3100px] py-10 overflow-hidden">
+          <div className="relative min-h-[2600px] overflow-hidden py-6 sm:min-h-[2900px] sm:py-10 md:min-h-[3100px]">
             {/* The Winding Path SVG */}
             <div className="absolute inset-0 flex justify-center pointer-events-none">
               <svg
@@ -806,7 +806,7 @@ export default function PremiumLandingPage() {
                 height="3600"
                 viewBox="0 0 600 3600"
                 fill="none"
-                className="w-full max-w-[800px]"
+                className="h-auto w-full max-w-[min(100%,36rem)]"
                 // Crucial: Ensures the SVG scales correctly without distortion
                 preserveAspectRatio="xMidYMin meet"
               >
@@ -1046,14 +1046,14 @@ export default function PremiumLandingPage() {
                   initial={{ opacity: 0, x: -50 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: false, margin: "-100px" }}
-                  className="max-w-sm w-full bg-white/70 dark:bg-slate-900/80 backdrop-blur-2xl border border-slate-200 dark:border-white/10 p-10 rounded-[3rem] shadow-2xl group hover:scale-[1.02] transition-all relative overflow-hidden border-blue-500/20 text-right"
+                  className="group relative w-full max-w-sm overflow-hidden rounded-[2rem] border border-slate-200 bg-white/70 p-6 text-right shadow-2xl backdrop-blur-2xl transition-all hover:scale-[1.02] dark:border-blue-500/20 dark:bg-slate-900/80 sm:rounded-[3rem] sm:p-8 md:p-10"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="w-20 h-20 bg-blue-100 dark:bg-white/5 rounded-3xl flex items-center justify-center mb-10 shadow-xl border border-blue-200 dark:border-white/10 ml-auto">
                     <Globe className="w-12 h-12 text-blue-600 dark:text-blue-500" />
                   </div>
-                  <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-4 tracking-tighter">Internship at Google</h3>
-                  <p className="text-slate-600 dark:text-slate-400 font-bold leading-relaxed mb-8">Selected via exclusive partner referral through Campus Career analytics.</p>
+                  <h3 className="mb-3 text-2xl font-black tracking-tighter text-slate-900 dark:text-white sm:mb-4 sm:text-3xl">Internship at Google</h3>
+                  <p className="mb-6 font-bold leading-relaxed text-slate-600 dark:text-slate-400 sm:mb-8">Selected via exclusive partner referral through Campus Career analytics.</p>
 
                   <div className="space-y-4 mb-8 text-left">
                     <div className="flex justify-between items-end flex-row-reverse">
@@ -1086,17 +1086,17 @@ export default function PremiumLandingPage() {
                   className="relative group"
                 >
                   <div className="absolute inset-0 bg-pink-500/20 rounded-[3rem] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="bg-gradient-to-br from-pink-600 via-rose-600 to-purple-700 p-12 rounded-[3.5rem] shadow-3xl text-center relative z-10 border border-white/20 hover:scale-105 transition-transform">
-                    <div className="w-24 h-24 bg-white/20 backdrop-blur-3xl rounded-3xl flex items-center justify-center mb-8 mx-auto shadow-2xl border border-white/30 rotate-3 group-hover:rotate-0 transition-transform">
-                      <Briefcase className="w-12 h-12 text-white" />
+                  <div className="relative z-10 rounded-[2rem] border border-white/20 bg-gradient-to-br from-pink-600 via-rose-600 to-purple-700 p-6 text-center shadow-3xl transition-transform hover:scale-[1.02] sm:rounded-[3rem] sm:p-10 md:p-12 md:hover:scale-105">
+                    <div className="mx-auto mb-6 flex h-16 w-16 rotate-3 items-center justify-center rounded-2xl border border-white/30 bg-white/20 shadow-2xl backdrop-blur-3xl transition-transform group-hover:rotate-0 sm:mb-8 sm:h-24 sm:w-24 sm:rounded-3xl">
+                      <Briefcase className="h-8 w-8 text-white sm:h-12 sm:w-12" />
                     </div>
-                    <Badge className="mb-6 bg-white/20 text-white border-0 font-black px-6 py-2 rounded-full uppercase tracking-tighter">Mission Accomplished</Badge>
-                    <h3 className="text-5xl font-black text-white mb-4 tracking-tighter">Job Offer</h3>
-                    <p className="text-white/80 font-black text-3xl mb-8">₹42.5 LPA • SDE-1</p>
+                    <Badge className="mb-4 rounded-full border-0 bg-white/20 px-4 py-1.5 font-black uppercase tracking-tighter text-white sm:mb-6 sm:px-6 sm:py-2">Mission Accomplished</Badge>
+                    <h3 className="mb-3 text-3xl font-black tracking-tighter text-white sm:mb-4 sm:text-5xl">Job Offer</h3>
+                    <p className="mb-6 font-black text-lg text-white/80 sm:mb-8 sm:text-2xl md:text-3xl">₹42.5 LPA • SDE-1</p>
 
-                    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10">
-                      <p className="text-[10px] font-black uppercase text-pink-200 tracking-[0.2em] mb-1 text-center">Career Growth</p>
-                      <p className="text-4xl font-black text-white text-center"><AnimatedNumber value={5} />X</p>
+                    <div className="rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur-md sm:p-4">
+                      <p className="mb-1 text-center text-[10px] font-black uppercase tracking-[0.2em] text-pink-200">Career Growth</p>
+                      <p className="text-center text-3xl font-black text-white sm:text-4xl"><AnimatedNumber value={5} />X</p>
                     </div>
                   </div>
 
@@ -1105,17 +1105,17 @@ export default function PremiumLandingPage() {
             </div>
           </div>
         </div>
-      </section >
+      </section>
       {/* Success Metrics */}
-      < section className="py-24 relative overflow-hidden bg-white dark:bg-black" >
+      <section className="py-24 relative overflow-hidden bg-white dark:bg-black" >
         {/* Dynamic Background: Gradient shows more subtly in dark mode */}
-        < div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 dark:from-grey-500/20 dark:via-black-500/50 dark:to-purple-500/20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 dark:from-grey-500/20 dark:via-black-500/50 dark:to-purple-500/20" />
 
         {/* Glassmorphism Blur Layer */}
-        < div className="absolute inset-0 backdrop-blur-3xl opacity-50" />
+        <div className="absolute inset-0 backdrop-blur-3xl opacity-50" />
 
         <div className="container mx-auto max-w-7xl relative z-10 px-4">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+          <div className="grid grid-cols-2 gap-4 text-center sm:gap-8 lg:grid-cols-4">
             {successMetrics.map((sm, i) => (
               <motion.div
                 key={i}
@@ -1150,10 +1150,10 @@ export default function PremiumLandingPage() {
             ))}
           </div>
         </div>
-      </section >
+      </section>
 
       {/* Testimonials */}
-      < section className="py-24 px-4 sm:px-6 relative" id="testimonials" >
+      <section className="py-24 px-4 sm:px-6 relative" id="testimonials" >
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-16 sm:mb-20 px-4">
             <Badge className="px-4 py-2 bg-yellow-600/10 text-yellow-600 dark:bg-yellow-600/20 dark:text-yellow-300 font-bold mb-6">Wall of Success</Badge>
@@ -1171,7 +1171,7 @@ export default function PremiumLandingPage() {
                   <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 fill-yellow-500" />
                 ))}
               </div>
-              <p className="text-xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white mb-8 sm:mb-10 leading-[1.3] relative z-10">
+              <p className="relative z-10 mb-8 text-pretty break-words text-xl font-black leading-snug text-slate-900 dark:text-white sm:mb-10 sm:text-3xl sm:leading-[1.3] lg:text-4xl">
                 "{testimonials[activeTestimonial].quote}"
               </p>
               <div className="flex items-center justify-between flex-wrap gap-6 border-t border-slate-100 dark:border-white/5 pt-8 relative z-10">
@@ -1197,7 +1197,7 @@ export default function PremiumLandingPage() {
             </div>
           </div>
         </div>
-      </section >
+      </section>
 
       {/* Companies Scroll */}
 
@@ -1266,10 +1266,10 @@ export default function PremiumLandingPage() {
                   <div className="h-full bg-white dark:bg-slate-950 rounded-[2rem] relative overflow-hidden transition-all">
                     <button
                       onClick={() => setActiveFaq(activeFaq === i ? null : i)}
-                      className="w-full p-8 text-left flex flex-col gap-4 relative z-10"
+                      className="relative z-10 flex w-full flex-col gap-3 p-5 text-left sm:gap-4 sm:p-8"
                     >
-                      <div className="flex items-start justify-between gap-6">
-                        <span className={`text-xl font-bold transition-colors duration-300 ${activeFaq === i ? 'bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent' : 'text-slate-900 dark:text-white'}`}>
+                      <div className="flex items-start justify-between gap-3 sm:gap-6">
+                        <span className={`min-w-0 flex-1 text-base font-bold transition-colors duration-300 sm:text-xl ${activeFaq === i ? 'bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent' : 'text-slate-900 dark:text-white'}`}>
                           {faq.question}
                         </span>
                         <div className={`w-10 h-10 rounded-full border flex items-center justify-center flex-shrink-0 transition-all duration-300 ${activeFaq === i ? 'bg-blue-600 border-blue-600 text-white rotate-180 scale-110' : 'border-slate-200 dark:border-white/10 text-slate-400 group-hover:border-blue-500 group-hover:text-blue-500'}`}>
@@ -1312,11 +1312,13 @@ export default function PremiumLandingPage() {
             <Zap className="w-5 h-5 mr-3 inline" />
             Join the Revolution Today
           </Badge>
-          <h2 className="text-4xl sm:text-8xl font-black mb-10 leading-[1.1] tracking-tight text-slate-900 dark:text-white">
-            Ready to <span className="sm:inline hidden"><br /></span> Accelerate Your <br />
-            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent underline decoration-blue-500/20 dark:decoration-white/20">Future?</span>
+          <h2 className="mb-8 px-1 text-3xl font-black leading-[1.12] tracking-tight text-slate-900 dark:text-white sm:mb-10 sm:text-5xl md:text-7xl lg:text-8xl">
+            Ready to Accelerate Your{" "}
+            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent underline decoration-blue-500/20 dark:decoration-white/20">
+              Future?
+            </span>
           </h2>
-          <p className="text-xl sm:text-2xl text-slate-600 dark:text-slate-300 mb-16 max-w-3xl mx-auto leading-relaxed font-bold">
+          <p className="mx-auto mb-12 max-w-3xl px-2 text-lg font-bold leading-relaxed text-slate-600 dark:text-slate-300 sm:mb-16 sm:text-xl md:text-2xl">
             Join 50,000+ students already using AI to unlock their peak placement potential.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8">
@@ -1334,7 +1336,7 @@ export default function PremiumLandingPage() {
 
       {/* Demo Dialog */}
       <Dialog open={demoOpen} onOpenChange={setDemoOpen}>
-        <DialogContent className="sm:max-w-4xl bg-slate-900 border-white/10 text-white">
+        <DialogContent className="mx-4 max-h-[min(92dvh,900px)] w-[calc(100%-2rem)] max-w-4xl overflow-y-auto border-white/10 bg-slate-900 text-white sm:mx-auto sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle className="text-3xl font-black">Experience the Platform</DialogTitle>
             <DialogDescription className="text-slate-400 text-lg">

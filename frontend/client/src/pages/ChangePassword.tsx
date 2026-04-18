@@ -29,13 +29,13 @@ export default function ChangePassword() {
       const role = localStorage.getItem("userRole");
       switch (role) {
         case 'STUDENT':
-          window.location.href = "/student/dashboard";
+          window.location.href = "/student/dashboard?tab=overview";
           break;
         case 'TPO_ADMIN':
-          window.location.href = "/admin/dashboard";
+          window.location.href = "/admin/dashboard?tab=overview";
           break;
         case 'TPO_HEAD':
-          window.location.href = "/department/dashboard";
+          window.location.href = "/department/dashboard?tab=overview";
           break;
         default:
           window.location.href = "/login";
@@ -48,7 +48,7 @@ export default function ChangePassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+    <div className="flex min-h-dvh items-center justify-center overflow-x-hidden bg-background p-4">
       <Card className="w-full max-w-md shadow-xl border-border">
         <CardContent className="p-6 sm:p-8">
           <div className="mb-8">

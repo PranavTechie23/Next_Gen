@@ -383,7 +383,7 @@ export function StudentManagement() {
 
       {/* Single Entry / Edit Sheet */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent side="right" className="w-[400px] sm:w-[540px] overflow-y-auto">
+        <SheetContent side="right" className="w-full max-w-[min(100vw,24rem)] overflow-y-auto sm:max-w-[540px] sm:w-[540px]">
           <SheetHeader className="mb-6">
             <SheetTitle>{isEditing ? 'Edit Academic Data' : 'Add New Student'}</SheetTitle>
             <SheetDescription>
@@ -458,7 +458,7 @@ export function StudentManagement() {
         setIsDetailsOpen(open);
         if (!open) setDetailedStudent(null);
       }}>
-        <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0 flex flex-col">
+        <SheetContent side="right" className="flex w-full max-w-[min(100vw,24rem)] flex-col p-0 sm:max-w-[540px] sm:w-[540px]">
           {isFetchingDetails || !detailedStudent ? (
              <div className="flex-1 flex items-center justify-center p-6">
                <div className="flex flex-col items-center gap-4">
