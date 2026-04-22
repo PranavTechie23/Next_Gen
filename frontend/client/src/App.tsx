@@ -51,11 +51,15 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/login" component={LoginPage} />
-      <Route path="/careers" component={Careers} />
+      <Route path="/careers">
+        <Careers />
+      </Route>
       <Route path="/about" component={AboutUs} />
       <Route path="/Footer" component={() => <Footer role="public" />} />
 
-      <Route path="/corporate_news" component={CorporateNews} />
+      <Route path="/corporate_news">
+        <CorporateNews />
+      </Route>
 
       <Route path="/contact" component={ContactUs} />
 

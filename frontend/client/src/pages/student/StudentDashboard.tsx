@@ -27,6 +27,7 @@ import CorporateNewsPage from "@/pages/student/CorporateNews";
 import StudentFeedbackForm from "@/pages/student/feedbackForm";
 import AssessmentHub from "@/pages/student/AssessmentHub";
 import CompanyWiseKit from "@/pages/student/CompanyWiseKit";
+import Internships from "@/pages/student/Internships";
 import { studentApi } from "@/services/studentApi";
 import { getPlacementDrives, computeDriveMatch } from "@/data/placementDrives";
 import {
@@ -87,6 +88,18 @@ export default function StudentDashboard() {
 
   const [backendProfile, setBackendProfile] = useState<any>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const [roadmapData, setRoadmapData] = useState<any>(null);
+  const [loadingRoadmap, setLoadingRoadmap] = useState(false);
+  const [savingPerformance, setSavingPerformance] = useState(false);
+  const [performanceDraft, setPerformanceDraft] = useState<any>({
+    amcat_quant: "",
+    amcat_verbal: "",
+    amcat_logical: "",
+    endsem_percentage: "",
+    mock_interview_score: "",
+    coding_test_score: "",
+  });
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -94,8 +107,12 @@ export default function StudentDashboard() {
         setLoadingProfile(true);
         const data = await studentApi.getProfile();
         setBackendProfile(data);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to fetch student profile", error);
+        if (error?.response?.status === 401) {
+          toast.error("Session expired. Please login again.");
+          window.location.href = "/login";
+        }
       } finally {
         setLoadingProfile(false);
       }
@@ -103,16 +120,92 @@ export default function StudentDashboard() {
     fetchProfile();
   }, []);
 
+  const fetchRoadmap = async () => {
+    try {
+      setLoadingRoadmap(true);
+      const data = await studentApi.getRoadmap();
+      setRoadmapData(data);
+      const perf = data?.performance || {};
+      setPerformanceDraft({
+        amcat_quant: perf?.amcat_quant ?? "",
+        amcat_verbal: perf?.amcat_verbal ?? "",
+        amcat_logical: perf?.amcat_logical ?? "",
+        endsem_percentage: perf?.endsem_percentage ?? "",
+        mock_interview_score: perf?.mock_interview_score ?? "",
+        coding_test_score: perf?.coding_test_score ?? "",
+      });
+    } catch (error: any) {
+      console.error("Failed to fetch roadmap", error);
+      if (error?.response?.status === 401) {
+        toast.error("Session expired. Please login again.");
+        window.location.href = "/login";
+      } else {
+        toast.error("Failed to load mentorship roadmap");
+      }
+    } finally {
+      setLoadingRoadmap(false);
+    }
+  };
+
+  // Load roadmap on first visit to Mentorship tab (and after resume upload/profile updates)
+  useEffect(() => {
+    if (activeTab === "learning" && !loadingProfile && backendProfile && !roadmapData && !loadingRoadmap) {
+      fetchRoadmap();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, loadingProfile, backendProfile]);
+
   // Student Profile Data (Merged with Backend)
+  const resumeParsed = backendProfile?.resumeParsed || {};
+  const resumeSections = resumeParsed?.sections || {};
+
+  const ordinalYear = (n: number) => {
+    const v = n % 100;
+    if (v >= 11 && v <= 13) return `${n}th`;
+    switch (n % 10) {
+      case 1:
+        return `${n}st`;
+      case 2:
+        return `${n}nd`;
+      case 3:
+        return `${n}rd`;
+      default:
+        return `${n}th`;
+    }
+  };
+
+  const computeSemesterLabel = () => {
+    const createdAtRaw = backendProfile?.user?.created_at;
+    const createdAt = createdAtRaw ? new Date(createdAtRaw) : null;
+    if (!createdAt || Number.isNaN(createdAt.getTime())) {
+      return "Year N/A";
+    }
+
+    const now = new Date();
+    let months =
+      (now.getFullYear() - createdAt.getFullYear()) * 12 +
+      (now.getMonth() - createdAt.getMonth());
+
+    // If joined mid-month and we're earlier in month, avoid jumping a month.
+    if (now.getDate() < createdAt.getDate()) months -= 1;
+    months = Math.max(0, months);
+
+    // Approx: 1 semester ≈ 6 months. Cap at 8 semesters (4 years) for display.
+    const sem = Math.min(8, Math.floor(months / 6) + 1);
+    const yearNum = Math.ceil(sem / 2);
+    return `Sem ${sem} • ${ordinalYear(yearNum)} year`;
+  };
+
+  const computedYearLabel = computeSemesterLabel();
   const studentProfile = {
-    name: backendProfile?.user?.email?.split('@')[0] || "Student",
+    name: backendProfile?.profile?.full_name || resumeParsed?.full_name || backendProfile?.user?.email?.split('@')[0] || "Student",
     id: backendProfile?.student?.roll_number || "N/A",
     email: backendProfile?.user?.email || "student@college.edu",
-    phone: backendProfile?.profile?.phone || "+91 00000 00000",
+    phone: backendProfile?.profile?.phone || resumeParsed?.phone || "+91 00000 00000",
     branch: backendProfile?.department?.name || "Engineering",
     college: "NextGen University", // Assuming static or from institution table
     bio: backendProfile?.profile?.bio || "No bio added yet.",
-    year: "Final Year", // This would ideally be calculated based on batch/admission year
+    year: computedYearLabel,
     cgpa: backendProfile?.student?.current_cgpa || 0,
     avatar: backendProfile?.profile?.avatar_url || ""
   };
@@ -122,26 +215,59 @@ export default function StudentDashboard() {
   const handleResumeClick = () => {
     resumeInputRef.current?.click();
   };
-  interface UserProfile {
-    skills: string[];
-    interests: string[];
-    learningGoals: string[];
-  }
-  const onResumeFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onResumeFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.type !== "application/pdf") {
         toast.error("Please upload a PDF file");
         return;
       }
-      toast.success(`Resume "${file.name}" uploaded successfully!`);
-      // Here you would typically handle the actual file upload to a server
+      try {
+        setUploadingResume(true);
+        await studentApi.uploadResume(file);
+        const refreshed = await studentApi.getProfile();
+        setBackendProfile(refreshed);
+        // Resume changes affect mentorship roadmap inputs (skills/projects/experience).
+        setRoadmapData(null);
+        toast.success(`Resume "${file.name}" uploaded and parsed successfully!`);
+      } catch (error) {
+        console.error("Resume upload failed", error);
+        toast.error("Resume upload failed. Please try again.");
+      } finally {
+        setUploadingResume(false);
+        e.target.value = "";
+      }
     }
   };
-  const MOCK_USER: UserProfile = {
-    skills: ['React', 'TypeScript', 'Node.js', 'Python', 'JavaScript'],
-    interests: ['Web Development', 'AI/ML', 'Cloud', 'DevOps'],
-    learningGoals: ['Next.js', 'Docker', 'AWS']
+  const parsedResumeSkills: string[] = backendProfile?.resumeParsed?.skills || [];
+  const profileSkills: string[] = (backendProfile?.skills || []).map((s: any) => s?.name).filter(Boolean);
+  const mergedSkills: string[] = Array.from(new Set([...profileSkills, ...parsedResumeSkills]));
+
+  const resumeAchievements: string[] = Array.isArray(resumeSections?.achievements) ? resumeSections.achievements : [];
+  const manualAchievements: string[] = Array.isArray(backendProfile?.achievements) ? backendProfile.achievements : [];
+  const mergedAchievements: string[] = Array.from(new Set([...resumeAchievements, ...manualAchievements]));
+
+  const [newSkillInput, setNewSkillInput] = useState("");
+  const [newAchievementInput, setNewAchievementInput] = useState("");
+  const [savingManualProfile, setSavingManualProfile] = useState(false);
+
+  const saveManualSkillsAndAchievements = async () => {
+    try {
+      setSavingManualProfile(true);
+      const skillsPayload = mergedSkills.map((name) => ({ name, proficiency_level: "BEGINNER" }));
+      await studentApi.updateSubjectiveProfile({
+        skills: skillsPayload,
+        achievements: mergedAchievements,
+      });
+      const refreshed = await studentApi.getProfile();
+      setBackendProfile(refreshed);
+      toast.success("Profile updated.");
+    } catch (e) {
+      console.error("Failed to save manual profile updates", e);
+      toast.error("Failed to save updates.");
+    } finally {
+      setSavingManualProfile(false);
+    }
   };
   const profileChecklist = [
     {
@@ -181,43 +307,117 @@ export default function StudentDashboard() {
     { month: "Jan", overall: 72, technical: 68, soft: 78 },
   ];
 
-  // Enhanced Quick Stats
+  const clamp = (n: number, min = 0, max = 100) => Math.max(min, Math.min(max, n));
+  const pct = (n: number) => `${Math.round(clamp(n))}%`;
+  const sigmoid = (x: number) => 1 / (1 + Math.exp(-x));
+
+  const computeDynamicMetrics = () => {
+    const cgpa = Number(backendProfile?.student?.current_cgpa ?? 0);
+    const backlogs = Number(backendProfile?.student?.active_backlogs ?? 0);
+
+    const projectsFromResume = Array.isArray(resumeSections?.projects) ? resumeSections.projects.length : 0;
+    const experienceFromResume = Array.isArray(resumeSections?.experience) ? resumeSections.experience.length : 0;
+    const extracurricularFromResume = Array.isArray(resumeSections?.extracurricular) ? resumeSections.extracurricular.length : 0;
+    const certificationsFromResume = Array.isArray(resumeSections?.certifications) ? resumeSections.certifications.length : 0;
+    const summaryPresent = !!resumeSections?.summary;
+    const skillsCount = Array.isArray(mergedSkills) ? mergedSkills.length : 0;
+
+    // Skills mastery: saturating curve based on skill count
+    const skillsMastered = clamp(100 * (1 - Math.exp(-skillsCount / 12)));
+
+    // Portfolio strength (projects + experience + certifications), capped
+    const portfolioRaw =
+      projectsFromResume * 10 +
+      experienceFromResume * 6 +
+      extracurricularFromResume * 2 +
+      certificationsFromResume * 6 +
+      (summaryPresent ? 8 : 0);
+    const portfolioScore = clamp(portfolioRaw, 0, 100);
+
+    // Academics score (CGPA scale 0-10; penalize backlogs)
+    const academicsScore = clamp((cgpa / 10) * 100 - backlogs * 15);
+
+    // Overall readiness (weighted)
+    const overallReadiness = clamp(
+      academicsScore * 0.45 +
+      skillsMastered * 0.30 +
+      portfolioScore * 0.25
+    );
+
+    // Placement probability (logistic mapping from readiness + academics)
+    const logit =
+      -2.2 +
+      (overallReadiness / 100) * 3.2 +
+      (academicsScore / 100) * 1.4 -
+      backlogs * 0.35;
+    const placementProbability = clamp(sigmoid(logit) * 100);
+
+    // AI confidence = confidence in our computed score (data completeness)
+    const hasPhone = !!resumeParsed?.phone || !!backendProfile?.profile?.phone;
+    const hasLinks = !!(
+      backendProfile?.profile?.github_url ||
+      backendProfile?.profile?.linkedin_url ||
+      resumeParsed?.github_url ||
+      resumeParsed?.linkedin_url
+    );
+    const completenessSignals = [
+      cgpa > 0,
+      skillsCount >= 5,
+      projectsFromResume > 0,
+      summaryPresent,
+      hasPhone,
+      hasLinks,
+    ];
+    const completeness = completenessSignals.filter(Boolean).length / completenessSignals.length;
+    const aiConfidence = clamp(55 + completeness * 45);
+
+    return {
+      overallReadiness,
+      skillsMastered,
+      placementProbability,
+      aiConfidence,
+    };
+  };
+
+  const dynamic = computeDynamicMetrics();
+
+  // Enhanced Quick Stats (Dynamic)
   const quickStats = [
     {
       label: "Overall Readiness",
-      value: "72%",
-      change: "+8%",
-      trend: "up",
+      value: pct(dynamic.overallReadiness),
+      change: "Dynamic",
+      trend: dynamic.overallReadiness >= 60 ? "up" : "down",
       icon: Target,
       color: "bg-gradient-to-br from-blue-500 to-blue-600",
       description: "Placement Preparedness"
     },
     {
       label: "Skills Mastered",
-      value: "67%",
-      change: "+17%",
-      trend: "up",
+      value: pct(dynamic.skillsMastered),
+      change: "Dynamic",
+      trend: dynamic.skillsMastered >= 60 ? "up" : "down",
       icon: Award,
       color: "bg-gradient-to-br from-green-500 to-emerald-600",
       description: "Core Competencies"
     },
     {
       label: "Placement Probability",
-      value: "85%",
-      change: "+5%",
-      trend: "up",
+      value: pct(dynamic.placementProbability),
+      change: "Dynamic",
+      trend: dynamic.placementProbability >= 60 ? "up" : "down",
       icon: TrendingUp,
       color: "bg-gradient-to-br from-purple-500 to-violet-600",
-      description: "Service-Based Roles"
+      description: "Overall Fit"
     },
     {
       label: "AI Confidence",
-      value: "78%",
-      change: "+12%",
-      trend: "up",
+      value: pct(dynamic.aiConfidence),
+      change: "Dynamic",
+      trend: dynamic.aiConfidence >= 70 ? "up" : "down",
       icon: Brain,
       color: "bg-gradient-to-br from-orange-500 to-red-600",
-      description: "Goal Achievement"
+      description: "Score Confidence"
     }
   ];
 
@@ -392,60 +592,86 @@ export default function StudentDashboard() {
     }
   ];
 
-  // Learning Paths
-  const learningPaths = [
-    {
-      title: "System Design Mastery",
-      description: "From basics to advanced distributed systems",
-      progress: 30,
-      courses: 6,
-      completedCourses: 2,
-      estimatedTime: "2 months",
-      difficulty: "Advanced",
-      icon: Server,
-      color: "bg-gradient-to-br from-purple-500 to-pink-600",
-      modules: [
-        { name: "Basics", status: "completed" },
-        { name: "Scalability", status: "in-progress" },
-        { name: "Databases", status: "pending" },
-        { name: "Microservices", status: "pending" }
-      ]
-    },
-    {
-      title: "Full Stack Development",
-      description: "End-to-end application development",
-      progress: 65,
-      courses: 8,
-      completedCourses: 5,
-      estimatedTime: "3 months",
-      difficulty: "Intermediate",
-      icon: Code,
-      color: "bg-gradient-to-br from-blue-500 to-cyan-600",
-      modules: [
-        { name: "Frontend", status: "completed" },
-        { name: "Backend", status: "in-progress" },
-        { name: "DevOps", status: "pending" },
-        { name: "Testing", status: "pending" }
-      ]
-    },
-    {
-      title: "Data Structures & Algorithms",
-      description: "Advanced problem solving techniques",
-      progress: 80,
-      courses: 10,
-      completedCourses: 8,
-      estimatedTime: "1 month",
-      difficulty: "Intermediate",
-      icon: Cpu,
-      color: "bg-gradient-to-br from-green-500 to-emerald-600",
-      modules: [
-        { name: "Arrays", status: "completed" },
-        { name: "Trees", status: "completed" },
-        { name: "Graphs", status: "in-progress" },
-        { name: "DP", status: "pending" }
-      ]
+  const iconFromKey = (key: string) => {
+    switch (key) {
+      case "target":
+        return Target;
+      case "briefcase":
+        return Briefcase;
+      case "users":
+        return Users;
+      case "code":
+      default:
+        return Code;
     }
-  ];
+  };
+
+  const colorFromKey = (key: string) => {
+    switch (key) {
+      case "target":
+        return "bg-gradient-to-br from-orange-500 to-yellow-600";
+      case "briefcase":
+        return "bg-gradient-to-br from-green-500 to-emerald-600";
+      case "users":
+        return "bg-gradient-to-br from-purple-500 to-pink-600";
+      case "code":
+      default:
+        return "bg-gradient-to-br from-blue-500 to-cyan-600";
+    }
+  };
+
+  // Learning Paths (dynamic roadmap when available; fallback to mock)
+  const learningPaths =
+    Array.isArray(roadmapData?.computed?.tracks) && roadmapData.computed.tracks.length > 0
+      ? roadmapData.computed.tracks.map((t: any) => ({
+          title: t.title,
+          description: t.description,
+          progress: Number(t.progress ?? 0),
+          icon: iconFromKey(String(t.iconKey || "code")),
+          color: colorFromKey(String(t.iconKey || "code")),
+          modules: Array.isArray(t.modules) ? t.modules : [],
+        }))
+      : [
+          {
+            title: "System Design Mastery",
+            description: "From basics to advanced distributed systems",
+            progress: 30,
+            icon: Server,
+            color: "bg-gradient-to-br from-purple-500 to-pink-600",
+            modules: [
+              { name: "Basics", status: "completed" },
+              { name: "Scalability", status: "in-progress" },
+              { name: "Databases", status: "pending" },
+              { name: "Microservices", status: "pending" }
+            ]
+          },
+          {
+            title: "Full Stack Development",
+            description: "End-to-end application development",
+            progress: 65,
+            icon: Code,
+            color: "bg-gradient-to-br from-blue-500 to-cyan-600",
+            modules: [
+              { name: "Frontend", status: "completed" },
+              { name: "Backend", status: "in-progress" },
+              { name: "DevOps", status: "pending" },
+              { name: "Testing", status: "pending" }
+            ]
+          },
+          {
+            title: "Data Structures & Algorithms",
+            description: "Advanced problem solving techniques",
+            progress: 80,
+            icon: Cpu,
+            color: "bg-gradient-to-br from-green-500 to-emerald-600",
+            modules: [
+              { name: "Arrays", status: "completed" },
+              { name: "Trees", status: "completed" },
+              { name: "Graphs", status: "in-progress" },
+              { name: "DP", status: "pending" }
+            ]
+          }
+        ];
 
   // Timeline & Milestones
   const timeline = [
@@ -501,7 +727,7 @@ export default function StudentDashboard() {
 
   // Placement drives from TPO (ticket creation) — shown as "Drives" with match %
   const placementDrives = getPlacementDrives();
-  const studentSkills = MOCK_USER?.skills ?? [];
+  const studentSkills = mergedSkills;
   const studentBacklogs = 0; // extend studentProfile if you track backlogs
   const drivesWithMatch = placementDrives.map((d, idx) => ({
     ...d,
@@ -636,28 +862,40 @@ export default function StudentDashboard() {
       description: "Solve coding problems",
       icon: Code,
       color: "from-blue-500 to-blue-600",
-      action: () => setActiveTab("skills")
+      action: () => {
+        setActiveTab("company-kit");
+        navigate("/student/dashboard?tab=company-kit");
+      }
     },
     {
-      title: "Mock Interview",
-      description: "Practice with AI",
+      title: "Resources",
+      description: "Practice & prep",
       icon: Users,
       color: "from-purple-500 to-purple-600",
-      action: () => console.log("Mock Interview")
+      action: () => {
+        setActiveTab("assessment-hub");
+        navigate("/student/dashboard?tab=assessment-hub");
+      }
     },
     {
       title: "View Drives",
       description: "Placement drives from TPO",
       icon: Briefcase,
       color: "from-green-500 to-green-600",
-      action: () => setActiveTab("opportunities")
+      action: () => {
+        setActiveTab("opportunities");
+        navigate("/student/dashboard?tab=opportunities");
+      }
     },
     {
       title: "Study Plan",
       description: "Generate roadmap",
       icon: BookOpen,
       color: "from-orange-500 to-orange-600",
-      action: () => console.log("Study Plan")
+      action: () => {
+        setActiveTab("learning");
+        navigate("/student/dashboard?tab=learning");
+      }
     }
   ];
 
@@ -712,6 +950,8 @@ export default function StudentDashboard() {
   const sidebarLinks = [
     { id: "overview", label: "Dashboard", icon: LayoutDashboard },
     { id: "skills", label: "Skills", icon: PaletteIcon },
+    { id: "internships", label: "Internships", icon: BriefcaseIcon },
+    { id: "resume", label: "Resume", icon: FileText },
     { id: "opportunities", label: "Drives", icon: BriefcaseIcon },
     { id: "learning", label: "Mentorship", icon: UsersIcon },
     { id: "progress", label: "Progress", icon: TrendingUp },
@@ -722,12 +962,12 @@ export default function StudentDashboard() {
     { id: "corporateNews", label: "Corporate News", icon: Newspaper },
 
     { id: "feedback", label: "Feedback", icon: MessageSquare },
-    { id: "assessment-hub", label: "Assessment Hub", icon: Zap },
+    { id: "assessment-hub", label: "Resources", icon: Zap },
     { id: "company-kit", label: "Company Wise Kit", icon: Building2 },
   ];
 
   const sidebarSections: Array<{ title: string; ids: Array<(typeof sidebarLinks)[number]["id"]> }> = [
-    { title: "PROFILE TRACKER", ids: ["overview", "skills"] },
+    { title: "PROFILE TRACKER", ids: ["overview", "skills", "internships"] },
     { title: "QUESTION TRACKER", ids: ["opportunities", "learning"] },
     { title: "RESOURCES", ids: ["progress", "careers", "webinars", "corporateNews"] },
     { title: "COMMUNITY", ids: ["feedback"] },
@@ -735,7 +975,7 @@ export default function StudentDashboard() {
   ];
 
   return (
-    <div className={`relative flex h-dvh max-h-dvh min-h-0 overflow-hidden ${isDark ? "bg-black" : "bg-background"} font-manrope text-foreground selection:bg-blue-500/30`}>
+    <div className={`relative flex h-dvh max-h-dvh min-h-0 overflow-hidden ${isDark ? "bg-[#0c0c14]" : "bg-background"} font-manrope text-foreground selection:bg-blue-500/30`}>
       {/* Premium Background Glows */}
       {isDark && (
         <div className="premium-glow-bg">
@@ -960,6 +1200,7 @@ export default function StudentDashboard() {
               <p className={`${isDark ? "text-blue-400" : "text-blue-600"} text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] opacity-90 mt-1 border-b-0 no-underline`}>
                 {activeTab === "overview" ? "Career Readiness Dashboard" :
                   activeTab === "skills" ? "Skill Architecture Analysis" :
+                    activeTab === "resume" ? "Resume: Projects, Education, Experience" :
                     activeTab === "opportunities" ? "Placement Drives" :
                       activeTab === "learning" ? "Learning & Development" :
                         activeTab === "progress" ? "Progress & Milestones" :
@@ -967,7 +1208,7 @@ export default function StudentDashboard() {
                             activeTab === "webinars" ? "Live Learning Sessions" :
                                 activeTab === "corporateNews" ? "Industry News & Updates" :
                                   activeTab === "feedback" ? "Share Your Feedback" :
-                                    activeTab === "assessment-hub" ? "Assessment Hub — End-to-End Prep" :
+                                    activeTab === "assessment-hub" ? "Resources — End-to-End Prep" :
                                       activeTab === "company-kit" ? "Company Wise Problems & Tracking" :
                                         "Student Portal"}
               </p>
@@ -1144,6 +1385,7 @@ export default function StudentDashboard() {
                       </Button>
                       <Button
                         onClick={handleResumeClick}
+                        disabled={uploadingResume}
                         className="
     h-14 px-8 flex-1 rounded-2xl gap-3
     bg-indigo-600 text-white
@@ -1155,7 +1397,7 @@ export default function StudentDashboard() {
   "
                       >
                         <UploadIcon className="w-6 h-6" />
-                        Resume (PDF)
+                        {uploadingResume ? "Uploading..." : "Resume (PDF)"}
                       </Button>
                       <input
                         type="file"
@@ -1369,6 +1611,107 @@ export default function StudentDashboard() {
           {/* Skills Tab */}
           {activeTab === "skills" && (
             <div className="space-y-10">
+              {/* Manual Update: Skills + Achievements */}
+              <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[2.5rem] overflow-hidden`}>
+                <CardContent className="p-6 sm:p-8">
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                    <div className="space-y-2">
+                      <p className={`text-xs font-black uppercase tracking-[0.2em] ${isDark ? "text-slate-500" : "text-slate-500"}`}>Manual Updates</p>
+                      <h3 className={`text-xl sm:text-2xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Skills & Achievements</h3>
+                      <p className={`${isDark ? "text-slate-400" : "text-slate-600"} text-sm max-w-2xl`}>
+                        If something wasn’t extracted from your resume, add it here. Saved items are stored in the database and visible to TPO.
+                      </p>
+                    </div>
+                    <Button onClick={saveManualSkillsAndAchievements} disabled={savingManualProfile} className="h-12 rounded-2xl font-black">
+                      {savingManualProfile ? "Saving..." : "Save Updates"}
+                    </Button>
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
+                      <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Add Skill</p>
+                      <div className="mt-3 flex gap-2">
+                        <input
+                          value={newSkillInput}
+                          onChange={(e) => setNewSkillInput(e.target.value)}
+                          placeholder="e.g., LangChain, SHAP, SQL"
+                          className={`flex-1 h-11 px-4 rounded-2xl text-sm font-bold outline-none border ${isDark ? "bg-white/5 border-white/10 text-white placeholder:text-slate-600" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400"}`}
+                        />
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            const v = newSkillInput.trim();
+                            if (!v) return;
+                            setNewSkillInput("");
+                            if (!mergedSkills.includes(v)) {
+                              // quick local add (will persist on Save)
+                              (mergedSkills as any).push(v);
+                            }
+                          }}
+                          className="h-11 rounded-2xl font-black"
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
+                      <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Add Achievement</p>
+                      <div className="mt-3 flex gap-2">
+                        <input
+                          value={newAchievementInput}
+                          onChange={(e) => setNewAchievementInput(e.target.value)}
+                          placeholder="e.g., 2nd Rank – 93.17% (HSC)"
+                          className={`flex-1 h-11 px-4 rounded-2xl text-sm font-bold outline-none border ${isDark ? "bg-white/5 border-white/10 text-white placeholder:text-slate-600" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400"}`}
+                        />
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            const v = newAchievementInput.trim();
+                            if (!v) return;
+                            setNewAchievementInput("");
+                            if (!mergedAchievements.includes(v)) {
+                              (mergedAchievements as any).push(v);
+                            }
+                          }}
+                          className="h-11 rounded-2xl font-black"
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
+                      <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Current Skills</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {(mergedSkills || []).slice(0, 30).map((s: string) => (
+                          <span key={s} className={`px-3 py-1 rounded-full text-[11px] font-black ${isDark ? "bg-white/10 text-slate-100" : "bg-slate-100 text-slate-800"}`}>
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
+                      <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Achievements</p>
+                      <div className="mt-3 space-y-2">
+                        {(mergedAchievements || []).slice(0, 12).map((a: string, idx: number) => (
+                          <div key={idx} className={`flex items-start gap-2 text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>
+                            <span className="mt-2 w-1.5 h-1.5 rounded-full bg-amber-500/70 flex-shrink-0" />
+                            <span>{a}</span>
+                          </div>
+                        ))}
+                        {(!mergedAchievements || mergedAchievements.length === 0) && (
+                          <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No achievements yet.</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Comprehensive Skill Analysis */}
               <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
                 <CardContent className="p-12">
@@ -1607,6 +1950,111 @@ export default function StudentDashboard() {
             </div>
           )}
 
+          {/* Internships Tab (Resume-driven) */}
+          {activeTab === "internships" && (
+            <Internships
+              isDark={isDark}
+              resumeSections={resumeSections}
+              onUploadResume={handleResumeClick}
+              uploading={uploadingResume}
+            />
+          )}
+
+          {activeTab === "resume" && (
+            <div className="space-y-8">
+              <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[2.5rem] overflow-hidden`}>
+                <CardContent className="p-6 sm:p-10">
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                    <div className="space-y-2">
+                      <p className={`text-xs font-black uppercase tracking-[0.2em] ${isDark ? "text-slate-500" : "text-slate-500"}`}>Resume</p>
+                      <h2 className={`text-2xl sm:text-3xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Projects & Experience</h2>
+                      <p className={`${isDark ? "text-slate-400" : "text-slate-600"} text-sm max-w-2xl`}>
+                        This tab shows structured details extracted from your engineering resume. If anything is missing, you can update manually.
+                      </p>
+                    </div>
+                    <Button onClick={handleResumeClick} disabled={uploadingResume} className="h-12 rounded-2xl font-black">
+                      {uploadingResume ? "Uploading..." : "Upload Updated Resume"}
+                    </Button>
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
+                      <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Education</p>
+                      <div className="mt-3 space-y-2">
+                        {(Array.isArray(resumeSections?.education) ? resumeSections.education : []).slice(0, 10).map((e: string, idx: number) => (
+                          <div key={idx} className={`text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>{e}</div>
+                        ))}
+                        {(Array.isArray(resumeSections?.education) ? resumeSections.education.length : 0) === 0 && (
+                          <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No education extracted yet.</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
+                      <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Certifications</p>
+                      <div className="mt-3 space-y-2">
+                        {(Array.isArray(resumeSections?.certifications) ? resumeSections.certifications : []).slice(0, 10).map((c: string, idx: number) => (
+                          <div key={idx} className={`text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>{c}</div>
+                        ))}
+                        {(Array.isArray(resumeSections?.certifications) ? resumeSections.certifications.length : 0) === 0 && (
+                          <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No certifications extracted yet.</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
+                      <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Projects</p>
+                      <div className="mt-3 space-y-3">
+                        {(Array.isArray(resumeSections?.projects) ? resumeSections.projects : []).slice(0, 6).map((p: any, idx: number) => (
+                          <div key={idx} className={`${isDark ? "bg-black/20" : "bg-slate-50"} rounded-xl p-4 border ${isDark ? "border-white/5" : "border-slate-200"}`}>
+                            <p className={`font-black text-sm ${isDark ? "text-white" : "text-slate-900"}`}>{p?.title || "Project"}</p>
+                            {Array.isArray(p?.bullets) && p.bullets.length > 0 && (
+                              <ul className={`mt-2 space-y-1 text-xs ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                                {p.bullets.slice(0, 5).map((b: string, i: number) => (
+                                  <li key={i} className="flex gap-2">
+                                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500/70 flex-shrink-0" />
+                                    <span>{b}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        ))}
+                        {(Array.isArray(resumeSections?.projects) ? resumeSections.projects.length : 0) === 0 && (
+                          <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No projects extracted yet.</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
+                      <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Internships / Experience / Activities</p>
+                      <div className="mt-3 space-y-2">
+                        {(Array.isArray(resumeSections?.experience) ? resumeSections.experience : []).slice(0, 12).map((e: string, idx: number) => (
+                          <div key={idx} className={`flex items-start gap-2 text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>
+                            <span className="mt-2 w-1.5 h-1.5 rounded-full bg-emerald-500/70 flex-shrink-0" />
+                            <span>{e}</span>
+                          </div>
+                        ))}
+                        {(Array.isArray(resumeSections?.extracurricular) ? resumeSections.extracurricular : []).slice(0, 12).map((e: string, idx: number) => (
+                          <div key={`x-${idx}`} className={`flex items-start gap-2 text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>
+                            <span className="mt-2 w-1.5 h-1.5 rounded-full bg-purple-500/70 flex-shrink-0" />
+                            <span>{e}</span>
+                          </div>
+                        ))}
+                        {(Array.isArray(resumeSections?.experience) ? resumeSections.experience.length : 0) === 0 &&
+                          (Array.isArray(resumeSections?.extracurricular) ? resumeSections.extracurricular.length : 0) === 0 && (
+                            <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No experience extracted yet.</p>
+                          )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           {/* Opportunities Tab */}
           {activeTab === "opportunities" && (
             <div className="space-y-10">
@@ -1719,6 +2167,138 @@ export default function StudentDashboard() {
             <div className="space-y-10">
               <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
                 <CardContent className="p-12">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+                    <div className="flex items-center gap-4">
+                      <Brain className={`w-8 h-8 ${isDark ? "text-blue-400" : "text-blue-600"}`} />
+                      <div>
+                        <h3 className={`text-3xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Your Dynamic Roadmap</h3>
+                        <p className={`text-lg font-bold ${isDark ? "text-gray-400" : "text-slate-600"}`}>
+                          Based on your CGPA, resume (projects/skills), and test scores
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="secondary"
+                        onClick={() => fetchRoadmap()}
+                        disabled={loadingRoadmap}
+                        className={`${isDark ? "bg-white/10 hover:bg-white/15 text-white border-white/10" : ""} rounded-2xl font-black`}
+                      >
+                        {loadingRoadmap ? "Refreshing..." : "Refresh"}
+                      </Button>
+                      <Button
+                        onClick={async () => {
+                          try {
+                            setSavingPerformance(true);
+                            await studentApi.updatePerformance(performanceDraft);
+                            toast.success("Scores updated.");
+                            setRoadmapData(null);
+                            await fetchRoadmap();
+                          } catch (e) {
+                            console.error("Failed to update performance", e);
+                            toast.error("Failed to update scores.");
+                          } finally {
+                            setSavingPerformance(false);
+                          }
+                        }}
+                        disabled={savingPerformance}
+                        className="rounded-2xl font-black"
+                      >
+                        {savingPerformance ? "Saving..." : "Save Scores"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid lg:grid-cols-2 gap-8">
+                    {/* Score inputs */}
+                    <div className={`p-8 rounded-[2.5rem] ${isDark ? "bg-white/5 border border-white/5" : "bg-slate-50/60 border border-slate-200/60"}`}>
+                      <h4 className={`text-xl font-black ${isDark ? "text-white" : "text-slate-900"} mb-6`}>Update your scores</h4>
+
+                      <div className="grid sm:grid-cols-2 gap-5">
+                        {[
+                          { key: "amcat_quant", label: "AMCAT Quant (0-100)" },
+                          { key: "amcat_logical", label: "AMCAT Logical (0-100)" },
+                          { key: "amcat_verbal", label: "AMCAT Verbal (0-100)" },
+                          { key: "coding_test_score", label: "Coding Test (0-100)" },
+                          { key: "mock_interview_score", label: "Mock Interview (0-100)" },
+                          { key: "endsem_percentage", label: "End-sem % (0-100)" },
+                        ].map((f) => (
+                          <label key={f.key} className="flex flex-col gap-2">
+                            <span className={`text-xs font-black uppercase tracking-widest ${isDark ? "text-slate-400" : "text-slate-500"}`}>{f.label}</span>
+                            <input
+                              value={performanceDraft?.[f.key] ?? ""}
+                              onChange={(e) => setPerformanceDraft((prev: any) => ({ ...(prev || {}), [f.key]: e.target.value }))}
+                              inputMode="numeric"
+                              placeholder="Optional"
+                              className={`h-11 px-4 rounded-2xl outline-none transition-colors ${
+                                isDark
+                                  ? "bg-[#0c0c14]/60 border border-white/10 text-white placeholder:text-slate-500 focus:border-blue-500/60"
+                                  : "bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500/60"
+                              }`}
+                            />
+                          </label>
+                        ))}
+                      </div>
+
+                      <p className={`text-xs mt-5 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                        Tip: After uploading a resume, hit <span className="font-black">Refresh</span> to re-calculate the roadmap using your latest projects, experience and skills.
+                      </p>
+                    </div>
+
+                    {/* Roadmap tasks */}
+                    <div className={`p-8 rounded-[2.5rem] ${isDark ? "bg-white/5 border border-white/5" : "bg-slate-50/60 border border-slate-200/60"}`}>
+                      <h4 className={`text-xl font-black ${isDark ? "text-white" : "text-slate-900"} mb-6`}>What to do next</h4>
+
+                      {loadingRoadmap && !roadmapData ? (
+                        <div className={`p-6 rounded-2xl ${isDark ? "bg-white/5" : "bg-white"}`}>
+                          <p className={`${isDark ? "text-slate-300" : "text-slate-700"} font-bold`}>Calculating your roadmap...</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          {[
+                            { title: "Next 7 days", key: "next7Days" },
+                            { title: "Next 30 days", key: "next30Days" },
+                            { title: "Next 90 days", key: "next90Days" },
+                          ].map((b) => {
+                            const items = roadmapData?.computed?.roadmap?.[b.key] || [];
+                            return (
+                              <div key={b.key} className={`p-6 rounded-2xl ${isDark ? "bg-[#0c0c14]/40 border border-white/5" : "bg-white border border-slate-200/50"}`}>
+                                <div className="flex items-center justify-between mb-4">
+                                  <div className={`font-black ${isDark ? "text-white" : "text-slate-900"}`}>{b.title}</div>
+                                  <Badge className={`${isDark ? "bg-white/10 text-slate-200 border-white/10" : "bg-slate-100 text-slate-700 border-slate-200"} rounded-xl`}>
+                                    {Array.isArray(items) ? items.length : 0} tasks
+                                  </Badge>
+                                </div>
+                                <div className="space-y-3">
+                                  {(Array.isArray(items) ? items : []).slice(0, 4).map((t: any) => (
+                                    <div key={t.id || t.title} className="flex items-start gap-3">
+                                      <CheckCircle2 className={`w-5 h-5 mt-0.5 ${isDark ? "text-blue-400" : "text-blue-600"}`} />
+                                      <div className="min-w-0">
+                                        <div className={`font-bold ${isDark ? "text-slate-100" : "text-slate-900"}`}>{t.title}</div>
+                                        {t.reason && (
+                                          <div className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>{t.reason}</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                  {Array.isArray(items) && items.length > 4 && (
+                                    <div className={`text-xs font-bold ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                                      +{items.length - 4} more
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
+                <CardContent className="p-12">
                   <div className="flex items-center gap-4 mb-10">
                     <GraduationCap className={`w-8 h-8 ${isDark ? "text-purple-400" : "text-purple-600"}`} />
                     <div>
@@ -1728,7 +2308,7 @@ export default function StudentDashboard() {
                   </div>
 
                   <div className="space-y-8">
-                    {learningPaths.map((path, idx) => {
+                    {learningPaths.map((path: any, idx: number) => {
                       const Icon = path.icon;
                       return (
                         <div key={idx} className={`group p-8 ${isDark ? "border-white/5 bg-white/5" : "border-slate-100 bg-slate-50/50"} rounded-[2.5rem] hover:border-purple-500/50 transition-all shadow-sm`}>
@@ -1753,7 +2333,7 @@ export default function StudentDashboard() {
                             </div>
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {path.modules.map((module, mIdx) => (
+                            {path.modules.map((module: any, mIdx: number) => (
                               <div key={mIdx} className={`p-4 rounded-2xl text-center ${module.status === "completed" ? "bg-green-500/10 text-green-400" :
                                 module.status === "in-progress" ? "bg-blue-500/10 text-blue-400 animate-pulse" :
                                   "bg-white/5 text-gray-400"
@@ -1975,7 +2555,7 @@ export default function StudentDashboard() {
           {/* Careers Tab */}
           {activeTab === "careers" && (
             <div className="space-y-10">
-              <Careers />
+              <Careers isDashboard />
             </div>
           )}
 
