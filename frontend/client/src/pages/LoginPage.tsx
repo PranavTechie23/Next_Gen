@@ -40,10 +40,13 @@ export default function LoginPage() {
         rememberMe,
       }, { withCredentials: true });
 
-      const { user, message } = response.data;
+      const { user, message, token } = response.data;
       if (user) {
         toast.success(message || "Login successful!");
         localStorage.setItem("userRole", user.role);
+        if (token) {
+          localStorage.setItem("token", token);
+        }
         if (rememberMe) {
           localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
         } else {

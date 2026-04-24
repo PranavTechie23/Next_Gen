@@ -600,14 +600,14 @@ export default function StudentWebinar(props: any) {
         {!isDashboard && (
           <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2 flex items-center gap-3">
+              <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2 flex items-center gap-3">
                 Live & Interactive Learning <Sparkles className="h-6 w-6 text-yellow-500" />
               </h1>
-              <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
+              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl leading-relaxed">
                 Connect with industry experts, learn trending technologies, and accelerate your career with our curated live sessions.
               </p>
             </div>
-            <div className="flex bg-card p-1.5 rounded-2xl gap-2 border border-border shadow-sm">
+            <div className="flex w-full md:w-auto overflow-x-auto bg-card p-1.5 rounded-2xl gap-2 border border-border shadow-sm">
               <Button
                 variant={activeTab === 'all' ? 'default' : 'ghost'}
                 className={`rounded-xl px-6 font-bold text-xs uppercase tracking-widest h-11 ${activeTab === 'all' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground'}`}
@@ -630,16 +630,16 @@ export default function StudentWebinar(props: any) {
         )}
         {/* Page Header */}
         <div className="mb-8">
-          <div className="flex items-start justify-between mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h1 className={`text-4xl font-bold ${textPrimaryClass} mb-2`}>
+              <h1 className={`text-3xl sm:text-4xl font-bold ${textPrimaryClass} mb-2`}>
                 Live Webinars & Workshops
               </h1>
-              <p className={`text-lg ${textSecondaryClass}`}>
+              <p className={`text-base sm:text-lg ${textSecondaryClass}`}>
                 Learn from industry experts and boost your career
               </p>
             </div>
-            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
+            <Button className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
               <Calendar className="w-4 h-4 mr-2" />
               My Schedule
             </Button>
@@ -657,7 +657,7 @@ export default function StudentWebinar(props: any) {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
@@ -669,7 +669,7 @@ export default function StudentWebinar(props: any) {
                       <Icon className="w-6 h-6 text-white" />
                     </div>
                   </div>
-                  <h3 className={`text-3xl font-bold ${textPrimaryClass} mb-1`}>{stat.value}</h3>
+                  <h3 className={`text-2xl sm:text-3xl font-bold ${textPrimaryClass} mb-1`}>{stat.value}</h3>
                   <p className={`text-sm ${textSecondaryClass} mb-1`}>{stat.label}</p>
                   <p className={`text-xs ${textMutedClass}`}>{stat.change}</p>
                 </CardContent>
@@ -743,7 +743,7 @@ export default function StudentWebinar(props: any) {
         <div className={`flex gap-1 p-1 ${darkMode ? 'bg-slate-800' : 'bg-slate-100'} rounded-xl mb-8 overflow-x-auto`}>
           <button
             onClick={() => setActiveTab('upcoming')}
-            className={`flex-1 whitespace-nowrap px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'upcoming'
+            className={`min-w-max md:min-w-0 flex-1 whitespace-nowrap px-4 sm:px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'upcoming'
               ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
               : `${textSecondaryClass} ${hoverBgClass}`
               }`}
@@ -752,7 +752,7 @@ export default function StudentWebinar(props: any) {
           </button>
           <button
             onClick={() => setActiveTab('past')}
-            className={`flex-1 whitespace-nowrap px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'past'
+            className={`min-w-max md:min-w-0 flex-1 whitespace-nowrap px-4 sm:px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'past'
               ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
               : `${textSecondaryClass} ${hoverBgClass}`
               }`}
@@ -761,7 +761,7 @@ export default function StudentWebinar(props: any) {
           </button>
           <button
             onClick={() => setActiveTab('registered')}
-            className={`flex-1 whitespace-nowrap px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'registered'
+            className={`min-w-max md:min-w-0 flex-1 whitespace-nowrap px-4 sm:px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'registered'
               ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
               : `${textSecondaryClass} ${hoverBgClass}`
               }`}
@@ -771,7 +771,7 @@ export default function StudentWebinar(props: any) {
         </div>
 
         {/* Main Content Grid - Side by side layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-12">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8 pb-12">
           {activeTab === 'upcoming' && (
             <>
               {upcomingWebinars.map((webinar) => (

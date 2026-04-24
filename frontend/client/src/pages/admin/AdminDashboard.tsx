@@ -17,6 +17,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Menu, Filter as FilterIcon, X, Sparkles, LayoutDashboard } from "lucide-react";
+import { deptApi } from "@/services/deptApi";
+import { adminApi } from "@/services/adminApi";
 
 const ADMIN_TABS = ["overview", "drives", "analytics", "students", "reports"] as const;
 type AdminTab = (typeof ADMIN_TABS)[number];
@@ -37,6 +39,71 @@ export default function AdminDashboard() {
   const [selectedBranch, setSelectedBranch] = useState("all");
   const [timeRange, setTimeRange] = useState("year");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [generatingReport, setGeneratingReport] = useState<string | null>(null);
+
+  // Uploads (TPO Head)
+  const [uploadDataOpen, setUploadDataOpen] = useState(false);
+  const [uploadingStudents, setUploadingStudents] = useState(false);
+  const [uploadingCompanyStats, setUploadingCompanyStats] = useState(false);
+  const studentsFileRef = useRef<HTMLInputElement>(null);
+  const companyStatsFileRef = useRef<HTMLInputElement>(null);
+  const [webinarRecOpen, setWebinarRecOpen] = useState(false);
+  const [webinarRecLoading, setWebinarRecLoading] = useState(false);
+  const [webinarRecData, setWebinarRecData] = useState<any>(null);
+
+  const onUploadStudentsExcel = async (file?: File) => {
+    if (!file) return;
+    try {
+      setUploadingStudents(true);
+      await deptApi.uploadStudentsExcel(file);
+      toast.success("Students data uploaded.");
+    } catch (e) {
+      console.error("uploadStudentsExcel failed", e);
+      toast.error("Failed to upload students data.");
+    } finally {
+      setUploadingStudents(false);
+    }
+  };
+
+  const onUploadCompanyStatsExcel = async (file?: File) => {
+    if (!file) return;
+    try {
+      setUploadingCompanyStats(true);
+      await deptApi.uploadCompanyStatsExcel(file);
+      toast.success("Company stats uploaded.");
+    } catch (e) {
+      console.error("uploadCompanyStatsExcel failed", e);
+      toast.error("Failed to upload company stats.");
+    } finally {
+      setUploadingCompanyStats(false);
+    }
+  };
+
+  const loadWebinarRecommendations = async () => {
+    try {
+      setWebinarRecLoading(true);
+      const data = await deptApi.getWebinarRecommendations();
+      setWebinarRecData(data);
+    } catch (e) {
+      console.error("getWebinarRecommendations failed", e);
+      toast.error("Failed to load webinar recommendations.");
+    } finally {
+      setWebinarRecLoading(false);
+    }
+  };
+
+  const downloadReport = async (kind: string, path: string) => {
+    try {
+      setGeneratingReport(kind);
+      await adminApi.downloadReportCsv(path, `${kind}_${new Date().toISOString().slice(0, 10)}.csv`);
+      toast.success("Report generated.");
+    } catch (e) {
+      console.error("downloadReport failed", e);
+      toast.error("Failed to generate report.");
+    } finally {
+      setGeneratingReport(null);
+    }
+  };
 
   // Smart JD Filter State
   const [jdFilters, setJdFilters] = useState({
@@ -393,7 +460,11 @@ export default function AdminDashboard() {
                   </Button>
                 )}
                 {selectedView === "overview" && (
-                  <Button size="lg" className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white gap-2 text-base px-6 py-6">
+                  <Button
+                    size="lg"
+                    onClick={() => setUploadDataOpen(true)}
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white gap-2 text-base px-6 py-6"
+                  >
                     <Upload className="w-5 h-5" />
                     Upload Data
                   </Button>
@@ -402,6 +473,94 @@ export default function AdminDashboard() {
             )}
           </div>
         </div>
+
+        {/* Upload Data Modal (TPO Head) */}
+        <Dialog open={uploadDataOpen} onOpenChange={setUploadDataOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black">Upload Data</DialogTitle>
+              <DialogDescription>
+                Upload student academic data or company hiring stats (Excel).
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid sm:grid-cols-2 gap-4 py-2">
+              <Card className="border border-border/60">
+                <CardContent className="pt-6 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                      <Users className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <div className="font-black">Students Data</div>
+                      <div className="text-xs text-muted-foreground">CGPA, backlogs, marks, etc.</div>
+                    </div>
+                  </div>
+                  <Button
+                    className="w-full gap-2"
+                    variant="outline"
+                    onClick={() => studentsFileRef.current?.click()}
+                    disabled={uploadingStudents}
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                    {uploadingStudents ? "Uploading..." : "Upload Students Excel"}
+                  </Button>
+                  <input
+                    ref={studentsFileRef}
+                    type="file"
+                    accept=".xlsx,.xls"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      e.target.value = "";
+                      void onUploadStudentsExcel(f);
+                    }}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card className="border border-border/60">
+                <CardContent className="pt-6 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                      <Building2 className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <div className="font-black">Company Stats</div>
+                      <div className="text-xs text-muted-foreground">Selected by year, roles, CTC distribution</div>
+                    </div>
+                  </div>
+                  <Button
+                    className="w-full gap-2"
+                    variant="outline"
+                    onClick={() => companyStatsFileRef.current?.click()}
+                    disabled={uploadingCompanyStats}
+                  >
+                    <FileBarChart className="h-4 w-4" />
+                    {uploadingCompanyStats ? "Uploading..." : "Upload Company Stats Excel"}
+                  </Button>
+                  <input
+                    ref={companyStatsFileRef}
+                    type="file"
+                    accept=".xlsx,.xls"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      e.target.value = "";
+                      void onUploadCompanyStatsExcel(f);
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setUploadDataOpen(false)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
 
 
@@ -962,6 +1121,178 @@ export default function AdminDashboard() {
               </Card>
             </div>
 
+            {/* AI Webinar Recommendations */}
+            <Card className="shadow-lg border-0 mb-12">
+              <CardHeader className="pb-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="space-y-2">
+                    <CardTitle className="text-2xl font-black flex items-center gap-3">
+                      <Sparkles className="w-6 h-6 text-yellow-500" />
+                      AI Webinar Recommendations
+                    </CardTitle>
+                    <CardDescription className="text-base">
+                      Suggested sessions based on your department gaps
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={async () => {
+                        setWebinarRecOpen(true);
+                        if (!webinarRecData && !webinarRecLoading) {
+                          await loadWebinarRecommendations();
+                        }
+                      }}
+                    >
+                      View
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        if (!webinarRecLoading) await loadWebinarRecommendations();
+                      }}
+                      className="gap-2"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${webinarRecLoading ? "animate-spin" : ""}`} />
+                      Refresh
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {webinarRecLoading && !webinarRecData ? (
+                  <div className="p-6 rounded-xl bg-muted/20 border border-border">
+                    <p className="font-bold text-muted-foreground">Generating recommendations...</p>
+                  </div>
+                ) : (
+                  <div className="grid md:grid-cols-3 gap-4">
+                    {(webinarRecData?.recommendations || []).slice(0, 3).map((w: any) => (
+                      <div key={w.id} className="p-5 rounded-xl border border-border bg-muted/10 hover:bg-muted/20 transition-colors">
+                        <div className="font-black text-foreground line-clamp-2">{w.title}</div>
+                        <div className="text-xs text-muted-foreground mt-2">
+                          {w.speaker_name ? `${w.speaker_name} • ` : ""}{w.date_time ? new Date(w.date_time).toLocaleString() : ""}
+                        </div>
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {(w.matchReasons || []).slice(0, 2).map((r: string) => (
+                            <Badge key={r} variant="secondary" className="text-[10px] font-black uppercase tracking-widest">
+                              {r.replace("Matches ", "")}
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="mt-4 flex justify-between items-center">
+                          <span className="text-xs font-black text-muted-foreground">Score: {w.score}</span>
+                          {w.link && (
+                            <Button size="sm" variant="outline" onClick={() => window.open(w.link, "_blank")} className="gap-1.5">
+                              <ExternalLink className="w-4 h-4" />
+                              Open
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    {(!webinarRecData?.recommendations || webinarRecData.recommendations.length === 0) && (
+                      <div className="md:col-span-3 p-6 rounded-xl border border-dashed border-border text-muted-foreground">
+                        No upcoming webinars in DB. Suggested topics to schedule:
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {(webinarRecData?.suggestedTopics || []).slice(0, 6).map((t: any) => (
+                            <Badge key={t.topic} className="text-[10px] font-black uppercase tracking-widest">
+                              {t.topic}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Dialog open={webinarRecOpen} onOpenChange={setWebinarRecOpen}>
+              <DialogContent className="max-w-3xl">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-black">AI Webinar Recommendations</DialogTitle>
+                  <DialogDescription>
+                    Ranked suggestions based on department signals (CGPA/backlogs/resume/skills).
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                  <div className="grid sm:grid-cols-4 gap-3">
+                    {[
+                      { k: "totalStudents", label: "Students" },
+                      { k: "avgCgpa", label: "Avg CGPA" },
+                      { k: "backlogsCount", label: "Backlogs" },
+                      { k: "resumeMissingCount", label: "Resumes missing" },
+                    ].map((s) => (
+                      <div key={s.k} className="p-4 rounded-xl border border-border bg-muted/10">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{s.label}</div>
+                        <div className="text-xl font-black text-foreground mt-1">
+                          {webinarRecData?.signals?.[s.k] ?? "—"}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="p-4 rounded-xl border border-border bg-muted/10">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Top focus topics</div>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {(webinarRecData?.targetTopics || []).map((t: any) => (
+                        <Badge key={t.topic} variant="secondary" className="text-[10px] font-black uppercase tracking-widest">
+                          {t.topic} ({t.score})
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 max-h-[360px] overflow-auto pr-1">
+                    {(webinarRecData?.recommendations || []).map((w: any) => (
+                      <div key={w.id} className="p-4 rounded-xl border border-border bg-background/40 flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <div className="font-black text-foreground">{w.title}</div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {w.speaker_name ? `${w.speaker_name} • ` : ""}{w.date_time ? new Date(w.date_time).toLocaleString() : ""}
+                          </div>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {(w.matchReasons || []).map((r: string) => (
+                              <Badge key={r} variant="secondary" className="text-[10px] font-black uppercase tracking-widest">
+                                {r.replace("Matches ", "")}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                          <Badge className="text-[10px] font-black uppercase tracking-widest">Score {w.score}</Badge>
+                          {w.link && (
+                            <Button size="sm" variant="outline" onClick={() => window.open(w.link, "_blank")} className="gap-1.5">
+                              <ExternalLink className="w-4 h-4" />
+                              Open
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    {(!webinarRecData?.recommendations || webinarRecData.recommendations.length === 0) && (
+                      <div className="p-4 rounded-xl border border-dashed border-border text-muted-foreground">
+                        No upcoming webinars found in DB. Suggested topics:
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {(webinarRecData?.suggestedTopics || []).map((t: any) => (
+                            <Badge key={t.topic} className="text-[10px] font-black uppercase tracking-widest">
+                              {t.topic}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setWebinarRecOpen(false)}>Close</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
             {/* Quick Actions */}
             <div className="grid md:grid-cols-3 gap-6 mb-12">
               <Card className="shadow-lg border-0 hover:shadow-xl transition-all cursor-pointer group" onClick={() => setSelectedView("analytics")}>
@@ -1474,7 +1805,13 @@ export default function AdminDashboard() {
                     </div>
                     <h3 className="text-xl font-black text-foreground mb-2">Placement Report</h3>
                     <p className="text-sm text-muted-foreground mb-4">Comprehensive placement statistics and trends</p>
-                    <Button className="w-full" onClick={() => window.open('https://pict.edu/placement/index.php#statistics', '_blank')}>Generate</Button>
+                    <Button
+                      className="w-full"
+                      onClick={() => downloadReport("placement_report", "/reports/placement")}
+                      disabled={generatingReport !== null}
+                    >
+                      {generatingReport === "placement_report" ? "Generating..." : "Generate"}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -1487,7 +1824,13 @@ export default function AdminDashboard() {
                     </div>
                     <h3 className="text-xl font-black text-foreground mb-2">Student Readiness</h3>
                     <p className="text-sm text-muted-foreground mb-4">Student readiness scores and analytics</p>
-                    <Button className="w-full">Generate</Button>
+                    <Button
+                      className="w-full"
+                      onClick={() => downloadReport("student_readiness", "/reports/student-readiness")}
+                      disabled={generatingReport !== null}
+                    >
+                      {generatingReport === "student_readiness" ? "Generating..." : "Generate"}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -1500,7 +1843,13 @@ export default function AdminDashboard() {
                     </div>
                     <h3 className="text-xl font-black text-foreground mb-2">Company Analysis</h3>
                     <p className="text-sm text-muted-foreground mb-4">Company-wise placement breakdown</p>
-                    <Button className="w-full">Generate</Button>
+                    <Button
+                      className="w-full"
+                      onClick={() => downloadReport("company_analysis", "/reports/company-analysis")}
+                      disabled={generatingReport !== null}
+                    >
+                      {generatingReport === "company_analysis" ? "Generating..." : "Generate"}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -1513,7 +1862,13 @@ export default function AdminDashboard() {
                     </div>
                     <h3 className="text-xl font-black text-foreground mb-2">Branch Performance</h3>
                     <p className="text-sm text-muted-foreground mb-4">Department-wise performance metrics</p>
-                    <Button className="w-full">Generate</Button>
+                    <Button
+                      className="w-full"
+                      onClick={() => downloadReport("branch_performance", "/reports/branch-performance")}
+                      disabled={generatingReport !== null}
+                    >
+                      {generatingReport === "branch_performance" ? "Generating..." : "Generate"}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -1526,7 +1881,13 @@ export default function AdminDashboard() {
                     </div>
                     <h3 className="text-xl font-black text-foreground mb-2">At-Risk Students</h3>
                     <p className="text-sm text-muted-foreground mb-4">List of students requiring attention</p>
-                    <Button className="w-full">Generate</Button>
+                    <Button
+                      className="w-full"
+                      onClick={() => downloadReport("at_risk_students", "/reports/at-risk-students")}
+                      disabled={generatingReport !== null}
+                    >
+                      {generatingReport === "at_risk_students" ? "Generating..." : "Generate"}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -1539,7 +1900,13 @@ export default function AdminDashboard() {
                     </div>
                     <h3 className="text-xl font-black text-foreground mb-2">Custom Report</h3>
                     <p className="text-sm text-muted-foreground mb-4">Create a customized report</p>
-                    <Button className="w-full">Create</Button>
+                    <Button
+                      className="w-full"
+                      onClick={() => downloadReport("custom_company_analysis", "/reports/company-analysis")}
+                      disabled={generatingReport !== null}
+                    >
+                      {generatingReport === "custom_company_analysis" ? "Generating..." : "Create"}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -1589,7 +1956,8 @@ export default function AdminDashboard() {
         )}
       </main>
 
-      {/* Footer */}
+      {/* Footer (only on Overview) */}
+      {selectedView === "overview" && (
       <footer className="bg-muted/30 border-t border-border mt-20">
         <div className="container px-6 py-16 max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
@@ -1751,6 +2119,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       </footer>
+      )}
     </div>
   );
 }

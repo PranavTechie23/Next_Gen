@@ -526,8 +526,7 @@ const successStories: SuccessStory[] = [
   }
 ];
 
-export default function Careers(props: any) {
-  const isDashboard = props?.isDashboard || false;
+export default function Careers({ isDashboard = false }: { isDashboard?: boolean }) {
   // State Management
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [expandedLevel, setExpandedLevel] = useState<number | null>(0);
@@ -613,7 +612,7 @@ export default function Careers(props: any) {
   };
 
   return (
-    <div className="min-h-dvh overflow-x-hidden bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 px-4 py-6 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 sm:p-6">
+    <div className={isDashboard ? "bg-transparent p-0" : "min-h-dvh overflow-x-hidden bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 px-4 py-6 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 sm:p-6"}>
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* Header Section */}
@@ -628,7 +627,7 @@ export default function Careers(props: any) {
             <span className="text-slate-900 dark:text-white">Career Path</span>
           </h1>
 
-          <p className="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
+          <p className="text-base sm:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
             Personalized roadmaps, skill tracking, and resources to help you land your dream job
           </p>
 

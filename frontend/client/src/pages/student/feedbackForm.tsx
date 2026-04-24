@@ -103,9 +103,9 @@ export default function StudentFeedbackForm(props: any) {
     ) : "bg-transparent"}`}>
       {darkMode && (
         <>
-          <div className="fixed top-0 right-1/3 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="fixed bottom-0 left-1/3 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-          <div className="fixed top-1/2 left-1/2 w-[400px] h-[400px] bg-pink-600/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+          <div className="fixed top-0 right-1/3 w-[320px] h-[320px] sm:w-[600px] sm:h-[600px] bg-blue-600/10 rounded-full blur-3xl animate-pulse pointer-events-none"></div>
+          <div className="fixed bottom-0 left-1/3 w-[320px] h-[320px] sm:w-[600px] sm:h-[600px] bg-purple-600/10 rounded-full blur-3xl animate-pulse pointer-events-none" style={{ animationDelay: '1s' }}></div>
+          <div className="fixed top-1/2 left-1/2 w-[220px] h-[220px] sm:w-[400px] sm:h-[400px] bg-pink-600/5 rounded-full blur-3xl animate-pulse pointer-events-none" style={{ animationDelay: '2s' }}></div>
         </>
       )}
 
@@ -142,15 +142,15 @@ export default function StudentFeedbackForm(props: any) {
         )}
 
         {/* Progress Steps */}
-        <div className={`mb-8 p-6 rounded-[2rem] transition-all duration-300 ${darkMode
+        <div className={`mb-8 p-4 sm:p-6 rounded-[2rem] transition-all duration-300 ${darkMode
           ? 'bg-gradient-to-r from-black/50 to-black/50 backdrop-blur-xl border-2 border-slate-700/50'
           : 'bg-white/80 backdrop-blur-3xl border-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.02)]'
           }`}>
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center gap-2">
             {steps.map((step, idx) => (
               <div key={step.num} className="flex items-center flex-1">
                 <div className="flex flex-col items-center flex-1">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${currentStep >= step.num
+                  <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 ${currentStep >= step.num
                     ? darkMode
                       ? 'bg-gradient-to-br from-black to-black shadow-lg shadow-blue-500/50'
                       : 'bg-gradient-to-br from-blue-500 to-purple-500 shadow-lg'
@@ -159,12 +159,12 @@ export default function StudentFeedbackForm(props: any) {
                       : 'bg-gray-100 border-2 border-gray-300'
                     }`}>
                     {currentStep > step.num ? (
-                      <CheckCircle2 className="w-7 h-7 text-white" />
+                      <CheckCircle2 className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
                     ) : (
-                      <step.icon className={`w-7 h-7 ${currentStep >= step.num ? 'text-white' : darkMode ? 'text-slate-500' : 'text-gray-400'}`} />
+                      <step.icon className={`w-5 h-5 sm:w-7 sm:h-7 ${currentStep >= step.num ? 'text-white' : darkMode ? 'text-slate-500' : 'text-gray-400'}`} />
                     )}
                   </div>
-                  <span className={`mt-2 text-xs font-bold ${currentStep >= step.num
+                  <span className={`mt-2 text-[10px] sm:text-xs text-center font-bold ${currentStep >= step.num
                     ? darkMode ? 'text-blue-400' : 'text-blue-600'
                     : darkMode ? 'text-slate-600' : 'text-gray-400'
                     }`}>
@@ -560,13 +560,13 @@ export default function StudentFeedbackForm(props: any) {
           </CardContent>
 
           {/* Navigation Buttons */}
-          <div className={`p-6 sm:p-8 border-t-2 flex justify-between items-center ${darkMode ? 'border-black bg-black/50' : 'border-gray-200 bg-gray-50'
+          <div className={`p-4 sm:p-8 border-t-2 flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-3 ${darkMode ? 'border-black bg-black/50' : 'border-gray-200 bg-gray-50'
             }`}>
             <Button
               type="button"
               onClick={prevStep}
               disabled={currentStep === 1}
-              className={`h-14 px-8 text-lg font-bold rounded-xl transition-all ${currentStep === 1
+              className={`h-12 sm:h-14 px-5 sm:px-8 text-base sm:text-lg font-bold rounded-xl transition-all w-full sm:w-auto ${currentStep === 1
                 ? 'opacity-50 cursor-not-allowed'
                 : darkMode
                   ? 'bg-slate-800 hover:bg-slate-700 text-white border-2 border-slate-700 hover:bg-white hover:text-black'
@@ -581,7 +581,7 @@ export default function StudentFeedbackForm(props: any) {
               <Button
                 type="button"
                 onClick={nextStep}
-                className={`h-14 px-8 text-lg font-bold rounded-xl transition-all shadow-xl ${darkMode
+                className={`h-12 sm:h-14 px-5 sm:px-8 text-base sm:text-lg font-bold rounded-xl transition-all shadow-xl w-full sm:w-auto ${darkMode
                   ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-blue-900/50'
                   : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-blue-500/30'
                   }`}
@@ -593,7 +593,7 @@ export default function StudentFeedbackForm(props: any) {
               <Button
                 type="button"
                 onClick={handleSubmit}
-                className={`h-14 px-10 text-lg font-bold rounded-xl transition-all duration-300 hover:scale-105 shadow-2xl ${darkMode
+                className={`h-12 sm:h-14 px-6 sm:px-10 text-base sm:text-lg font-bold rounded-xl transition-all duration-300 hover:scale-105 shadow-2xl w-full sm:w-auto ${darkMode
                   ? 'bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 text-white shadow-green-900/50'
                   : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-green-500/30'
                   }`}

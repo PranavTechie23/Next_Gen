@@ -188,7 +188,7 @@ export default function NotFound() {
           >
             <div className={`relative group ${isSpinning ? 'spin-scale' : ''}`}>
               <div className={`absolute inset-0 bg-gradient-to-r ${currentMemeData.color} rounded-full blur-xl opacity-30 group-hover:opacity-50 transition-opacity`} />
-              <div className="relative text-8xl hover:scale-110 transition-transform">
+              <div className="relative text-6xl sm:text-8xl hover:scale-110 transition-transform">
                 {currentMemeData.emoji}
               </div>
             </div>
@@ -202,11 +202,11 @@ export default function NotFound() {
             </div>
           )}
 
-          <h1 className={`text-6xl font-black mb-2 bg-gradient-to-r ${currentMemeData.color} bg-clip-text text-transparent ${clicks > 5 ? 'wiggle' : ''}`}>
+          <h1 className={`text-4xl sm:text-6xl font-black mb-2 bg-gradient-to-r ${currentMemeData.color} bg-clip-text text-transparent ${clicks > 5 ? 'wiggle' : ''}`}>
             {currentMemeData.title}
           </h1>
 
-          <h2 className="text-2xl font-bold text-foreground mb-4 font-black">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-4 font-black">
             {currentMemeData.subtitle}
           </h2>
 
@@ -220,10 +220,10 @@ export default function NotFound() {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3 justify-center mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6 w-full sm:w-auto">
             <Button
               onClick={goHome}
-              className="bg-primary text-white px-8 py-6 rounded-2xl transition-all duration-200 shadow-xl shadow-primary/20 hover:scale-105 font-black uppercase tracking-widest text-lg"
+              className="bg-primary text-white px-6 sm:px-8 py-4 sm:py-6 rounded-2xl transition-all duration-200 shadow-xl shadow-primary/20 hover:scale-105 font-black uppercase tracking-widest text-base sm:text-lg w-full sm:w-auto"
             >
               <Home className="w-5 h-5 mr-1.5" />
               Go Back Home
@@ -232,7 +232,7 @@ export default function NotFound() {
             <Button
               onClick={changeMeme}
               variant="outline"
-              className="px-8 py-6 rounded-2xl transition-all duration-200 border-2 border-border hover:bg-muted font-black uppercase tracking-widest text-lg"
+              className="px-6 sm:px-8 py-4 sm:py-6 rounded-2xl transition-all duration-200 border-2 border-border hover:bg-muted font-black uppercase tracking-widest text-base sm:text-lg w-full sm:w-auto"
             >
               <RefreshCw className="w-5 h-5 mr-1.5" />
               New Meme
@@ -267,8 +267,8 @@ export default function NotFound() {
       </Card>
 
       {/* Corner decorations */}
-      <div className="absolute top-8 left-8 text-6xl opacity-20 animate-pulse">😵</div>
-      <div className="absolute bottom-8 right-8 text-6xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }}>🤷</div>
+      <div className="absolute top-8 left-8 text-6xl opacity-20 animate-pulse hidden sm:block">😵</div>
+      <div className="absolute bottom-8 right-8 text-6xl opacity-20 animate-pulse hidden sm:block" style={{ animationDelay: '1s' }}>🤷</div>
     </div>
   );
 }

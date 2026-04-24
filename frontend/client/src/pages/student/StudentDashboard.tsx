@@ -46,7 +46,7 @@ import {
   Linkedin, Twitter, Instagram, Share2, Bookmark, LineChart as LineChartIcon, Calendar,
   TrendingDown, Edit, Upload as UploadIcon, Download as DownloadIcon, LayoutDashboard,
   Users as UsersIcon, Briefcase as BriefcaseIcon, Palette as PaletteIcon,
-  Newspaper, DollarSign, CreditCard, FileCheck, Sparkles, HelpCircle, Menu, PanelLeft
+  Newspaper, DollarSign, CreditCard, FileCheck, Sparkles, HelpCircle, Menu, PanelLeft, Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -92,6 +92,18 @@ export default function StudentDashboard() {
   const [roadmapData, setRoadmapData] = useState<any>(null);
   const [loadingRoadmap, setLoadingRoadmap] = useState(false);
   const [savingPerformance, setSavingPerformance] = useState(false);
+  const [resumeUploadState, setResumeUploadState] = useState<"idle" | "uploading" | "success" | "error">("idle");
+  const [resumeUploadStatusText, setResumeUploadStatusText] = useState<string>("");
+  const [interestInput, setInterestInput] = useState("");
+  const [careerInterests, setCareerInterests] = useState<string[]>(() => {
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem("student-career-interests") : null;
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed.filter(Boolean).slice(0, 6) : [];
+    } catch {
+      return [];
+    }
+  });
   const [performanceDraft, setPerformanceDraft] = useState<any>({
     amcat_quant: "",
     amcat_verbal: "",
@@ -120,6 +132,16 @@ export default function StudentDashboard() {
     fetchProfile();
   }, []);
 
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("student-career-interests", JSON.stringify(careerInterests || []));
+      }
+    } catch {
+      // ignore persistence errors
+    }
+  }, [careerInterests]);
+
   const fetchRoadmap = async () => {
     try {
       setLoadingRoadmap(true);
@@ -134,6 +156,7 @@ export default function StudentDashboard() {
         mock_interview_score: perf?.mock_interview_score ?? "",
         coding_test_score: perf?.coding_test_score ?? "",
       });
+      return data;
     } catch (error: any) {
       console.error("Failed to fetch roadmap", error);
       if (error?.response?.status === 401) {
@@ -142,10 +165,39 @@ export default function StudentDashboard() {
       } else {
         toast.error("Failed to load mentorship roadmap");
       }
+      return null;
     } finally {
       setLoadingRoadmap(false);
     }
   };
+
+  const onGeneratePersonalPlan = async () => {
+    try {
+      setSavingPerformance(true);
+      await studentApi.updatePerformance(performanceDraft);
+      const refreshed = await fetchRoadmap();
+      const llmSummary = await summarizePlanWithPuter({
+        performanceDraft,
+        roadmap: refreshed?.computed?.roadmap || roadmapData?.computed?.roadmap || {},
+        focus: refreshed?.computed?.summary?.focus || roadmapData?.computed?.summary?.focus || [],
+      });
+      if (llmSummary) setPuterSummary(llmSummary);
+      toast.success("Personalized plan generated.");
+    } catch (e) {
+      console.error("Failed to generate personalized plan", e);
+      toast.error("Failed to generate plan.");
+    } finally {
+      setSavingPerformance(false);
+    }
+  };
+
+  // Load roadmap once profile is available so overview recommendations can be dynamic too.
+  useEffect(() => {
+    if (!loadingProfile && backendProfile && !roadmapData && !loadingRoadmap) {
+      fetchRoadmap();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingProfile, backendProfile]);
 
   // Load roadmap on first visit to Mentorship tab (and after resume upload/profile updates)
   useEffect(() => {
@@ -174,31 +226,106 @@ export default function StudentDashboard() {
     }
   };
 
-  const computeSemesterLabel = () => {
-    const createdAtRaw = backendProfile?.user?.created_at;
-    const createdAt = createdAtRaw ? new Date(createdAtRaw) : null;
-    if (!createdAt || Number.isNaN(createdAt.getTime())) {
-      return "Year N/A";
+  const inferJoiningYear = () => {
+    const explicitJoinYear = Number((backendProfile as any)?.student?.joining_year);
+    if (Number.isFinite(explicitJoinYear) && explicitJoinYear >= 2000 && explicitJoinYear <= 2100) {
+      return explicitJoinYear;
     }
 
+    const roll = String((backendProfile as any)?.student?.roll_number || "");
+    const rollYearMatch = roll.match(/\b(20\d{2})\b/);
+    if (rollYearMatch) {
+      const y = Number(rollYearMatch[1]);
+      if (Number.isFinite(y)) return y;
+    }
+
+    const createdAtRaw = backendProfile?.user?.created_at;
+    const createdAt = createdAtRaw ? new Date(createdAtRaw) : null;
+    if (createdAt && !Number.isNaN(createdAt.getTime())) return createdAt.getFullYear();
+    return null;
+  };
+
+  const computeSemesterLabel = () => {
+    const joinYear = inferJoiningYear();
+    if (!joinYear) return "Year N/A";
+
     const now = new Date();
-    let months =
-      (now.getFullYear() - createdAt.getFullYear()) * 12 +
-      (now.getMonth() - createdAt.getMonth());
+    // Academic session assumed to start in July (common for engineering colleges).
+    const academicStartMonth = 6; // 0-indexed => July
+    const monthsSinceStart =
+      (now.getFullYear() - joinYear) * 12 + (now.getMonth() - academicStartMonth);
 
-    // If joined mid-month and we're earlier in month, avoid jumping a month.
-    if (now.getDate() < createdAt.getDate()) months -= 1;
-    months = Math.max(0, months);
-
-    // Approx: 1 semester ≈ 6 months. Cap at 8 semesters (4 years) for display.
-    const sem = Math.min(8, Math.floor(months / 6) + 1);
+    const sem = Math.max(1, Math.min(8, Math.floor(monthsSinceStart / 6) + 1));
     const yearNum = Math.ceil(sem / 2);
     return `Sem ${sem} • ${ordinalYear(yearNum)} year`;
   };
 
+  const extractLatestSemesterGpa = () => {
+    const educationLines: string[] = Array.isArray(resumeSections?.education) ? resumeSections.education : [];
+    if (!educationLines.length) return null;
+
+    const candidates: Array<{ sem: number; gpa: number }> = [];
+    for (const raw of educationLines) {
+      const line = String(raw || "");
+      const semMatch = line.match(/(?:sem(?:ester)?\s*[-:]?\s*)([1-8])/i);
+      const gpaMatch =
+        line.match(/(?:sgpa|gpa|cgpa)\s*[:=]?\s*([0-9](?:\.[0-9]{1,2})?)/i) ||
+        line.match(/\b([0-9](?:\.[0-9]{1,2})?)\s*\/\s*10\b/i);
+
+      if (semMatch && gpaMatch) {
+        const sem = Number(semMatch[1]);
+        const gpa = Number(gpaMatch[1]);
+        if (Number.isFinite(sem) && Number.isFinite(gpa)) {
+          candidates.push({ sem, gpa });
+        }
+      }
+    }
+
+    if (candidates.length > 0) {
+      candidates.sort((a, b) => b.sem - a.sem);
+      return candidates[0].gpa;
+    }
+    return null;
+  };
+
   const computedYearLabel = computeSemesterLabel();
+  const latestSemGpa = extractLatestSemesterGpa();
+  const sanitizeDisplayName = (...candidates: any[]) => {
+    const blocked = new Set([
+      "projects", "project", "experience", "education", "skills", "summary",
+      "certifications", "achievements", "internships", "resume", "profile"
+    ]);
+
+    for (const raw of candidates) {
+      const name = String(raw || "").trim();
+      if (!name) continue;
+
+      const compact = name.toLowerCase().replace(/[^a-z\s]/g, "").replace(/\s+/g, " ").trim();
+      if (!compact) continue;
+      if (blocked.has(compact)) continue;
+
+      // Must look like a person name: at least 2 alphabetic chars and not mostly symbols.
+      if (!/^[a-zA-Z][a-zA-Z\s.'-]{1,59}$/.test(name)) continue;
+      // Reject all-uppercase heading-style tokens unless multi-word likely proper name.
+      if (name === name.toUpperCase() && compact.split(" ").length < 2) continue;
+
+      return name;
+    }
+    return null;
+  };
+
+  const fallbackNameFromEmail = String(backendProfile?.user?.email || "student")
+    .split("@")[0]
+    .replace(/[._-]+/g, " ")
+    .replace(/\b\w/g, (ch) => ch.toUpperCase());
+
+  const resolvedStudentName =
+    sanitizeDisplayName(backendProfile?.profile?.full_name, resumeParsed?.full_name) ||
+    fallbackNameFromEmail ||
+    "Student";
+
   const studentProfile = {
-    name: backendProfile?.profile?.full_name || resumeParsed?.full_name || backendProfile?.user?.email?.split('@')[0] || "Student",
+    name: resolvedStudentName,
     id: backendProfile?.student?.roll_number || "N/A",
     email: backendProfile?.user?.email || "student@college.edu",
     phone: backendProfile?.profile?.phone || resumeParsed?.phone || "+91 00000 00000",
@@ -206,7 +333,7 @@ export default function StudentDashboard() {
     college: "NextGen University", // Assuming static or from institution table
     bio: backendProfile?.profile?.bio || "No bio added yet.",
     year: computedYearLabel,
-    cgpa: backendProfile?.student?.current_cgpa || 0,
+    cgpa: latestSemGpa ?? backendProfile?.student?.current_cgpa ?? 0,
     avatar: backendProfile?.profile?.avatar_url || ""
   };
 
@@ -224,14 +351,49 @@ export default function StudentDashboard() {
       }
       try {
         setUploadingResume(true);
+        setResumeUploadState("uploading");
+        setResumeUploadStatusText("Uploading and parsing resume...");
         await studentApi.uploadResume(file);
-        const refreshed = await studentApi.getProfile();
-        setBackendProfile(refreshed);
-        // Resume changes affect mentorship roadmap inputs (skills/projects/experience).
-        setRoadmapData(null);
+        // Force full recomputation refresh after every new resume upload.
+        const [profileResult, roadmapResult] = await Promise.allSettled([
+          studentApi.getProfile(),
+          studentApi.getRoadmap(),
+        ]);
+
+        if (profileResult.status === "fulfilled") {
+          setBackendProfile(profileResult.value);
+        } else {
+          throw profileResult.reason;
+        }
+
+        if (roadmapResult.status === "fulfilled") {
+          const data = roadmapResult.value;
+          setRoadmapData(data);
+          const perf = data?.performance || {};
+          setPerformanceDraft({
+            amcat_quant: perf?.amcat_quant ?? "",
+            amcat_verbal: perf?.amcat_verbal ?? "",
+            amcat_logical: perf?.amcat_logical ?? "",
+            endsem_percentage: perf?.endsem_percentage ?? "",
+            mock_interview_score: perf?.mock_interview_score ?? "",
+            coding_test_score: perf?.coding_test_score ?? "",
+          });
+        } else {
+          // Keep UI working even if roadmap refresh fails once; retry path already exists in UI.
+          setRoadmapData(null);
+        }
+
+        setResumeUploadState("success");
+        setResumeUploadStatusText("Resume parsed and dashboard updated.");
         toast.success(`Resume "${file.name}" uploaded and parsed successfully!`);
+        setTimeout(() => {
+          setResumeUploadState("idle");
+          setResumeUploadStatusText("");
+        }, 3500);
       } catch (error) {
         console.error("Resume upload failed", error);
+        setResumeUploadState("error");
+        setResumeUploadStatusText("Resume upload failed. Please try again.");
         toast.error("Resume upload failed. Please try again.");
       } finally {
         setUploadingResume(false);
@@ -239,17 +401,45 @@ export default function StudentDashboard() {
       }
     }
   };
-  const parsedResumeSkills: string[] = backendProfile?.resumeParsed?.skills || [];
-  const profileSkills: string[] = (backendProfile?.skills || []).map((s: any) => s?.name).filter(Boolean);
-  const mergedSkills: string[] = Array.from(new Set([...profileSkills, ...parsedResumeSkills]));
+  const cleanSkillToken = (raw: any) => {
+    const t = String(raw || "").replace(/\([^)]*\)/g, " ").replace(/\s{2,}/g, " ").trim();
+    if (!t || t.length < 2 || t.length > 35) return null;
+    const lower = t.toLowerCase();
+    const blocked = new Set(["skills", "technical skills", "core concepts", "languages", "tools", "technologies", "database"]);
+    if (blocked.has(lower)) return null;
+    if (/^\d+$/.test(t) || /^[^a-zA-Z0-9]+$/.test(t)) return null;
+    if (t.split(/\s+/).length > 4) return null;
+    return t;
+  };
+  const cleanAchievementToken = (raw: any) => {
+    const t = String(raw || "").trim();
+    if (!t || t.length < 6) return null;
+    if (/^[-–—\s]*\d+\s*(?:of)?\s*\d+\s*[-–—\s]*$/i.test(t)) return null;
+    return t;
+  };
 
-  const resumeAchievements: string[] = Array.isArray(resumeSections?.achievements) ? resumeSections.achievements : [];
-  const manualAchievements: string[] = Array.isArray(backendProfile?.achievements) ? backendProfile.achievements : [];
-  const mergedAchievements: string[] = Array.from(new Set([...resumeAchievements, ...manualAchievements]));
+  const parsedResumeSkills: string[] = (backendProfile?.resumeParsed?.skills || []).map(cleanSkillToken).filter(Boolean);
+  const profileSkills: string[] = (backendProfile?.skills || []).map((s: any) => cleanSkillToken(s?.name)).filter(Boolean);
+  const baseMergedSkills: string[] = Array.from(new Set([...profileSkills, ...parsedResumeSkills]));
+
+  const resumeAchievements: string[] = (Array.isArray(resumeSections?.achievements) ? resumeSections.achievements : []).map(cleanAchievementToken).filter(Boolean);
+  const manualAchievements: string[] = (Array.isArray(backendProfile?.achievements) ? backendProfile.achievements : []).map(cleanAchievementToken).filter(Boolean);
+  const baseMergedAchievements: string[] = Array.from(new Set([...resumeAchievements, ...manualAchievements]));
+
+  const [pendingSkills, setPendingSkills] = useState<string[]>([]);
+  const [pendingAchievements, setPendingAchievements] = useState<string[]>([]);
+  const mergedSkills: string[] = Array.from(new Set([...baseMergedSkills, ...pendingSkills]));
+  const mergedAchievements: string[] = Array.from(new Set([...baseMergedAchievements, ...pendingAchievements]));
 
   const [newSkillInput, setNewSkillInput] = useState("");
   const [newAchievementInput, setNewAchievementInput] = useState("");
   const [savingManualProfile, setSavingManualProfile] = useState(false);
+
+  useEffect(() => {
+    // Clear local pending edits when backend profile refreshes (e.g. after Save/Resume upload).
+    setPendingSkills([]);
+    setPendingAchievements([]);
+  }, [backendProfile]);
 
   const saveManualSkillsAndAchievements = async () => {
     try {
@@ -297,15 +487,21 @@ export default function StudentDashboard() {
     },
   ];
 
-  // Evolution Track Data
-  const evolutionData = [
-    { month: "Aug", overall: 45, technical: 40, soft: 50 },
-    { month: "Sep", overall: 52, technical: 45, soft: 58 },
-    { month: "Oct", overall: 48, technical: 52, soft: 45 },
-    { month: "Nov", overall: 61, technical: 58, soft: 65 },
-    { month: "Dec", overall: 68, technical: 62, soft: 72 },
-    { month: "Jan", overall: 72, technical: 68, soft: 78 },
-  ];
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthToIndex = (m: string) => MONTHS.findIndex((x) => x.toLowerCase() === m.toLowerCase());
+  const parseMonthYearFromText = (value: any): Date | null => {
+    const text = String(value || "");
+    if (!text) return null;
+    const m = text.match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[\s,.-]+(20\d{2})\b/i);
+    if (m) {
+      const month = monthToIndex(m[1].slice(0, 3));
+      const year = Number(m[2]);
+      if (month >= 0 && year >= 2000) return new Date(year, month, 1);
+    }
+    const y = text.match(/\b(20\d{2})\b/);
+    if (y) return new Date(Number(y[1]), 0, 1);
+    return null;
+  };
 
   const clamp = (n: number, min = 0, max = 100) => Math.max(min, Math.min(max, n));
   const pct = (n: number) => `${Math.round(clamp(n))}%`;
@@ -380,6 +576,206 @@ export default function StudentDashboard() {
   };
 
   const dynamic = computeDynamicMetrics();
+  const normalizeToken = (v: any) => String(v || "").toLowerCase().trim();
+  const roleNoiseWords = new Set([
+    "pune", "mumbai", "india", "college", "university", "institute", "school", "present",
+    "jun", "june", "jul", "july", "aug", "sep", "oct", "nov", "dec", "jan", "feb", "mar", "apr", "may",
+    "btech", "bachelor", "hsc", "ssc", "cgpa", "gmail", "linkedin", "github", "address", "phone", "email",
+    "computer", "engineering", "student", "resume", "summary"
+  ]);
+
+  const topJourneyKeywords = (() => {
+    const blobs = [
+      ...(mergedSkills || []),
+      ...(Array.isArray(resumeSections?.experience) ? resumeSections.experience : []),
+      ...(Array.isArray(resumeSections?.education) ? resumeSections.education : []),
+      ...(Array.isArray(resumeSections?.certifications) ? resumeSections.certifications : []),
+      ...(Array.isArray(resumeSections?.projects) ? resumeSections.projects.map((p: any) => p?.title || "") : []),
+      ...(careerInterests || []),
+    ]
+      .map((x) => String(x || "").toLowerCase())
+      .join(" ");
+
+    const tokens = blobs
+      .split(/[^a-z0-9+#./-]+/g)
+      .map((t) => t.trim())
+      .filter((t) => t.length >= 3 && !/^\d+$/.test(t))
+      .filter((t) => !roleNoiseWords.has(t))
+      .filter((t) => !/^(20\d{2}|\d{1,2})$/.test(t));
+
+    const counts = new Map<string, number>();
+    tokens.forEach((t) => counts.set(t, (counts.get(t) || 0) + 1));
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 16)
+      .map(([k]) => k);
+  })();
+
+  const roleRecommendation = (() => {
+    const backendRole = String(resumeParsed?.inferred_role || "").trim();
+    const backendConfidence = Number(resumeParsed?.inferred_role_confidence ?? 0);
+    if (backendRole) {
+      return {
+        title: backendRole,
+        confidence: Math.round(clamp(backendConfidence || dynamic.aiConfidence, 35, 96)),
+        trend: "UP",
+      };
+    }
+
+    const skillsSet = new Set((mergedSkills || []).map((s: string) => normalizeToken(s)));
+    const interestsSet = new Set((careerInterests || []).map((i) => normalizeToken(i)));
+    const evidenceBlob = [
+      ...(Array.isArray(resumeSections?.projects) ? resumeSections.projects.map((p: any) => p?.title || "") : []),
+      ...(Array.isArray(resumeSections?.experience) ? resumeSections.experience : []),
+      ...(Array.isArray(resumeSections?.certifications) ? resumeSections.certifications : []),
+      ...(topJourneyKeywords || []),
+      ...(careerInterests || []),
+      ...(mergedSkills || []),
+    ].join(" ").toLowerCase();
+
+    const roleTaxonomy = [
+      {
+        title: "Full Stack Developer",
+        signals: ["react", "node", "express", "javascript", "typescript", "html", "css", "api", "mongodb", "mysql", "sql"],
+      },
+      {
+        title: "Backend Developer",
+        signals: ["node", "express", "java", "spring", "api", "microservice", "redis", "sql", "postgres", "backend"],
+      },
+      {
+        title: "Frontend Developer",
+        signals: ["react", "next", "javascript", "typescript", "html", "css", "tailwind", "frontend", "ui"],
+      },
+      {
+        title: "Data / ML Engineer",
+        signals: ["python", "pandas", "numpy", "machine learning", "deep learning", "tensorflow", "pytorch", "data", "analytics"],
+      },
+      {
+        title: "DevOps / Cloud Engineer",
+        signals: ["docker", "kubernetes", "aws", "azure", "gcp", "ci/cd", "jenkins", "terraform", "cloud", "devops"],
+      },
+      {
+        title: "Software Engineer",
+        signals: ["dsa", "algorithm", "problem solving", "oop", "java", "c++", "software", "developer"],
+      },
+    ];
+
+    const scored = roleTaxonomy.map((role) => {
+      let score = 0;
+      for (const s of role.signals) {
+        const key = s.toLowerCase();
+        const inSkills = Array.from(skillsSet).some((x) => x.includes(key));
+        const inInterests = Array.from(interestsSet).some((x) => x.includes(key) || key.includes(x));
+        const inJourney = evidenceBlob.includes(key);
+        if (inSkills) score += 5;
+        if (inInterests) score += 6;
+        if (inJourney) score += 3;
+      }
+      return { ...role, score };
+    }).sort((a, b) => b.score - a.score);
+
+    const top = scored[0];
+    const second = scored[1];
+    const margin = Math.max(0, Number(top?.score || 0) - Number(second?.score || 0));
+    const projects = Array.isArray(resumeSections?.projects) ? resumeSections.projects.length : 0;
+    const exp = Array.isArray(resumeSections?.experience) ? resumeSections.experience.length : 0;
+    const certs = Array.isArray(resumeSections?.certifications) ? resumeSections.certifications.length : 0;
+    const baseDensity = (mergedSkills || []).length + projects + exp + certs + (careerInterests || []).length;
+    const confidence = clamp(45 + baseDensity * 3 + margin * 2, 42, 96);
+
+    return {
+      title: top?.title || "Software Engineer",
+      confidence: Math.round(confidence),
+      trend: margin >= 4 ? "UP" : "STABLE",
+    };
+  })();
+
+  const roleSkillCards = [
+    {
+      label: "Technical Skills",
+      score: Math.round(dynamic.skillsMastered),
+      color: "text-blue-400",
+      bg: isDark ? "bg-blue-500/10" : "bg-blue-50",
+    },
+    {
+      label: "Soft Skills",
+      score: Math.round(45 + Math.min((mergedAchievements || []).length, 6) * 8),
+      color: "text-amber-400",
+      bg: isDark ? "bg-amber-500/10" : "bg-amber-50",
+    },
+    {
+      label: "Experience",
+      score: Math.round(35 + Math.min(((Array.isArray(resumeSections?.projects) ? resumeSections.projects.length : 0) * 9) + ((Array.isArray(resumeSections?.experience) ? resumeSections.experience.length : 0) * 6), 60)),
+      color: "text-green-400",
+      bg: isDark ? "bg-green-500/10" : "bg-green-50",
+    }
+  ];
+  const toggleInterest = (interest: string) => {
+    setCareerInterests((prev) => {
+      const exists = prev.includes(interest);
+      if (exists) return prev.filter((x) => x !== interest);
+      return [...prev, interest].slice(0, 6);
+    });
+  };
+  const addInterestFromInput = () => {
+    const val = String(interestInput || "").trim();
+    if (!val) return;
+    toggleInterest(val);
+    setInterestInput("");
+  };
+
+  const normalizedResumeTimeline = (() => {
+    const edu = Array.isArray(resumeSections?.education) ? resumeSections.education : [];
+    const exp = Array.isArray(resumeSections?.experience) ? resumeSections.experience : [];
+    const certs = Array.isArray(resumeSections?.certifications) ? resumeSections.certifications : [];
+    const ach = Array.isArray(mergedAchievements) ? mergedAchievements : [];
+    const projectBlocks = Array.isArray(resumeSections?.projects) ? resumeSections.projects : [];
+
+    const inferredEvents: any[] = [];
+
+    edu.forEach((line: any) => inferredEvents.push({ source: "education", title: String(line || ""), date: parseMonthYearFromText(line) }));
+    exp.forEach((line: any) => inferredEvents.push({ source: "experience", title: String(line || ""), date: parseMonthYearFromText(line) }));
+    certs.forEach((line: any) => inferredEvents.push({ source: "certification", title: String(line || ""), date: parseMonthYearFromText(line) }));
+    ach.forEach((line: any) => inferredEvents.push({ source: "achievement", title: String(line || ""), date: parseMonthYearFromText(line) }));
+    projectBlocks.forEach((p: any) => inferredEvents.push({ source: "project", title: String(p?.title || ""), date: parseMonthYearFromText(p?.title || "") }));
+
+    const filtered = inferredEvents
+      .filter((e) => String(e.title || "").trim().length >= 4)
+      .map((e) => ({ ...e, date: e.date || new Date() }))
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    return filtered.slice(-12);
+  })();
+
+  // Evolution Track Data (resume timeline-driven)
+  const evolutionData = (() => {
+    const eventDates = normalizedResumeTimeline.map((e) => e.date).filter((d: Date) => d instanceof Date && !Number.isNaN(d.getTime()));
+    const now = new Date();
+    const anchor = eventDates.length > 0 ? eventDates[eventDates.length - 1] : now;
+    const months: { key: string; month: string; year: number; date: Date }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(anchor.getFullYear(), anchor.getMonth() - i, 1);
+      months.push({ key: `${d.getFullYear()}-${d.getMonth()}`, month: MONTHS[d.getMonth()], year: d.getFullYear(), date: d });
+    }
+
+    const counts = months.map((m) => {
+      const sameMonthEvents = normalizedResumeTimeline.filter((e) => e.date.getMonth() === m.date.getMonth() && e.date.getFullYear() === m.date.getFullYear()).length;
+      return sameMonthEvents;
+    });
+
+    let cumulative = 0;
+    return months.map((m, idx) => {
+      cumulative += counts[idx];
+      const momentum = cumulative * 4 + counts[idx] * 6;
+      const technicalBase = clamp(dynamic.skillsMastered * 0.55 + momentum + idx * 2, 25, 95);
+      const overallBase = clamp(dynamic.overallReadiness * 0.5 + momentum + idx * 2, 20, 95);
+      return {
+        month: m.month,
+        overall: Math.round(overallBase),
+        technical: Math.round(technicalBase),
+      };
+    });
+  })();
 
   // Enhanced Quick Stats (Dynamic)
   const quickStats = [
@@ -421,79 +817,107 @@ export default function StudentDashboard() {
     }
   ];
 
-  // Comprehensive Skill Data
-  const skillData = [
-    {
-      skill: "DSA",
-      student: 72,
-      industry: 85,
-      target: 80,
-      gap: 8,
-      category: "Technical",
-      priority: "high",
-      improvement: "+8% this month"
-    },
-    {
-      skill: "System Design",
-      student: 45,
-      industry: 75,
-      target: 65,
-      gap: 20,
-      category: "Technical",
-      priority: "critical",
-      improvement: "+15% needed"
-    },
-    {
-      skill: "Full Stack Dev",
-      student: 75,
-      industry: 82,
-      target: 80,
-      gap: 5,
-      category: "Technical",
-      priority: "medium",
-      improvement: "+2% this month"
-    },
-    {
-      skill: "Database Design",
-      student: 68,
-      industry: 80,
-      target: 75,
-      gap: 7,
-      category: "Technical",
-      priority: "medium",
-      improvement: "+5% needed"
-    },
-    {
-      skill: "Communication",
-      student: 65,
-      industry: 80,
-      target: 75,
-      gap: 10,
-      category: "Soft Skills",
-      priority: "high",
-      improvement: "+10% needed"
-    },
-    {
-      skill: "Team Projects",
-      student: 70,
-      industry: 85,
-      target: 80,
-      gap: 10,
-      category: "Experience",
-      priority: "medium",
-      improvement: "+5% this month"
-    }
+  // Dynamic Skill Data (resume/profile-driven)
+  const skillData = (() => {
+    const projectCount = Array.isArray(resumeSections?.projects) ? resumeSections.projects.length : 0;
+    const expCount = Array.isArray(resumeSections?.experience) ? resumeSections.experience.length : 0;
+    const certCount = Array.isArray(resumeSections?.certifications) ? resumeSections.certifications.length : 0;
+    const achievementsCount = Array.isArray(mergedAchievements) ? mergedAchievements.length : 0;
+    const totalSkills = Array.isArray(mergedSkills) ? mergedSkills.length : 0;
+
+    const hasAny = (keywords: string[]) =>
+      (mergedSkills || []).some((s: string) => keywords.some((k) => s.toLowerCase().includes(k)));
+
+    const codingSignals = [
+      "dsa", "algorithm", "leetcode", "problem solving", "c++", "java", "python", "competitive"
+    ];
+    const dbSignals = ["sql", "mysql", "postgres", "mongodb", "database", "dbms", "redis"];
+    const webSignals = ["react", "node", "express", "next", "html", "css", "typescript", "javascript"];
+    const sysSignals = ["system design", "microservice", "docker", "kubernetes", "aws", "scalable"];
+
+    const codingScore = clamp(
+      totalSkills * 3 +
+      (hasAny(codingSignals) ? 18 : 0) +
+      Math.min(projectCount, 3) * 6 +
+      Math.min(expCount, 2) * 5
+    );
+    const systemDesignScore = clamp(
+      (hasAny(sysSignals) ? 28 : 8) +
+      projectCount * 7 +
+      expCount * 8 +
+      certCount * 4
+    );
+    const fullStackScore = clamp(
+      (hasAny(webSignals) ? 28 : 12) +
+      projectCount * 10 +
+      expCount * 8 +
+      Math.min(totalSkills, 20) * 1.5
+    );
+    const databaseScore = clamp(
+      (hasAny(dbSignals) ? 32 : 10) +
+      projectCount * 7 +
+      certCount * 6 +
+      expCount * 5
+    );
+    const communicationScore = clamp(
+      30 +
+      Math.min(achievementsCount, 6) * 8 +
+      Math.min(projectCount + expCount, 8) * 4
+    );
+    const teamProjectScore = clamp(
+      25 +
+      projectCount * 10 +
+      expCount * 8 +
+      Math.min(achievementsCount, 5) * 5
+    );
+
+    const mk = (skill: string, student: number, industry: number, target: number, category: string) => {
+      const gap = clamp(target - student, 0, 100);
+      const priority = gap >= 18 ? "critical" : gap >= 10 ? "high" : "medium";
+      const improvement =
+        gap >= 18 ? `+${gap}% needed` :
+        gap >= 10 ? `+${gap}% target` :
+        "Maintaining momentum";
+      return { skill, student: Math.round(student), industry, target, gap: Math.round(gap), category, priority, improvement };
+    };
+
+    return [
+      mk("DSA", codingScore, 85, 80, "Technical"),
+      mk("System Design", systemDesignScore, 75, 68, "Technical"),
+      mk("Full Stack Dev", fullStackScore, 82, 78, "Technical"),
+      mk("Database Design", databaseScore, 80, 75, "Technical"),
+      mk("Communication", communicationScore, 80, 74, "Soft Skills"),
+      mk("Team Projects", teamProjectScore, 85, 78, "Experience"),
+    ];
+  })();
+
+  const radarSkillData = [
+    { skill: "Coding", current: Math.round((skillData.find((s) => s.skill === "DSA")?.student || 0)), required: 85, category: "Technical" },
+    { skill: "Projects", current: Math.round((skillData.find((s) => s.skill === "Team Projects")?.student || 0)), required: 78, category: "Experience" },
+    { skill: "Communication", current: Math.round((skillData.find((s) => s.skill === "Communication")?.student || 0)), required: 80, category: "Soft Skills" },
+    { skill: "Problem Solving", current: Math.round((skillData.find((s) => s.skill === "DSA")?.student || 0) + 4), required: 85, category: "Technical" },
+    { skill: "System Design", current: Math.round((skillData.find((s) => s.skill === "System Design")?.student || 0)), required: 75, category: "Technical" },
+    { skill: "Teamwork", current: Math.round((skillData.find((s) => s.skill === "Team Projects")?.student || 0)), required: 80, category: "Soft Skills" },
+    { skill: "Leadership", current: Math.round(clamp((skillData.find((s) => s.skill === "Communication")?.student || 0) - 8)), required: 72, category: "Soft Skills" },
   ];
 
-  // Enhanced Radar Skill Data
-  const radarSkillData = [
-    { skill: "Coding", current: 72, required: 85, category: "Technical" },
-    { skill: "Projects", current: 60, required: 75, category: "Experience" },
-    { skill: "Communication", current: 65, required: 80, category: "Soft Skills" },
-    { skill: "Problem Solving", current: 78, required: 85, category: "Technical" },
-    { skill: "System Design", current: 45, required: 75, category: "Technical" },
-    { skill: "Teamwork", current: 70, required: 80, category: "Soft Skills" },
-    { skill: "Leadership", current: 55, required: 70, category: "Soft Skills" },
+  const skillProgressPanels = [
+    {
+      title: "Skill Progress",
+      label: "Technical Skills",
+      ring1: Math.round((skillData.find((s) => s.skill === "DSA")?.student || 0)),
+      ring2: Math.round((skillData.find((s) => s.skill === "Full Stack Dev")?.student || 0)),
+      ring3: Math.round((skillData.find((s) => s.skill === "System Design")?.student || 0)),
+      colors: ["#3b82f6", "#06b6d4", "#a855f7"]
+    },
+    {
+      title: "Skill Progress",
+      label: "Professional Skills",
+      ring1: Math.round((skillData.find((s) => s.skill === "Communication")?.student || 0)),
+      ring2: Math.round((skillData.find((s) => s.skill === "Team Projects")?.student || 0)),
+      ring3: Math.round((skillData.find((s) => s.skill === "Database Design")?.student || 0)),
+      colors: ["#ec4899", "#8b5cf6", "#3b82f6"]
+    }
   ];
 
   // Placement Analysis
@@ -540,57 +964,95 @@ export default function StudentDashboard() {
     }
   ];
 
-  // AI-Powered Recommendations
-  const recommendations = [
-    {
-      title: "Master System Design Fundamentals",
-      description: "Focus on distributed systems, scalability patterns, and database optimization to bridge the 30% gap in this critical area.",
-      source: "AI Insight",
-      priority: "critical",
-      impact: "High",
-      estimatedTime: "4 weeks",
-      category: "Technical",
-      resources: ["Grokking System Design", "System Design Primer", "Designing Data-Intensive Apps"],
-      completion: 20,
-      actions: ["Complete URL Shortener Design", "Learn CAP Theorem", "Practice Database Scaling"]
-    },
-    {
-      title: "Enhance Communication for Interviews",
-      description: "Improve technical communication skills through mock interviews and structured problem explanation practice.",
-      source: "Placement Officer",
-      priority: "high",
-      impact: "High",
-      estimatedTime: "Ongoing",
-      category: "Soft Skills",
-      resources: ["Toastmasters", "Technical Communication Guide"],
-      completion: 40,
-      actions: ["Weekly Mock Interviews", "Record & Review Answers", "Join Speaking Club"]
-    },
-    {
-      title: "Complete Backend Project with Scalability",
-      description: "Build a production-ready backend system with microservices, caching, and load balancing to strengthen your portfolio.",
-      source: "Industry Expert",
-      priority: "high",
-      impact: "Medium",
-      estimatedTime: "6 weeks",
-      category: "Projects",
-      resources: ["Node.js Best Practices", "Microservices Patterns", "Docker Docs"],
-      completion: 10,
-      actions: ["Design Architecture", "Implement API Gateway", "Add Monitoring"]
-    },
-    {
-      title: "Solve 100 Advanced DSA Problems",
-      description: "Focus on dynamic programming, graphs, and advanced data structures to reach top-tier company standards.",
-      source: "AI Insight",
-      priority: "medium",
-      impact: "High",
-      estimatedTime: "1 month",
-      category: "Technical",
-      resources: ["LeetCode Premium", "Algorithms Book", "CP Platforms"],
-      completion: 65,
-      actions: ["Daily Problem Solving", "Participate Contests", "Review Solutions"]
+  // AI-Powered Recommendations (dynamic from roadmap API when available)
+  const recommendations = (() => {
+    const llmRecs = Array.isArray(roadmapData?.computed?.llmRecommendations) ? roadmapData.computed.llmRecommendations : [];
+    if (llmRecs.length > 0) {
+      return llmRecs.map((r: any) => ({
+        title: r?.title || "Personalized action",
+        description: r?.description || "Generated from your profile and resume signals.",
+        source: "LLM Mentor",
+        priority: r?.priority || "high",
+        impact: r?.impact || "Medium",
+        estimatedTime: r?.estimatedTime || "2 weeks",
+        category: r?.category || "skills",
+        resources: [],
+        completion: Number(r?.completion ?? 15),
+        actions: [],
+      }));
     }
-  ];
+
+    const focus = Array.isArray(roadmapData?.computed?.summary?.focus) ? roadmapData.computed.summary.focus : [];
+    const tasks30 = Array.isArray(roadmapData?.computed?.roadmap?.next30Days) ? roadmapData.computed.roadmap.next30Days : [];
+
+    const categoryPriority = (category: string) => {
+      const c = String(category || "").toLowerCase();
+      if (c.includes("academics") || c.includes("aptitude") || c.includes("coding")) return "critical";
+      if (c.includes("interview") || c.includes("skills")) return "high";
+      return "medium";
+    };
+
+    const focusGapByKey = new Map<string, number>((focus || []).map((f: any) => [String(f?.key || ""), Number(f?.score || 0)]));
+
+    if (tasks30.length > 0) {
+      return tasks30.slice(0, 4).map((t: any) => {
+        const category = String(t?.category || "general");
+        const gap = focusGapByKey.get(category) ?? 55;
+        const completion = Math.max(10, Math.min(80, 100 - Math.round(gap)));
+        const effort = Number(t?.effortHours || 0);
+        const estimatedTime =
+          effort >= 40 ? "6 weeks" :
+          effort >= 24 ? "4 weeks" :
+          effort >= 12 ? "2 weeks" : "1 week";
+
+        return {
+          title: t?.title || "Recommended action",
+          description: t?.reason || "Action generated from your current resume/profile gaps.",
+          source: "AI Insight",
+          priority: categoryPriority(category),
+          impact: gap >= 70 ? "High" : gap >= 45 ? "Medium" : "Low",
+          estimatedTime,
+          category,
+          resources: [],
+          completion,
+          actions: [],
+        };
+      });
+    }
+
+    return [
+      {
+        title: "Build your next resume-backed project milestone",
+        description: "Convert one current skill gap into a demonstrable project artifact this month.",
+        source: "AI Insight",
+        priority: "high",
+        impact: "High",
+        estimatedTime: "2 weeks",
+        category: "portfolio",
+        resources: [],
+        completion: 15,
+        actions: []
+      }
+    ];
+  })();
+
+  const mentorshipSummary = (() => {
+    const llmRecs = Array.isArray(roadmapData?.computed?.llmRecommendations) ? roadmapData.computed.llmRecommendations : [];
+    if (llmRecs.length > 0) {
+      const priorities = llmRecs.map((r: any) => String(r?.priority || "")).filter(Boolean);
+      const criticalCount = priorities.filter((p: string) => p === "critical").length;
+      const focusText = llmRecs.slice(0, 2).map((r: any) => r?.title).filter(Boolean).join(" + ");
+      return criticalCount > 0
+        ? `LLM identified ${criticalCount} critical area(s). Start with: ${focusText}.`
+        : `LLM suggests highest-impact next steps: ${focusText}.`;
+    }
+    const focus = Array.isArray(roadmapData?.computed?.summary?.focus) ? roadmapData.computed.summary : null;
+    if (focus?.focus?.length) {
+      const top = focus.focus[0];
+      return `Current top gap is ${top?.title || "readiness"} — improve this first for maximum placement impact.`;
+    }
+    return "Update your scores and generate plan to get a personalized summary.";
+  })();
 
   const iconFromKey = (key: string) => {
     switch (key) {
@@ -673,57 +1135,51 @@ export default function StudentDashboard() {
           }
         ];
 
-  // Timeline & Milestones
-  const timeline = [
-    {
-      date: "Jan 2024",
-      event: "Data Structures Course Completed",
-      type: "course",
-      status: "completed",
-      icon: BookOpen,
-      color: "bg-blue-500"
-    },
-    {
-      date: "Feb 2024",
-      event: "Summer Internship at TechCorp",
-      type: "internship",
-      status: "completed",
-      icon: Briefcase,
-      color: "bg-green-500"
-    },
-    {
-      date: "Mar 2024",
-      event: "E-commerce Platform Project",
-      type: "project",
-      status: "completed",
-      icon: Code,
-      color: "bg-purple-500"
-    },
-    {
-      date: "Apr 2024",
-      event: "AWS Certification",
-      type: "certification",
-      status: "completed",
-      icon: Award,
-      color: "bg-orange-500"
-    },
-    {
-      date: "May 2024",
-      event: "System Design Workshop",
-      type: "workshop",
-      status: "in-progress",
-      icon: Server,
-      color: "bg-red-500"
-    },
-    {
-      date: "Jun 2024",
-      event: "Full Stack Development Project",
-      type: "project",
-      status: "planned",
-      icon: Rocket,
-      color: "bg-indigo-500"
+  // Timeline & Milestones (resume-driven)
+  const timeline = (() => {
+    const iconBySource: Record<string, any> = {
+      education: GraduationCap,
+      experience: Briefcase,
+      project: Code,
+      certification: Award,
+      achievement: Trophy,
+    };
+    const colorBySource: Record<string, string> = {
+      education: "bg-blue-500",
+      experience: "bg-green-500",
+      project: "bg-purple-500",
+      certification: "bg-orange-500",
+      achievement: "bg-pink-500",
+    };
+
+    if (normalizedResumeTimeline.length > 0) {
+      return normalizedResumeTimeline.slice(-8).map((item: any, idx: number, arr: any[]) => {
+        const Icon = iconBySource[item.source] || BookOpen;
+        const color = colorBySource[item.source] || "bg-indigo-500";
+        const status = idx === arr.length - 1 ? "in-progress" : "completed";
+        const dateLabel = `${MONTHS[item.date.getMonth()]} ${item.date.getFullYear()}`;
+        return {
+          date: dateLabel,
+          event: item.title.length > 90 ? `${item.title.slice(0, 90)}...` : item.title,
+          type: item.source,
+          status,
+          icon: Icon,
+          color,
+        };
+      });
     }
-  ];
+
+    return [
+      {
+        date: "Resume Pending",
+        event: "Upload resume to unlock timeline",
+        type: "resume",
+        status: "planned",
+        icon: Upload,
+        color: "bg-slate-500",
+      }
+    ];
+  })();
 
   // Placement drives from TPO (ticket creation) — shown as "Drives" with match %
   const placementDrives = getPlacementDrives();
@@ -929,14 +1385,44 @@ export default function StudentDashboard() {
 
 
 
-  // Upcoming Tasks
-  const upcomingTasks = [
-    { task: "Complete System Design Mock Interview", due: "Tomorrow", priority: "high", status: "pending" },
-    { task: "Submit Backend Project Documentation", due: "2 days", priority: "high", status: "pending" },
-    { task: "Practice 10 DSA Problems", due: "This week", priority: "medium", status: "in-progress" },
-    { task: "Review Database Optimization Course", due: "Next week", priority: "medium", status: "pending" },
-    { task: "Update Resume with Recent Projects", due: "3 days", priority: "high", status: "in-progress" }
-  ];
+  // Upcoming Tasks (roadmap-driven)
+  const upcomingTasks = (() => {
+    const tasks7 = Array.isArray(roadmapData?.computed?.roadmap?.next7Days) ? roadmapData.computed.roadmap.next7Days : [];
+    if (tasks7.length > 0) {
+      return tasks7.slice(0, 6).map((t: any) => {
+        const effort = Number(t?.effortHours || 0);
+        return {
+          task: String(t?.title || "Recommended task"),
+          due: effort >= 12 ? "This week" : effort >= 6 ? "3 days" : "Tomorrow",
+          priority: effort >= 10 ? "high" : "medium",
+          status: "pending",
+        };
+      });
+    }
+    const projects = Array.isArray(resumeSections?.projects) ? resumeSections.projects.length : 0;
+    const skills = Array.isArray(mergedSkills) ? mergedSkills.length : 0;
+    const backlogTask = projects < 2 ? "Build one more project and update resume" : "Revise recent projects for interviews";
+    return [
+      { task: backlogTask, due: "This week", priority: "high", status: "pending" },
+      { task: skills < 8 ? "Add 3 core skills from your learning this week" : "Practice skill-based interview questions", due: "3 days", priority: "medium", status: "in-progress" },
+    ];
+  })();
+
+  const performanceSummaryCards = (() => {
+    const projectCount = Array.isArray(resumeSections?.projects) ? resumeSections.projects.length : 0;
+    const expCount = Array.isArray(resumeSections?.experience) ? resumeSections.experience.length : 0;
+    const certCount = Array.isArray(resumeSections?.certifications) ? resumeSections.certifications.length : 0;
+    const technicalDelta = Math.max(1, Math.round(dynamic.skillsMastered / 10));
+    const softDelta = Math.max(1, Math.round((skillData.find((s) => s.skill === "Communication")?.student || 0) / 14));
+    const overallDelta = Math.max(1, Math.round((dynamic.overallReadiness - 50) / 4));
+    const solvedEstimate = Math.round(projectCount * 18 + expCount * 14 + certCount * 8 + (mergedSkills?.length || 0) * 2);
+    return [
+      { value: `${overallDelta >= 0 ? "+" : ""}${overallDelta}%`, label: "Overall improvement", tone: "blue" },
+      { value: `+${technicalDelta}%`, label: "Technical Skills", tone: "green" },
+      { value: `+${softDelta}%`, label: "Soft Skills", tone: "purple" },
+      { value: String(Math.max(0, solvedEstimate)), label: "Problems Solved (estimated)", tone: "amber" },
+    ];
+  })();
 
   // Weekly Goals
   const weeklyGoals = [
@@ -1396,8 +1882,18 @@ export default function StudentDashboard() {
     active:scale-[0.97]
   "
                       >
-                        <UploadIcon className="w-6 h-6" />
-                        {uploadingResume ? "Uploading..." : "Resume (PDF)"}
+                        {uploadingResume ? (
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                        ) : resumeUploadState === "success" ? (
+                          <CheckCircle2 className="w-6 h-6 text-green-300" />
+                        ) : (
+                          <UploadIcon className="w-6 h-6" />
+                        )}
+                        {uploadingResume
+                          ? "Uploading..."
+                          : resumeUploadState === "success"
+                            ? "Uploaded"
+                            : "Resume (PDF)"}
                       </Button>
                       <input
                         type="file"
@@ -1406,6 +1902,19 @@ export default function StudentDashboard() {
                         accept=".pdf"
                         className="hidden"
                       />
+                      {resumeUploadStatusText && (
+                        <div
+                          className={`mt-2 text-xs font-bold ${
+                            resumeUploadState === "success"
+                              ? "text-green-400"
+                              : resumeUploadState === "error"
+                                ? "text-red-400"
+                                : "text-blue-300"
+                          }`}
+                        >
+                          {resumeUploadStatusText}
+                        </div>
+                      )}
 
                     </div>
                   </div>
@@ -1452,39 +1961,100 @@ export default function StudentDashboard() {
                         <div className="space-y-2">
                           <p className={`text-sm font-black ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-[0.4em] opacity-50`}>Focusing Role</p>
                           <p className="text-4xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent leading-tight">
-                            Software Developer
+                            {roleRecommendation.title}
+                          </p>
+                          <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"} font-semibold`}>
+                            Based on resume journey + skills{careerInterests.length ? " + selected interests" : ""}.
                           </p>
                         </div>
                         <div className={`${isDark ? "bg-blue-500/10" : "bg-blue-50"} rounded-2xl p-6 ${isDark ? "border-blue-500/20" : "border-blue-200"} flex items-center gap-6`}>
                           <div className={`w-16 h-16 ${isDark ? "bg-white/5" : "bg-white"} rounded-2xl flex items-center justify-center shadow-lg ${isDark ? "border-blue-500/20" : "border-blue-200"}`}>
-                            <span className="text-2xl font-black text-blue-400">72%</span>
+                            <span className="text-2xl font-black text-blue-400">{roleRecommendation.confidence}%</span>
                           </div>
                           <div>
                             <p className={`text-sm font-bold ${isDark ? "text-gray-400" : "text-gray-600"}`}>AI Readiness</p>
-                            <p className={`text-lg font-black ${isDark ? "text-white" : "text-gray-900"}`}>+8% <span className="text-xs text-green-400 font-bold ml-1">UP</span></p>
+                            <p className={`text-lg font-black ${isDark ? "text-white" : "text-gray-900"}`}>
+                              {roleRecommendation.trend === "UP" ? "+6%" : "+2%"} <span className="text-xs text-green-400 font-bold ml-1">{roleRecommendation.trend}</span>
+                            </p>
                           </div>
                         </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className={`text-[11px] font-black uppercase tracking-wider ${isDark ? "text-gray-400" : "text-gray-600"} mr-1`}>Interests</p>
+                          {careerInterests.map((interest) => (
+                            <button
+                              key={interest}
+                              type="button"
+                              onClick={() => toggleInterest(interest)}
+                              className="text-xs px-3 py-1.5 rounded-full border font-semibold transition bg-blue-500 text-white border-blue-500"
+                              title="Click to remove"
+                            >
+                              {interest}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <input
+                            value={interestInput}
+                            onChange={(e) => setInterestInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                addInterestFromInput();
+                              }
+                            }}
+                            placeholder="Type your interest (e.g. distributed systems)"
+                            className={`h-10 rounded-xl px-3 text-sm border flex-1 ${
+                              isDark ? "bg-white/5 border-white/10 text-white placeholder:text-slate-500" : "bg-white border-slate-200 text-slate-900"
+                            }`}
+                          />
+                          <Button type="button" onClick={addInterestFromInput} className="h-10 rounded-xl">
+                            Add Interest
+                          </Button>
+                        </div>
+                        {topJourneyKeywords.length > 0 && (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className={`text-[11px] font-black uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-500"} mr-1`}>Suggested from resume</p>
+                            {topJourneyKeywords
+                              .filter((k) => !careerInterests.some((i) => i.toLowerCase() === k.toLowerCase()))
+                              .slice(0, 8)
+                              .map((k) => (
+                                <button
+                                  key={k}
+                                  type="button"
+                                  onClick={() => toggleInterest(k)}
+                                  className={`text-xs px-3 py-1.5 rounded-full border font-semibold transition ${
+                                    isDark
+                                      ? "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10"
+                                      : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                                  }`}
+                                >
+                                  {k}
+                                </button>
+                              ))}
+                          </div>
+                        )}
                       </div>
 
                       <div className="space-y-4">
                         <div className="flex items-center justify-between px-1">
                           <p className={`text-lg font-black ${isDark ? "text-white" : "text-gray-900"}`}>Overall Confidence</p>
-                          <span className={`text-sm font-bold text-blue-400 px-3 py-1 ${isDark ? "bg-blue-500/10" : "bg-blue-50"} rounded-lg tracking-wide uppercase`}>AI VERIFIED</span>
+                          <span className={`text-sm font-bold text-blue-400 px-3 py-1 ${isDark ? "bg-blue-500/10" : "bg-blue-50"} rounded-lg tracking-wide uppercase`}>AI INFERRED</span>
                         </div>
                         <div className={`h-4 ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-full overflow-hidden shadow-inner p-1`}>
-                          <div className="h-full bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.3)]" style={{ width: "72%" }}></div>
+                          <div className="h-full bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.3)]" style={{ width: `${roleRecommendation.confidence}%` }}></div>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {[
-                          { label: "Technical Skills", val: "High", color: "text-blue-400", bg: isDark ? "bg-blue-500/10" : "bg-blue-50" },
-                          { label: "Soft Skills", val: "Medium", color: "text-amber-400", bg: isDark ? "bg-amber-500/10" : "bg-amber-50" },
-                          { label: "Experience", val: "Good", color: "text-green-400", bg: isDark ? "bg-green-500/10" : "bg-green-50" }
-                        ].map((item, i) => (
+                        {roleSkillCards.map((item, i) => (
                           <div key={i} className={`p-4 rounded-2xl ${item.bg} ${isDark ? "border-white/5" : "border-gray-200"} flex flex-col gap-1`}>
                             <span className={`text-[11px] font-black ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-wider`}>{item.label}</span>
-                            <span className={`${item.color} text-xl font-black`}>{item.val}</span>
+                            <span className={`${item.color} text-xl font-black`}>
+                              {item.score >= 75 ? "High" : item.score >= 55 ? "Medium" : "Building"}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -1542,7 +2112,7 @@ export default function StudentDashboard() {
                     </Button>
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {recommendations.slice(0, 3).map((rec, idx) => (
+                    {recommendations.slice(0, 3).map((rec: any, idx: number) => (
                       <div key={idx} className={`group flex flex-col p-8 ${isDark ? "border-white/5 bg-white/5" : "border-gray-200 bg-gray-50"} rounded-[2rem] hover:border-blue-500/50 ${isDark ? "hover:bg-blue-500/5" : "hover:bg-blue-50"} transition-all relative overflow-hidden shadow-sm hover:shadow-xl`}>
                         {/* Priority Indicator Line */}
                         <div className={`absolute top-0 left-0 right-0 h-1.5 ${rec.priority === "critical" ? "bg-red-500 shadow-[0_2px_10px_rgba(239,68,68,0.3)]" :
@@ -1593,7 +2163,14 @@ export default function StudentDashboard() {
                             </div>
                           </div>
 
-                          <Button className="w-full h-12 rounded-xl font-black text-sm uppercase tracking-widest bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white border border-blue-500/20 transition-all">
+                          <Button
+                            className="w-full h-12 rounded-xl font-black text-sm uppercase tracking-widest bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white border border-blue-500/20 transition-all"
+                            onClick={() => {
+                              setActiveTab("learning");
+                              navigate("/student/dashboard?tab=learning");
+                              toast.success(`Opened personalized plan for: ${rec.title}`);
+                            }}
+                          >
                             Start Implementation
                           </Button>
                         </div>
@@ -1628,53 +2205,58 @@ export default function StudentDashboard() {
                   </div>
 
                   <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
+                    <div className={`rounded-2xl border p-5 shadow-sm ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
                       <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Add Skill</p>
                       <div className="mt-3 flex gap-2">
                         <input
                           value={newSkillInput}
                           onChange={(e) => setNewSkillInput(e.target.value)}
                           placeholder="e.g., LangChain, SHAP, SQL"
-                          className={`flex-1 h-11 px-4 rounded-2xl text-sm font-bold outline-none border ${isDark ? "bg-white/5 border-white/10 text-white placeholder:text-slate-600" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400"}`}
+                          className={`flex-1 h-11 px-4 rounded-2xl text-sm font-semibold outline-none border transition-all ${isDark ? "bg-white/5 border-white/10 text-white placeholder:text-slate-600 focus:border-blue-500/50" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-400 shadow-inner"}`}
                         />
                         <Button
                           type="button"
                           onClick={() => {
-                            const v = newSkillInput.trim();
-                            if (!v) return;
-                            setNewSkillInput("");
-                            if (!mergedSkills.includes(v)) {
-                              // quick local add (will persist on Save)
-                              (mergedSkills as any).push(v);
+                            const raw = newSkillInput.trim();
+                            const v = cleanSkillToken(raw);
+                            if (!v) {
+                              toast.error("Please enter a valid skill.");
+                              return;
                             }
+                            setNewSkillInput("");
+                            if (mergedSkills.some((s) => s.toLowerCase() === v.toLowerCase())) return;
+                            setPendingSkills((prev) => [...prev, v]);
                           }}
-                          className="h-11 rounded-2xl font-black"
+                          className="h-11 rounded-2xl font-black px-5"
                         >
                           Add
                         </Button>
                       </div>
                     </div>
 
-                    <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
+                    <div className={`rounded-2xl border p-5 shadow-sm ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
                       <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Add Achievement</p>
                       <div className="mt-3 flex gap-2">
                         <input
                           value={newAchievementInput}
                           onChange={(e) => setNewAchievementInput(e.target.value)}
                           placeholder="e.g., 2nd Rank – 93.17% (HSC)"
-                          className={`flex-1 h-11 px-4 rounded-2xl text-sm font-bold outline-none border ${isDark ? "bg-white/5 border-white/10 text-white placeholder:text-slate-600" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400"}`}
+                          className={`flex-1 h-11 px-4 rounded-2xl text-sm font-semibold outline-none border transition-all ${isDark ? "bg-white/5 border-white/10 text-white placeholder:text-slate-600 focus:border-blue-500/50" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-400 shadow-inner"}`}
                         />
                         <Button
                           type="button"
                           onClick={() => {
-                            const v = newAchievementInput.trim();
-                            if (!v) return;
-                            setNewAchievementInput("");
-                            if (!mergedAchievements.includes(v)) {
-                              (mergedAchievements as any).push(v);
+                            const raw = newAchievementInput.trim();
+                            const v = cleanAchievementToken(raw);
+                            if (!v) {
+                              toast.error("Please enter a valid achievement.");
+                              return;
                             }
+                            setNewAchievementInput("");
+                            if (mergedAchievements.some((a) => a.toLowerCase() === v.toLowerCase())) return;
+                            setPendingAchievements((prev) => [...prev, v]);
                           }}
-                          className="h-11 rounded-2xl font-black"
+                          className="h-11 rounded-2xl font-black px-5"
                         >
                           Add
                         </Button>
@@ -1682,29 +2264,88 @@ export default function StudentDashboard() {
                     </div>
                   </div>
 
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[
+                      {
+                        label: "Skills Captured",
+                        value: (mergedSkills || []).length,
+                        tone: isDark ? "from-blue-500/15 to-cyan-500/10 border-blue-500/20" : "from-blue-50 to-cyan-50 border-blue-200",
+                      },
+                      {
+                        label: "Achievements",
+                        value: (mergedAchievements || []).length,
+                        tone: isDark ? "from-amber-500/15 to-orange-500/10 border-amber-500/20" : "from-amber-50 to-orange-50 border-amber-200",
+                      },
+                      {
+                        label: "Profile Completion",
+                        value: `${Math.min(100, Math.round((((mergedSkills || []).length >= 8 ? 1 : (mergedSkills || []).length / 8) * 0.6 + (((mergedAchievements || []).length >= 3 ? 1 : (mergedAchievements || []).length / 3) * 0.4)) * 100))}%`,
+                        tone: isDark ? "from-green-500/15 to-emerald-500/10 border-green-500/20" : "from-green-50 to-emerald-50 border-green-200",
+                      },
+                    ].map((s) => (
+                      <div key={s.label} className={`rounded-2xl border bg-gradient-to-br p-4 ${s.tone}`}>
+                        <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-400" : "text-slate-500"}`}>{s.label}</p>
+                        <p className={`mt-1 text-2xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>{s.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
                   <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
-                      <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Current Skills</p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {(mergedSkills || []).slice(0, 30).map((s: string) => (
-                          <span key={s} className={`px-3 py-1 rounded-full text-[11px] font-black ${isDark ? "bg-white/10 text-slate-100" : "bg-slate-100 text-slate-800"}`}>
-                            {s}
-                          </span>
-                        ))}
+                    <div className={`rounded-2xl border p-5 shadow-sm ${isDark ? "border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02]" : "border-slate-200 bg-gradient-to-br from-white to-slate-50"}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${isDark ? "bg-blue-500/15" : "bg-blue-100"}`}>
+                            <Code className="h-4 w-4 text-blue-500" />
+                          </div>
+                          <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Current Skills</p>
+                        </div>
+                        <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${isDark ? "bg-white/10 text-slate-300" : "bg-slate-100 text-slate-700"}`}>
+                          {(mergedSkills || []).length}
+                        </span>
+                      </div>
+                      <div className="mt-3 max-h-40 overflow-y-auto pr-1 space-y-0 custom-scrollbar">
+                        <div className="flex flex-wrap gap-2">
+                          {(mergedSkills || []).map((s: string) => (
+                            <span
+                              key={s}
+                              className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all ${
+                                isDark
+                                  ? "bg-white/10 border-white/10 text-slate-100 hover:bg-white/15"
+                                  : "bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:text-blue-700"
+                              }`}
+                            >
+                              {s}
+                            </span>
+                          ))}
+                          {(!mergedSkills || mergedSkills.length === 0) && (
+                            <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No skills added yet.</p>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
-                      <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Achievements</p>
-                      <div className="mt-3 space-y-2">
-                        {(mergedAchievements || []).slice(0, 12).map((a: string, idx: number) => (
+                    <div className={`rounded-2xl border p-5 shadow-sm ${isDark ? "border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02]" : "border-slate-200 bg-gradient-to-br from-white to-slate-50"}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${isDark ? "bg-amber-500/15" : "bg-amber-100"}`}>
+                            <Trophy className="h-4 w-4 text-amber-500" />
+                          </div>
+                          <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Achievements</p>
+                        </div>
+                        <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${isDark ? "bg-white/10 text-slate-300" : "bg-slate-100 text-slate-700"}`}>
+                          {(mergedAchievements || []).length}
+                        </span>
+                      </div>
+                      <div className="mt-3 max-h-40 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
+                        {(mergedAchievements || []).map((a: string, idx: number) => (
                           <div key={idx} className={`flex items-start gap-2 text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>
                             <span className="mt-2 w-1.5 h-1.5 rounded-full bg-amber-500/70 flex-shrink-0" />
-                            <span>{a}</span>
+                            <span className="leading-relaxed">{a}</span>
                           </div>
                         ))}
                         {(!mergedAchievements || mergedAchievements.length === 0) && (
-                          <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No achievements yet.</p>
+                          <div className={`rounded-xl border border-dashed p-4 text-sm ${isDark ? "border-white/10 text-slate-500" : "border-slate-200 text-slate-500"}`}>
+                            No achievements yet. Add one above to strengthen your profile.
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1744,24 +2385,7 @@ export default function StudentDashboard() {
                   </div>
                   {/* Skill Progress Panels - Concentric Rings */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {[
-                      {
-                        title: "Skill Progress",
-                        label: "Data Science",
-                        ring1: 85,
-                        ring2: 65,
-                        ring3: 50,
-                        colors: ["#3b82f6", "#06b6d4", "#a855f7"]
-                      },
-                      {
-                        title: "Skill Progress",
-                        label: "Soft Skills",
-                        ring1: 90,
-                        ring2: 75,
-                        ring3: 80,
-                        colors: ["#ec4899", "#8b5cf6", "#3b82f6"]
-                      }
-                    ].map((panel, idx) => (
+                    {skillProgressPanels.map((panel, idx) => (
                       <Card key={idx} className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] p-12 overflow-hidden group`}>
                         <h3 className={`text-sm font-black ${isDark ? "text-white/40" : "text-gray-600/60"} uppercase tracking-[0.2em] mb-12`}>{panel.title}</h3>
                         <div className="flex items-center justify-center relative">
@@ -1892,7 +2516,7 @@ export default function StudentDashboard() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {skillData
+                    {[...skillData]
                       .sort((a, b) => b.gap - a.gap)
                       .slice(0, 4)
                       .map((skill, idx) => (
@@ -2243,6 +2867,25 @@ export default function StudentDashboard() {
                       <p className={`text-xs mt-5 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
                         Tip: After uploading a resume, hit <span className="font-black">Refresh</span> to re-calculate the roadmap using your latest projects, experience and skills.
                       </p>
+
+                      <div className="mt-6 space-y-4">
+                        <Button
+                          onClick={onGeneratePersonalPlan}
+                          disabled={savingPerformance || loadingRoadmap}
+                          className="w-full rounded-2xl font-black"
+                        >
+                          {savingPerformance ? "Generating..." : "Generate Plan"}
+                        </Button>
+
+                        <div className={`rounded-2xl p-4 border ${isDark ? "bg-[#0c0c14]/60 border-white/10" : "bg-white border-slate-200"}`}>
+                          <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>
+                            LLM Summary
+                          </p>
+                          <p className={`mt-2 text-sm font-semibold leading-relaxed ${isDark ? "text-slate-200" : "text-slate-700"}`}>
+                            {mentorshipSummary}
+                          </p>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Roadmap tasks */}
@@ -2476,7 +3119,7 @@ export default function StudentDashboard() {
                     </div>
 
                     <div className="space-y-4">
-                      {upcomingTasks.map((task, idx) => (
+                      {upcomingTasks.map((task: any, idx: number) => (
                         <div key={idx} className={`p-4 ${isDark ? "border-white/5" : "border-slate-100 bg-slate-50/30"} rounded-2xl hover:border-blue-500/30 ${isDark ? "hover:bg-blue-500/5" : "hover:bg-blue-50/30"} transition-all group shadow-sm`}>
                           <div className="flex items-start gap-3">
                             <div className={`
@@ -2530,22 +3173,22 @@ export default function StudentDashboard() {
                 <CardContent className="p-12">
                   <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-slate-900"} mb-8`}>Performance Summary</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className={`p-6 ${isDark ? "bg-blue-500/10" : "bg-blue-50"} rounded-2xl border ${isDark ? "border-blue-500/20" : "border-blue-100"} shadow-sm`}>
-                      <div className="text-3xl font-black text-blue-400 mb-2">+14%</div>
-                      <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>Overall improvement</p>
-                    </div>
-                    <div className={`p-6 ${isDark ? "bg-green-500/10" : "bg-green-50"} rounded-2xl border ${isDark ? "border-green-500/20" : "border-green-100"} shadow-sm`}>
-                      <div className="text-3xl font-black text-green-400 mb-2">+8%</div>
-                      <p className="text-sm text-gray-400">Technical Skills</p>
-                    </div>
-                    <div className={`p-6 ${isDark ? "bg-purple-500/10" : "bg-purple-50"} rounded-2xl border ${isDark ? "border-purple-500/20" : "border-purple-100"} shadow-sm`}>
-                      <div className="text-3xl font-black text-purple-400 mb-2">+6%</div>
-                      <p className="text-sm text-gray-400">Soft Skills</p>
-                    </div>
-                    <div className={`p-6 ${isDark ? "bg-amber-500/10" : "bg-amber-50"} rounded-2xl border ${isDark ? "border-amber-500/20" : "border-amber-100"} shadow-sm`}>
-                      <div className="text-3xl font-black text-amber-400 mb-2">127</div>
-                      <p className="text-sm text-gray-400">Problems Solved</p>
-                    </div>
+                    {performanceSummaryCards.map((card, idx) => {
+                      const toneClass =
+                        card.tone === "green"
+                          ? (isDark ? "bg-green-500/10 border-green-500/20 text-green-400" : "bg-green-50 border-green-100 text-green-600")
+                          : card.tone === "purple"
+                            ? (isDark ? "bg-purple-500/10 border-purple-500/20 text-purple-400" : "bg-purple-50 border-purple-100 text-purple-600")
+                            : card.tone === "amber"
+                              ? (isDark ? "bg-amber-500/10 border-amber-500/20 text-amber-400" : "bg-amber-50 border-amber-100 text-amber-600")
+                              : (isDark ? "bg-blue-500/10 border-blue-500/20 text-blue-400" : "bg-blue-50 border-blue-100 text-blue-600");
+                      return (
+                        <div key={`${card.label}-${idx}`} className={`p-6 rounded-2xl border shadow-sm ${toneClass}`}>
+                          <div className="text-3xl font-black mb-2">{card.value}</div>
+                          <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>{card.label}</p>
+                        </div>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
@@ -2602,11 +3245,25 @@ export default function StudentDashboard() {
                   <p className={`text-lg font-bold ${isDark ? "text-gray-400" : "text-gray-600"} opacity-80`}>Accelerate your career journey with personalized AI actions.</p>
                 </div>
                 <div className="flex flex-wrap gap-4">
-                  <Button variant="outline" className={`h-14 px-8 rounded-2xl font-black text-sm uppercase tracking-widest ${isDark ? "border-white/30 text-white hover:bg-white/10" : "border-gray-300 text-gray-900 hover:bg-gray-100"}`}>
+                  <Button
+                    variant="outline"
+                    className={`h-14 px-8 rounded-2xl font-black text-sm uppercase tracking-widest ${isDark ? "border-white/30 text-white hover:bg-white/10" : "border-gray-300 text-gray-900 hover:bg-gray-100"}`}
+                    onClick={() => {
+                      setActiveTab("learning");
+                      navigate("/student/dashboard?tab=learning");
+                    }}
+                  >
                     <GraduationCap className="w-6 h-6 mr-3" />
                     Mock Interview
                   </Button>
-                  <Button className="h-14 px-8 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-800 hover:opacity-90 font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/30 gap-3 text-white">
+                  <Button
+                    className="h-14 px-8 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-800 hover:opacity-90 font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/30 gap-3 text-white"
+                    onClick={() => {
+                      setActiveTab("learning");
+                      navigate("/student/dashboard?tab=learning");
+                      fetchRoadmap();
+                    }}
+                  >
                     <FileText className="w-6 h-6" />
                     Generate Study Plan
                   </Button>

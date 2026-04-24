@@ -98,8 +98,13 @@ export default function StudentSettings(props: any) {
             portfolio: "",
             bio: data?.profile?.bio || ""
         });
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to fetch profile settings", error);
+        if (error?.response?.status === 401) {
+          toast.error("Session expired. Please login again.");
+          window.location.href = "/login";
+          return;
+        }
         toast.error("Failed to load profile data.");
       } finally {
         setIsLoading(false);

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,8 @@ import { motion, useInView } from "framer-motion";
 // ─── Import Data ────────────────────────────────────────────────────────
 import type { Company } from "@/data/companyProblemPools";
 import { problemService } from "@/services/problemService";
+import { studentApi } from "@/services/studentApi";
+import { deptApi } from "@/services/deptApi";
 import { Loader2 } from "lucide-react";
 
 const TIER_COLORS: Record<string, string> = {
@@ -473,9 +476,18 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
     const { theme } = useTheme();
     const isDark = theme === "dark";
 
+    const userRole = (() => {
+        try { return String(localStorage.getItem("userRole") || "STUDENT"); } catch { return "STUDENT"; }
+    })();
+    const canUploadCompanyData = userRole === "TPO_HEAD" || userRole === "TPO_ADMIN";
+    const companyStatsInputRef = useRef<HTMLInputElement>(null);
+    const [uploadingCompanyStats, setUploadingCompanyStats] = useState(false);
+
     // ─── State: Data ────────────────────────────────────────────────────
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
+    const [companyStats, setCompanyStats] = useState<any>(null);
+    const [loadingCompanyStats, setLoadingCompanyStats] = useState(false);
 
     // ─── State: Preferences & Progress ──────────────────────────────────
     const [preferences, setPreferences] = useState<{
@@ -560,6 +572,47 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
     };
 
     const company: Company | undefined = companies.find(c => c.id === selectedCompany);
+
+    const fetchCompanyStats = async (companyName: string) => {
+        try {
+            setLoadingCompanyStats(true);
+            const data = await studentApi.getCompanyStats(companyName);
+            setCompanyStats(data);
+        } catch (e: any) {
+            console.error("Failed to fetch company stats", e);
+            setCompanyStats(null);
+        } finally {
+            setLoadingCompanyStats(false);
+        }
+    };
+
+    useEffect(() => {
+        if (company?.name) {
+            fetchCompanyStats(company.name);
+        } else {
+            setCompanyStats(null);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [company?.name]);
+
+    const onUploadCompanyStatsFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+            setUploadingCompanyStats(true);
+            await deptApi.uploadCompanyStatsExcel(file);
+            toast.success("Company stats uploaded.");
+            if (company?.name) {
+                await fetchCompanyStats(company.name);
+            }
+        } catch (err) {
+            console.error("Company stats upload failed", err);
+            toast.error("Failed to upload company stats.");
+        } finally {
+            setUploadingCompanyStats(false);
+            e.target.value = "";
+        }
+    };
 
     // ─── Dynamic Placeholder Hook ─────────────────────────────────────
     const searchPlaceholder = (() => {
@@ -817,6 +870,73 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                                     <span className={`text-sm font-bold ${isDark ? "text-slate-300" : "text-slate-700"}`}>{d.label}: {d.count}</span>
                                 </div>
                             ))}
+                        </div>
+
+                        {/* Company Stats (from TPO uploads) */}
+                        <div className={`mt-6 pt-6 border-t ${isDark ? "border-white/5" : "border-slate-100"}`}>
+                            <p className={`text-xs font-black uppercase tracking-widest mb-3 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Company Stats</p>
+
+                            {loadingCompanyStats ? (
+                                <div className={`p-6 rounded-2xl ${isDark ? "bg-white/5" : "bg-slate-50"}`}>
+                                    <p className={`text-sm font-bold ${isDark ? "text-slate-300" : "text-slate-700"}`}>Loading stats...</p>
+                                </div>
+                            ) : companyStats?.yearly?.length ? (
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                    <div className={`rounded-2xl p-5 border ${isDark ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"}`}>
+                                        <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Selected by year</p>
+                                        <div className="mt-3 space-y-2">
+                                            {companyStats.yearly.slice(0, 6).map((y: any) => (
+                                                <div key={y.year} className="flex items-center justify-between">
+                                                    <span className={`text-sm font-bold ${isDark ? "text-slate-300" : "text-slate-700"}`}>{y.year}</span>
+                                                    <span className={`text-sm font-black ${isDark ? "text-white" : "text-slate-900"}`}>{y.selected}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className={`rounded-2xl p-5 border ${isDark ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"}`}>
+                                        <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Role mix</p>
+                                        <div className="mt-3 space-y-2">
+                                            {(companyStats.roles || []).slice(0, 6).map((r: any) => (
+                                                <div key={r.role} className="flex items-center justify-between">
+                                                    <span className={`text-sm font-bold ${isDark ? "text-slate-300" : "text-slate-700"}`}>{r.role}</span>
+                                                    <span className={`text-sm font-black ${isDark ? "text-white" : "text-slate-900"}`}>{r.count}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className={`rounded-2xl p-5 border ${isDark ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"}`}>
+                                        <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>CTC distribution (LPA)</p>
+                                        <div className="mt-3 space-y-2">
+                                            {Object.entries(companyStats.ctcBuckets || {}).map(([k, v]) => (
+                                                <div key={k} className="flex items-center justify-between">
+                                                    <span className={`text-sm font-bold ${isDark ? "text-slate-300" : "text-slate-700"}`}>{k}</span>
+                                                    <span className={`text-sm font-black ${isDark ? "text-white" : "text-slate-900"}`}>{Number(v)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className={`p-6 rounded-2xl border-2 border-dashed ${isDark ? "border-white/10" : "border-slate-200"}`}>
+                                    <p className={`text-sm font-bold ${isDark ? "text-slate-500" : "text-slate-500"}`}>
+                                        No stats uploaded yet for this company.
+                                    </p>
+                                    {canUploadCompanyData && (
+                                        <div className="mt-3">
+                                            <Button
+                                                size="sm"
+                                                onClick={() => companyStatsInputRef.current?.click()}
+                                                className="rounded-xl font-black text-xs uppercase tracking-widest"
+                                                disabled={uploadingCompanyStats}
+                                            >
+                                                {uploadingCompanyStats ? "Uploading..." : "Upload Company Data"}
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -1098,14 +1218,36 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                     )}
                 </div>
                 {/* Suggestion button */}
-                <button
-                    onClick={() => setShowSuggestion(true)}
-                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all shadow-sm
-                    ${isDark ? "bg-white/5 border-white/10 text-slate-100 hover:bg-white/10" : "bg-white border-slate-200 text-slate-800 hover:bg-slate-50"}`}
-                >
-                    <Lightbulb className="w-4 h-4 text-amber-400" />
-                    Suggest Insight
-                </button>
+                <div className="flex items-center gap-2">
+                    {canUploadCompanyData && (
+                        <>
+                            <button
+                                onClick={() => companyStatsInputRef.current?.click()}
+                                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all shadow-sm
+                                ${isDark ? "bg-white/5 border-white/10 text-slate-100 hover:bg-white/10" : "bg-white border-slate-200 text-slate-800 hover:bg-slate-50"}`}
+                                disabled={uploadingCompanyStats}
+                            >
+                                <Filter className="w-4 h-4 text-blue-400" />
+                                {uploadingCompanyStats ? "Uploading..." : "Upload Company Data"}
+                            </button>
+                            <input
+                                ref={companyStatsInputRef}
+                                type="file"
+                                accept=".xlsx,.xls"
+                                className="hidden"
+                                onChange={onUploadCompanyStatsFileChange}
+                            />
+                        </>
+                    )}
+                    <button
+                        onClick={() => setShowSuggestion(true)}
+                        className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all shadow-sm
+                        ${isDark ? "bg-white/5 border-white/10 text-slate-100 hover:bg-white/10" : "bg-white border-slate-200 text-slate-800 hover:bg-slate-50"}`}
+                    >
+                        <Lightbulb className="w-4 h-4 text-amber-400" />
+                        Suggest Insight
+                    </button>
+                </div>
             </div>
 
             {/* Stats Row */}

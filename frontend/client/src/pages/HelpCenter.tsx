@@ -111,17 +111,17 @@ export default function HelpCenter() {
   return (
     <div className="min-h-dvh overflow-x-hidden bg-background text-foreground transition-colors duration-300">
       <header className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl border-b border-slate-200 dark:border-white/5 transition-all duration-500">
-        <div className="max-w-[1700px] mx-auto px-6 sm:px-10">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center gap-6">
+        <div className="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-10">
+          <div className="flex h-auto min-h-20 flex-wrap items-center justify-between gap-3 py-3">
+            <div className="flex items-center gap-3 sm:gap-6 min-w-0">
               <button
                 onClick={handleBack}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white rounded-xl font-black text-sm tracking-tight hover:shadow-[0_10px_30px_rgba(37,99,235,0.4)] transition-all flex items-center gap-2 hover:scale-105 active:scale-95 group"
+                className="px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white rounded-xl font-black text-xs sm:text-sm tracking-tight hover:shadow-[0_10px_30px_rgba(37,99,235,0.4)] transition-all flex items-center gap-2 hover:scale-105 active:scale-95 group"
               >
                 <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                 Back
               </button>
-              <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
+              <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden md:block"></div>
               <div className="flex items-center gap-0 group cursor-pointer" onClick={() => window.location.href = "/"}>
                 <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
                 <div className="hidden sm:flex flex-col">
@@ -130,11 +130,12 @@ export default function HelpCenter() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <ThemeToggle className="!h-12 !w-12 bg-slate-100 dark:bg-white/5 backdrop-blur-md border border-slate-200 dark:border-white/10 hover:border-blue-500/30 !rounded-xl transition-all flex items-center justify-center shadow-lg hover:scale-110 text-slate-600 dark:text-white" />
-              <button className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-black text-sm tracking-tight hover:shadow-[0_10px_30px_rgba(37,99,235,0.4)] transition-all flex items-center gap-2 hover:scale-105 active:scale-95 group">
+              <button className="px-3 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-black text-xs sm:text-sm tracking-tight hover:shadow-[0_10px_30px_rgba(37,99,235,0.4)] transition-all flex items-center gap-2 hover:scale-105 active:scale-95 group">
                 <MessageCircle className="w-5 h-5 mr-1" />
-                Contact Support
+                <span className="hidden sm:inline">Contact Support</span>
+                <span className="sm:hidden">Support</span>
               </button>
             </div>
           </div>
@@ -142,11 +143,11 @@ export default function HelpCenter() {
       </header>
 
       {/* Hero Section */}
-      <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-        <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6">
+      <div className="max-w-7xl mx-auto px-4 py-10 sm:py-16 text-center">
+        <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-foreground mb-4 sm:mb-6">
           How can we help you?
         </h1>
-        <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+        <p className="text-base sm:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">
           Search our knowledge base or browse categories below
         </p>
 
@@ -203,8 +204,8 @@ export default function HelpCenter() {
 
       {/* Popular Articles */}
       <div className="max-w-7xl mx-auto px-4 pb-16">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-bold text-foreground flex items-center">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center">
             <TrendingUp className="w-8 h-8 mr-3 text-primary" />
             Popular Articles
           </h2>
@@ -219,7 +220,7 @@ export default function HelpCenter() {
             return (
               <div
                 key={index}
-                className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b border-border last:border-0 cursor-pointer group"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 hover:bg-muted/30 transition-colors border-b border-border last:border-0 cursor-pointer group"
               >
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">

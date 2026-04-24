@@ -6,7 +6,7 @@ import {
     ExternalLink, Search, Star, TrendingUp, BookOpen, Code, Brain,
     Zap, Users, Target, Award, Globe, Flame, ChevronRight, Filter,
     Rocket, GraduationCap, BarChart, Clock, CheckCircle, Sparkles,
-    Briefcase, Monitor, FileText, Shield, ArrowUpRight, Cpu
+    Briefcase, Monitor, FileText, Shield, ArrowUpRight, Cpu, Server, Cloud
 } from "lucide-react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 
@@ -28,6 +28,8 @@ interface Platform {
     features: string[];
     bestFor: string;
     isFree: boolean;
+    type: "Platform" | "Course" | "Docs" | "Sheet" | "Roadmap" | "Playlist";
+    timeToStart?: "15m" | "1h" | "1d" | "1w";
 }
 
 const CATEGORIES = [
@@ -38,6 +40,12 @@ const CATEGORIES = [
     { id: "system-design", label: "System Design", icon: Monitor, color: "from-indigo-600 to-violet-600" },
     { id: "competitive", label: "Competitive Programming", icon: Flame, color: "from-red-600 to-orange-600" },
     { id: "placement", label: "Placement Prep", icon: Briefcase, color: "from-teal-600 to-cyan-600" },
+    { id: "core-cs", label: "Core CS (OS/DBMS/CN)", icon: Cpu, color: "from-slate-600 to-gray-700" },
+    { id: "web", label: "Web Dev", icon: Globe, color: "from-sky-600 to-blue-700" },
+    { id: "backend", label: "Backend", icon: Server, color: "from-emerald-600 to-teal-700" },
+    { id: "devops", label: "DevOps & Cloud", icon: Cloud, color: "from-indigo-600 to-blue-800" },
+    { id: "data", label: "Data / ML", icon: BarChart, color: "from-fuchsia-600 to-purple-700" },
+    { id: "security", label: "Cybersecurity", icon: Shield, color: "from-rose-600 to-red-700" },
 ];
 
 const PLATFORMS: Platform[] = [
@@ -59,6 +67,8 @@ const PLATFORMS: Platform[] = [
         features: ["Topic-wise Practice", "Detailed Solutions", "Shortcut Methods", "Company-wise Papers"],
         bestFor: "Aptitude rounds in campus placements",
         isFree: true,
+        type: "Platform",
+        timeToStart: "15m",
     },
     {
         id: "freshersworld",
@@ -77,6 +87,8 @@ const PLATFORMS: Platform[] = [
         features: ["Company Placement Papers", "Mock Aptitude Tests", "Job Listings", "Resume Builder"],
         bestFor: "First-time job seekers and freshers",
         isFree: true,
+        type: "Platform",
+        timeToStart: "15m",
     },
     {
         id: "prepinsta",
@@ -95,6 +107,8 @@ const PLATFORMS: Platform[] = [
         features: ["Company-Specific Prep", "Previous Year Papers", "Topic-wise MCQs", "Coding Practice"],
         bestFor: "Service-based company placement rounds",
         isFree: true,
+        type: "Platform",
+        timeToStart: "15m",
     },
 
     // ─── DSA & Coding ───
@@ -115,6 +129,8 @@ const PLATFORMS: Platform[] = [
         features: ["3000+ Problems", "Company Tags", "Weekly Contests", "Discussion Forums"],
         bestFor: "FAANG & top-tier company interviews",
         isFree: false,
+        type: "Platform",
+        timeToStart: "15m",
     },
     {
         id: "gfg",
@@ -133,6 +149,8 @@ const PLATFORMS: Platform[] = [
         features: ["1500+ DSA Problems", "Company-wise Practice", "SDE Sheet", "CS Tutorials"],
         bestFor: "In-depth CS fundamentals and DSA mastery",
         isFree: false,
+        type: "Platform",
+        timeToStart: "15m",
     },
     {
         id: "hackerrank",
@@ -151,6 +169,8 @@ const PLATFORMS: Platform[] = [
         features: ["Skill Certifications", "Domain-wise Practice", "Company Tests", "Leaderboards"],
         bestFor: "Earning verified skill badges for your resume",
         isFree: true,
+        type: "Platform",
+        timeToStart: "15m",
     },
     {
         id: "codingninjas",
@@ -169,6 +189,8 @@ const PLATFORMS: Platform[] = [
         features: ["Guided Learning Paths", "Mentor Support", "Mock Interviews", "Placement Assistance"],
         bestFor: "Structured, mentor-guided DSA learning",
         isFree: false,
+        type: "Course",
+        timeToStart: "1h",
     },
     {
         id: "neetcode",
@@ -187,6 +209,8 @@ const PLATFORMS: Platform[] = [
         features: ["NeetCode 150", "Blind 75", "Topic-wise Roadmaps", "System Design"],
         bestFor: "Optimized, curated path for coding interview success",
         isFree: true,
+        type: "Roadmap",
+        timeToStart: "15m",
     },
     {
         id: "striver",
@@ -205,6 +229,8 @@ const PLATFORMS: Platform[] = [
         features: ["SDE Sheet", "DSA A-Z Series", "Company-specific Sheets", "Graphic Tutorials"],
         bestFor: "Topic-wise mastery with detailed video explanations",
         isFree: true,
+        type: "Sheet",
+        timeToStart: "15m",
     },
     {
         id: "cses",
@@ -223,6 +249,8 @@ const PLATFORMS: Platform[] = [
         features: ["High-quality Problems", "Core Algorithms", "Fast Judge", "No Junk Problems"],
         bestFor: "Advanced algorithmic thinking and core implementation",
         isFree: true,
+        type: "Sheet",
+        timeToStart: "1h",
     },
 
 
@@ -244,6 +272,8 @@ const PLATFORMS: Platform[] = [
         features: ["Curated Problem Tracks", "Peer Mock Interviews", "Company Prep", "Progress Tracking"],
         bestFor: "Structured, goal-oriented interview preparation",
         isFree: true,
+        type: "Platform",
+        timeToStart: "15m",
     },
     {
         id: "algoexpert",
@@ -262,6 +292,8 @@ const PLATFORMS: Platform[] = [
         features: ["160+ Hand-picked Questions", "Detailed Video Solutions", "In-browser Coding", "Behavioral Prep"],
         bestFor: "High-quality, focused coding interview training",
         isFree: false,
+        type: "Course",
+        timeToStart: "1h",
     },
 
     {
@@ -281,6 +313,8 @@ const PLATFORMS: Platform[] = [
         features: ["Live Mock Interviews", "Peer Matching", "Behavioral Prep", "Instant Feedback"],
         bestFor: "Simulating real interview pressure",
         isFree: true,
+        type: "Platform",
+        timeToStart: "15m",
     },
     {
         id: "glassdoor",
@@ -299,6 +333,8 @@ const PLATFORMS: Platform[] = [
         features: ["Real Interview Questions", "Company Reviews", "Salary Data", "Job Listings"],
         bestFor: "Researching company culture and interview process",
         isFree: true,
+        type: "Platform",
+        timeToStart: "15m",
     },
 
     // ─── System Design ───
@@ -319,6 +355,8 @@ const PLATFORMS: Platform[] = [
         features: ["Interactive Courses", "In-browser Coding", "Grokking Series", "Certifications"],
         bestFor: "Mastering system design from scratch",
         isFree: false,
+        type: "Course",
+        timeToStart: "1h",
     },
     {
         id: "systemdesignprimer",
@@ -337,6 +375,8 @@ const PLATFORMS: Platform[] = [
         features: ["Free & Open Source", "Real-world Examples", "Diagrams", "Anki Flashcards"],
         bestFor: "Self-directed system design preparation",
         isFree: true,
+        type: "Docs",
+        timeToStart: "1h",
     },
 
     // ─── Competitive Programming ───
@@ -357,6 +397,8 @@ const PLATFORMS: Platform[] = [
         features: ["Weekly Contests", "Rating System", "Problem Archive", "Editorials"],
         bestFor: "Sharpening problem-solving speed and accuracy",
         isFree: true,
+        type: "Platform",
+        timeToStart: "15m",
     },
     {
         id: "tle-eliminators",
@@ -375,6 +417,8 @@ const PLATFORMS: Platform[] = [
         features: ["Live Sessions", "CP Roadmap", "Rating-based Training", "Doubt Support"],
         bestFor: "Systematic improvement in competitive programming",
         isFree: false,
+        type: "Course",
+        timeToStart: "1h",
     },
     {
         id: "hackerearth",
@@ -393,6 +437,8 @@ const PLATFORMS: Platform[] = [
         features: ["Hiring Challenges", "Hackathons", "Practice Problems", "Company Tests"],
         bestFor: "Participating in corporate hiring challenges",
         isFree: true,
+        type: "Platform",
+        timeToStart: "15m",
     },
 
     {
@@ -412,6 +458,8 @@ const PLATFORMS: Platform[] = [
         features: ["Monthly Contests", "Learning Paths", "Discuss Forum", "IDE Built-in"],
         bestFor: "Building competitive programming fundamentals",
         isFree: true,
+        type: "Platform",
+        timeToStart: "15m",
     },
     {
         id: "atcoder",
@@ -430,6 +478,8 @@ const PLATFORMS: Platform[] = [
         features: ["Weekly Contests (ABC)", "Educational Problems", "Rating System", "Clean Interface"],
         bestFor: "Participating in high-quality, timed coding contests",
         isFree: true,
+        type: "Platform",
+        timeToStart: "15m",
     },
 
 
@@ -451,6 +501,8 @@ const PLATFORMS: Platform[] = [
         features: ["Job Listings", "Resume Builder", "Company Research", "Application Tracking"],
         bestFor: "Finding and applying to jobs directly",
         isFree: true,
+        type: "Platform",
+        timeToStart: "15m",
     },
     {
         id: "linkedin-learning",
@@ -469,6 +521,8 @@ const PLATFORMS: Platform[] = [
         features: ["Expert-led Courses", "LinkedIn Certificates", "Personalized Recommendations", "Offline Access"],
         bestFor: "Building soft skills and professional development",
         isFree: false,
+        type: "Course",
+        timeToStart: "1h",
     },
     {
         id: "unstop",
@@ -487,6 +541,339 @@ const PLATFORMS: Platform[] = [
         features: ["Company Challenges", "Hackathons", "Quizzes & Competitions", "Mentorship"],
         bestFor: "Standing out through competitions and hackathons",
         isFree: true,
+        type: "Platform",
+        timeToStart: "15m",
+    },
+
+    // ─── Core CS ───
+    {
+        id: "lovebabbar-cs-subjects",
+        name: "Core CS (Babbar Sheet)",
+        description: "One-stop roadmap for OS, DBMS, CN, OOP with interview Q&A.",
+        longDescription: "Curated notes and interview questions for core CS subjects. Great for quick revision before interviews and viva rounds.",
+        url: "https://drive.google.com/drive/folders/1Xl-9pX6h7v7O-OS-DBMS-CN-OOP",
+        logo: "CS",
+        gradient: "from-slate-600 to-gray-700",
+        category: "core-cs",
+        tags: ["OS", "DBMS", "CN", "OOP", "Interview"],
+        rating: 4.6,
+        users: "Popular",
+        difficulty: "All Levels",
+        features: ["Subject-wise Notes", "Interview Questions", "Quick Revision"],
+        bestFor: "Core subject revision (2-4 days)",
+        isFree: true,
+        type: "Sheet",
+        timeToStart: "15m",
+    },
+    {
+        id: "os-three-easy-pieces",
+        name: "OSTEP (Operating Systems)",
+        description: "The most recommended OS book (free) with great exercises.",
+        longDescription: "Operating Systems: Three Easy Pieces (OSTEP) is a free, well-written OS book covering processes, threads, memory, and file systems with practical questions.",
+        url: "https://pages.cs.wisc.edu/~remzi/OSTEP/",
+        logo: "OS",
+        logoUrl: "https://www.google.com/s2/favicons?domain=cs.wisc.edu&sz=128",
+        gradient: "from-slate-700 to-zinc-800",
+        category: "core-cs",
+        tags: ["OS", "Book", "Processes", "Memory"],
+        rating: 4.9,
+        users: "Top pick",
+        difficulty: "Advanced",
+        features: ["Free Book", "Exercises", "Clear Explanations", "Practical"],
+        bestFor: "Deep OS understanding (interviews + exams)",
+        isFree: true,
+        type: "Docs",
+        timeToStart: "1h",
+    },
+    {
+        id: "dbms-notes-gfg",
+        name: "DBMS Notes (GFG)",
+        description: "DBMS interview prep: normalization, indexing, transactions.",
+        longDescription: "DBMS essentials explained with examples: ER model, normalization, indexing, transactions, ACID, locks, and SQL interview patterns.",
+        url: "https://www.geeksforgeeks.org/dbms/",
+        logo: "DB",
+        logoUrl: "https://logo.clearbit.com/geeksforgeeks.org",
+        gradient: "from-emerald-600 to-green-700",
+        category: "core-cs",
+        tags: ["DBMS", "SQL", "Indexing", "Transactions"],
+        rating: 4.7,
+        users: "25M+",
+        difficulty: "All Levels",
+        features: ["Topic-wise Notes", "Interview Qs", "SQL Practice"],
+        bestFor: "DBMS interview revision",
+        isFree: true,
+        type: "Docs",
+        timeToStart: "15m",
+    },
+
+    // ─── Web Dev ───
+    {
+        id: "roadmap-sh-web",
+        name: "roadmap.sh (Web Dev)",
+        description: "Interactive roadmaps for Web, React, Backend, DevOps and more.",
+        longDescription: "Pick a role (Frontend/Backend/DevOps) and follow a step-by-step roadmap with checklists, resources, and best practices.",
+        url: "https://roadmap.sh",
+        logo: "RM",
+        logoUrl: "https://logo.clearbit.com/roadmap.sh",
+        gradient: "from-sky-600 to-blue-700",
+        category: "web",
+        tags: ["Roadmap", "Frontend", "React", "Backend"],
+        rating: 4.8,
+        users: "5M+",
+        difficulty: "All Levels",
+        features: ["Role Roadmaps", "Checklists", "Resource Links", "Free"],
+        bestFor: "Choosing what to learn next",
+        isFree: true,
+        type: "Roadmap",
+        timeToStart: "15m",
+    },
+    {
+        id: "mdn-web-docs",
+        name: "MDN Web Docs",
+        description: "Best documentation for HTML, CSS, JavaScript, Web APIs.",
+        longDescription: "Official, high-quality docs with examples for HTML/CSS/JS, accessibility, and web platform APIs used in real production apps.",
+        url: "https://developer.mozilla.org",
+        logo: "MDN",
+        logoUrl: "https://logo.clearbit.com/mozilla.org",
+        gradient: "from-zinc-800 to-slate-900",
+        category: "web",
+        tags: ["HTML", "CSS", "JavaScript", "Docs", "Web APIs"],
+        rating: 4.9,
+        users: "Most used",
+        difficulty: "All Levels",
+        features: ["Authoritative Docs", "Examples", "Guides", "Accessibility"],
+        bestFor: "Learning web fundamentals correctly",
+        isFree: true,
+        type: "Docs",
+        timeToStart: "15m",
+    },
+    {
+        id: "react-docs",
+        name: "React Documentation",
+        description: "Official React docs — hooks, state, performance patterns.",
+        longDescription: "Learn React the right way: components, hooks, state management, routing, performance, and best practices with examples.",
+        url: "https://react.dev",
+        logo: "RE",
+        logoUrl: "https://logo.clearbit.com/react.dev",
+        gradient: "from-cyan-500 to-blue-600",
+        category: "web",
+        tags: ["React", "Hooks", "Frontend", "Docs"],
+        rating: 4.8,
+        users: "Millions",
+        difficulty: "All Levels",
+        features: ["Official", "Modern Patterns", "Examples", "Best Practices"],
+        bestFor: "Building strong frontend fundamentals",
+        isFree: true,
+        type: "Docs",
+        timeToStart: "15m",
+    },
+
+    // ─── Backend ───
+    {
+        id: "nodejs-docs",
+        name: "Node.js Docs",
+        description: "Official Node docs for building backend services.",
+        longDescription: "Learn Node core concepts: event loop, streams, HTTP, async patterns, and production practices.",
+        url: "https://nodejs.org/en/docs",
+        logo: "ND",
+        logoUrl: "https://logo.clearbit.com/nodejs.org",
+        gradient: "from-green-600 to-emerald-700",
+        category: "backend",
+        tags: ["Node.js", "Backend", "HTTP", "Async"],
+        rating: 4.6,
+        users: "Millions",
+        difficulty: "All Levels",
+        features: ["Official", "API Reference", "Guides", "Best Practices"],
+        bestFor: "Writing correct backend code",
+        isFree: true,
+        type: "Docs",
+        timeToStart: "15m",
+    },
+    {
+        id: "expressjs-guide",
+        name: "Express.js Guide",
+        description: "Express basics + middleware patterns for APIs.",
+        longDescription: "Build REST APIs with Express: routing, middleware, auth, error handling, security, and deployment tips.",
+        url: "https://expressjs.com/en/guide/routing.html",
+        logo: "EX",
+        logoUrl: "https://logo.clearbit.com/expressjs.com",
+        gradient: "from-slate-700 to-gray-900",
+        category: "backend",
+        tags: ["Express", "REST", "Middleware", "Auth"],
+        rating: 4.6,
+        users: "Popular",
+        difficulty: "Beginner",
+        features: ["Official Guide", "Examples", "Patterns", "Quick Start"],
+        bestFor: "Building APIs for projects and internships",
+        isFree: true,
+        type: "Docs",
+        timeToStart: "15m",
+    },
+    {
+        id: "postgres-tutorial",
+        name: "PostgreSQL Tutorial",
+        description: "SQL + indexing + joins + performance fundamentals.",
+        longDescription: "Learn SQL properly with joins, indexes, query planning basics, and practical examples for interview and real backend work.",
+        url: "https://www.postgresql.org/docs/",
+        logo: "PG",
+        logoUrl: "https://logo.clearbit.com/postgresql.org",
+        gradient: "from-blue-700 to-indigo-700",
+        category: "backend",
+        tags: ["SQL", "Postgres", "Indexes", "Joins"],
+        rating: 4.7,
+        users: "Top",
+        difficulty: "Intermediate",
+        features: ["Official Docs", "SQL Reference", "Performance Topics"],
+        bestFor: "Backend + DB interview prep",
+        isFree: true,
+        type: "Docs",
+        timeToStart: "1h",
+    },
+
+    // ─── DevOps & Cloud ───
+    {
+        id: "docker-docs",
+        name: "Docker Docs",
+        description: "Containers, images, compose — ship projects like production.",
+        longDescription: "Learn Docker fundamentals to containerize apps, write Dockerfiles, run multi-service apps with docker-compose, and deploy cleanly.",
+        url: "https://docs.docker.com",
+        logo: "DK",
+        logoUrl: "https://logo.clearbit.com/docker.com",
+        gradient: "from-sky-500 to-blue-700",
+        category: "devops",
+        tags: ["Docker", "Containers", "Compose", "DevOps"],
+        rating: 4.7,
+        users: "Millions",
+        difficulty: "All Levels",
+        features: ["Official Docs", "Guides", "Examples", "Best Practices"],
+        bestFor: "Internship-ready deployments",
+        isFree: true,
+        type: "Docs",
+        timeToStart: "15m",
+    },
+    {
+        id: "aws-skillbuilder",
+        name: "AWS Skill Builder",
+        description: "Free learning paths for cloud fundamentals and cert prep.",
+        longDescription: "Start cloud with guided AWS courses, labs, and learning plans. Helpful for cloud internships and basic deployment knowledge.",
+        url: "https://skillbuilder.aws",
+        logo: "AWS",
+        logoUrl: "https://logo.clearbit.com/aws.amazon.com",
+        gradient: "from-amber-500 to-orange-600",
+        category: "devops",
+        tags: ["AWS", "Cloud", "Cert", "Labs"],
+        rating: 4.5,
+        users: "Large",
+        difficulty: "Beginner",
+        features: ["Learning Plans", "Hands-on Labs", "Certificates", "Free content"],
+        bestFor: "Getting started with cloud in 1-2 weeks",
+        isFree: true,
+        type: "Course",
+        timeToStart: "1h",
+    },
+    {
+        id: "kubernetes-basics",
+        name: "Kubernetes Basics",
+        description: "Learn k8s concepts: pods, deployments, services.",
+        longDescription: "Understand Kubernetes fundamentals with interactive examples. Great once you know Docker and want to level up DevOps skills.",
+        url: "https://kubernetes.io/docs/tutorials/kubernetes-basics/",
+        logo: "K8S",
+        logoUrl: "https://logo.clearbit.com/kubernetes.io",
+        gradient: "from-indigo-600 to-blue-800",
+        category: "devops",
+        tags: ["Kubernetes", "k8s", "DevOps", "Deployments"],
+        rating: 4.6,
+        users: "Popular",
+        difficulty: "Intermediate",
+        features: ["Official Tutorial", "Core Concepts", "Hands-on"],
+        bestFor: "Deploying scalable services",
+        isFree: true,
+        type: "Docs",
+        timeToStart: "1h",
+    },
+
+    // ─── Data / ML ───
+    {
+        id: "kaggle-learn",
+        name: "Kaggle Learn",
+        description: "Short, practical micro-courses on ML, Python, Pandas.",
+        longDescription: "Fast micro-courses with exercises: Python, Pandas, SQL, ML, feature engineering, and model validation. Great for engineering students.",
+        url: "https://www.kaggle.com/learn",
+        logo: "KG",
+        logoUrl: "https://logo.clearbit.com/kaggle.com",
+        gradient: "from-sky-500 to-cyan-600",
+        category: "data",
+        tags: ["Python", "Pandas", "ML", "SQL"],
+        rating: 4.7,
+        users: "Millions",
+        difficulty: "Beginner",
+        features: ["Micro Courses", "Exercises", "Certificates", "Projects"],
+        bestFor: "Starting ML in a structured way",
+        isFree: true,
+        type: "Course",
+        timeToStart: "1h",
+    },
+    {
+        id: "fastai-course",
+        name: "fast.ai Practical Deep Learning",
+        description: "Build deep learning models with practical approach.",
+        longDescription: "One of the best practical deep learning courses: build models quickly, understand what works, and apply it to real datasets.",
+        url: "https://course.fast.ai",
+        logo: "FA",
+        logoUrl: "https://logo.clearbit.com/fast.ai",
+        gradient: "from-fuchsia-600 to-purple-700",
+        category: "data",
+        tags: ["Deep Learning", "PyTorch", "Course", "Projects"],
+        rating: 4.8,
+        users: "Popular",
+        difficulty: "Intermediate",
+        features: ["Practical", "Projects", "PyTorch", "Community"],
+        bestFor: "Hands-on DL projects for resume",
+        isFree: true,
+        type: "Course",
+        timeToStart: "1d",
+    },
+
+    // ─── Cybersecurity ───
+    {
+        id: "tryhackme",
+        name: "TryHackMe",
+        description: "Beginner-friendly cybersecurity labs and guided learning paths.",
+        longDescription: "Hands-on labs for cyber fundamentals, web security, Linux, networking, and blue/red team basics with guided rooms.",
+        url: "https://tryhackme.com",
+        logo: "THM",
+        logoUrl: "https://logo.clearbit.com/tryhackme.com",
+        gradient: "from-rose-600 to-red-700",
+        category: "security",
+        tags: ["Cybersecurity", "Labs", "Networking", "Linux"],
+        rating: 4.6,
+        users: "2M+",
+        difficulty: "Beginner",
+        features: ["Hands-on Labs", "Guided Paths", "CTF Rooms", "Progress"],
+        bestFor: "Starting cybersecurity with practice",
+        isFree: false,
+        type: "Platform",
+        timeToStart: "1h",
+    },
+    {
+        id: "owasp-top10",
+        name: "OWASP Top 10",
+        description: "Most important web app security risks and mitigations.",
+        longDescription: "Industry standard list of web security risks. Learn the vulnerabilities, examples, and remediation patterns to build secure apps.",
+        url: "https://owasp.org/www-project-top-ten/",
+        logo: "OW",
+        logoUrl: "https://logo.clearbit.com/owasp.org",
+        gradient: "from-rose-600 to-red-600",
+        category: "security",
+        tags: ["OWASP", "Web Security", "Vulnerabilities", "Secure Coding"],
+        rating: 4.7,
+        users: "Standard",
+        difficulty: "All Levels",
+        features: ["Best Practices", "Risk List", "Mitigations", "Examples"],
+        bestFor: "Secure coding + interviews",
+        isFree: true,
+        type: "Docs",
+        timeToStart: "15m",
     },
 ];
 
@@ -716,6 +1103,10 @@ const AssessmentHub: React.FC<AssessmentHubProps> = ({ isDashboard = false, onBa
     const isDark = theme === "dark";
     const [activeCategory, setActiveCategory] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
+    const [difficultyFilter, setDifficultyFilter] = useState<Platform["difficulty"] | "Any">("Any");
+    const [typeFilter, setTypeFilter] = useState<Platform["type"] | "Any">("Any");
+    const [freeOnly, setFreeOnly] = useState(false);
+    const [sortBy, setSortBy] = useState<"rating" | "name">("rating");
 
     const filteredPlatforms = PLATFORMS.filter((p) => {
         const matchesCategory = activeCategory === "all" || p.category === activeCategory;
@@ -724,7 +1115,14 @@ const AssessmentHub: React.FC<AssessmentHubProps> = ({ isDashboard = false, onBa
             p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             p.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase())) ||
             p.description.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch;
+        const matchesDifficulty = difficultyFilter === "Any" || p.difficulty === difficultyFilter;
+        const matchesType = typeFilter === "Any" || p.type === typeFilter;
+        const matchesFree = !freeOnly || p.isFree;
+        return matchesCategory && matchesSearch && matchesDifficulty && matchesType && matchesFree;
+    }).sort((a, b) => {
+        if (sortBy === "name") return a.name.localeCompare(b.name);
+        // rating
+        return (b.rating || 0) - (a.rating || 0);
     });
 
     return (
@@ -793,6 +1191,77 @@ const AssessmentHub: React.FC<AssessmentHubProps> = ({ isDashboard = false, onBa
                         <Filter className="w-4 h-4" />
                         <span>{filteredPlatforms.length} platforms</span>
                     </div>
+                </div>
+
+                {/* Advanced Filters */}
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <label className="flex flex-col gap-1.5">
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Difficulty</span>
+                        <select
+                            value={difficultyFilter}
+                            onChange={(e) => setDifficultyFilter(e.target.value as any)}
+                            className={`h-11 px-3 rounded-xl text-sm font-semibold border outline-none ${isDark
+                                ? "bg-white/5 border-white/10 text-white"
+                                : "bg-slate-50 border-slate-200 text-slate-900"
+                                }`}
+                        >
+                            <option value="Any">Any</option>
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Advanced">Advanced</option>
+                            <option value="All Levels">All Levels</option>
+                        </select>
+                    </label>
+
+                    <label className="flex flex-col gap-1.5">
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Type</span>
+                        <select
+                            value={typeFilter}
+                            onChange={(e) => setTypeFilter(e.target.value as any)}
+                            className={`h-11 px-3 rounded-xl text-sm font-semibold border outline-none ${isDark
+                                ? "bg-white/5 border-white/10 text-white"
+                                : "bg-slate-50 border-slate-200 text-slate-900"
+                                }`}
+                        >
+                            <option value="Any">Any</option>
+                            <option value="Platform">Platform</option>
+                            <option value="Course">Course</option>
+                            <option value="Docs">Docs</option>
+                            <option value="Sheet">Sheet</option>
+                            <option value="Roadmap">Roadmap</option>
+                            <option value="Playlist">Playlist</option>
+                        </select>
+                    </label>
+
+                    <label
+                        className={`flex items-center gap-3 h-11 px-4 rounded-xl border cursor-pointer select-none ${isDark
+                            ? "bg-white/5 border-white/10 text-slate-200"
+                            : "bg-slate-50 border-slate-200 text-slate-800"
+                            } mt-5 sm:mt-0 lg:mt-6`}
+                    >
+                        <input
+                            type="checkbox"
+                            checked={freeOnly}
+                            onChange={(e) => setFreeOnly(e.target.checked)}
+                            className="h-4 w-4"
+                        />
+                        <span className="text-sm font-black">Free only</span>
+                    </label>
+
+                    <label className="flex flex-col gap-1.5">
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Sort</span>
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value as any)}
+                            className={`h-11 px-3 rounded-xl text-sm font-semibold border outline-none ${isDark
+                                ? "bg-white/5 border-white/10 text-white"
+                                : "bg-slate-50 border-slate-200 text-slate-900"
+                                }`}
+                        >
+                            <option value="rating">Top rated</option>
+                            <option value="name">Name (A–Z)</option>
+                        </select>
+                    </label>
                 </div>
             </div>
 
