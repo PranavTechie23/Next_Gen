@@ -43,6 +43,17 @@ export const deptApi = {
     return response.data;
   },
 
+  uploadCompanyStatsExcel: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post('/company-stats/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
   updateStudentAcademicData: async (id: string | number, data: any) => {
     const response = await api.put(`/students/${id}`, data);
     return response.data;
@@ -63,5 +74,10 @@ export const deptApi = {
   getDashboardStats: async () => {
     const response = await api.get('/dashboard/stats');
     return response.data;
-  }
+  },
+
+  getWebinarRecommendations: async () => {
+    const response = await api.get('/webinars/recommendations');
+    return response.data;
+  },
 };

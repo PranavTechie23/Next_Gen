@@ -108,12 +108,4 @@ temp/
 *.db
 *.sqlite
 *.sqlite3
-Contents/INVESTOR_README.md
-Contents/INVESTOR_PITCH.md
-Contents/BUSINESS_ROADMAP.md
-PITCH_QUESTIONS_AND_STORY.txt
-Contents/JOBS_PAGE_PURPOSE_AND_ALIGNMENT.md
-client/src/pages/student/Difficulty,Title,Frequency,Acceptance Ra.txt
-pool_titles.txt
-PROJECT_USP_INNOVATION_PRODUCTIZATION.txt
-STARTUP_PLAYBOOK_STAKEHOLDERS_FAILURE_MODES_FUTURE.txt
+Contents/

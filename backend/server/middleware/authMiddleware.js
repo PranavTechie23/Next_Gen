@@ -4,10 +4,12 @@ const db = require('../config/db');
 exports.protect = async (req, res, next) => {
     let token;
 
-    if (req.cookies && req.cookies.token) {
-        token = req.cookies.token;
-    } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    // Prefer explicit Authorization header over cookie.
+    // This avoids stale/blacklisted cookies overriding a fresh bearer token.
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies && req.cookies.token) {
+        token = req.cookies.token;
     }
 
     if (token) {
