@@ -175,13 +175,7 @@ export default function StudentDashboard() {
     try {
       setSavingPerformance(true);
       await studentApi.updatePerformance(performanceDraft);
-      const refreshed = await fetchRoadmap();
-      const llmSummary = await summarizePlanWithPuter({
-        performanceDraft,
-        roadmap: refreshed?.computed?.roadmap || roadmapData?.computed?.roadmap || {},
-        focus: refreshed?.computed?.summary?.focus || roadmapData?.computed?.summary?.focus || [],
-      });
-      if (llmSummary) setPuterSummary(llmSummary);
+      await fetchRoadmap();
       toast.success("Personalized plan generated.");
     } catch (e) {
       console.error("Failed to generate personalized plan", e);
@@ -891,31 +885,85 @@ export default function StudentDashboard() {
     ];
   })();
 
-  const radarSkillData = [
-    { skill: "Coding", current: Math.round((skillData.find((s) => s.skill === "DSA")?.student || 0)), required: 85, category: "Technical" },
-    { skill: "Projects", current: Math.round((skillData.find((s) => s.skill === "Team Projects")?.student || 0)), required: 78, category: "Experience" },
-    { skill: "Communication", current: Math.round((skillData.find((s) => s.skill === "Communication")?.student || 0)), required: 80, category: "Soft Skills" },
-    { skill: "Problem Solving", current: Math.round((skillData.find((s) => s.skill === "DSA")?.student || 0) + 4), required: 85, category: "Technical" },
-    { skill: "System Design", current: Math.round((skillData.find((s) => s.skill === "System Design")?.student || 0)), required: 75, category: "Technical" },
-    { skill: "Teamwork", current: Math.round((skillData.find((s) => s.skill === "Team Projects")?.student || 0)), required: 80, category: "Soft Skills" },
-    { skill: "Leadership", current: Math.round(clamp((skillData.find((s) => s.skill === "Communication")?.student || 0) - 8)), required: 72, category: "Soft Skills" },
-  ];
+  // Role-aware radar: required benchmarks shift by inferred role; all values clamped 0–100 (fixes tooltip >100).
+  const radarSkillData = (() => {
+    const title = String(roleRecommendation?.title || "Software Engineer").toLowerCase();
+    let required: number[];
+    if (title.includes("frontend")) {
+      required = [78, 82, 82, 76, 56, 82, 68];
+    } else if (title.includes("backend")) {
+      required = [82, 78, 76, 84, 80, 76, 70];
+    } else if (title.includes("data") || title.includes("ml")) {
+      required = [74, 78, 84, 80, 58, 78, 74];
+    } else if (title.includes("devops") || title.includes("cloud")) {
+      required = [72, 84, 76, 76, 82, 82, 72];
+    } else if (title.includes("qa") || title.includes("test")) {
+      required = [68, 74, 88, 76, 56, 86, 68];
+    } else if (title.includes("full stack")) {
+      required = [84, 80, 78, 82, 72, 78, 70];
+    } else {
+      required = [85, 78, 80, 85, 75, 80, 72];
+    }
+    required = required.map((n) => Math.round(clamp(n, 0, 100)));
+
+    const dsa = clamp(Number(skillData.find((s) => s.skill === "DSA")?.student ?? 0), 0, 100);
+    const sys = clamp(Number(skillData.find((s) => s.skill === "System Design")?.student ?? 0), 0, 100);
+    const team = clamp(Number(skillData.find((s) => s.skill === "Team Projects")?.student ?? 0), 0, 100);
+    const comm = clamp(Number(skillData.find((s) => s.skill === "Communication")?.student ?? 0), 0, 100);
+    const full = clamp(Number(skillData.find((s) => s.skill === "Full Stack Dev")?.student ?? 0), 0, 100);
+    const problem = clamp(Math.round(dsa * 0.55 + sys * 0.45), 0, 100);
+    const lead = clamp(Math.round(comm * 0.75 + team * 0.25 - 6), 0, 100);
+
+    let coding = dsa;
+    let projects = team;
+    if (title.includes("frontend")) {
+      coding = clamp(Math.round(dsa * 0.45 + full * 0.55), 0, 100);
+      projects = clamp(Math.round(team * 0.5 + full * 0.5), 0, 100);
+    } else if (title.includes("backend")) {
+      const db = clamp(Number(skillData.find((s) => s.skill === "Database Design")?.student ?? 0), 0, 100);
+      coding = clamp(Math.round(dsa * 0.65 + db * 0.35), 0, 100);
+      projects = clamp(Math.round(team * 0.55 + db * 0.45), 0, 100);
+    } else if (title.includes("data") || title.includes("ml")) {
+      coding = clamp(Math.round(dsa * 0.6 + full * 0.2 + sys * 0.2), 0, 100);
+    } else if (title.includes("devops") || title.includes("cloud")) {
+      coding = clamp(Math.round(sys * 0.55 + dsa * 0.45), 0, 100);
+      projects = clamp(Math.round(team * 0.6 + sys * 0.4), 0, 100);
+    } else if (title.includes("qa") || title.includes("test")) {
+      coding = clamp(Math.round(dsa * 0.5 + comm * 0.5), 0, 100);
+      projects = clamp(Math.round(team * 0.65 + dsa * 0.35), 0, 100);
+    }
+
+    const rows = [
+      { skill: "Coding", current: coding, required: required[0], category: "Technical" },
+      { skill: "Projects", current: projects, required: required[1], category: "Experience" },
+      { skill: "Communication", current: comm, required: required[2], category: "Soft Skills" },
+      { skill: "Problem Solving", current: problem, required: required[3], category: "Technical" },
+      { skill: "System Design", current: sys, required: required[4], category: "Technical" },
+      { skill: "Teamwork", current: team, required: required[5], category: "Soft Skills" },
+      { skill: "Leadership", current: lead, required: required[6], category: "Soft Skills" },
+    ];
+    return rows.map((r) => ({
+      ...r,
+      current: Math.round(clamp(r.current, 0, 100)),
+      required: Math.round(clamp(r.required, 0, 100)),
+    }));
+  })();
 
   const skillProgressPanels = [
     {
       title: "Skill Progress",
       label: "Technical Skills",
-      ring1: Math.round((skillData.find((s) => s.skill === "DSA")?.student || 0)),
-      ring2: Math.round((skillData.find((s) => s.skill === "Full Stack Dev")?.student || 0)),
-      ring3: Math.round((skillData.find((s) => s.skill === "System Design")?.student || 0)),
+      ring1: Math.round(clamp(Number(skillData.find((s) => s.skill === "DSA")?.student || 0), 0, 100)),
+      ring2: Math.round(clamp(Number(skillData.find((s) => s.skill === "Full Stack Dev")?.student || 0), 0, 100)),
+      ring3: Math.round(clamp(Number(skillData.find((s) => s.skill === "System Design")?.student || 0), 0, 100)),
       colors: ["#3b82f6", "#06b6d4", "#a855f7"]
     },
     {
       title: "Skill Progress",
       label: "Professional Skills",
-      ring1: Math.round((skillData.find((s) => s.skill === "Communication")?.student || 0)),
-      ring2: Math.round((skillData.find((s) => s.skill === "Team Projects")?.student || 0)),
-      ring3: Math.round((skillData.find((s) => s.skill === "Database Design")?.student || 0)),
+      ring1: Math.round(clamp(Number(skillData.find((s) => s.skill === "Communication")?.student || 0), 0, 100)),
+      ring2: Math.round(clamp(Number(skillData.find((s) => s.skill === "Team Projects")?.student || 0), 0, 100)),
+      ring3: Math.round(clamp(Number(skillData.find((s) => s.skill === "Database Design")?.student || 0), 0, 100)),
       colors: ["#ec4899", "#8b5cf6", "#3b82f6"]
     }
   ];
@@ -2364,7 +2412,10 @@ export default function StudentDashboard() {
                         </div>
                         Skill Architecture
                       </h3>
-                      <p className={`text-lg font-bold ${isDark ? "text-gray-400" : "text-gray-600"} ml-16 mt-1`}>Holistic view of your core competencies vs. target industry standards</p>
+                      <p className={`text-lg font-bold ${isDark ? "text-gray-400" : "text-gray-600"} ml-16 mt-1`}>
+                        Holistic view vs. benchmarks for{" "}
+                        <span className={`${isDark ? "text-blue-300" : "text-blue-700"}`}>{roleRecommendation.title}</span>
+                      </p>
                     </div>
                     <div className="flex bg-white/5 p-1.5 rounded-2xl gap-2 border border-white/10">
                       <Button
@@ -2454,7 +2505,7 @@ export default function StudentDashboard() {
                         <RadarChart data={radarSkillData}>
                           <PolarGrid stroke="#ffffff20" />
                           <PolarAngleAxis dataKey="skill" tick={{ fill: '#9ca3af', fontSize: 12 }} />
-                          <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: '#9ca3af' }} />
+                          <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: isDark ? '#9ca3af' : '#64748b' }} />
                           <Radar
                             name="Your Skills"
                             dataKey="current"
@@ -2463,18 +2514,39 @@ export default function StudentDashboard() {
                             fillOpacity={0.6}
                           />
                           <Radar
-                            name="Required"
+                            name="Role benchmark"
                             dataKey="required"
                             stroke="#ef4444"
                             fill="#ef4444"
                             fillOpacity={0.2}
                           />
-                          <Legend wrapperStyle={{ color: 'white' }} />
+                          <Legend
+                            wrapperStyle={{
+                              color: isDark ? "#e5e7eb" : "#334155",
+                              fontSize: 12,
+                              fontWeight: 700,
+                            }}
+                          />
                           <Tooltip
-                            contentStyle={{
-                              backgroundColor: '#0c0c14',
-                              border: '1px solid rgba(255,255,255,0.1)',
-                              color: 'white'
+                            content={({ active, payload, label }) => {
+                              if (!active || !payload?.length) return null;
+                              return (
+                                <div
+                                  className={`rounded-xl border px-3 py-2 text-sm shadow-lg ${
+                                    isDark
+                                      ? "border-white/10 bg-[#0c0c14] text-white"
+                                      : "border-slate-200 bg-white text-slate-900"
+                                  }`}
+                                >
+                                  <p className="font-black mb-1">{label}</p>
+                                  {payload.map((entry: any) => (
+                                    <p key={String(entry.name)} className="font-semibold tabular-nums">
+                                      {entry.name}: {Math.round(clamp(Number(entry.value), 0, 100))}
+                                      <span className="opacity-60 font-normal"> / 100</span>
+                                    </p>
+                                  ))}
+                                </div>
+                              );
                             }}
                           />
                         </RadarChart>

@@ -66,9 +66,20 @@ const updateStudentSubjectiveProfile = async (req, res) => {
     const connection = await db.getConnection();
     try {
         const userId = req.user.id;
-        const { resume_url, linkedin_url, github_url, address, skills, projects } = req.body;
+        const { resume_url, linkedin_url, github_url, address, skills, projects, achievements } = req.body;
 
         await connection.beginTransaction();
+
+        // Ensure achievements table exists (safe in runtime for now)
+        await connection.execute(`
+            CREATE TABLE IF NOT EXISTS student_achievements (
+                id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                student_id BIGINT NOT NULL,
+                achievement_text VARCHAR(1000) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX (student_id)
+            )
+        `);
 
         // 1. Update student_profiles table
         const profileUpdateFields = [];
@@ -139,6 +150,19 @@ const updateStudentSubjectiveProfile = async (req, res) => {
                 await connection.execute(
                     'INSERT INTO projects (student_id, title, description, project_link) VALUES (?, ?, ?, ?)',
                     [userId, title, description || null, project_link || null]
+                );
+            }
+        }
+
+        // 4. Update achievements table
+        if (achievements && Array.isArray(achievements)) {
+            await connection.execute('DELETE FROM student_achievements WHERE student_id = ?', [userId]);
+            for (const item of achievements) {
+                const text = typeof item === 'string' ? item.trim() : '';
+                if (!text) continue;
+                await connection.execute(
+                    'INSERT INTO student_achievements (student_id, achievement_text) VALUES (?, ?)',
+                    [userId, text.slice(0, 1000)]
                 );
             }
         }

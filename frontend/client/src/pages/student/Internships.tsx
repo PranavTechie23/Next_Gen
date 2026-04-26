@@ -39,13 +39,15 @@ export default function Internships(props: {
               <p className={`text-xs font-black uppercase tracking-[0.2em] ${isDark ? "text-slate-500" : "text-slate-500"}`}>Internships</p>
               <h2 className={`text-2xl sm:text-3xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Projects & Internships</h2>
               <p className={`${isDark ? "text-slate-400" : "text-slate-600"} text-sm max-w-2xl`}>
-                These details are extracted from your resume. If anything is missing, upload an updated resume or add items manually in Skills.
+                These details are extracted from your resume. Upload an updated PDF if anything is missing.
               </p>
             </div>
-            <Button onClick={onUploadResume} disabled={!!uploading} className="h-12 rounded-2xl font-black">
-              <Upload className="w-4 h-4 mr-2" />
-              {uploading ? "Uploading..." : "Upload Resume"}
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto shrink-0">
+              <Button onClick={onUploadResume} disabled={!!uploading} className="h-12 rounded-2xl font-black">
+                <Upload className="w-4 h-4 mr-2" />
+                {uploading ? "Uploading..." : "Upload Resume"}
+              </Button>
+            </div>
           </div>
 
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -155,4 +157,3 @@ export default function Internships(props: {
     </div>
   );
 }
-

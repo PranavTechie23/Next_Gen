@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const studentController = require('../controllers/studentController');
 const studentProfileController = require('../controllers/studentProfileController');
+const roadmapController = require('../controllers/roadmapController');
+const companyStatsController = require('../controllers/companyStatsController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // --------------------------------------------------
@@ -29,6 +31,31 @@ router.post('/profile/resume',
     studentProfileController.resumeUploadMiddleware,
     studentProfileController.uploadResume,
     studentProfileController.uploadErrorHandler
+);
+
+// --------------------------------------------------
+// STUDENT ROADMAP (DYNAMIC) ROUTES
+// --------------------------------------------------
+
+// GET /api/student/roadmap - Get personalized roadmap for the logged-in student
+router.get('/roadmap',
+    protect,
+    authorize('STUDENT'),
+    roadmapController.getRoadmap
+);
+
+// PUT /api/student/performance - Upsert AMCAT/endsem/mock scores
+router.put('/performance',
+    protect,
+    authorize('STUDENT'),
+    roadmapController.upsertPerformance
+);
+
+// GET /api/student/company-stats?company=Google - Company stats for kit
+router.get('/company-stats',
+    protect,
+    authorize('STUDENT'),
+    companyStatsController.getCompanyStats
 );
 
 // --------------------------------------------------
