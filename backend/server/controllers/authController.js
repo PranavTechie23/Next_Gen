@@ -180,7 +180,10 @@ exports.login = async (req, res) => {
         const defaultTokenExpiry = process.env.JWT_EXPIRE || '1d';
         const rememberTokenExpiry = process.env.JWT_REMEMBER_EXPIRE || '30d';
         const tokenExpiry = rememberMe ? rememberTokenExpiry : defaultTokenExpiry;
-        const token = jwt.sign(payload, process.env.JWT_SECRET, {
+        const token = jwt.sign({
+            ...payload,
+            session_nonce: require('crypto').randomBytes(8).toString('hex')
+        }, process.env.JWT_SECRET, {
             expiresIn: tokenExpiry
         });
 
@@ -211,6 +214,7 @@ exports.login = async (req, res) => {
 
         res.json({
             message: "Login successful.",
+            token,
             user: {
                 id: user.id,
                 email: user.email,

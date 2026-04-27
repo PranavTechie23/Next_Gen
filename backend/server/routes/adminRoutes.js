@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
 const analyticsController = require('../controllers/analyticsController');
+const reportsController = require('../controllers/reportsController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // POST /dept-heads - Create a new Department Head
@@ -79,6 +80,46 @@ router.get('/analytics/placement-stats',
     protect,
     authorize("TPO_ADMIN", "TPO_HEAD"),
     analyticsController.getPlacementStats
+);
+
+// --------------------------------------------------
+// REPORTS & EXPORTS (TPO_ADMIN, TPO_HEAD)
+// --------------------------------------------------
+
+router.get('/reports/placement',
+    protect,
+    authorize("TPO_ADMIN", "TPO_HEAD"),
+    reportsController.getPlacementReport
+);
+
+router.get('/reports/student-readiness',
+    protect,
+    authorize("TPO_ADMIN", "TPO_HEAD"),
+    reportsController.getStudentReadinessReport
+);
+
+router.get('/reports/company-analysis',
+    protect,
+    authorize("TPO_ADMIN", "TPO_HEAD"),
+    reportsController.getCompanyAnalysisReport
+);
+
+router.get('/reports/branch-performance',
+    protect,
+    authorize("TPO_ADMIN", "TPO_HEAD"),
+    reportsController.getBranchPerformanceReport
+);
+
+router.get('/reports/at-risk-students',
+    protect,
+    authorize("TPO_ADMIN", "TPO_HEAD"),
+    reportsController.getAtRiskStudentsReport
+);
+
+router.post('/reports/custom',
+    protect,
+    authorize("TPO_ADMIN", "TPO_HEAD"),
+    reportsController.getCustomReport
 );
 
 module.exports = router;

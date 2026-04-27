@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const deptController = require('../controllers/deptController');
+const companyStatsController = require('../controllers/companyStatsController');
+const webinarRecommendationController = require('../controllers/webinarRecommendationController');
 const analyticsController = require('../controllers/analyticsController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -18,6 +20,14 @@ router.post('/students/upload',
     authorize('TPO_HEAD'), // Only Dept Heads can upload
     upload.single('file'),
     deptController.uploadStudents
+);
+
+// POST /api/dept/company-stats/upload - Bulk upload company stats via Excel
+router.post('/company-stats/upload',
+    protect,
+    authorize('TPO_HEAD'),
+    upload.single('file'),
+    companyStatsController.uploadCompanyStats
 );
 
 // GET /api/dept/students - Get all students for the Department Head's department
@@ -74,6 +84,13 @@ router.get('/analytics/department-stats',
     protect,
     authorize("TPO_ADMIN", "TPO_HEAD"),
     analyticsController.getDepartmentStats
+);
+
+// GET /api/dept/webinars/recommendations - AI webinar recommendations for Dept TPO
+router.get('/webinars/recommendations',
+    protect,
+    authorize('TPO_HEAD'),
+    webinarRecommendationController.getDeptWebinarRecommendations
 );
 
 module.exports = router;
