@@ -92,6 +92,7 @@ export default function StudentDashboard() {
   const [roadmapData, setRoadmapData] = useState<any>(null);
   const [loadingRoadmap, setLoadingRoadmap] = useState(false);
   const [savingPerformance, setSavingPerformance] = useState(false);
+  const [uploadingAmcat, setUploadingAmcat] = useState(false);
   const [resumeUploadState, setResumeUploadState] = useState<"idle" | "uploading" | "success" | "error">("idle");
   const [resumeUploadStatusText, setResumeUploadStatusText] = useState<string>("");
   const [interestInput, setInterestInput] = useState("");
@@ -182,6 +183,33 @@ export default function StudentDashboard() {
       toast.error("Failed to generate plan.");
     } finally {
       setSavingPerformance(false);
+    }
+  };
+
+  const onAmcatReportChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.currentTarget.value = "";
+    if (!file) return;
+    try {
+      setUploadingAmcat(true);
+      const data = await studentApi.uploadAmcatReport(file);
+      const perf = data?.performance || {};
+      setPerformanceDraft((prev: any) => ({
+        ...(prev || {}),
+        amcat_quant: perf?.amcat_quant ?? prev?.amcat_quant ?? "",
+        amcat_verbal: perf?.amcat_verbal ?? prev?.amcat_verbal ?? "",
+        amcat_logical: perf?.amcat_logical ?? prev?.amcat_logical ?? "",
+        mock_interview_score: perf?.mock_interview_score ?? prev?.mock_interview_score ?? "",
+        coding_test_score: perf?.coding_test_score ?? prev?.coding_test_score ?? "",
+      }));
+      toast.success(data?.message || "AMCAT report uploaded.");
+      setRoadmapData(null);
+      await fetchRoadmap();
+    } catch (error: any) {
+      console.error("AMCAT upload failed", error);
+      toast.error(error?.response?.data?.message || "Could not parse AMCAT report.");
+    } finally {
+      setUploadingAmcat(false);
     }
   };
 
@@ -1102,87 +1130,6 @@ export default function StudentDashboard() {
     return "Update your scores and generate plan to get a personalized summary.";
   })();
 
-  const iconFromKey = (key: string) => {
-    switch (key) {
-      case "target":
-        return Target;
-      case "briefcase":
-        return Briefcase;
-      case "users":
-        return Users;
-      case "code":
-      default:
-        return Code;
-    }
-  };
-
-  const colorFromKey = (key: string) => {
-    switch (key) {
-      case "target":
-        return "bg-gradient-to-br from-orange-500 to-yellow-600";
-      case "briefcase":
-        return "bg-gradient-to-br from-green-500 to-emerald-600";
-      case "users":
-        return "bg-gradient-to-br from-purple-500 to-pink-600";
-      case "code":
-      default:
-        return "bg-gradient-to-br from-blue-500 to-cyan-600";
-    }
-  };
-
-  // Learning Paths (dynamic roadmap when available; fallback to mock)
-  const learningPaths =
-    Array.isArray(roadmapData?.computed?.tracks) && roadmapData.computed.tracks.length > 0
-      ? roadmapData.computed.tracks.map((t: any) => ({
-          title: t.title,
-          description: t.description,
-          progress: Number(t.progress ?? 0),
-          icon: iconFromKey(String(t.iconKey || "code")),
-          color: colorFromKey(String(t.iconKey || "code")),
-          modules: Array.isArray(t.modules) ? t.modules : [],
-        }))
-      : [
-          {
-            title: "System Design Mastery",
-            description: "From basics to advanced distributed systems",
-            progress: 30,
-            icon: Server,
-            color: "bg-gradient-to-br from-purple-500 to-pink-600",
-            modules: [
-              { name: "Basics", status: "completed" },
-              { name: "Scalability", status: "in-progress" },
-              { name: "Databases", status: "pending" },
-              { name: "Microservices", status: "pending" }
-            ]
-          },
-          {
-            title: "Full Stack Development",
-            description: "End-to-end application development",
-            progress: 65,
-            icon: Code,
-            color: "bg-gradient-to-br from-blue-500 to-cyan-600",
-            modules: [
-              { name: "Frontend", status: "completed" },
-              { name: "Backend", status: "in-progress" },
-              { name: "DevOps", status: "pending" },
-              { name: "Testing", status: "pending" }
-            ]
-          },
-          {
-            title: "Data Structures & Algorithms",
-            description: "Advanced problem solving techniques",
-            progress: 80,
-            icon: Cpu,
-            color: "bg-gradient-to-br from-green-500 to-emerald-600",
-            modules: [
-              { name: "Arrays", status: "completed" },
-              { name: "Trees", status: "completed" },
-              { name: "Graphs", status: "in-progress" },
-              { name: "DP", status: "pending" }
-            ]
-          }
-        ];
-
   // Timeline & Milestones (resume-driven)
   const timeline = (() => {
     const iconBySource: Record<string, any> = {
@@ -1488,7 +1435,6 @@ export default function StudentDashboard() {
     { id: "resume", label: "Resume", icon: FileText },
     { id: "opportunities", label: "Drives", icon: BriefcaseIcon },
     { id: "learning", label: "Mentorship", icon: UsersIcon },
-    { id: "progress", label: "Progress", icon: TrendingUp },
 
     { id: "webinars", label: "Webinars", icon: Play },
 
@@ -1503,7 +1449,7 @@ export default function StudentDashboard() {
   const sidebarSections: Array<{ title: string; ids: Array<(typeof sidebarLinks)[number]["id"]> }> = [
     { title: "PROFILE TRACKER", ids: ["overview", "skills", "internships"] },
     { title: "QUESTION TRACKER", ids: ["opportunities", "learning"] },
-    { title: "RESOURCES", ids: ["progress", "careers", "webinars", "corporateNews"] },
+    { title: "RESOURCES", ids: ["careers", "webinars", "corporateNews"] },
     { title: "COMMUNITY", ids: ["feedback"] },
     { title: "PRACTICE & PREP", ids: ["assessment-hub", "company-kit"] },
   ];
@@ -1737,7 +1683,6 @@ export default function StudentDashboard() {
                     activeTab === "resume" ? "Resume: Projects, Education, Experience" :
                     activeTab === "opportunities" ? "Placement Drives" :
                       activeTab === "learning" ? "Learning & Development" :
-                        activeTab === "progress" ? "Progress & Milestones" :
                           activeTab === "careers" ? "Career Opportunities & Resources" :
                             activeTab === "webinars" ? "Live Learning Sessions" :
                                 activeTab === "corporateNews" ? "Industry News & Updates" :
@@ -2004,26 +1949,24 @@ export default function StudentDashboard() {
                 {/* Career Goal Panel */}
                 <div className="lg:col-span-2">
                   <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] overflow-hidden shadow-2xl`}>
-                    <CardContent className="p-12 space-y-10">
+                    <CardContent className="p-8 sm:p-9 space-y-6">
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div className="space-y-2">
-                          <p className={`text-sm font-black ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-[0.4em] opacity-50`}>Focusing Role</p>
-                          <p className="text-4xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent leading-tight">
+                          <p className={`text-xs font-black ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-[0.24em] opacity-70`}>Current Direction Signal</p>
+                          <p className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent leading-tight">
                             {roleRecommendation.title}
                           </p>
-                          <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"} font-semibold`}>
-                            Based on resume journey + skills{careerInterests.length ? " + selected interests" : ""}.
+                          <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"} font-semibold max-w-2xl`}>
+                            This is a guidance hint from resume + skills{careerInterests.length ? " + interests" : ""}, not a fixed role decision.
                           </p>
                         </div>
-                        <div className={`${isDark ? "bg-blue-500/10" : "bg-blue-50"} rounded-2xl p-6 ${isDark ? "border-blue-500/20" : "border-blue-200"} flex items-center gap-6`}>
-                          <div className={`w-16 h-16 ${isDark ? "bg-white/5" : "bg-white"} rounded-2xl flex items-center justify-center shadow-lg ${isDark ? "border-blue-500/20" : "border-blue-200"}`}>
-                            <span className="text-2xl font-black text-blue-400">{roleRecommendation.confidence}%</span>
+                        <div className={`${isDark ? "bg-blue-500/10" : "bg-blue-50"} rounded-2xl p-4 ${isDark ? "border-blue-500/20" : "border-blue-200"} flex items-center gap-4`}>
+                          <div className={`w-12 h-12 ${isDark ? "bg-white/5" : "bg-white"} rounded-xl flex items-center justify-center shadow-lg ${isDark ? "border-blue-500/20" : "border-blue-200"}`}>
+                            <span className="text-base font-black text-blue-400">{roleRecommendation.confidence}%</span>
                           </div>
                           <div>
-                            <p className={`text-sm font-bold ${isDark ? "text-gray-400" : "text-gray-600"}`}>AI Readiness</p>
-                            <p className={`text-lg font-black ${isDark ? "text-white" : "text-gray-900"}`}>
-                              {roleRecommendation.trend === "UP" ? "+6%" : "+2%"} <span className="text-xs text-green-400 font-bold ml-1">{roleRecommendation.trend}</span>
-                            </p>
+                            <p className={`text-xs font-bold ${isDark ? "text-gray-400" : "text-gray-600"}`}>Confidence Signal</p>
+                            <p className={`text-xs font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}>Use with your own goals</p>
                           </div>
                         </div>
                       </div>
@@ -2086,12 +2029,12 @@ export default function StudentDashboard() {
                         )}
                       </div>
 
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         <div className="flex items-center justify-between px-1">
-                          <p className={`text-lg font-black ${isDark ? "text-white" : "text-gray-900"}`}>Overall Confidence</p>
-                          <span className={`text-sm font-bold text-blue-400 px-3 py-1 ${isDark ? "bg-blue-500/10" : "bg-blue-50"} rounded-lg tracking-wide uppercase`}>AI INFERRED</span>
+                          <p className={`text-sm font-black ${isDark ? "text-white" : "text-gray-900"}`}>Role confidence (suggestive)</p>
+                          <span className={`text-[10px] font-bold text-blue-400 px-2.5 py-1 ${isDark ? "bg-blue-500/10" : "bg-blue-50"} rounded-lg tracking-wide uppercase`}>Exploratory</span>
                         </div>
-                        <div className={`h-4 ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-full overflow-hidden shadow-inner p-1`}>
+                        <div className={`h-3 ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-full overflow-hidden shadow-inner p-0.5`}>
                           <div className="h-full bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.3)]" style={{ width: `${roleRecommendation.confidence}%` }}></div>
                         </div>
                       </div>
@@ -2417,7 +2360,19 @@ export default function StudentDashboard() {
                         <span className={`${isDark ? "text-blue-300" : "text-blue-700"}`}>{roleRecommendation.title}</span>
                       </p>
                     </div>
-                    <div className="flex bg-white/5 p-1.5 rounded-2xl gap-2 border border-white/10">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className={`inline-flex items-center h-11 px-4 rounded-2xl text-xs font-black uppercase tracking-widest cursor-pointer border ${isDark ? "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}>
+                        <Upload className="w-4 h-4 mr-2" />
+                        {uploadingAmcat ? "Uploading AMCAT..." : "Upload AMCAT PDF"}
+                        <input
+                          type="file"
+                          accept="application/pdf"
+                          className="hidden"
+                          onChange={onAmcatReportChange}
+                          disabled={uploadingAmcat}
+                        />
+                      </label>
+                      <div className="flex bg-white/5 p-1.5 rounded-2xl gap-2 border border-white/10">
                       <Button
                         variant={viewMode === "radar" ? "default" : "ghost"}
                         className={`rounded-xl px-6 font-black text-xs uppercase tracking-widest h-11 ${viewMode === "radar" ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20" : "text-gray-400 hover:text-white"}`}
@@ -2432,6 +2387,7 @@ export default function StudentDashboard() {
                       >
                         Bar View
                       </Button>
+                      </div>
                     </div>
                   </div>
                   {/* Skill Progress Panels - Concentric Rings */}
@@ -2576,73 +2532,6 @@ export default function StudentDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Priority Skill Gaps */}
-              <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                <CardContent className="p-12">
-                  <div className="flex items-center gap-4 mb-10">
-                    <Target className="w-8 h-8 text-orange-400" />
-                    <div>
-                      <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-gray-900"}`}>Priority Skill Gaps</h3>
-                      <p className={`text-base font-bold ${isDark ? "text-gray-400" : "text-gray-600"}`}>Areas that require immediate focus to reach target benchmarks</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {[...skillData]
-                      .sort((a, b) => b.gap - a.gap)
-                      .slice(0, 4)
-                      .map((skill, idx) => (
-                        <div key={idx} className={`group p-6 ${isDark ? "border-white/5 bg-white/5" : "border-slate-100 bg-slate-50/50"} rounded-[2rem] hover:border-orange-500/50 ${isDark ? "hover:bg-orange-500/5" : "hover:bg-orange-50/50"} transition-all relative overflow-hidden shadow-sm`}>
-                          <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-4">
-                              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${skill.priority === "critical" ? "bg-red-500/10 text-red-400" :
-                                skill.priority === "high" ? "bg-orange-500/10 text-orange-400" : "bg-blue-500/10 text-blue-400"
-                                }`}>
-                                <AlertTriangle className="w-7 h-7" />
-                              </div>
-                              <div>
-                                <h4 className={`text-xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tight`}>{skill.skill}</h4>
-                                <p className={`text-xs font-black ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-widest opacity-60`}>{skill.category}</p>
-                              </div>
-                            </div>
-                            <div className={`px-4 py-2 rounded-xl font-black text-sm ${skill.priority === "critical" ? "bg-red-500/20 text-red-400 border-red-500/30" :
-                              skill.priority === "high" ? "bg-orange-500/20 text-orange-400 border-orange-500/30" : "bg-blue-500/20 text-blue-400 border-blue-500/30"
-                              } shadow-lg`}>
-                              {skill.gap}% GAP
-                            </div>
-                          </div>
-
-                          <div className="space-y-6 mt-4">
-                            <div className="space-y-2.5">
-                              <div className="flex items-center justify-between px-1">
-                                <span className={`text-xs font-black ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-widest`}>Current Proficiency</span>
-                                <span className="text-sm font-black text-blue-400">{skill.student}%</span>
-                              </div>
-                              <div className={`h-2.5 ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-full overflow-hidden p-0.5`}>
-                                <div className="h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" style={{ width: `${skill.student}%` }}></div>
-                              </div>
-                            </div>
-
-                            <div className="space-y-2.5">
-                              <div className="flex items-center justify-between px-1">
-                                <span className={`text-xs font-black ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-widest`}>Industry Target</span>
-                                <span className="text-sm font-black text-purple-400">{skill.target}%</span>
-                              </div>
-                              <div className={`h-2.5 ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-full overflow-hidden p-0.5`}>
-                                <div className="h-full bg-purple-500 rounded-full" style={{ width: `${skill.target}%` }}></div>
-                              </div>
-                            </div>
-
-                            <div className={`pt-4 border-t ${isDark ? "border-white/5" : "border-gray-200"} flex items-center justify-between`}>
-                              <p className="text-xs font-black text-green-400 uppercase tracking-widest">{skill.improvement}</p>
-                              <Button variant="ghost" className="h-8 text-[11px] font-black uppercase tracking-widest text-blue-400 hover:bg-blue-500/10">Improve Now</Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           )}
 
@@ -2653,6 +2542,15 @@ export default function StudentDashboard() {
               resumeSections={resumeSections}
               onUploadResume={handleResumeClick}
               uploading={uploadingResume}
+              onAfterSectionsSave={async () => {
+                try {
+                  const refreshed = await studentApi.getProfile();
+                  setBackendProfile(refreshed);
+                  setRoadmapData(null);
+                } catch (e) {
+                  console.error(e);
+                }
+              }}
             />
           )}
 
@@ -2862,55 +2760,107 @@ export default function StudentDashboard() {
           {activeTab === "learning" && (
             <div className="space-y-10">
               <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                <CardContent className="p-12">
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
-                    <div className="flex items-center gap-4">
-                      <Brain className={`w-8 h-8 ${isDark ? "text-blue-400" : "text-blue-600"}`} />
-                      <div>
-                        <h3 className={`text-3xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Your Dynamic Roadmap</h3>
-                        <p className={`text-lg font-bold ${isDark ? "text-gray-400" : "text-slate-600"}`}>
-                          Based on your CGPA, resume (projects/skills), and test scores
+                <CardContent className="p-6 sm:p-8 lg:p-12">
+                  <div className={`relative rounded-[2rem] border p-6 sm:p-8 overflow-hidden ${isDark ? "border-white/10 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-transparent" : "border-blue-100 bg-gradient-to-br from-blue-50 to-white"}`}>
+                    <div className={`absolute -top-20 -right-20 w-56 h-56 rounded-full blur-3xl ${isDark ? "bg-blue-500/15" : "bg-blue-300/30"}`} />
+                    <div className={`absolute -bottom-20 -left-20 w-56 h-56 rounded-full blur-3xl ${isDark ? "bg-purple-500/15" : "bg-purple-300/30"}`} />
+
+                    <div className="relative flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isDark ? "bg-blue-500/20" : "bg-blue-100"}`}>
+                            <Brain className={`w-6 h-6 ${isDark ? "text-blue-300" : "text-blue-700"}`} />
+                          </div>
+                          <div>
+                            <p className={`text-[10px] font-black uppercase tracking-[0.22em] ${isDark ? "text-blue-300/80" : "text-blue-700/80"}`}>
+                              AI Mentor Console
+                            </p>
+                            <h3 className={`text-2xl sm:text-3xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>
+                              Your Dynamic Roadmap
+                            </h3>
+                          </div>
+                        </div>
+                        <p className={`text-sm sm:text-base font-semibold max-w-2xl ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                          Premium mentorship guidance built from your CGPA, resume (projects/skills), and score signals.
                         </p>
                       </div>
+
+                      <div className="flex flex-wrap gap-3">
+                        <Button
+                          variant="secondary"
+                          onClick={() => fetchRoadmap()}
+                          disabled={loadingRoadmap}
+                          className={`${isDark ? "bg-white/10 hover:bg-white/15 text-white border-white/10" : ""} rounded-2xl font-black`}
+                        >
+                          {loadingRoadmap ? "Refreshing..." : "Refresh"}
+                        </Button>
+                        <Button
+                          onClick={async () => {
+                            try {
+                              setSavingPerformance(true);
+                              await studentApi.updatePerformance(performanceDraft);
+                              toast.success("Scores updated.");
+                              setRoadmapData(null);
+                              await fetchRoadmap();
+                            } catch (e) {
+                              console.error("Failed to update performance", e);
+                              toast.error("Failed to update scores.");
+                            } finally {
+                              setSavingPerformance(false);
+                            }
+                          }}
+                          disabled={savingPerformance}
+                          className="rounded-2xl font-black"
+                        >
+                          {savingPerformance ? "Saving..." : "Save Scores"}
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Button
-                        variant="secondary"
-                        onClick={() => fetchRoadmap()}
-                        disabled={loadingRoadmap}
-                        className={`${isDark ? "bg-white/10 hover:bg-white/15 text-white border-white/10" : ""} rounded-2xl font-black`}
-                      >
-                        {loadingRoadmap ? "Refreshing..." : "Refresh"}
-                      </Button>
-                      <Button
-                        onClick={async () => {
-                          try {
-                            setSavingPerformance(true);
-                            await studentApi.updatePerformance(performanceDraft);
-                            toast.success("Scores updated.");
-                            setRoadmapData(null);
-                            await fetchRoadmap();
-                          } catch (e) {
-                            console.error("Failed to update performance", e);
-                            toast.error("Failed to update scores.");
-                          } finally {
-                            setSavingPerformance(false);
-                          }
-                        }}
-                        disabled={savingPerformance}
-                        className="rounded-2xl font-black"
-                      >
-                        {savingPerformance ? "Saving..." : "Save Scores"}
-                      </Button>
+
+                    <div className="relative mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                      {[
+                        { label: "Readiness", value: `${pct(dynamic.overallReadiness)}%`, tone: "blue" },
+                        { label: "Placement Fit", value: `${pct(dynamic.placementProbability)}%`, tone: "violet" },
+                        { label: "AI Confidence", value: `${pct(dynamic.aiConfidence)}%`, tone: "emerald" },
+                        {
+                          label: "Active Tasks",
+                          value: String(
+                            (roadmapData?.computed?.roadmap?.next7Days?.length || 0) +
+                            (roadmapData?.computed?.roadmap?.next30Days?.length || 0) +
+                            (roadmapData?.computed?.roadmap?.next90Days?.length || 0)
+                          ),
+                          tone: "amber",
+                        },
+                      ].map((kpi) => (
+                        <div
+                          key={kpi.label}
+                          className={`rounded-2xl border p-4 ${
+                            isDark
+                              ? "border-white/10 bg-black/20"
+                              : "border-slate-200 bg-white/80"
+                          }`}
+                        >
+                          <p className={`text-[10px] font-black uppercase tracking-[0.18em] ${isDark ? "text-slate-400" : "text-slate-500"}`}>{kpi.label}</p>
+                          <p className={`mt-1 text-xl sm:text-2xl font-black ${
+                            kpi.tone === "blue" ? "text-blue-500" :
+                            kpi.tone === "violet" ? "text-violet-500" :
+                            kpi.tone === "emerald" ? "text-emerald-500" :
+                            "text-amber-500"
+                          }`}>{kpi.value}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
-                  <div className="grid lg:grid-cols-2 gap-8">
+                  <div className="grid xl:grid-cols-5 gap-6 mt-8">
                     {/* Score inputs */}
-                    <div className={`p-8 rounded-[2.5rem] ${isDark ? "bg-white/5 border border-white/5" : "bg-slate-50/60 border border-slate-200/60"}`}>
-                      <h4 className={`text-xl font-black ${isDark ? "text-white" : "text-slate-900"} mb-6`}>Update your scores</h4>
+                    <div className={`xl:col-span-2 p-6 sm:p-7 rounded-[2rem] ${isDark ? "bg-white/5 border border-white/5" : "bg-slate-50/60 border border-slate-200/60"}`}>
+                      <div className="flex items-center gap-3 mb-5">
+                        <Sparkles className={`w-5 h-5 ${isDark ? "text-blue-400" : "text-blue-600"}`} />
+                        <h4 className={`text-lg sm:text-xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Calibrate Your Inputs</h4>
+                      </div>
 
-                      <div className="grid sm:grid-cols-2 gap-5">
+                      <div className="grid sm:grid-cols-2 gap-4">
                         {[
                           { key: "amcat_quant", label: "AMCAT Quant (0-100)" },
                           { key: "amcat_logical", label: "AMCAT Logical (0-100)" },
@@ -2920,7 +2870,7 @@ export default function StudentDashboard() {
                           { key: "endsem_percentage", label: "End-sem % (0-100)" },
                         ].map((f) => (
                           <label key={f.key} className="flex flex-col gap-2">
-                            <span className={`text-xs font-black uppercase tracking-widest ${isDark ? "text-slate-400" : "text-slate-500"}`}>{f.label}</span>
+                            <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-400" : "text-slate-500"}`}>{f.label}</span>
                             <input
                               value={performanceDraft?.[f.key] ?? ""}
                               onChange={(e) => setPerformanceDraft((prev: any) => ({ ...(prev || {}), [f.key]: e.target.value }))}
@@ -2936,22 +2886,22 @@ export default function StudentDashboard() {
                         ))}
                       </div>
 
-                      <p className={`text-xs mt-5 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                        Tip: After uploading a resume, hit <span className="font-black">Refresh</span> to re-calculate the roadmap using your latest projects, experience and skills.
+                      <p className={`text-xs mt-4 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                        After uploading a resume, click <span className="font-black">Refresh</span> to re-calculate with your latest projects, experience and skills.
                       </p>
 
-                      <div className="mt-6 space-y-4">
+                      <div className="mt-5 space-y-3">
                         <Button
                           onClick={onGeneratePersonalPlan}
                           disabled={savingPerformance || loadingRoadmap}
-                          className="w-full rounded-2xl font-black"
+                          className="w-full rounded-2xl font-black h-11"
                         >
-                          {savingPerformance ? "Generating..." : "Generate Plan"}
+                          {savingPerformance ? "Generating Mentor Plan..." : "Generate AI Mentor Plan"}
                         </Button>
 
                         <div className={`rounded-2xl p-4 border ${isDark ? "bg-[#0c0c14]/60 border-white/10" : "bg-white border-slate-200"}`}>
                           <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>
-                            LLM Summary
+                            Mentor Brief
                           </p>
                           <p className={`mt-2 text-sm font-semibold leading-relaxed ${isDark ? "text-slate-200" : "text-slate-700"}`}>
                             {mentorshipSummary}
@@ -2961,44 +2911,51 @@ export default function StudentDashboard() {
                     </div>
 
                     {/* Roadmap tasks */}
-                    <div className={`p-8 rounded-[2.5rem] ${isDark ? "bg-white/5 border border-white/5" : "bg-slate-50/60 border border-slate-200/60"}`}>
-                      <h4 className={`text-xl font-black ${isDark ? "text-white" : "text-slate-900"} mb-6`}>What to do next</h4>
+                    <div className={`xl:col-span-3 p-6 sm:p-7 rounded-[2rem] ${isDark ? "bg-white/5 border border-white/5" : "bg-slate-50/60 border border-slate-200/60"}`}>
+                      <div className="flex items-center gap-3 mb-6">
+                        <Target className={`w-5 h-5 ${isDark ? "text-purple-400" : "text-purple-600"}`} />
+                        <h4 className={`text-lg sm:text-xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>What To Do Next</h4>
+                      </div>
 
                       {loadingRoadmap && !roadmapData ? (
-                        <div className={`p-6 rounded-2xl ${isDark ? "bg-white/5" : "bg-white"}`}>
+                        <div className={`p-6 rounded-2xl ${isDark ? "bg-white/5" : "bg-white"} border ${isDark ? "border-white/5" : "border-slate-200"}`}>
                           <p className={`${isDark ? "text-slate-300" : "text-slate-700"} font-bold`}>Calculating your roadmap...</p>
                         </div>
                       ) : (
-                        <div className="space-y-6">
+                        <div className="grid md:grid-cols-3 gap-4">
                           {[
-                            { title: "Next 7 days", key: "next7Days" },
-                            { title: "Next 30 days", key: "next30Days" },
-                            { title: "Next 90 days", key: "next90Days" },
+                            { title: "Next 7 days", key: "next7Days", tone: "blue" },
+                            { title: "Next 30 days", key: "next30Days", tone: "violet" },
+                            { title: "Next 90 days", key: "next90Days", tone: "emerald" },
                           ].map((b) => {
                             const items = roadmapData?.computed?.roadmap?.[b.key] || [];
                             return (
-                              <div key={b.key} className={`p-6 rounded-2xl ${isDark ? "bg-[#0c0c14]/40 border border-white/5" : "bg-white border border-slate-200/50"}`}>
-                                <div className="flex items-center justify-between mb-4">
-                                  <div className={`font-black ${isDark ? "text-white" : "text-slate-900"}`}>{b.title}</div>
+                              <div key={b.key} className={`rounded-2xl p-4 border ${isDark ? "bg-[#0c0c14]/40 border-white/8" : "bg-white border-slate-200/70"}`}>
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className={`text-sm font-black ${isDark ? "text-white" : "text-slate-900"}`}>{b.title}</div>
                                   <Badge className={`${isDark ? "bg-white/10 text-slate-200 border-white/10" : "bg-slate-100 text-slate-700 border-slate-200"} rounded-xl`}>
-                                    {Array.isArray(items) ? items.length : 0} tasks
+                                    {Array.isArray(items) ? items.length : 0}
                                   </Badge>
                                 </div>
-                                <div className="space-y-3">
+                                <div className="space-y-2.5">
                                   {(Array.isArray(items) ? items : []).slice(0, 4).map((t: any) => (
-                                    <div key={t.id || t.title} className="flex items-start gap-3">
-                                      <CheckCircle2 className={`w-5 h-5 mt-0.5 ${isDark ? "text-blue-400" : "text-blue-600"}`} />
+                                    <div key={t.id || t.title} className="flex items-start gap-2.5">
+                                      <CheckCircle2 className={`w-4 h-4 mt-0.5 ${
+                                        b.tone === "blue" ? (isDark ? "text-blue-300" : "text-blue-600")
+                                        : b.tone === "violet" ? (isDark ? "text-violet-300" : "text-violet-600")
+                                        : (isDark ? "text-emerald-300" : "text-emerald-600")
+                                      }`} />
                                       <div className="min-w-0">
-                                        <div className={`font-bold ${isDark ? "text-slate-100" : "text-slate-900"}`}>{t.title}</div>
+                                        <div className={`text-sm font-bold leading-snug ${isDark ? "text-slate-100" : "text-slate-900"}`}>{t.title}</div>
                                         {t.reason && (
-                                          <div className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>{t.reason}</div>
+                                          <div className={`text-[11px] leading-snug ${isDark ? "text-slate-400" : "text-slate-600"}`}>{t.reason}</div>
                                         )}
                                       </div>
                                     </div>
                                   ))}
                                   {Array.isArray(items) && items.length > 4 && (
                                     <div className={`text-xs font-bold ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                                      +{items.length - 4} more
+                                      +{items.length - 4} more items
                                     </div>
                                   )}
                                 </div>
@@ -3012,258 +2969,6 @@ export default function StudentDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                <CardContent className="p-12">
-                  <div className="flex items-center gap-4 mb-10">
-                    <GraduationCap className={`w-8 h-8 ${isDark ? "text-purple-400" : "text-purple-600"}`} />
-                    <div>
-                      <h3 className={`text-3xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Mastery Paths</h3>
-                      <p className={`text-lg font-bold ${isDark ? "text-gray-400" : "text-slate-600"}`}>Structured learning journeys tailored for you</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-8">
-                    {learningPaths.map((path: any, idx: number) => {
-                      const Icon = path.icon;
-                      return (
-                        <div key={idx} className={`group p-8 ${isDark ? "border-white/5 bg-white/5" : "border-slate-100 bg-slate-50/50"} rounded-[2.5rem] hover:border-purple-500/50 transition-all shadow-sm`}>
-                          <div className="flex flex-col md:flex-row items-center gap-8 mb-8">
-                            <div className={`w-20 h-20 ${path.color} rounded-2xl flex items-center justify-center shadow-lg`}>
-                              <Icon className="w-10 h-10 text-white" />
-                            </div>
-                            <div className="flex-1 w-full flex flex-col gap-2">
-                              <div className="flex justify-between items-center">
-                                <div>
-                                  <h4 className={`text-2xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>{path.title}</h4>
-                                  <p className={`text-sm ${isDark ? "text-gray-400" : "text-slate-500"}`}>{path.description}</p>
-                                </div>
-                                <span className="font-black text-purple-400">{path.progress}%</span>
-                              </div>
-                              <div className="h-2 bg-white/5 rounded-full overflow-hidden mt-4">
-                                <div
-                                  className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-1000"
-                                  style={{ width: `${path.progress}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {path.modules.map((module: any, mIdx: number) => (
-                              <div key={mIdx} className={`p-4 rounded-2xl text-center ${module.status === "completed" ? "bg-green-500/10 text-green-400" :
-                                module.status === "in-progress" ? "bg-blue-500/10 text-blue-400 animate-pulse" :
-                                  "bg-white/5 text-gray-400"
-                                }`}>
-                                <p className="text-sm font-black uppercase">{module.name}</p>
-                                <p className="text-xs opacity-70 mt-1">{module.status}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-
-            </div>
-          )}
-
-          {/* Progress Tab */}
-          {activeTab === "progress" && (
-            <div className="space-y-10">
-              {/* Evolution Track */}
-              <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                <CardContent className="p-12">
-                  <div className="flex items-center gap-4 mb-10">
-                    <TrendingUp className={`w-8 h-8 ${isDark ? "text-green-400" : "text-green-600"}`} />
-                    <div>
-                      <h3 className={`text-3xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Evolution Track</h3>
-                      <p className={`text-lg font-bold ${isDark ? "text-gray-400" : "text-slate-600"}`}>Your readiness score progression over time</p>
-                    </div>
-                  </div>
-
-                  <div className="h-96 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={evolutionData}>
-                        <defs>
-                          <linearGradient id="colorOverall" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                          </linearGradient>
-                          <linearGradient id="colorTechnical" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} />
-                        <XAxis
-                          dataKey="month"
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fill: isDark ? '#9ca3af' : '#4b5563', fontSize: 12, fontWeight: 'bold' }}
-                          dy={10}
-                        />
-                        <YAxis
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fill: isDark ? '#9ca3af' : '#4b5563', fontSize: 12, fontWeight: 'bold' }}
-                          dx={-10}
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: isDark ? '#0c0c14' : '#ffffff',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            borderRadius: '1.5rem',
-                            padding: '1.5rem',
-                            boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
-                          }}
-                          itemStyle={{ fontWeight: 'black', textTransform: 'uppercase', fontSize: '10px', letterSpacing: '0.1em' }}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="overall"
-                          stroke="#3b82f6"
-                          strokeWidth={4}
-                          fillOpacity={1}
-                          fill="url(#colorOverall)"
-                          name="Overall Readiness"
-                          animationDuration={2000}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="technical"
-                          stroke="#8b5cf6"
-                          strokeWidth={4}
-                          fillOpacity={1}
-                          fill="url(#colorTechnical)"
-                          name="Technical Skills"
-                          animationDuration={2500}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Career Timeline + Upcoming Tasks */}
-              <div className="grid lg:grid-cols-2 gap-8">
-                {/* Career Timeline */}
-                <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                  <CardContent className="p-12">
-                    <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-slate-900"} mb-8`}>Career Timeline</h3>
-                    <div className="relative pl-8">
-                      <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-400 to-purple-400"></div>
-
-                      {timeline.map((item, idx) => {
-                        const Icon = item.icon;
-                        return (
-                          <div key={idx} className="relative mb-6 last:mb-0">
-                            <div className={`absolute -left-8 w-4 h-4 ${item.color} rounded-full border-4 border-[#050509] shadow-md`}></div>
-
-                            <div className="ml-4">
-                              <div className="flex items-center gap-3 mb-2">
-                                <div className={`w-10 h-10 ${item.color} rounded-lg flex items-center justify-center`}>
-                                  <Icon className="w-5 h-5 text-white" />
-                                </div>
-                                <div>
-                                  <h4 className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{item.event}</h4>
-                                  <p className={`text-sm ${isDark ? "text-gray-400" : "text-slate-500"}`}>{item.date}</p>
-                                </div>
-                                <Badge className="ml-auto capitalize bg-white/10 text-white border-white/10">
-                                  {item.status === 'completed' ? 'Completed' :
-                                    item.status === 'in-progress' ? 'In Progress' : 'Planned'}
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Upcoming Tasks */}
-                <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                  <CardContent className="p-12">
-                    <div className="flex items-center justify-between mb-8">
-                      <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Upcoming Tasks</h3>
-                      <span className="text-sm text-gray-400">{upcomingTasks.length} remaining</span>
-                    </div>
-
-                    <div className="space-y-4">
-                      {upcomingTasks.map((task: any, idx: number) => (
-                        <div key={idx} className={`p-4 ${isDark ? "border-white/5" : "border-slate-100 bg-slate-50/30"} rounded-2xl hover:border-blue-500/30 ${isDark ? "hover:bg-blue-500/5" : "hover:bg-blue-50/30"} transition-all group shadow-sm`}>
-                          <div className="flex items-start gap-3">
-                            <div className={`
-                              w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5
-                              ${task.priority === 'high' ? 'bg-red-500/20' : 'bg-blue-500/20'}
-                            `}>
-                              {task.status === 'in-progress' ? (
-                                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                              ) : (
-                                <Circle className="w-3 h-3 text-gray-400/40" />
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-start justify-between mb-2">
-                                <h4 className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{task.task}</h4>
-                                <Badge className={
-                                  task.priority === 'high' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-                                }>
-                                  {task.priority === 'high' ? 'High' : 'Medium'}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-400 flex items-center gap-1">
-                                  <Clock className="w-4 h-4" />
-                                  Due {task.due}
-                                </span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-400 hover:bg-blue-500/10"
-                                >
-                                  Mark as Done
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-
-                      <Button variant="outline" className="w-full mt-4 h-12 rounded-xl border-white/10 text-white hover:bg-white/10">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add New Task
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Performance Summary */}
-              <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)]`}>
-                <CardContent className="p-12">
-                  <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-slate-900"} mb-8`}>Performance Summary</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {performanceSummaryCards.map((card, idx) => {
-                      const toneClass =
-                        card.tone === "green"
-                          ? (isDark ? "bg-green-500/10 border-green-500/20 text-green-400" : "bg-green-50 border-green-100 text-green-600")
-                          : card.tone === "purple"
-                            ? (isDark ? "bg-purple-500/10 border-purple-500/20 text-purple-400" : "bg-purple-50 border-purple-100 text-purple-600")
-                            : card.tone === "amber"
-                              ? (isDark ? "bg-amber-500/10 border-amber-500/20 text-amber-400" : "bg-amber-50 border-amber-100 text-amber-600")
-                              : (isDark ? "bg-blue-500/10 border-blue-500/20 text-blue-400" : "bg-blue-50 border-blue-100 text-blue-600");
-                      return (
-                        <div key={`${card.label}-${idx}`} className={`p-6 rounded-2xl border shadow-sm ${toneClass}`}>
-                          <div className="text-3xl font-black mb-2">{card.value}</div>
-                          <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>{card.label}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           )}
 
@@ -3313,31 +3018,30 @@ export default function StudentDashboard() {
               <div className={`absolute top-0 right-0 w-96 h-96 ${isDark ? "bg-blue-500/5" : "bg-blue-500/5"} rounded-full -mr-48 -mt-48 blur-3xl group-hover:scale-110 transition-all duration-700`}></div>
               <div className="flex flex-col lg:flex-row items-center justify-between gap-8 relative z-10">
                 <div>
-                  <h3 className={`text-3xl font-black ${isDark ? "text-white" : "text-gray-900"} mb-3 tracking-tight`}>Ready for your next leap? 🚀</h3>
-                  <p className={`text-lg font-bold ${isDark ? "text-gray-400" : "text-gray-600"} opacity-80`}>Accelerate your career journey with personalized AI actions.</p>
+                  <h3 className={`text-3xl font-black ${isDark ? "text-white" : "text-gray-900"} mb-3 tracking-tight`}>Accelerate company-wise prep 🚀</h3>
+                  <p className={`text-lg font-bold ${isDark ? "text-gray-400" : "text-gray-600"} opacity-80`}>Focus on targeted company kits, patterns, and role-specific practice paths.</p>
                 </div>
                 <div className="flex flex-wrap gap-4">
                   <Button
                     variant="outline"
                     className={`h-14 px-8 rounded-2xl font-black text-sm uppercase tracking-widest ${isDark ? "border-white/30 text-white hover:bg-white/10" : "border-gray-300 text-gray-900 hover:bg-gray-100"}`}
                     onClick={() => {
-                      setActiveTab("learning");
-                      navigate("/student/dashboard?tab=learning");
+                      setActiveTab("opportunities");
+                      navigate("/student/dashboard?tab=opportunities");
                     }}
                   >
-                    <GraduationCap className="w-6 h-6 mr-3" />
-                    Mock Interview
+                    <Briefcase className="w-6 h-6 mr-3" />
+                    View Drives
                   </Button>
                   <Button
                     className="h-14 px-8 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-800 hover:opacity-90 font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/30 gap-3 text-white"
                     onClick={() => {
-                      setActiveTab("learning");
-                      navigate("/student/dashboard?tab=learning");
-                      fetchRoadmap();
+                      setActiveTab("company-kit");
+                      navigate("/student/dashboard?tab=company-kit");
                     }}
                   >
-                    <FileText className="w-6 h-6" />
-                    Generate Study Plan
+                    <Building2 className="w-6 h-6" />
+                    Open Company Kit
                   </Button>
                 </div>
               </div>
