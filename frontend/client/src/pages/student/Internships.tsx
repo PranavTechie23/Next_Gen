@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Code, GraduationCap, Upload } from "lucide-react";
+import { Briefcase, Code, GraduationCap, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { studentApi } from "@/services/studentApi";
+import { toast } from "sonner";
 
 type ResumeProject = {
   title?: string;
@@ -19,16 +21,115 @@ type ResumeSections = {
 export default function Internships(props: {
   isDark: boolean;
   resumeSections: ResumeSections;
-  onUploadResume: () => void;
-  uploading?: boolean;
+  onAfterSectionsSave?: () => void | Promise<void>;
 }) {
-  const { isDark, resumeSections, onUploadResume, uploading } = props;
+  const { isDark, resumeSections, onAfterSectionsSave } = props;
 
-  const projects = Array.isArray(resumeSections?.projects) ? resumeSections.projects : [];
-  const experience = Array.isArray(resumeSections?.experience) ? resumeSections.experience : [];
-  const extracurricular = Array.isArray(resumeSections?.extracurricular) ? resumeSections.extracurricular : [];
-  const education = Array.isArray(resumeSections?.education) ? resumeSections.education : [];
-  const certifications = Array.isArray(resumeSections?.certifications) ? resumeSections.certifications : [];
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [draft, setDraft] = useState<ResumeSections>({});
+
+  useEffect(() => {
+    setDraft({
+      projects: Array.isArray(resumeSections?.projects) ? resumeSections.projects.map((p) => ({ title: p?.title || "", bullets: Array.isArray(p?.bullets) ? [...p.bullets] : [] })) : [],
+      experience: Array.isArray(resumeSections?.experience) ? [...resumeSections.experience] : [],
+      extracurricular: Array.isArray(resumeSections?.extracurricular) ? [...resumeSections.extracurricular] : [],
+      education: Array.isArray(resumeSections?.education) ? [...resumeSections.education] : [],
+      certifications: Array.isArray(resumeSections?.certifications) ? [...resumeSections.certifications] : [],
+    });
+  }, [resumeSections]);
+
+  const projects = Array.isArray(draft?.projects) ? draft.projects : [];
+  const experience = Array.isArray(draft?.experience) ? draft.experience : [];
+  const extracurricular = Array.isArray(draft?.extracurricular) ? draft.extracurricular : [];
+  const education = Array.isArray(draft?.education) ? draft.education : [];
+  const certifications = Array.isArray(draft?.certifications) ? draft.certifications : [];
+
+  const updateList = (key: "experience" | "extracurricular" | "education" | "certifications", index: number, value: string) => {
+    setDraft((prev) => {
+      const arr = Array.isArray(prev?.[key]) ? [...(prev[key] as string[])] : [];
+      arr[index] = value;
+      return { ...(prev || {}), [key]: arr };
+    });
+  };
+
+  const addListItem = (key: "experience" | "extracurricular" | "education" | "certifications") => {
+    setDraft((prev) => {
+      const arr = Array.isArray(prev?.[key]) ? [...(prev[key] as string[])] : [];
+      arr.push("");
+      return { ...(prev || {}), [key]: arr };
+    });
+  };
+
+  const deleteListItem = (key: "experience" | "extracurricular" | "education" | "certifications", index: number) => {
+    setDraft((prev) => {
+      const arr = Array.isArray(prev?.[key]) ? [...(prev[key] as string[])] : [];
+      arr.splice(index, 1);
+      return { ...(prev || {}), [key]: arr };
+    });
+  };
+
+  const addProject = () => {
+    setDraft((prev) => ({
+      ...(prev || {}),
+      projects: [...(Array.isArray(prev?.projects) ? prev.projects : []), { title: "", bullets: [] }],
+    }));
+  };
+
+  const updateProject = (index: number, patch: Partial<ResumeProject>) => {
+    setDraft((prev) => {
+      const arr = Array.isArray(prev?.projects) ? [...prev.projects] : [];
+      arr[index] = { ...(arr[index] || {}), ...patch };
+      return { ...(prev || {}), projects: arr };
+    });
+  };
+
+  const deleteProject = (index: number) => {
+    setDraft((prev) => {
+      const arr = Array.isArray(prev?.projects) ? [...prev.projects] : [];
+      arr.splice(index, 1);
+      return { ...(prev || {}), projects: arr };
+    });
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setDraft({
+      projects: Array.isArray(resumeSections?.projects) ? resumeSections.projects.map((p) => ({ title: p?.title || "", bullets: Array.isArray(p?.bullets) ? [...p.bullets] : [] })) : [],
+      experience: Array.isArray(resumeSections?.experience) ? [...resumeSections.experience] : [],
+      extracurricular: Array.isArray(resumeSections?.extracurricular) ? [...resumeSections.extracurricular] : [],
+      education: Array.isArray(resumeSections?.education) ? [...resumeSections.education] : [],
+      certifications: Array.isArray(resumeSections?.certifications) ? [...resumeSections.certifications] : [],
+    });
+  };
+
+  const saveChanges = async () => {
+    try {
+      setSaving(true);
+      await studentApi.updateResumeSections({
+        projects: (projects || [])
+          .map((p) => ({
+            title: String(p?.title || "").trim(),
+            bullets: (Array.isArray(p?.bullets) ? p.bullets : [])
+              .map((b) => String(b || "").trim())
+              .filter(Boolean),
+          }))
+          .filter((p) => p.title || p.bullets.length > 0),
+        experience: (experience || []).map((x) => String(x || "").trim()).filter(Boolean),
+        extracurricular: (extracurricular || []).map((x) => String(x || "").trim()).filter(Boolean),
+        education: (education || []).map((x) => String(x || "").trim()).filter(Boolean),
+        certifications: (certifications || []).map((x) => String(x || "").trim()).filter(Boolean),
+      });
+      toast.success("Internship and project details updated.");
+      setIsEditing(false);
+      await onAfterSectionsSave?.();
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error?.response?.data?.message || "Could not save changes.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -43,10 +144,23 @@ export default function Internships(props: {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto shrink-0">
-              <Button onClick={onUploadResume} disabled={!!uploading} className="h-12 rounded-2xl font-black">
-                <Upload className="w-4 h-4 mr-2" />
-                {uploading ? "Uploading..." : "Upload Resume"}
-              </Button>
+              {!isEditing ? (
+                <Button onClick={() => setIsEditing(true)} className="h-12 rounded-2xl font-black" variant="secondary">
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Edit Details
+                </Button>
+              ) : (
+                <>
+                  <Button onClick={saveChanges} disabled={saving} className="h-12 rounded-2xl font-black">
+                    <Save className="w-4 h-4 mr-2" />
+                    {saving ? "Saving..." : "Save Changes"}
+                  </Button>
+                  <Button onClick={cancelEdit} disabled={saving} className="h-12 rounded-2xl font-black" variant="secondary">
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 
@@ -63,18 +177,60 @@ export default function Internships(props: {
               </div>
 
               <div className="mt-4 space-y-3">
+                {isEditing && (
+                  <Button onClick={addProject} variant="outline" className={`h-9 rounded-xl ${isDark ? "border-white/20 text-white hover:bg-white/10" : ""}`}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Project
+                  </Button>
+                )}
                 {projects.slice(0, 8).map((p, idx) => (
                   <div key={idx} className={`${isDark ? "bg-black/20" : "bg-slate-50"} rounded-xl p-4 border ${isDark ? "border-white/5" : "border-slate-200"}`}>
-                    <p className={`font-black text-sm ${isDark ? "text-white" : "text-slate-900"}`}>{p?.title || "Project"}</p>
-                    {Array.isArray(p?.bullets) && p.bullets.length > 0 && (
-                      <ul className={`mt-2 space-y-1 text-xs ${isDark ? "text-slate-300" : "text-slate-700"}`}>
-                        {p.bullets.slice(0, 5).map((b, i) => (
-                          <li key={i} className="flex gap-2">
-                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500/70 flex-shrink-0" />
-                            <span>{b}</span>
-                          </li>
-                        ))}
-                      </ul>
+                    {isEditing ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <input
+                            value={p?.title || ""}
+                            onChange={(e) => updateProject(idx, { title: e.target.value })}
+                            placeholder="Project title"
+                            className={`w-full h-10 px-3 rounded-xl text-sm border outline-none ${
+                              isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
+                            }`}
+                          />
+                          <Button variant="ghost" size="icon" onClick={() => deleteProject(idx)} className="h-9 w-9">
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </div>
+                        <textarea
+                          value={Array.isArray(p?.bullets) ? p.bullets.join("\n") : ""}
+                          onChange={(e) =>
+                            updateProject(idx, {
+                              bullets: e.target.value
+                                .split("\n")
+                                .map((x) => x.trim())
+                                .filter(Boolean),
+                            })
+                          }
+                          placeholder="One bullet per line"
+                          rows={4}
+                          className={`w-full px-3 py-2 rounded-xl text-sm border outline-none ${
+                            isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
+                          }`}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <p className={`font-black text-sm ${isDark ? "text-white" : "text-slate-900"}`}>{p?.title || "Project"}</p>
+                        {Array.isArray(p?.bullets) && p.bullets.length > 0 && (
+                          <ul className={`mt-2 space-y-1 text-xs ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                            {p.bullets.slice(0, 5).map((b, i) => (
+                              <li key={i} className="flex gap-2">
+                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500/70 flex-shrink-0" />
+                                <span>{b}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </>
                     )}
                   </div>
                 ))}
@@ -98,12 +254,65 @@ export default function Internships(props: {
               </div>
 
               <div className="mt-4 space-y-2">
-                {[...experience, ...extracurricular].slice(0, 18).map((e, idx) => (
+                {!isEditing && [...experience, ...extracurricular].slice(0, 18).map((e, idx) => (
                   <div key={idx} className={`flex items-start gap-2 text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>
                     <span className="mt-2 w-1.5 h-1.5 rounded-full bg-emerald-500/70 flex-shrink-0" />
                     <span>{e}</span>
                   </div>
                 ))}
+                {isEditing && (
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className={`text-xs font-black uppercase tracking-widest ${isDark ? "text-slate-400" : "text-slate-500"}`}>Experience</p>
+                        <Button variant="outline" className={`h-8 rounded-lg text-xs ${isDark ? "border-white/20 text-white hover:bg-white/10" : ""}`} onClick={() => addListItem("experience")}>
+                          <Plus className="w-3 h-3 mr-1" /> Add
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        {experience.map((line, idx) => (
+                          <div key={`exp-${idx}`} className="flex items-center gap-2">
+                            <input
+                              value={line}
+                              onChange={(e) => updateList("experience", idx, e.target.value)}
+                              className={`w-full h-10 px-3 rounded-xl text-sm border outline-none ${
+                                isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
+                              }`}
+                            />
+                            <Button variant="ghost" size="icon" onClick={() => deleteListItem("experience", idx)} className="h-8 w-8">
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className={`text-xs font-black uppercase tracking-widest ${isDark ? "text-slate-400" : "text-slate-500"}`}>Extracurricular</p>
+                        <Button variant="outline" className={`h-8 rounded-lg text-xs ${isDark ? "border-white/20 text-white hover:bg-white/10" : ""}`} onClick={() => addListItem("extracurricular")}>
+                          <Plus className="w-3 h-3 mr-1" /> Add
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        {extracurricular.map((line, idx) => (
+                          <div key={`extra-${idx}`} className="flex items-center gap-2">
+                            <input
+                              value={line}
+                              onChange={(e) => updateList("extracurricular", idx, e.target.value)}
+                              className={`w-full h-10 px-3 rounded-xl text-sm border outline-none ${
+                                isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
+                              }`}
+                            />
+                            <Button variant="ghost" size="icon" onClick={() => deleteListItem("extracurricular", idx)} className="h-8 w-8">
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {(experience.length + extracurricular.length) === 0 && (
                   <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No internship/experience extracted yet.</p>
                 )}
@@ -123,9 +332,30 @@ export default function Internships(props: {
                 </div>
               </div>
               <div className="mt-4 space-y-2">
-                {education.slice(0, 12).map((e, idx) => (
+                {!isEditing && education.slice(0, 12).map((e, idx) => (
                   <div key={idx} className={`text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>{e}</div>
                 ))}
+                {isEditing && (
+                  <div className="space-y-2">
+                    <Button variant="outline" className={`h-8 rounded-lg text-xs ${isDark ? "border-white/20 text-white hover:bg-white/10" : ""}`} onClick={() => addListItem("education")}>
+                      <Plus className="w-3 h-3 mr-1" /> Add Education Line
+                    </Button>
+                    {education.map((line, idx) => (
+                      <div key={`edu-${idx}`} className="flex items-center gap-2">
+                        <input
+                          value={line}
+                          onChange={(e) => updateList("education", idx, e.target.value)}
+                          className={`w-full h-10 px-3 rounded-xl text-sm border outline-none ${
+                            isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
+                          }`}
+                        />
+                        <Button variant="ghost" size="icon" onClick={() => deleteListItem("education", idx)} className="h-8 w-8">
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {education.length === 0 && (
                   <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No education extracted yet.</p>
                 )}
@@ -143,9 +373,30 @@ export default function Internships(props: {
                 </div>
               </div>
               <div className="mt-4 space-y-2">
-                {certifications.slice(0, 12).map((c, idx) => (
+                {!isEditing && certifications.slice(0, 12).map((c, idx) => (
                   <div key={idx} className={`text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>{c}</div>
                 ))}
+                {isEditing && (
+                  <div className="space-y-2">
+                    <Button variant="outline" className={`h-8 rounded-lg text-xs ${isDark ? "border-white/20 text-white hover:bg-white/10" : ""}`} onClick={() => addListItem("certifications")}>
+                      <Plus className="w-3 h-3 mr-1" /> Add Certification Line
+                    </Button>
+                    {certifications.map((line, idx) => (
+                      <div key={`cert-${idx}`} className="flex items-center gap-2">
+                        <input
+                          value={line}
+                          onChange={(e) => updateList("certifications", idx, e.target.value)}
+                          className={`w-full h-10 px-3 rounded-xl text-sm border outline-none ${
+                            isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
+                          }`}
+                        />
+                        <Button variant="ghost" size="icon" onClick={() => deleteListItem("certifications", idx)} className="h-8 w-8">
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {certifications.length === 0 && (
                   <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No certifications extracted yet.</p>
                 )}

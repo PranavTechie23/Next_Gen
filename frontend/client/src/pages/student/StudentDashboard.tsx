@@ -2540,8 +2540,6 @@ export default function StudentDashboard() {
             <Internships
               isDark={isDark}
               resumeSections={resumeSections}
-              onUploadResume={handleResumeClick}
-              uploading={uploadingResume}
               onAfterSectionsSave={async () => {
                 try {
                   const refreshed = await studentApi.getProfile();

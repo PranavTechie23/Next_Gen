@@ -109,3 +109,6 @@ temp/
 *.sqlite
 *.sqlite3
 Contents/
+
+# User-uploaded files (runtime generated)
+backend/server/uploads/
