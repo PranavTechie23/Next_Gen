@@ -1,5 +1,6 @@
 import { useTheme } from "next-themes";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
+import { CheckCircle2 } from "lucide-react";
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme();
@@ -7,6 +8,22 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme={theme as ToasterProps["theme"]}
+      position="bottom-right"
+      icons={{
+        success: (
+          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/95 text-emerald-600">
+            <CheckCircle2 className="h-4 w-4" />
+          </span>
+        ),
+      }}
+      toastOptions={{
+        classNames: {
+          success:
+            "!bg-emerald-600 !text-white !border !border-emerald-500 shadow-lg shadow-emerald-900/30",
+          title: "!text-white !font-bold",
+          description: "!text-emerald-50",
+        },
+      }}
       className="toaster group"
       style={
         {
