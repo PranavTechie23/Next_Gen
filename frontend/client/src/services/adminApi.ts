@@ -19,6 +19,11 @@ api.interceptors.request.use((config) => {
 });
 
 export const adminApi = {
+  getDashboardAnalytics: async () => {
+    const response = await api.get("/analytics/dashboard");
+    return response.data;
+  },
+
   downloadReportCsv: async (path: string, filename: string) => {
     const response = await api.get(path, {
       params: { format: "csv" },
@@ -34,6 +39,25 @@ export const adminApi = {
     a.click();
     a.remove();
     window.URL.revokeObjectURL(url);
+  },
+
+  getWebinars: async (params?: {
+    scope?: "all" | "upcoming" | "past";
+    status?: "DRAFT" | "PUBLISHED" | "COMPLETED" | "CANCELLED";
+    search?: string;
+  }) => {
+    const response = await api.get("/webinars", { params });
+    return response.data;
+  },
+
+  createWebinar: async (payload: any) => {
+    const response = await api.post("/webinars", payload);
+    return response.data;
+  },
+
+  updateWebinar: async (id: string | number, payload: any) => {
+    const response = await api.put(`/webinars/${id}`, payload);
+    return response.data;
   },
 };
 

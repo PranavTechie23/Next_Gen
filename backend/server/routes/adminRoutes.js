@@ -3,6 +3,7 @@ const router = express.Router();
 const adminController = require('../controllers/adminController');
 const analyticsController = require('../controllers/analyticsController');
 const reportsController = require('../controllers/reportsController');
+const webinarController = require('../controllers/webinarController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // POST /dept-heads - Create a new Department Head
@@ -82,6 +83,12 @@ router.get('/analytics/placement-stats',
     analyticsController.getPlacementStats
 );
 
+router.get('/analytics/dashboard',
+    protect,
+    authorize("TPO_ADMIN", "TPO_HEAD"),
+    analyticsController.getAdminDashboardData
+);
+
 // --------------------------------------------------
 // REPORTS & EXPORTS (TPO_ADMIN, TPO_HEAD)
 // --------------------------------------------------
@@ -120,6 +127,24 @@ router.post('/reports/custom',
     protect,
     authorize("TPO_ADMIN", "TPO_HEAD"),
     reportsController.getCustomReport
+);
+
+router.get('/webinars',
+    protect,
+    authorize("TPO_ADMIN", "TPO_HEAD"),
+    webinarController.listWebinarsForManagement
+);
+
+router.post('/webinars',
+    protect,
+    authorize("TPO_ADMIN", "TPO_HEAD"),
+    webinarController.createWebinar
+);
+
+router.put('/webinars/:id',
+    protect,
+    authorize("TPO_ADMIN", "TPO_HEAD"),
+    webinarController.updateWebinar
 );
 
 module.exports = router;

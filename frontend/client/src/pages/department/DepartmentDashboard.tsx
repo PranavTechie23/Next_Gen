@@ -70,56 +70,26 @@ export default function DepartmentDashboard() {
 
     const stats = dashboardData?.stats || { totalStudents: 0, placedStudents: 0, avgPackage: 0, atRiskStudents: 0 };
 
-    // Department specific stats (Dynamic)
+    // Department specific stats (DB-driven)
     const dynamicDeptStats = [
-        { label: "Dept Students", value: stats.totalStudents, change: "+5%", trend: "up", icon: Users, color: "bg-blue-500" },
-        { label: "Placed Students", value: stats.placedStudents, change: "+12%", trend: "up", icon: Award, color: "bg-green-500" },
-        { label: "Avg Package", value: `${stats.avgPackage} LPA`, change: "+8%", trend: "up", icon: DollarSign, color: "bg-purple-500" },
-        { label: "At Risk", value: stats.atRiskStudents, change: "-2%", trend: "down", icon: AlertTriangle, color: "bg-red-500" },
-    ];
-
-    const additionalMetrics = [
-        { label: "Active Companies", value: "45", change: "+5%", trend: "up", icon: Building2 },
-        { label: "Avg Package (LPA)", value: "8.2", change: "+12%", trend: "up", icon: Briefcase },
-        { label: "Dept Workshops", value: "12", change: "+20%", trend: "up", icon: BookOpen },
-        { label: "Interview Success", value: "72%", change: "+4%", trend: "up", icon: Activity },
+        { label: "Dept Students", value: stats.totalStudents, change: "Live", trend: "up", icon: Users, color: "bg-blue-500" },
+        { label: "Placed Students", value: stats.placedStudents, change: "Live", trend: "up", icon: Award, color: "bg-green-500" },
+        { label: "Avg Package", value: `${stats.avgPackage} LPA`, change: "Live", trend: "up", icon: DollarSign, color: "bg-purple-500" },
+        { label: "At Risk", value: stats.atRiskStudents, change: "Live", trend: "down", icon: AlertTriangle, color: "bg-red-500" },
     ];
 
     // Comparisons: Dept vs College Average
-    const comparisonData = dashboardData?.comparisonData || [
-        { metric: "Placement %", dept: 0, collegeAvg: 0 },
-        { metric: "Avg Package (LPA)", dept: 0, collegeAvg: 0 },
-        { metric: "Highest Package (LPA)", dept: 0, collegeAvg: 0 },
-    ];
+    const comparisonData = dashboardData?.comparisonData || [];
 
     const yearTrend = dashboardData?.yearTrend || [];
 
-    const skillsRadarData = [
-        { skill: "Coding", dept: 85, collegeAvg: 70 },
-        { skill: "System Design", dept: 75, collegeAvg: 55 },
-        { skill: "Comm.", dept: 78, collegeAvg: 72 },
-        { skill: "Aptitude", dept: 88, collegeAvg: 80 },
-        { skill: "Projects", dept: 82, collegeAvg: 65 },
-    ];
+    const skillsRadarData = dashboardData?.skillsRadarData || [];
 
     const placementDistribution = dashboardData?.placementDistribution || [];
 
-    const atRiskStudents = [
-        { id: "CSE001", name: "Priya Sharma", readiness: 35, status: "Critical", issues: ["Low DSA Score", "No Projects"], lastActivity: "2 days ago" },
-        { id: "CSE005", name: "Sneha Reddy", readiness: 45, status: "At Risk", issues: ["Interview Skills"], lastActivity: "4 days ago" },
-        { id: "CSE012", name: "Rahul Singh", readiness: 42, status: "At Risk", issues: ["Backlog"], lastActivity: "1 day ago" },
-    ];
-
-    const topPerformers = [
-        { rank: 1, name: "Arjun Mehta", score: 95, offers: 5, package: 12.5 },
-        { rank: 2, name: "Karthik Rao", score: 91, offers: 4, package: 10.8 },
-        { rank: 3, name: "Vikram Shah", score: 88, offers: 3, package: 9.2 },
-    ];
-
-    const upcomingEvents = [
-        { date: "Jan 28", title: "Dept System Design Workshop", type: "Workshop", attendees: 95 },
-        { date: "Feb 02", title: "Amazon Pre-Placement Talk", type: "PPT", attendees: 240 },
-    ];
+    const atRiskStudents = dashboardData?.atRiskStudents || [];
+    const topPerformers = dashboardData?.topPerformers || [];
+    const upcomingEvents = dashboardData?.upcomingEvents || [];
 
     const COLORS = ['#1e3a8a', '#3b82f6', '#60a5fa', '#93c5fd'];
 

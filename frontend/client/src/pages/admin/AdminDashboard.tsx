@@ -179,129 +179,80 @@ export default function AdminDashboard() {
     }
   }, [selectedView]);
 
-  const collegeStats = [
-    { label: "Total Students", value: "1,240", change: "+5%", trend: "up", icon: Users, color: "bg-blue-500" },
-    { label: "Placement Ready", value: "892", change: "+12%", trend: "up", icon: Target, color: "bg-green-500" },
-    { label: "Avg Readiness Score", value: "71%", change: "+3%", trend: "up", icon: Award, color: "bg-purple-500" },
-    { label: "Placement Rate (YoY)", value: "87%", change: "+8%", trend: "up", icon: TrendingUp, color: "bg-orange-500" },
-  ];
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
 
-  const additionalMetrics = [
-    { label: "Active Companies", value: "142", change: "+18%", trend: "up", icon: Building2 },
-    { label: "Avg Package (LPA)", value: "7.1", change: "+15%", trend: "up", icon: Briefcase },
-    { label: "Workshops Conducted", value: "28", change: "+40%", trend: "up", icon: BookOpen },
-    { label: "Interview Success", value: "64%", change: "-2%", trend: "down", icon: Activity },
-  ];
+  useEffect(() => {
+    const loadDashboardAnalytics = async () => {
+      try {
+        setDashboardLoading(true);
+        const data = await adminApi.getDashboardAnalytics();
+        setDashboardData(data);
+      } catch (e) {
+        console.error("getDashboardAnalytics failed", e);
+        toast.error("Failed to load dashboard analytics.");
+      } finally {
+        setDashboardLoading(false);
+      }
+    };
+    loadDashboardAnalytics();
+  }, []);
 
-  const branchData = [
-    { branch: "CSE", students: 320, ready: 285, avg: 74, placed: 268, avgPackage: 8.2 },
-    { branch: "ECE", students: 280, ready: 225, avg: 68, placed: 210, avgPackage: 7.5 },
-    { branch: "Mechanical", students: 240, ready: 180, avg: 65, placed: 165, avgPackage: 6.8 },
-    { branch: "Civil", students: 200, ready: 140, avg: 62, placed: 128, avgPackage: 6.2 },
-    { branch: "Electrical", students: 200, ready: 162, avg: 70, placed: 148, avgPackage: 7.0 },
-  ];
+  const metricConfig: Record<string, { label: string; icon: any; color?: string }> = {
+    total_students: { label: "Total Students", icon: Users, color: "bg-blue-500" },
+    placement_ready: { label: "Placement Ready", icon: Target, color: "bg-green-500" },
+    avg_readiness: { label: "Avg Readiness Score", icon: Award, color: "bg-purple-500" },
+    placement_rate: { label: "Placement Rate", icon: TrendingUp, color: "bg-orange-500" },
+    active_companies: { label: "Active Companies", icon: Building2 },
+    avg_package: { label: "Avg Package (LPA)", icon: Briefcase },
+    active_drives: { label: "Active Drives", icon: BookOpen },
+    interview_success: { label: "Interview Success", icon: Activity },
+  } as const;
 
-  const yearTrend = [
-    { year: "2020", placements: 78, avg_salary: 5.2, companies: 85, offers: 892 },
-    { year: "2021", placements: 82, avg_salary: 5.8, companies: 98, offers: 1024 },
-    { year: "2022", placements: 85, avg_salary: 6.2, companies: 112, offers: 1156 },
-    { year: "2023", placements: 87, avg_salary: 6.8, companies: 128, offers: 1289 },
-    { year: "2024", placements: 89, avg_salary: 7.1, companies: 142, offers: 1421 },
-  ];
+  const collegeStats: any[] = (dashboardData?.collegeStats || []).map((item: any) => {
+    const key = item?.key as string;
+    const conf = metricConfig[key] || { label: key || "Metric", icon: Users, color: "bg-blue-500" };
+    const rawValue = Number(item?.value || 0);
+    const value = key === "avg_readiness" || key === "placement_rate" ? `${rawValue}%` : rawValue.toLocaleString();
+    return {
+      label: conf.label,
+      value,
+      change: "Live",
+      trend: item?.trend || "up",
+      icon: conf.icon,
+      color: conf.color || "bg-blue-500",
+    };
+  });
 
-  const skillsRadarData = [
-    { skill: "Technical", college: 72, industry: 85 },
-    { skill: "Communication", college: 65, industry: 78 },
-    { skill: "Problem Solving", college: 78, industry: 82 },
-    { skill: "Teamwork", college: 70, industry: 80 },
-    { skill: "Leadership", college: 58, industry: 75 },
-    { skill: "Adaptability", college: 68, industry: 79 },
-  ];
+  const additionalMetrics: any[] = (dashboardData?.additionalMetrics || []).map((item: any) => {
+    const key = item?.key as string;
+    const conf = metricConfig[key] || { label: key || "Metric", icon: Activity };
+    const rawValue = Number(item?.value || 0);
+    const value =
+      key === "avg_package"
+        ? rawValue.toFixed(2)
+        : key === "interview_success"
+          ? `${rawValue}%`
+          : rawValue.toLocaleString();
+    return {
+      label: conf.label,
+      value,
+      change: "Live",
+      trend: item?.trend || "up",
+      icon: conf.icon,
+    };
+  });
 
-  const placementDistribution = [
-    { name: "Product Based", value: 35, color: "#1e3a8a" },
-    { name: "Service Based", value: 45, color: "#3b82f6" },
-    { name: "Startups", value: 12, color: "#60a5fa" },
-    { name: "Core Engineering", value: 8, color: "#93c5fd" },
-  ];
-
-  const monthlyActivity = [
-    { month: "Aug", applications: 145, interviews: 89, offers: 23 },
-    { month: "Sep", applications: 198, interviews: 124, offers: 45 },
-    { month: "Oct", applications: 267, interviews: 178, offers: 78 },
-    { month: "Nov", applications: 312, interviews: 234, offers: 112 },
-    { month: "Dec", applications: 289, interviews: 198, offers: 89 },
-    { month: "Jan", applications: 245, interviews: 167, offers: 67 },
-  ];
-
-  const atRiskStudents = [
-    { id: "S001", name: "Priya Sharma", branch: "CSE", readiness: 35, status: "Critical", issues: ["Low DSA Score", "No Projects"], lastActivity: "2 days ago" },
-    { id: "S002", name: "Amit Kumar", branch: "ECE", readiness: 42, status: "At Risk", issues: ["Communication Gap"], lastActivity: "5 days ago" },
-    { id: "S003", name: "Neha Patel", branch: "Mechanical", readiness: 48, status: "At Risk", issues: ["Incomplete Resume"], lastActivity: "1 day ago" },
-    { id: "S004", name: "Rohan Singh", branch: "Civil", readiness: 38, status: "Critical", issues: ["Low Attendance", "No Internship"], lastActivity: "3 days ago" },
-    { id: "S005", name: "Sneha Reddy", branch: "CSE", readiness: 45, status: "At Risk", issues: ["Interview Skills"], lastActivity: "4 days ago" },
-  ];
-
-  const topPerformers = [
-    { rank: 1, name: "Arjun Mehta", branch: "CSE", score: 95, offers: 5, package: 12.5 },
-    { rank: 2, name: "Divya Iyer", branch: "ECE", score: 93, offers: 4, package: 11.2 },
-    { rank: 3, name: "Karthik Rao", branch: "CSE", score: 91, offers: 4, package: 10.8 },
-    { rank: 4, name: "Ananya Das", branch: "Electrical", score: 89, offers: 3, package: 9.5 },
-    { rank: 5, name: "Vikram Shah", branch: "ECE", score: 88, offers: 3, package: 9.2 },
-  ];
-
-  const suggestions = [
-    {
-      title: "Introduce Industry-Backed DBMS Workshop",
-      impact: "High",
-      affectedStudents: 450,
-      description: "Database concepts are a critical gap across all branches. Partner with industry experts for hands-on sessions.",
-      priority: 1,
-      timeline: "2 weeks",
-      cost: "₹45,000"
-    },
-    {
-      title: "Final-Year Students Lack System Design Exposure",
-      impact: "High",
-      affectedStudents: 280,
-      description: "Only 35% of final-year students have system design skills. This is critical for product-based interviews.",
-      priority: 1,
-      timeline: "1 month",
-      cost: "₹30,000"
-    },
-    {
-      title: "CP-Heavy Students Need Development Balance",
-      impact: "Medium",
-      affectedStudents: 180,
-      description: "Students strong in competitive programming need web/app development skills for broader opportunities.",
-      priority: 2,
-      timeline: "3 weeks",
-      cost: "₹25,000"
-    },
-    {
-      title: "Soft Skills Enhancement Program",
-      impact: "Medium",
-      affectedStudents: 320,
-      description: "Communication and presentation skills need improvement. Regular mock interviews recommended.",
-      priority: 2,
-      timeline: "Ongoing",
-      cost: "₹15,000/month"
-    },
-  ];
-
-  const upcomingEvents = [
-    { date: "Jan 25", title: "TCS Campus Drive", type: "Placement", attendees: 180 },
-    { date: "Jan 28", title: "System Design Workshop", type: "Workshop", attendees: 95 },
-    { date: "Feb 02", title: "Amazon Pre-Placement Talk", type: "PPT", attendees: 240 },
-    { date: "Feb 05", title: "Mock Interview Session", type: "Training", attendees: 120 },
-  ];
-
-  const recentPlacements = [
-    { student: "Rahul Verma", company: "Google", package: 18.5, date: "Jan 20", branch: "CSE" },
-    { student: "Pooja Singh", company: "Microsoft", package: 16.2, date: "Jan 19", branch: "CSE" },
-    { student: "Aditya Jain", company: "Amazon", package: 14.8, date: "Jan 18", branch: "ECE" },
-    { student: "Shruti Nair", company: "Flipkart", package: 12.5, date: "Jan 17", branch: "CSE" },
-  ];
+  const branchData: any[] = dashboardData?.branchData || [];
+  const yearTrend: any[] = dashboardData?.yearTrend || [];
+  const skillsRadarData: any[] = dashboardData?.skillsRadarData || [];
+  const placementDistribution: any[] = dashboardData?.placementDistribution || [];
+  const monthlyActivity: any[] = dashboardData?.monthlyActivity || [];
+  const atRiskStudents: any[] = dashboardData?.atRiskStudents || [];
+  const topPerformers: any[] = dashboardData?.topPerformers || [];
+  const suggestions: any[] = dashboardData?.suggestions || [];
+  const upcomingEvents: any[] = dashboardData?.upcomingEvents || [];
+  const recentPlacements: any[] = dashboardData?.recentPlacements || [];
 
   const COLORS = ['#1e3a8a', '#3b82f6', '#60a5fa', '#93c5fd'];
 
@@ -1046,7 +997,7 @@ export default function AdminDashboard() {
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex flex-wrap gap-2">
-                            {student.issues.slice(0, 2).map((issue, idx) => (
+                            {student.issues.slice(0, 2).map((issue: any, idx: number) => (
                               <span key={idx} className="text-xs px-3 py-1 bg-background border border-border text-muted-foreground font-semibold rounded-lg">
                                 {issue}
                               </span>
@@ -1639,7 +1590,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground font-semibold mb-1">Total Students</p>
-                      <p className="text-3xl font-black text-foreground">1,240</p>
+                      <p className="text-3xl font-black text-foreground">{Number(collegeStats[0]?.value?.toString().replace(/,/g, "") || 0).toLocaleString()}</p>
                     </div>
                     <Users className="w-10 h-10 text-blue-500 opacity-20" />
                   </div>
@@ -1650,7 +1601,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground font-semibold mb-1">Placement Ready</p>
-                      <p className="text-3xl font-black text-foreground">892</p>
+                      <p className="text-3xl font-black text-foreground">{Number(collegeStats[1]?.value?.toString().replace(/,/g, "") || 0).toLocaleString()}</p>
                     </div>
                     <CheckCircle2 className="w-10 h-10 text-green-500 opacity-20" />
                   </div>
@@ -1661,7 +1612,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground font-semibold mb-1">At Risk</p>
-                      <p className="text-3xl font-black text-foreground">348</p>
+                      <p className="text-3xl font-black text-foreground">{atRiskStudents.length.toLocaleString()}</p>
                     </div>
                     <AlertTriangle className="w-10 h-10 text-red-500 opacity-20" />
                   </div>
@@ -1672,7 +1623,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground font-semibold mb-1">Placed</p>
-                      <p className="text-3xl font-black text-foreground">1,078</p>
+                      <p className="text-3xl font-black text-foreground">{branchData.reduce((sum: number, b: any) => sum + Number(b.placed || 0), 0).toLocaleString()}</p>
                     </div>
                     <Award className="w-10 h-10 text-purple-500 opacity-20" />
                   </div>
@@ -1725,7 +1676,7 @@ export default function AdminDashboard() {
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex flex-wrap gap-2">
-                          {student.issues.map((issue, idx) => (
+                          {student.issues.map((issue: any, idx: number) => (
                             <span key={idx} className="text-xs px-3 py-1 bg-background border border-border text-muted-foreground font-semibold rounded-lg">
                               {issue}
                             </span>
