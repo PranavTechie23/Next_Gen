@@ -8,6 +8,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- 2. DROP ALL EXISTING TABLES
 DROP TABLE IF EXISTS applications;
 DROP TABLE IF EXISTS audit_logs;
+DROP TABLE IF EXISTS placement_analytics;
 DROP TABLE IF EXISTS external_engagements;
 DROP TABLE IF EXISTS feedbacks;
 DROP TABLE IF EXISTS job_postings;
@@ -250,12 +251,45 @@ CREATE TABLE applications (
 
 CREATE TABLE webinars (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(150),
-    speaker_name VARCHAR(100),
-    date_time DATETIME,
-    link VARCHAR(255),
+    title VARCHAR(150) NOT NULL,
+    summary TEXT NOT NULL,
+    speaker_name VARCHAR(100) NOT NULL,
+    speaker_role VARCHAR(150),
+    speaker_background TEXT,
+    speaker_photo_url VARCHAR(500),
+    session_mode ENUM('OFFLINE', 'ONLINE', 'HYBRID') NOT NULL DEFAULT 'OFFLINE',
+    venue VARCHAR(255),
+    meeting_link VARCHAR(500),
+    recording_url VARCHAR(500),
+    starts_at DATETIME NOT NULL,
+    ends_at DATETIME,
+    registration_required BOOLEAN NOT NULL DEFAULT FALSE,
+    capacity INT,
+    status ENUM('DRAFT', 'PUBLISHED', 'COMPLETED', 'CANCELLED') NOT NULL DEFAULT 'DRAFT',
+    mom_text LONGTEXT,
+    mom_url VARCHAR(500),
+    key_takeaways TEXT,
     created_by INT,
-    FOREIGN KEY (created_by) REFERENCES tpo_admins(user_id) ON DELETE SET NULL
+    updated_by INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_webinars_starts_at (starts_at),
+    INDEX idx_webinars_status (status),
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE webinar_registrations (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    webinar_id INT NOT NULL,
+    student_id INT NOT NULL,
+    status ENUM('REGISTERED', 'CANCELLED') NOT NULL DEFAULT 'REGISTERED',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_webinar_student (webinar_id, student_id),
+    INDEX idx_webinar_registrations_status (status),
+    FOREIGN KEY (webinar_id) REFERENCES webinars(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES students(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE feedbacks (
@@ -289,4 +323,15 @@ CREATE TABLE notifications (
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (recipient_user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Cached analytics snapshots for fast Admin dashboard loading
+CREATE TABLE placement_analytics (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    scope VARCHAR(100) NOT NULL,
+    payload_json LONGTEXT NOT NULL,
+    generated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_scope (scope)
 );

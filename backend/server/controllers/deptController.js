@@ -4,6 +4,25 @@ const bcrypt = require('bcrypt'); // Use the existing bcrypt module
 const crypto = require('crypto');
 const sendEmail = require('../utils/email');
 
+/** Returns true if the current database has the given column (for schema drift / legacy DBs). */
+const hasColumn = async (tableName, columnName) => {
+    try {
+        const [rows] = await db.execute(
+            `
+            SELECT COUNT(*) AS c
+            FROM information_schema.columns
+            WHERE table_schema = DATABASE()
+              AND table_name = ?
+              AND column_name = ?
+            `,
+            [tableName, columnName]
+        );
+        return Number(rows?.[0]?.c || 0) > 0;
+    } catch {
+        return false;
+    }
+};
+
 /**
  * Bulk upload students via Excel file
  * POST /api/dept/students/upload
@@ -748,69 +767,267 @@ const getDashboardStats = async (req, res) => {
 
         const deptId = headResult[0].department_id;
 
-        // 1. Total Students in Dept
-        const [totalRes] = await db.execute(
-            'SELECT COUNT(*) as count FROM students WHERE department_id = ?',
+        const [[deptTotals]] = await db.execute(
+            `SELECT COUNT(*) AS total_students
+             FROM students
+             WHERE department_id = ?`,
             [deptId]
         );
-        const totalStudents = totalRes[0].count;
+        const totalStudents = Number(deptTotals?.total_students || 0);
 
-        // 2. Placed Students
-        const [placedRes] = await db.execute(
-            'SELECT COUNT(*) as count FROM students WHERE department_id = ? AND is_placed = 1',
+        const [[deptPlacement]] = await db.execute(
+            `SELECT
+                COUNT(DISTINCT CASE WHEN a.status = 'SELECTED' THEN s.user_id END) AS placed_students,
+                ROUND(AVG(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS avg_package,
+                ROUND(MAX(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS highest_package
+             FROM students s
+             LEFT JOIN applications a ON a.student_id = s.user_id
+             LEFT JOIN job_postings jp ON jp.id = a.job_id
+             WHERE s.department_id = ?`,
             [deptId]
         );
-        const placedStudents = placedRes[0].count;
 
-        // 3. Average Package
-        const [avgPkgRes] = await db.execute(
-            'SELECT AVG(current_package_value) as avg FROM students WHERE department_id = ? AND is_placed = 1',
+        const placedStudents = Number(deptPlacement?.placed_students || 0);
+        const avgPackage = Number(deptPlacement?.avg_package || 0);
+        const highestPackage = Number(deptPlacement?.highest_package || 0);
+
+        const [atRiskRows] = await db.execute(
+            `SELECT
+                s.user_id AS id,
+                s.roll_number,
+                u.email,
+                s.current_cgpa,
+                s.active_backlogs,
+                (SELECT COUNT(*) FROM student_skills ss WHERE ss.student_id = s.user_id) AS skills_count,
+                (CASE WHEN rp.student_id IS NULL THEN 0 ELSE 1 END) AS has_resume
+             FROM students s
+             JOIN users u ON u.id = s.user_id
+             LEFT JOIN resume_parsed_data rp ON rp.student_id = s.user_id
+             WHERE s.department_id = ?`,
             [deptId]
         );
-        const avgPackage = avgPkgRes[0].avg ? parseFloat(avgPkgRes[0].avg).toFixed(2) : 0;
-        
-        // 4. At Risk Students (e.g., active backlogs > 0 or CGPA < 6.0)
-        const [atRiskRes] = await db.execute(
-            'SELECT COUNT(*) as count FROM students WHERE department_id = ? AND (current_cgpa < 6.0 OR active_backlogs > 0)',
+
+        const atRiskStudentsList = (atRiskRows || [])
+            .map((r) => {
+                const cgpa = Number(r.current_cgpa || 0);
+                const backlogs = Number(r.active_backlogs || 0);
+                const skills = Number(r.skills_count || 0);
+                const hasResume = Number(r.has_resume || 0) === 1;
+                const riskScore = Math.max(
+                    0,
+                    Math.min(
+                        100,
+                        (cgpa > 0 ? (6.0 - Math.min(cgpa, 6.0)) * 25 : 10) +
+                            backlogs * 20 +
+                            (!hasResume ? 25 : 0) +
+                            (skills < 5 ? (5 - skills) * 6 : 0)
+                    )
+                );
+
+                const issues = [];
+                if (cgpa > 0 && cgpa < 6.0) issues.push('Low CGPA');
+                if (backlogs > 0) issues.push('Active backlogs');
+                if (!hasResume) issues.push('Resume not uploaded');
+                if (skills < 5) issues.push('Low skills count');
+
+                return {
+                    id: r.roll_number || String(r.id),
+                    name: String(r.email || '').split('@')[0] || r.roll_number || 'Student',
+                    readiness: Number((100 - riskScore).toFixed(0)),
+                    status: riskScore >= 60 ? 'Critical' : 'At Risk',
+                    issues,
+                    lastActivity: 'Recent',
+                    risk_score: riskScore,
+                };
+            })
+            .filter((r) => r.risk_score >= 25)
+            .sort((a, b) => b.risk_score - a.risk_score);
+
+        const [monthlyRows] = await db.execute(
+            `SELECT
+                DATE_FORMAT(a.applied_at, '%b') AS month,
+                MONTH(a.applied_at) AS month_num,
+                COUNT(DISTINCT CASE WHEN a.status = 'SELECTED' THEN a.student_id END) AS placements
+             FROM applications a
+             JOIN students s ON s.user_id = a.student_id
+             WHERE s.department_id = ?
+               AND a.applied_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+             GROUP BY DATE_FORMAT(a.applied_at, '%b'), MONTH(a.applied_at)
+             ORDER BY month_num ASC`,
             [deptId]
         );
-        const atRiskStudents = atRiskRes[0].count;
-        
-        // 5. Monthly Placement Trend (Mocked for now since schema doesn't track placement date easily yet)
-        const yearTrend = [
-            { month: "Jan", placements: Math.floor(placedStudents * 0.1) },
-            { month: "Feb", placements: Math.floor(placedStudents * 0.2) },
-            { month: "Mar", placements: Math.floor(placedStudents * 0.4) },
-            { month: "Apr", placements: Math.floor(placedStudents * 0.2) },
-            { month: "May", placements: Math.floor(placedStudents * 0.1) },
-            { month: "Jun", placements: 0 },
-        ];
-        
-        // 6. Placement Distribution (By Package Range) -> Mocked as schema doesn't classify domains easily without complex joins
+
+        const yearTrend = (monthlyRows || []).map((r) => ({
+            month: r.month,
+            placements: Number(r.placements || 0),
+        }));
+
+        const [[packageBands]] = await db.execute(
+            `SELECT
+                SUM(CASE WHEN jp.package_value >= 12 THEN 1 ELSE 0 END) AS high,
+                SUM(CASE WHEN jp.package_value >= 7 AND jp.package_value < 12 THEN 1 ELSE 0 END) AS medium,
+                SUM(CASE WHEN jp.package_value > 0 AND jp.package_value < 7 THEN 1 ELSE 0 END) AS entry
+             FROM applications a
+             JOIN students s ON s.user_id = a.student_id
+             JOIN job_postings jp ON jp.id = a.job_id
+             WHERE s.department_id = ?
+               AND a.status = 'SELECTED'`,
+            [deptId]
+        );
+
+        const totalSelectedOffers =
+            Number(packageBands?.high || 0) +
+            Number(packageBands?.medium || 0) +
+            Number(packageBands?.entry || 0);
+        const toPercent = (n) =>
+            totalSelectedOffers > 0 ? Number(((Number(n || 0) / totalSelectedOffers) * 100).toFixed(0)) : 0;
+
         const placementDistribution = [
-            { name: "Software Development", value: Math.floor(placedStudents * 0.6), color: "#3B82F6" },
-            { name: "Data Science", value: Math.floor(placedStudents * 0.2), color: "#10B981" },
-            { name: "Core Engineering", value: Math.floor(placedStudents * 0.1), color: "#F59E0B" },
-            { name: "Consulting", value: Math.floor(placedStudents * 0.1), color: "#8B5CF6" },
+            { name: "12+ LPA", value: toPercent(packageBands?.high), color: "#3B82F6" },
+            { name: "7-12 LPA", value: toPercent(packageBands?.medium), color: "#10B981" },
+            { name: "<7 LPA", value: toPercent(packageBands?.entry), color: "#F59E0B" },
         ];
-        
-        // 7. Dept vs College (Mocked college averages)
+
+        const [[collegeStats]] = await db.execute(
+            `SELECT
+                COUNT(DISTINCT s.user_id) AS total_students,
+                COUNT(DISTINCT CASE WHEN a.status = 'SELECTED' THEN s.user_id END) AS placed_students,
+                ROUND(AVG(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS avg_package,
+                ROUND(MAX(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS highest_package
+             FROM students s
+             LEFT JOIN applications a ON a.student_id = s.user_id
+             LEFT JOIN job_postings jp ON jp.id = a.job_id`
+        );
+
+        const deptPlacementPct = totalStudents > 0 ? Number(((placedStudents / totalStudents) * 100).toFixed(1)) : 0;
+        const collegeTotalStudents = Number(collegeStats?.total_students || 0);
+        const collegePlacedStudents = Number(collegeStats?.placed_students || 0);
+        const collegePlacementPct = collegeTotalStudents > 0 ? Number(((collegePlacedStudents / collegeTotalStudents) * 100).toFixed(1)) : 0;
+
         const comparisonData = [
-            { metric: "Placement %", dept: totalStudents ? ((placedStudents/totalStudents)*100).toFixed(1) : 0, collegeAvg: 75 },
-            { metric: "Avg Package (LPA)", dept: avgPackage, collegeAvg: 8.5 },
-            { metric: "Highest Package (LPA)", dept: Math.max((parseFloat(avgPackage) * 1.5).toFixed(1), 10), collegeAvg: 45 },
+            { metric: "Placement %", dept: deptPlacementPct, collegeAvg: collegePlacementPct },
+            { metric: "Avg Package (LPA)", dept: avgPackage, collegeAvg: Number(collegeStats?.avg_package || 0) },
+            { metric: "Highest Package (LPA)", dept: highestPackage, collegeAvg: Number(collegeStats?.highest_package || 0) },
         ];
-        
+
+        let skillsRadarData = [];
+        try {
+            const [skillsRows] = await db.execute(
+                `SELECT
+                    AVG(spm.coding_test_score) AS coding,
+                    AVG(spm.mock_interview_score) AS communication,
+                    AVG(spm.amcat_logical) AS aptitude,
+                    AVG(spm.amcat_quant) AS quantitative,
+                    AVG(spm.amcat_verbal) AS verbal
+                 FROM student_performance_metrics spm
+                 JOIN students s ON s.user_id = spm.student_id
+                 WHERE s.department_id = ?`,
+                [deptId]
+            );
+
+            const [collegeSkillsRows] = await db.execute(
+                `SELECT
+                    AVG(coding_test_score) AS coding,
+                    AVG(mock_interview_score) AS communication,
+                    AVG(amcat_logical) AS aptitude,
+                    AVG(amcat_quant) AS quantitative,
+                    AVG(amcat_verbal) AS verbal
+                 FROM student_performance_metrics`
+            );
+
+            const deptSkill = skillsRows?.[0] || {};
+            const collegeSkill = collegeSkillsRows?.[0] || {};
+            skillsRadarData = [
+                { skill: "Coding", dept: Number(deptSkill.coding || 0), collegeAvg: Number(collegeSkill.coding || 0) },
+                { skill: "Communication", dept: Number(deptSkill.communication || 0), collegeAvg: Number(collegeSkill.communication || 0) },
+                { skill: "Aptitude", dept: Number(deptSkill.aptitude || 0), collegeAvg: Number(collegeSkill.aptitude || 0) },
+                { skill: "Quant", dept: Number(deptSkill.quantitative || 0), collegeAvg: Number(collegeSkill.quantitative || 0) },
+                { skill: "Verbal", dept: Number(deptSkill.verbal || 0), collegeAvg: Number(collegeSkill.verbal || 0) },
+            ];
+        } catch {
+            skillsRadarData = [];
+        }
+
+        const [topRows] = await db.execute(
+            `SELECT
+                s.roll_number,
+                u.email,
+                COUNT(CASE WHEN a.status = 'SELECTED' THEN 1 END) AS offers,
+                ROUND(MAX(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS package
+             FROM students s
+             JOIN users u ON u.id = s.user_id
+             LEFT JOIN applications a ON a.student_id = s.user_id
+             LEFT JOIN job_postings jp ON jp.id = a.job_id
+             WHERE s.department_id = ?
+             GROUP BY s.user_id, s.roll_number, u.email
+             HAVING offers > 0
+             ORDER BY offers DESC, package DESC
+             LIMIT 5`,
+            [deptId]
+        );
+
+        const topPerformers = (topRows || []).map((r, idx) => ({
+            rank: idx + 1,
+            name: String(r.email || '').split('@')[0] || r.roll_number || `Student ${idx + 1}`,
+            score: Math.min(100, Math.round(60 + Number(r.offers || 0) * 8 + Number(r.package || 0))),
+            offers: Number(r.offers || 0),
+            package: Number(r.package || 0),
+        }));
+
+        // Webinar schema may be legacy (date_time) or new (starts_at, status). Do not fail the whole dashboard.
+        let upcomingEvents = [];
+        try {
+            const hasStartsAt = await hasColumn('webinars', 'starts_at');
+            const hasStatus = await hasColumn('webinars', 'status');
+            const hasLegacyDate = await hasColumn('webinars', 'date_time');
+
+            let eventRows = [];
+            if (hasStartsAt && hasStatus) {
+                [eventRows] = await db.execute(
+                    `SELECT title, starts_at
+                     FROM webinars
+                     WHERE starts_at >= NOW()
+                       AND status IN ('PUBLISHED', 'COMPLETED')
+                     ORDER BY starts_at ASC
+                     LIMIT 5`
+                );
+            } else if (hasLegacyDate) {
+                [eventRows] = await db.execute(
+                    `SELECT title, date_time AS starts_at
+                     FROM webinars
+                     WHERE date_time >= NOW()
+                     ORDER BY date_time ASC
+                     LIMIT 5`
+                );
+            }
+
+            upcomingEvents = (eventRows || []).map((e) => ({
+                date: e.starts_at
+                    ? new Date(e.starts_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                    : '',
+                title: e.title || 'Webinar',
+                type: 'Webinar',
+                attendees: totalStudents,
+            }));
+        } catch (webinarErr) {
+            console.warn('getDashboardStats: skipping upcoming webinars (schema or query issue)', webinarErr.message);
+            upcomingEvents = [];
+        }
+
         res.status(200).json({
             stats: {
                 totalStudents,
                 placedStudents,
-                avgPackage,
-                atRiskStudents
+                avgPackage: Number(avgPackage.toFixed(2)),
+                atRiskStudents: atRiskStudentsList.length,
             },
             yearTrend,
             placementDistribution,
-            comparisonData
+            comparisonData,
+            atRiskStudents: atRiskStudentsList.slice(0, 5),
+            topPerformers,
+            upcomingEvents,
+            skillsRadarData,
         });
 
     } catch (error) {

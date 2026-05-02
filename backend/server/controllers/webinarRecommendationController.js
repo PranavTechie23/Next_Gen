@@ -40,7 +40,7 @@ const inferTopicsFromSignals = (signals) => {
 };
 
 const scoreWebinar = (webinar, targetTopics) => {
-  const text = normalize(`${webinar.title} ${webinar.speaker_name || ''}`);
+  const text = normalize(`${webinar.title} ${webinar.speaker_name || ''} ${webinar.summary || ''}`);
   let score = 0;
   const reasons = [];
 
@@ -55,8 +55,8 @@ const scoreWebinar = (webinar, targetTopics) => {
   }
 
   // boost upcoming sooner webinars
-  if (webinar.date_time) {
-    const dt = new Date(webinar.date_time);
+  if (webinar.starts_at) {
+    const dt = new Date(webinar.starts_at);
     const days = (dt.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
     if (Number.isFinite(days) && days >= 0) {
       score += clamp(20 - days, 0, 20);
@@ -110,10 +110,11 @@ exports.getDeptWebinarRecommendations = async (req, res) => {
     const targetTopics = inferTopicsFromSignals(signals);
 
     const [webinarRows] = await db.execute(
-      `SELECT id, title, speaker_name, date_time, link
+      `SELECT id, title, summary, speaker_name, starts_at, meeting_link AS link
        FROM webinars
-       WHERE date_time >= NOW()
-       ORDER BY date_time ASC
+       WHERE starts_at >= NOW()
+         AND status IN ('PUBLISHED', 'COMPLETED')
+       ORDER BY starts_at ASC
        LIMIT 100`
     );
 
