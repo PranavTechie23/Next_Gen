@@ -4,6 +4,7 @@ const studentController = require('../controllers/studentController');
 const studentProfileController = require('../controllers/studentProfileController');
 const roadmapController = require('../controllers/roadmapController');
 const companyStatsController = require('../controllers/companyStatsController');
+const webinarController = require('../controllers/webinarController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // --------------------------------------------------
@@ -33,6 +34,13 @@ router.post('/profile/resume',
     studentProfileController.uploadErrorHandler
 );
 
+// PUT /api/student/profile/resume-sections - Manual add/edit/delete of parsed resume sections
+router.put('/profile/resume-sections',
+    protect,
+    authorize('STUDENT'),
+    studentProfileController.updateResumeSections
+);
+
 // --------------------------------------------------
 // STUDENT ROADMAP (DYNAMIC) ROUTES
 // --------------------------------------------------
@@ -49,6 +57,15 @@ router.put('/performance',
     protect,
     authorize('STUDENT'),
     roadmapController.upsertPerformance
+);
+
+// POST /api/student/performance/amcat-report - Upload AMCAT PDF and auto-fill score metrics
+router.post('/performance/amcat-report',
+    protect,
+    authorize('STUDENT'),
+    roadmapController.amcatUploadMiddleware,
+    roadmapController.uploadAmcatReport,
+    roadmapController.amcatUploadErrorHandler
 );
 
 // GET /api/student/company-stats?company=Google - Company stats for kit
@@ -102,6 +119,18 @@ router.delete('/applications/:id',
     protect,
     authorize('STUDENT'),
     studentController.withdrawApplication
+);
+
+router.get('/webinars',
+    protect,
+    authorize('STUDENT'),
+    webinarController.getStudentWebinars
+);
+
+router.post('/webinars/:id/register',
+    protect,
+    authorize('STUDENT'),
+    webinarController.registerForWebinar
 );
 
 module.exports = router;

@@ -114,25 +114,41 @@ const updateStudentSubjectiveProfile = async (req, res) => {
             // Remove existing skills to replace with new ones
             await connection.execute('DELETE FROM student_skills WHERE student_id = ?', [userId]);
 
+            // De-duplicate incoming skills to avoid duplicate (student_id, skill_id) inserts
+            const normalizeSkill = (v) =>
+                String(v || '')
+                    .toLowerCase()
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            const seenSkills = new Set();
+
             for (const skill of skills) {
                 const { name, proficiency_level } = skill;
                 if (!name) continue;
+                const normalizedName = normalizeSkill(name);
+                if (!normalizedName || seenSkills.has(normalizedName)) continue;
+                seenSkills.add(normalizedName);
 
                 // Check if skill exists in `skills` table
                 let skillId;
-                const [existingSkill] = await connection.execute('SELECT id FROM skills WHERE name = ?', [name]);
+                const [existingSkill] = await connection.execute(
+                    'SELECT id FROM skills WHERE LOWER(name) = LOWER(?) LIMIT 1',
+                    [String(name).trim()]
+                );
 
                 if (existingSkill.length > 0) {
                     skillId = existingSkill[0].id;
                 } else {
                     // Create new skill
-                    const [newSkill] = await connection.execute('INSERT INTO skills (name) VALUES (?)', [name]);
+                    const [newSkill] = await connection.execute('INSERT INTO skills (name) VALUES (?)', [String(name).trim()]);
                     skillId = newSkill.insertId;
                 }
 
                 // Map student to skill
                 await connection.execute(
-                    'INSERT INTO student_skills (student_id, skill_id, proficiency_level) VALUES (?, ?, ?)',
+                    `INSERT INTO student_skills (student_id, skill_id, proficiency_level)
+                     VALUES (?, ?, ?)
+                     ON DUPLICATE KEY UPDATE proficiency_level = VALUES(proficiency_level)`,
                     [userId, skillId, proficiency_level || 'BEGINNER']
                 );
             }

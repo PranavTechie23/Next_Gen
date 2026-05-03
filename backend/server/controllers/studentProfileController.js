@@ -87,6 +87,7 @@ const ensureResumeParsedTable = async () => {
 };
 
 const uniq = (arr = []) => Array.from(new Set(arr.filter(Boolean)));
+const clamp = (value, min, max) => Math.max(min, Math.min(max, Number(value)));
 
 const safeJsonValue = (v, fallback) => {
     if (v === null || v === undefined) return fallback;
@@ -379,7 +380,9 @@ const parseResumeText = (rawText = '') => {
             .sort((a, b) => b.length - a.length) // longer first
             .map((h) => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 
-        const re = new RegExp(`\\n?\\s*(${candidates.join('|')})\\s*\\n`, 'ig');
+        // IMPORTANT: match headings only when the whole line is a heading.
+        // This avoids false section switches for phrases like "user experience".
+        const re = new RegExp(`^\\s*(${candidates.join('|')})\\s*$`, 'igm');
         const hits = [];
         let m;
         while ((m = re.exec(text)) !== null) {
@@ -443,7 +446,13 @@ const parseResumeText = (rawText = '') => {
     const normalizeSkillToken = (token = '') => {
         let t = String(token || '').trim();
         if (!t) return null;
-        t = t.replace(/\([^)]*\)/g, ' ').replace(/\s{2,}/g, ' ').trim();
+        // Remove parentheses noise + normalize punctuation that appears in PDFs (":", "•", etc.)
+        t = t
+            .replace(/\([^)]*\)/g, ' ')
+            .replace(/[•|]/g, ' ')
+            .replace(/[:]/g, ' ')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
         const lower = t.toLowerCase();
         if (!lower || SKILL_STOPWORDS.has(lower)) return null;
         if (lower.length < 2 || lower.length > 35) return null;
@@ -451,6 +460,9 @@ const parseResumeText = (rawText = '') => {
         if (/^[^a-zA-Z0-9]+$/.test(lower)) return null;
         if (lower.split(/\s+/).length > 4) return null;
         if (/(basic queries|crud operations|strong interest|seeking an internship)/i.test(lower)) return null;
+        // Drop generic/non-skill tokens that commonly leak from PDF parsing.
+        if (/(^learn$|^learning$|^object$|^language$|^languages$|^core$|^concepts$|^tools$|^technologies$)/i.test(lower)) return null;
+        if (/(^core concepts$|^programming languages$|^web development$|^ai\s*\/\s*ml|^ai\s*&\s*ml)/i.test(lower)) return null;
 
         const canonicalMap = new Map([
             ['js', 'JavaScript'],
@@ -494,19 +506,10 @@ const parseResumeText = (rawText = '') => {
         return uniq(tokens);
     };
 
-    const inferredSkills = COMMON_SKILLS
-        .filter((skill) => lowerText.includes(skill))
-        .map((skill) => {
-            if (skill === 'node') return 'Node.js';
-            if (skill === 'node.js') return 'Node.js';
-            if (skill === 'next.js') return 'Next.js';
-            if (skill === 'c++') return 'C++';
-            if (skill === 'tailwind') return 'TailwindCSS';
-            return skill.charAt(0).toUpperCase() + skill.slice(1);
-        });
-
+    // IMPORTANT: skills should come from the Technical Skills section only.
+    // Inferring skills from the entire resume text can add non-mentioned/noisy tokens.
     const sectionSkills = parseSkillsFromSection();
-    const allSkills = uniq([...sectionSkills, ...inferredSkills]);
+    const allSkills = uniq([...sectionSkills]);
 
     const summaryText = extractBullets(sections.summary).join(' ');
 
@@ -514,14 +517,24 @@ const parseResumeText = (rawText = '') => {
         const projectLines = extractBullets(sections.projects);
         const projects = [];
         let currentProject = null;
+        const startsWithActionVerb = (line = '') =>
+            /^(built|developed|implemented|designed|created|integrated|engineered|deployed|optimized|managed|handled)\b/i.test(String(line).trim());
 
         const isLikelyTitleLine = (l) => {
-            // Detect "Project Name (GitHub) ... Feb 2026 – Ongoing" style lines
-            const hasSignal = /github|vercel|ongoing|\d{4}|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec/i.test(l);
-            // Avoid treating bullet points as titles
-            const looksBullet = /^[•\-\u2022]/.test(l);
-            // Title lines are typically longer and not ending with a period
-            return hasSignal && !looksBullet && l.length >= 8;
+            const line = String(l || '').trim();
+            if (!line || line.length < 6 || line.length > 180) return false;
+            if (/^[•\-\u2022]/.test(line)) return false;
+            if (/\.$/.test(line)) return false;
+            if (startsWithActionVerb(line)) return false;
+
+            // Common project-title signals.
+            const hasSignal = /github|vercel|ongoing|\d{4}|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|react|node|python|java|api|tailwind|docker|mongodb|mysql|postgres/i.test(line);
+            if (hasSignal) return true;
+
+            // Fallback heuristic: "Title Case words" style lines are often project names.
+            const words = line.split(/\s+/).filter(Boolean);
+            const titleCaseWords = words.filter((w) => /^[A-Z][a-zA-Z0-9+.#-]*$/.test(w)).length;
+            return words.length >= 2 && words.length <= 12 && titleCaseWords >= Math.ceil(words.length * 0.5);
         };
 
         for (const l of projectLines) {
@@ -535,6 +548,16 @@ const parseResumeText = (rawText = '') => {
             }
         }
         if (currentProject) projects.push(currentProject);
+
+        // If no title lines were detected but project section has content,
+        // keep one inferred project so projects are not silently lost.
+        if (projects.length === 0 && projectLines.length > 0) {
+            const [first, ...rest] = projectLines;
+            projects.push({
+                title: first || 'Project',
+                bullets: rest.slice(0, 8),
+            });
+        }
         return projects.slice(0, 10);
     };
 
@@ -561,6 +584,60 @@ const parseResumeText = (rawText = '') => {
 
     const fullName = extractLikelyName() || (firstLine && !firstLine.includes('@') && firstLine.length < 80 ? firstLine : null);
 
+    const parsedProjects = parseProjectBlocks();
+    const parsedExperience = parseSimpleList(sections.experience, 25);
+
+    // Safety rebalance:
+    // If projects ended up empty, recover likely project entries from experience lines.
+    const rebalanceProjectsFromExperience = (projectsArr, experienceArr) => {
+        const projectsOut = Array.isArray(projectsArr) ? [...projectsArr] : [];
+        const experienceOut = Array.isArray(experienceArr) ? [...experienceArr] : [];
+        if (projectsOut.length > 0 || experienceOut.length === 0) {
+            return { projects: projectsOut, experience: experienceOut };
+        }
+
+        const looksProjectish = (line = '') =>
+            /project|clone|portal|app|application|dashboard|website|api|react|node|python|java|tailwind|mongodb|mysql|gemini/i.test(String(line));
+        const startsWithActionVerb = (line = '') =>
+            /^(built|developed|implemented|designed|created|integrated|engineered|deployed|optimized|managed)\b/i.test(String(line).trim());
+
+        const recovered = [];
+        const keptExperience = [];
+        let i = 0;
+        while (i < experienceOut.length) {
+            const line = String(experienceOut[i] || '').trim();
+            const next = String(experienceOut[i + 1] || '').trim();
+
+            const titleCandidate = looksProjectish(line) && !startsWithActionVerb(line);
+            if (titleCandidate) {
+                const bullets = [];
+                let j = i + 1;
+                while (j < experienceOut.length && startsWithActionVerb(experienceOut[j])) {
+                    bullets.push(String(experienceOut[j] || '').trim());
+                    j += 1;
+                }
+                if (bullets.length > 0 || looksProjectish(next)) {
+                    recovered.push({ title: line, bullets: bullets.slice(0, 8) });
+                    i = j;
+                    continue;
+                }
+            }
+
+            keptExperience.push(line);
+            i += 1;
+        }
+
+        if (recovered.length > 0) {
+            return {
+                projects: recovered.slice(0, 10),
+                experience: keptExperience.slice(0, 25),
+            };
+        }
+        return { projects: projectsOut, experience: experienceOut };
+    };
+
+    const rebalanced = rebalanceProjectsFromExperience(parsedProjects, parsedExperience);
+
     return {
         fullName,
         email: emailMatch ? emailMatch[0] : null,
@@ -571,8 +648,8 @@ const parseResumeText = (rawText = '') => {
         sections: {
             summary: summaryText || null,
             education: parseSimpleList(sections.education, 20),
-            projects: parseProjectBlocks(),
-            experience: parseSimpleList(sections.experience, 25),
+            projects: rebalanced.projects,
+            experience: rebalanced.experience,
             certifications: parseSimpleList(sections.certifications, 25),
             achievements: parseAchievementList(sections.achievements, 25),
             extracurricular: parseSimpleList(sections.extracurricular, 25),
@@ -1012,10 +1089,87 @@ const uploadErrorHandler = (err, req, res, next) => {
     next();
 };
 
+const normalizeLineArray = (arr, max = 40) => {
+    if (!Array.isArray(arr)) return [];
+    return arr
+        .map((x) => String(x || '').replace(/\s+/g, ' ').trim())
+        .filter(Boolean)
+        .slice(0, max);
+};
+
+const normalizeProjectsArray = (arr, maxProjects = 20) => {
+    if (!Array.isArray(arr)) return [];
+    return arr
+        .map((p) => {
+            const title = String(p?.title || '').replace(/\s+/g, ' ').trim();
+            const bullets = normalizeLineArray(p?.bullets, 10);
+            if (!title && bullets.length === 0) return null;
+            return { title: title || 'Project', bullets };
+        })
+        .filter(Boolean)
+        .slice(0, maxProjects);
+};
+
+const normalizeCustomSections = (arr, maxSections = 10) => {
+    if (!Array.isArray(arr)) return [];
+    return arr
+        .map((s) => {
+            const title = String(s?.title || '').replace(/\s+/g, ' ').trim();
+            const lines = normalizeLineArray(s?.lines, 40);
+            if (!title) return null;
+            return { title, lines };
+        })
+        .filter(Boolean)
+        .slice(0, maxSections);
+};
+
+// PUT /api/student/profile/resume-sections
+const updateResumeSections = async (req, res) => {
+    try {
+        const studentId = req.user.id;
+        await ensureResumeParsedTable();
+
+        const incoming = req.body?.sections || {};
+        const [rows] = await db.execute(
+            'SELECT sections_json FROM resume_parsed_data WHERE student_id = ? LIMIT 1',
+            [studentId]
+        );
+        const existingSections = safeJsonValue(rows?.[0]?.sections_json, {});
+
+        const mergedSections = {
+            ...(existingSections || {}),
+            projects: normalizeProjectsArray(incoming.projects),
+            experience: normalizeLineArray(incoming.experience, 50),
+            extracurricular: normalizeLineArray(incoming.extracurricular, 50),
+            education: normalizeLineArray(incoming.education, 40),
+            certifications: normalizeLineArray(incoming.certifications, 40),
+            custom_sections: normalizeCustomSections(incoming.custom_sections, 12),
+        };
+
+        await db.execute(
+            `
+            INSERT INTO resume_parsed_data (student_id, sections_json)
+            VALUES (?, ?)
+            ON DUPLICATE KEY UPDATE sections_json = VALUES(sections_json)
+            `,
+            [studentId, JSON.stringify(mergedSections)]
+        );
+
+        return res.status(200).json({
+            message: 'Resume sections updated successfully.',
+            sections: mergedSections,
+        });
+    } catch (error) {
+        console.error('Error updating resume sections:', error);
+        return res.status(500).json({ message: 'Failed to update resume sections.' });
+    }
+};
+
 module.exports = {
     upsertProfile,
     getProfile,
     uploadResume,
+    updateResumeSections,
     resumeUploadMiddleware: upload.single('resume'),
     uploadErrorHandler
 };
