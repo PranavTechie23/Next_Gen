@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Menu, Filter as FilterIcon, X, Sparkles, LayoutDashboard } from "lucide-react";
 import { deptApi } from "@/services/deptApi";
 import { adminApi } from "@/services/adminApi";
+import { performClientLogout } from "@/lib/logout";
 
 const ADMIN_TABS = ["overview", "drives", "analytics", "students", "reports"] as const;
 type AdminTab = (typeof ADMIN_TABS)[number];
@@ -303,7 +304,7 @@ export default function AdminDashboard() {
                 <Settings className="h-4 w-4" />
               </Button>
 
-              <Button variant="ghost" size="sm" className="shrink-0 touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => navigate("/")}>
+              <Button variant="ghost" size="sm" className="shrink-0 touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => performClientLogout(navigate)}>
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>

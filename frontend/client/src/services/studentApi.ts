@@ -53,6 +53,11 @@ export const studentApi = {
     return response.data;
   },
 
+  updateResumeSections: async (sections: any) => {
+    const response = await api.put('/profile/resume-sections', { sections });
+    return response.data;
+  },
+
   // Dynamic Roadmap (Mentorship)
   getRoadmap: async () => {
     const response = await api.get('/roadmap');
@@ -61,6 +66,15 @@ export const studentApi = {
 
   updatePerformance: async (data: any) => {
     const response = await api.put('/performance', data);
+    return response.data;
+  },
+
+  uploadAmcatReport: async (file: File) => {
+    const formData = new FormData();
+    formData.append('report', file);
+    const response = await api.post('/performance/amcat-report', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return response.data;
   },
 
@@ -90,5 +104,15 @@ export const studentApi = {
   getApplications: async () => {
     const response = await api.get('/applications');
     return response.data;
-  }
+  },
+
+  getWebinars: async (params?: { scope?: 'all' | 'upcoming' | 'past'; search?: string }) => {
+    const response = await api.get('/webinars', { params });
+    return response.data;
+  },
+
+  registerWebinar: async (id: string | number) => {
+    const response = await api.post(`/webinars/${id}/register`);
+    return response.data;
+  },
 };

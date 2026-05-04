@@ -1,5 +1,6 @@
 import { useState, Fragment, useRef, useEffect } from "react";
 import { toast } from "sonner";
+import { performClientLogout } from "@/lib/logout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,7 +34,7 @@ import { getPlacementDrives, computeDriveMatch } from "@/data/placementDrives";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-  AreaChart, Area, Cell, PieChart, Pie, ComposedChart, Scatter
+  AreaChart, Area, ComposedChart, Scatter
 } from "recharts";
 import {
   LogOut, Settings, TrendingUp, AlertCircle, CheckCircle, Target, Award, BookOpen,
@@ -267,9 +268,23 @@ export default function StudentDashboard() {
     return null;
   };
 
-  const computeSemesterLabel = () => {
-    const joinYear = inferJoiningYear();
-    if (!joinYear) return "Year N/A";
+  const inferJoiningYearFromEducation = () => {
+    const educationLines: string[] = Array.isArray(resumeSections?.education) ? resumeSections.education : [];
+    const joined = educationLines.map((x) => String(x || "")).join(" ");
+    // Try to find a start year for bachelor's program (e.g., "Aug 2024 - Jun 2028" or "2024 - 2028")
+    const range =
+      joined.match(/\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(20\d{2})\s*[-–—]\s*(?:present|ongoing|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+20\d{2}|20\d{2})\b/i) ||
+      joined.match(/\b(20\d{2})\s*[-–—]\s*(?:present|ongoing|20\d{2})\b/i);
+    if (range) {
+      const y = Number(range[1]);
+      if (Number.isFinite(y)) return y;
+    }
+    return null;
+  };
+
+  const computeSemesterLabelFromJoinYear = () => {
+    const joinYear = inferJoiningYearFromEducation() ?? inferJoiningYear();
+    if (!joinYear) return { sem: null, label: "Year N/A" };
 
     const now = new Date();
     // Academic session assumed to start in July (common for engineering colleges).
@@ -279,14 +294,15 @@ export default function StudentDashboard() {
 
     const sem = Math.max(1, Math.min(8, Math.floor(monthsSinceStart / 6) + 1));
     const yearNum = Math.ceil(sem / 2);
-    return `Sem ${sem} • ${ordinalYear(yearNum)} year`;
+    return { sem, label: `Sem ${sem} • ${ordinalYear(yearNum)} year` };
   };
 
-  const extractLatestSemesterGpa = () => {
+  const extractSemesterGpaSignalsFromResume = () => {
     const educationLines: string[] = Array.isArray(resumeSections?.education) ? resumeSections.education : [];
-    if (!educationLines.length) return null;
+    if (!educationLines.length) return { maxSem: null, semToGpa: new Map<number, number>() };
 
-    const candidates: Array<{ sem: number; gpa: number }> = [];
+    const semToGpa = new Map<number, number>();
+    let maxSem: number | null = null;
     for (const raw of educationLines) {
       const line = String(raw || "");
       const semMatch = line.match(/(?:sem(?:ester)?\s*[-:]?\s*)([1-8])/i);
@@ -298,20 +314,44 @@ export default function StudentDashboard() {
         const sem = Number(semMatch[1]);
         const gpa = Number(gpaMatch[1]);
         if (Number.isFinite(sem) && Number.isFinite(gpa)) {
-          candidates.push({ sem, gpa });
+          semToGpa.set(sem, gpa);
+          if (maxSem === null || sem > maxSem) maxSem = sem;
         }
       }
     }
-
-    if (candidates.length > 0) {
-      candidates.sort((a, b) => b.sem - a.sem);
-      return candidates[0].gpa;
-    }
-    return null;
+    return { maxSem, semToGpa };
   };
 
-  const computedYearLabel = computeSemesterLabel();
-  const latestSemGpa = extractLatestSemesterGpa();
+  const joinYearFallback = computeSemesterLabelFromJoinYear();
+  const resumeSemSignals = extractSemesterGpaSignalsFromResume();
+  // If resume doesn't list SGPA per semester, still infer semester from any "Sem X" mention in education.
+  const maxSemMentioned = (() => {
+    const educationLines: string[] = Array.isArray(resumeSections?.education) ? resumeSections.education : [];
+    let m: number | null = null;
+    for (const raw of educationLines) {
+      const line = String(raw || "");
+      const mm = line.match(/\bsem(?:ester)?\s*[-:]?\s*([1-8])\b/i);
+      if (mm) {
+        const sem = Number(mm[1]);
+        if (Number.isFinite(sem)) m = m === null ? sem : Math.max(m, sem);
+      }
+    }
+    return m;
+  })();
+
+  const resolvedSem = resumeSemSignals.maxSem ?? maxSemMentioned ?? joinYearFallback.sem;
+  const resolvedYearLabel =
+    resolvedSem !== null
+      ? `Sem ${resolvedSem} • ${ordinalYear(Math.ceil(resolvedSem / 2))} year`
+      : joinYearFallback.label;
+
+  // If current semester is even (Sem 2/4/6/8), show previous semester GPA when present.
+  const prevSem = resolvedSem && resolvedSem > 1 ? resolvedSem - 1 : null;
+  const prevSemGpa = prevSem ? resumeSemSignals.semToGpa.get(prevSem) ?? null : null;
+  const latestKnownGpa =
+    (resolvedSem ? resumeSemSignals.semToGpa.get(resolvedSem) : null) ??
+    backendProfile?.student?.current_cgpa ??
+    null;
   const sanitizeDisplayName = (...candidates: any[]) => {
     const blocked = new Set([
       "projects", "project", "experience", "education", "skills", "summary",
@@ -354,8 +394,9 @@ export default function StudentDashboard() {
     branch: backendProfile?.department?.name || "Engineering",
     college: "NextGen University", // Assuming static or from institution table
     bio: backendProfile?.profile?.bio || "No bio added yet.",
-    year: computedYearLabel,
-    cgpa: latestSemGpa ?? backendProfile?.student?.current_cgpa ?? 0,
+    year: resolvedYearLabel,
+    // Prefer previous semester GPA when available (Sem 4 shows Sem 3 GPA).
+    cgpa: prevSemGpa ?? latestKnownGpa ?? 0,
     avatar: backendProfile?.profile?.avatar_url || ""
   };
 
@@ -434,45 +475,159 @@ export default function StudentDashboard() {
     return t;
   };
   const cleanAchievementToken = (raw: any) => {
-    const t = String(raw || "").trim();
+    const t = String(raw || "")
+      .replace(/^[•\-\u2022]\s*/, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
     if (!t || t.length < 6) return null;
     if (/^[-–—\s]*\d+\s*(?:of)?\s*\d+\s*[-–—\s]*$/i.test(t)) return null;
     return t;
+  };
+
+  const splitIntoLines = (raw: any) => {
+    const t = String(raw || "").replace(/\r/g, "\n");
+    const trimmed = t.trim();
+    // Only split aggressively when it looks like a multi-line/bulleted block.
+    if (trimmed.includes("\n")) {
+      return trimmed.split(/\n+/g).map((x) => x.trim()).filter(Boolean);
+    }
+    if (/^[•\-\u2022]\s+/.test(trimmed)) {
+      // bullet-prefixed single string like "• a • b"
+      return trimmed
+        .split(/(?=[•\-\u2022]\s+)/g)
+        .map((x) => x.trim())
+        .filter(Boolean);
+    }
+    return [trimmed];
+  };
+
+  const groupAchievementLines = (lines: string[]) => {
+    const out: string[] = [];
+    const isContinuation = (s: string) => {
+      const t = String(s || "").trim();
+      if (!t) return false;
+      // Continuations are usually short and start like "round..." or lowercase phrases.
+      if (t.length <= 60 && /^[a-z]/.test(t)) return true;
+      if (/^(round|interview|aptitude|reasoning|verbal|quant|bug|coding|team|final)\b/i.test(t)) return true;
+      // Lines starting with conjunctions are usually continuation.
+      if (/^(and|or|with|followed|including)\b/i.test(t)) return true;
+      return false;
+    };
+
+    for (const raw of lines) {
+      const t = String(raw || "").trim();
+      if (!t) continue;
+      if (out.length === 0) {
+        out.push(t);
+        continue;
+      }
+      if (isContinuation(t)) {
+        const prev = out[out.length - 1];
+        const sep = /[.!?]$/.test(prev) ? " " : " ";
+        out[out.length - 1] = `${prev}${sep}${t}`.replace(/\s{2,}/g, " ").trim();
+      } else {
+        out.push(t);
+      }
+    }
+    return out;
   };
 
   const parsedResumeSkills: string[] = (backendProfile?.resumeParsed?.skills || []).map(cleanSkillToken).filter(Boolean);
   const profileSkills: string[] = (backendProfile?.skills || []).map((s: any) => cleanSkillToken(s?.name)).filter(Boolean);
   const baseMergedSkills: string[] = Array.from(new Set([...profileSkills, ...parsedResumeSkills]));
 
-  const resumeAchievements: string[] = (Array.isArray(resumeSections?.achievements) ? resumeSections.achievements : []).map(cleanAchievementToken).filter(Boolean);
-  const manualAchievements: string[] = (Array.isArray(backendProfile?.achievements) ? backendProfile.achievements : []).map(cleanAchievementToken).filter(Boolean);
-  const baseMergedAchievements: string[] = Array.from(new Set([...resumeAchievements, ...manualAchievements]));
+  const normalizeAchievementKey = (s: string) =>
+    String(s || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+
+  const resumeAchievements: string[] = groupAchievementLines(
+    (Array.isArray(resumeSections?.achievements) ? resumeSections.achievements : [])
+      .flatMap(splitIntoLines)
+      .map(cleanAchievementToken)
+      .filter(Boolean)
+  );
+  const manualAchievements: string[] = groupAchievementLines(
+    (Array.isArray(backendProfile?.achievements) ? backendProfile.achievements : [])
+      .flatMap(splitIntoLines)
+      .map(cleanAchievementToken)
+      .filter(Boolean)
+  );
+
+  const baseMergedAchievements: string[] = (() => {
+    const map = new Map<string, string>();
+    for (const a of [...resumeAchievements, ...manualAchievements]) {
+      const key = normalizeAchievementKey(a);
+      if (!key) continue;
+      if (!map.has(key) || map.get(key)!.length < a.length) {
+        map.set(key, a);
+      }
+    }
+    return Array.from(map.values());
+  })();
+
+  const normalizeToken = (v: any) => String(v || "").toLowerCase().trim();
 
   const [pendingSkills, setPendingSkills] = useState<string[]>([]);
   const [pendingAchievements, setPendingAchievements] = useState<string[]>([]);
-  const mergedSkills: string[] = Array.from(new Set([...baseMergedSkills, ...pendingSkills]));
-  const mergedAchievements: string[] = Array.from(new Set([...baseMergedAchievements, ...pendingAchievements]));
+  const [removedSkills, setRemovedSkills] = useState<string[]>([]);
+  const [removedAchievements, setRemovedAchievements] = useState<string[]>([]);
+  const mergedSkills: string[] = Array.from(
+    new Set(
+      [...baseMergedSkills, ...pendingSkills].filter(
+        (s) => !removedSkills.some((r) => normalizeToken(r) === normalizeToken(s))
+      )
+    )
+  );
+  const mergedAchievements: string[] = Array.from(
+    new Set(
+      [...baseMergedAchievements, ...pendingAchievements].filter(
+        (a) =>
+          !removedAchievements.some(
+            (r) =>
+              String(r || "").toLowerCase().replace(/\s+/g, " ").trim() ===
+              String(a || "").toLowerCase().replace(/\s+/g, " ").trim()
+          )
+      )
+    )
+  );
 
   const [newSkillInput, setNewSkillInput] = useState("");
   const [newAchievementInput, setNewAchievementInput] = useState("");
   const [savingManualProfile, setSavingManualProfile] = useState(false);
+  const [manualEditMode, setManualEditMode] = useState(false);
+  const [showAllSkillsCard, setShowAllSkillsCard] = useState(false);
+  const [showAllAchievementsCard, setShowAllAchievementsCard] = useState(false);
 
   useEffect(() => {
     // Clear local pending edits when backend profile refreshes (e.g. after Save/Resume upload).
     setPendingSkills([]);
     setPendingAchievements([]);
+    setRemovedSkills([]);
+    setRemovedAchievements([]);
   }, [backendProfile]);
 
   const saveManualSkillsAndAchievements = async () => {
     try {
       setSavingManualProfile(true);
-      const skillsPayload = mergedSkills.map((name) => ({ name, proficiency_level: "BEGINNER" }));
+      const uniqueSkillNames = (mergedSkills || []).reduce<string[]>((acc, skillName) => {
+        const cleaned = String(skillName || "").trim();
+        if (!cleaned) return acc;
+        const normalized = cleaned.toLowerCase();
+        const exists = acc.some((item) => item.toLowerCase() === normalized);
+        if (!exists) acc.push(cleaned);
+        return acc;
+      }, []);
+      const skillsPayload = uniqueSkillNames.map((name) => ({ name, proficiency_level: "BEGINNER" }));
       await studentApi.updateSubjectiveProfile({
         skills: skillsPayload,
         achievements: mergedAchievements,
       });
       const refreshed = await studentApi.getProfile();
       setBackendProfile(refreshed);
+      setManualEditMode(false);
       toast.success("Profile updated.");
     } catch (e) {
       console.error("Failed to save manual profile updates", e);
@@ -480,6 +635,25 @@ export default function StudentDashboard() {
     } finally {
       setSavingManualProfile(false);
     }
+  };
+
+  const removeSkill = (skill: string) => {
+    setPendingSkills((prev) => prev.filter((s) => normalizeToken(s) !== normalizeToken(skill)));
+    setRemovedSkills((prev) => {
+      if (prev.some((s) => normalizeToken(s) === normalizeToken(skill))) return prev;
+      return [...prev, skill];
+    });
+  };
+
+  const removeAchievement = (achievement: string) => {
+    const norm = String(achievement || "").toLowerCase().replace(/\s+/g, " ").trim();
+    setPendingAchievements((prev) =>
+      prev.filter((a) => String(a || "").toLowerCase().replace(/\s+/g, " ").trim() !== norm)
+    );
+    setRemovedAchievements((prev) => {
+      if (prev.some((a) => String(a || "").toLowerCase().replace(/\s+/g, " ").trim() === norm)) return prev;
+      return [...prev, achievement];
+    });
   };
   const profileChecklist = [
     {
@@ -598,13 +772,49 @@ export default function StudentDashboard() {
   };
 
   const dynamic = computeDynamicMetrics();
-  const normalizeToken = (v: any) => String(v || "").toLowerCase().trim();
   const roleNoiseWords = new Set([
     "pune", "mumbai", "india", "college", "university", "institute", "school", "present",
     "jun", "june", "jul", "july", "aug", "sep", "oct", "nov", "dec", "jan", "feb", "mar", "apr", "may",
     "btech", "bachelor", "hsc", "ssc", "cgpa", "gmail", "linkedin", "github", "address", "phone", "email",
-    "computer", "engineering", "student", "resume", "summary"
+    "computer", "engineering", "student", "resume", "summary",
+    "secondary", "certificate", "certification", "certifications", "board", "junior", "senior", "marks", "rank"
   ]);
+
+  const normalizeInterest = (v: any) =>
+    String(v || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9+#./\s-]/g, " ")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+
+  const suggestedInterests = (() => {
+    // Keep suggestions focused: skills + project titles only (avoid education/cert noise).
+    const blobs = [
+      ...(mergedSkills || []),
+      ...(Array.isArray(resumeSections?.projects) ? resumeSections.projects.map((p: any) => p?.title || "") : []),
+    ]
+      .map((x) => String(x || "").toLowerCase())
+      .join(" ");
+
+    const tokens = blobs
+      .split(/[^a-z0-9+#./-]+/g)
+      .map((t) => t.trim())
+      .filter((t) => t.length >= 3 && !/^\d+$/.test(t))
+      .filter((t) => !roleNoiseWords.has(t))
+      .filter((t) => !/^(20\d{2}|\d{1,2})$/.test(t));
+
+    // Prefer tokens that look like tech keywords
+    const techish = tokens.filter((t) => /[+#./]/.test(t) || /^(react|node|express|sql|mysql|postgres|mongodb|python|java|dsa|api|docker|aws|git|github|typescript|javascript|tailwind|next|ml|ai|pandas|numpy)$/.test(t));
+
+    const counts = new Map<string, number>();
+    techish.forEach((t) => counts.set(t, (counts.get(t) || 0) + 1));
+    const sorted = Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([k]) => k);
+
+    const existing = new Set((careerInterests || []).map((x) => normalizeInterest(x)));
+    return sorted.filter((k) => !existing.has(normalizeInterest(k))).slice(0, 18);
+  })();
 
   const topJourneyKeywords = (() => {
     const blobs = [
@@ -734,9 +944,14 @@ export default function StudentDashboard() {
   ];
   const toggleInterest = (interest: string) => {
     setCareerInterests((prev) => {
-      const exists = prev.includes(interest);
-      if (exists) return prev.filter((x) => x !== interest);
-      return [...prev, interest].slice(0, 6);
+      const next = Array.isArray(prev) ? [...prev] : [];
+      const key = normalizeInterest(interest);
+      const idx = next.findIndex((x) => normalizeInterest(x) === key);
+      if (idx >= 0) {
+        next.splice(idx, 1);
+        return next;
+      }
+      return [...next, String(interest || "").trim()].slice(0, 6);
     });
   };
   const addInterestFromInput = () => {
@@ -976,25 +1191,6 @@ export default function StudentDashboard() {
       required: Math.round(clamp(r.required, 0, 100)),
     }));
   })();
-
-  const skillProgressPanels = [
-    {
-      title: "Skill Progress",
-      label: "Technical Skills",
-      ring1: Math.round(clamp(Number(skillData.find((s) => s.skill === "DSA")?.student || 0), 0, 100)),
-      ring2: Math.round(clamp(Number(skillData.find((s) => s.skill === "Full Stack Dev")?.student || 0), 0, 100)),
-      ring3: Math.round(clamp(Number(skillData.find((s) => s.skill === "System Design")?.student || 0), 0, 100)),
-      colors: ["#3b82f6", "#06b6d4", "#a855f7"]
-    },
-    {
-      title: "Skill Progress",
-      label: "Professional Skills",
-      ring1: Math.round(clamp(Number(skillData.find((s) => s.skill === "Communication")?.student || 0), 0, 100)),
-      ring2: Math.round(clamp(Number(skillData.find((s) => s.skill === "Team Projects")?.student || 0), 0, 100)),
-      ring3: Math.round(clamp(Number(skillData.find((s) => s.skill === "Database Design")?.student || 0), 0, 100)),
-      colors: ["#ec4899", "#8b5cf6", "#3b82f6"]
-    }
-  ];
 
   // Placement Analysis
   const placementData = [
@@ -1541,10 +1737,7 @@ export default function StudentDashboard() {
             <div className={`p-4 border-t ${isDark ? "border-white/10" : "border-slate-200"} flex items-center justify-between`}>
               <ThemeToggle />
               <button
-                onClick={() => {
-                  localStorage.removeItem("userRole");
-                  navigate("/");
-                }}
+                onClick={() => performClientLogout(navigate)}
                 className={`p-3 rounded-xl transition-colors ${isDark ? "text-red-300 hover:bg-red-500/10" : "text-red-600 hover:bg-red-50"}`}
                 title="Log out"
                 aria-label="Log out"
@@ -1805,10 +1998,7 @@ export default function StudentDashboard() {
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator className={`${isDark ? "bg-white/5" : "bg-slate-100"} -mx-2 my-2`} />
-                  <DropdownMenuItem onClick={() => {
-                    localStorage.removeItem("userRole");
-                    navigate("/");
-                  }} className={`rounded-xl flex items-center gap-3 p-3 transition-all cursor-pointer group/signout ${isDark ? "hover:bg-red-500/10 text-red-400" : "hover:bg-red-50 text-red-500"}`}>
+                  <DropdownMenuItem onClick={() => performClientLogout(navigate)} className={`rounded-xl flex items-center gap-3 p-3 transition-all cursor-pointer group/signout ${isDark ? "hover:bg-red-500/10 text-red-400" : "hover:bg-red-50 text-red-500"}`}>
                     <div className={`w-8 h-8 rounded-lg ${isDark ? "bg-red-500/10" : "bg-red-500/5"} flex items-center justify-center transition-colors group-hover/signout:bg-red-500/20`}>
                       <LogOut className="w-4 h-4" />
                     </div>
@@ -1950,31 +2140,31 @@ export default function StudentDashboard() {
                 <div className="lg:col-span-2">
                   <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] overflow-hidden shadow-2xl`}>
                     <CardContent className="p-8 sm:p-9 space-y-6">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                        <div className="space-y-2">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="space-y-1.5">
                           <p className={`text-xs font-black ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-[0.24em] opacity-70`}>Current Direction Signal</p>
                           <p className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent leading-tight">
                             {roleRecommendation.title}
                           </p>
-                          <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"} font-semibold max-w-2xl`}>
-                            This is a guidance hint from resume + skills{careerInterests.length ? " + interests" : ""}, not a fixed role decision.
+                          <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"} font-semibold max-w-xl`}>
+                            Guidance hint from resume and skills.
                           </p>
                         </div>
-                        <div className={`${isDark ? "bg-blue-500/10" : "bg-blue-50"} rounded-2xl p-4 ${isDark ? "border-blue-500/20" : "border-blue-200"} flex items-center gap-4`}>
-                          <div className={`w-12 h-12 ${isDark ? "bg-white/5" : "bg-white"} rounded-xl flex items-center justify-center shadow-lg ${isDark ? "border-blue-500/20" : "border-blue-200"}`}>
-                            <span className="text-base font-black text-blue-400">{roleRecommendation.confidence}%</span>
+                        <div className={`${isDark ? "bg-blue-500/10" : "bg-blue-50"} rounded-xl px-3 py-2 ${isDark ? "border-blue-500/20" : "border-blue-200"} flex items-center gap-3`}>
+                          <div className={`w-10 h-10 ${isDark ? "bg-white/5" : "bg-white"} rounded-lg flex items-center justify-center shadow-lg ${isDark ? "border-blue-500/20" : "border-blue-200"}`}>
+                            <span className="text-sm font-black text-blue-400">{roleRecommendation.confidence}%</span>
                           </div>
                           <div>
-                            <p className={`text-xs font-bold ${isDark ? "text-gray-400" : "text-gray-600"}`}>Confidence Signal</p>
-                            <p className={`text-xs font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}>Use with your own goals</p>
+                            <p className={`text-[11px] font-bold ${isDark ? "text-gray-400" : "text-gray-600"}`}>Confidence</p>
+                            <p className={`text-[11px] font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}>Use with your goals</p>
                           </div>
                         </div>
                       </div>
 
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className={`text-[11px] font-black uppercase tracking-wider ${isDark ? "text-gray-400" : "text-gray-600"} mr-1`}>Interests</p>
-                          {careerInterests.map((interest) => (
+                          {careerInterests.slice(0, 4).map((interest) => (
                             <button
                               key={interest}
                               type="button"
@@ -1985,6 +2175,11 @@ export default function StudentDashboard() {
                               {interest}
                             </button>
                           ))}
+                          {careerInterests.length > 4 && (
+                            <span className={`text-xs px-2.5 py-1 rounded-full border font-semibold ${isDark ? "bg-white/5 border-white/10 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
+                              +{careerInterests.length - 4} more
+                            </span>
+                          )}
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2">
                           <input
@@ -2005,12 +2200,11 @@ export default function StudentDashboard() {
                             Add Interest
                           </Button>
                         </div>
-                        {topJourneyKeywords.length > 0 && (
+                        {suggestedInterests.length > 0 && (
                           <div className="flex flex-wrap items-center gap-2">
                             <p className={`text-[11px] font-black uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-500"} mr-1`}>Suggested from resume</p>
-                            {topJourneyKeywords
-                              .filter((k) => !careerInterests.some((i) => i.toLowerCase() === k.toLowerCase()))
-                              .slice(0, 8)
+                            {suggestedInterests
+                              .slice(0, 4)
                               .map((k) => (
                                 <button
                                   key={k}
@@ -2029,21 +2223,15 @@ export default function StudentDashboard() {
                         )}
                       </div>
 
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between px-1">
-                          <p className={`text-sm font-black ${isDark ? "text-white" : "text-gray-900"}`}>Role confidence (suggestive)</p>
-                          <span className={`text-[10px] font-bold text-blue-400 px-2.5 py-1 ${isDark ? "bg-blue-500/10" : "bg-blue-50"} rounded-lg tracking-wide uppercase`}>Exploratory</span>
-                        </div>
-                        <div className={`h-3 ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-full overflow-hidden shadow-inner p-0.5`}>
-                          <div className="h-full bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.3)]" style={{ width: `${roleRecommendation.confidence}%` }}></div>
-                        </div>
+                      <div className={`h-2 ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-full overflow-hidden shadow-inner`}>
+                        <div className="h-full bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 rounded-full" style={{ width: `${roleRecommendation.confidence}%` }}></div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         {roleSkillCards.map((item, i) => (
-                          <div key={i} className={`p-4 rounded-2xl ${item.bg} ${isDark ? "border-white/5" : "border-gray-200"} flex flex-col gap-1`}>
+                          <div key={i} className={`p-3 rounded-xl ${item.bg} ${isDark ? "border-white/5" : "border-gray-200"} flex flex-col gap-0.5`}>
                             <span className={`text-[11px] font-black ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-wider`}>{item.label}</span>
-                            <span className={`${item.color} text-xl font-black`}>
+                            <span className={`${item.color} text-lg font-black`}>
                               {item.score >= 75 ? "High" : item.score >= 55 ? "Medium" : "Building"}
                             </span>
                           </div>
@@ -2184,15 +2372,21 @@ export default function StudentDashboard() {
                 <CardContent className="p-6 sm:p-8">
                   <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                     <div className="space-y-2">
-                      <p className={`text-xs font-black uppercase tracking-[0.2em] ${isDark ? "text-slate-500" : "text-slate-500"}`}>Manual Updates</p>
-                      <h3 className={`text-xl sm:text-2xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Skills & Achievements</h3>
+                      <p className={`text-[11px] font-black uppercase tracking-[0.22em] ${isDark ? "text-slate-400" : "text-slate-500"}`}>Manual Updates</p>
+                      <h3 className={`text-2xl sm:text-3xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Skills & Achievements</h3>
                       <p className={`${isDark ? "text-slate-400" : "text-slate-600"} text-sm max-w-2xl`}>
-                        If something wasn’t extracted from your resume, add it here. Saved items are stored in the database and visible to TPO.
+                        Add only missing items. Keep entries short and relevant.
                       </p>
                     </div>
-                    <Button onClick={saveManualSkillsAndAchievements} disabled={savingManualProfile} className="h-12 rounded-2xl font-black">
-                      {savingManualProfile ? "Saving..." : "Save Updates"}
-                    </Button>
+                    {!manualEditMode ? (
+                      <Button onClick={() => setManualEditMode(true)} className="h-12 rounded-2xl font-black" variant="secondary">
+                        Edit
+                      </Button>
+                    ) : (
+                      <Button onClick={saveManualSkillsAndAchievements} disabled={savingManualProfile} className="h-12 rounded-2xl font-black">
+                        {savingManualProfile ? "Saving..." : "Save Updates"}
+                      </Button>
+                    )}
                   </div>
 
                   <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -2203,10 +2397,12 @@ export default function StudentDashboard() {
                           value={newSkillInput}
                           onChange={(e) => setNewSkillInput(e.target.value)}
                           placeholder="e.g., LangChain, SHAP, SQL"
+                          disabled={!manualEditMode}
                           className={`flex-1 h-11 px-4 rounded-2xl text-sm font-semibold outline-none border transition-all ${isDark ? "bg-white/5 border-white/10 text-white placeholder:text-slate-600 focus:border-blue-500/50" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-400 shadow-inner"}`}
                         />
                         <Button
                           type="button"
+                          disabled={!manualEditMode}
                           onClick={() => {
                             const raw = newSkillInput.trim();
                             const v = cleanSkillToken(raw);
@@ -2232,10 +2428,12 @@ export default function StudentDashboard() {
                           value={newAchievementInput}
                           onChange={(e) => setNewAchievementInput(e.target.value)}
                           placeholder="e.g., 2nd Rank – 93.17% (HSC)"
+                          disabled={!manualEditMode}
                           className={`flex-1 h-11 px-4 rounded-2xl text-sm font-semibold outline-none border transition-all ${isDark ? "bg-white/5 border-white/10 text-white placeholder:text-slate-600 focus:border-blue-500/50" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-400 shadow-inner"}`}
                         />
                         <Button
                           type="button"
+                          disabled={!manualEditMode}
                           onClick={() => {
                             const raw = newAchievementInput.trim();
                             const v = cleanAchievementToken(raw);
@@ -2281,58 +2479,107 @@ export default function StudentDashboard() {
                   </div>
 
                   <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div className={`rounded-2xl border p-5 shadow-sm ${isDark ? "border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02]" : "border-slate-200 bg-gradient-to-br from-white to-slate-50"}`}>
+                    <div className={`rounded-3xl border p-5 sm:p-6 shadow-sm ${isDark ? "border-white/10 bg-gradient-to-br from-white/10 via-white/[0.05] to-white/[0.02]" : "border-slate-200 bg-gradient-to-br from-white to-slate-50"}`}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${isDark ? "bg-blue-500/15" : "bg-blue-100"}`}>
+                          <div className={`h-8 w-8 rounded-xl flex items-center justify-center ${isDark ? "bg-blue-500/15" : "bg-blue-100"}`}>
                             <Code className="h-4 w-4 text-blue-500" />
                           </div>
-                          <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Current Skills</p>
+                          <p className={`text-base font-extrabold uppercase tracking-wide ${isDark ? "text-slate-100" : "text-slate-700"}`}>Current Skills</p>
                         </div>
-                        <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${isDark ? "bg-white/10 text-slate-300" : "bg-slate-100 text-slate-700"}`}>
+                        <span className={`text-[11px] font-black px-2.5 py-1 rounded-lg ${isDark ? "bg-white/10 text-slate-300" : "bg-slate-100 text-slate-700"}`}>
                           {(mergedSkills || []).length}
                         </span>
                       </div>
-                      <div className="mt-3 max-h-40 overflow-y-auto pr-1 space-y-0 custom-scrollbar">
-                        <div className="flex flex-wrap gap-2">
-                          {(mergedSkills || []).map((s: string) => (
-                            <span
+                      <div className={`mt-4 h-px ${isDark ? "bg-white/10" : "bg-slate-200"}`} />
+                      <div className={`${showAllSkillsCard ? "mt-4 max-h-72 overflow-y-auto pr-1 custom-scrollbar" : "mt-4"}`}>
+                        <div className="flex flex-wrap gap-2.5">
+                          {(showAllSkillsCard ? (mergedSkills || []) : (mergedSkills || []).slice(0, 14)).map((s: string) => (
+                            <button
+                              type="button"
                               key={s}
-                              className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all ${
+                              onClick={() => {
+                                if (manualEditMode) removeSkill(s);
+                              }}
+                              title={manualEditMode ? "Remove skill" : undefined}
+                              className={`px-3.5 py-2 rounded-full text-xs font-semibold border transition-all ${
                                 isDark
                                   ? "bg-white/10 border-white/10 text-slate-100 hover:bg-white/15"
                                   : "bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:text-blue-700"
                               }`}
                             >
                               {s}
-                            </span>
+                              {manualEditMode && <span className="ml-2 text-red-500 text-base font-black leading-none">×</span>}
+                            </button>
                           ))}
                           {(!mergedSkills || mergedSkills.length === 0) && (
                             <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No skills added yet.</p>
                           )}
                         </div>
+                        {(mergedSkills || []).length > 14 && (
+                          <button
+                            type="button"
+                            onClick={() => setShowAllSkillsCard((v) => !v)}
+                            className={`mt-3 text-xs font-bold underline-offset-2 hover:underline ${isDark ? "text-blue-300" : "text-blue-700"}`}
+                          >
+                            {showAllSkillsCard ? "Show less" : `Show all ${(mergedSkills || []).length} skills`}
+                          </button>
+                        )}
                       </div>
                     </div>
 
-                    <div className={`rounded-2xl border p-5 shadow-sm ${isDark ? "border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02]" : "border-slate-200 bg-gradient-to-br from-white to-slate-50"}`}>
+                    <div className={`rounded-3xl border p-5 sm:p-6 shadow-sm ${isDark ? "border-white/10 bg-gradient-to-br from-white/10 via-white/[0.05] to-white/[0.02]" : "border-slate-200 bg-gradient-to-br from-white to-slate-50"}`}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${isDark ? "bg-amber-500/15" : "bg-amber-100"}`}>
+                          <div className={`h-8 w-8 rounded-xl flex items-center justify-center ${isDark ? "bg-amber-500/15" : "bg-amber-100"}`}>
                             <Trophy className="h-4 w-4 text-amber-500" />
                           </div>
-                          <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Achievements</p>
+                          <p className={`text-base font-extrabold uppercase tracking-wide ${isDark ? "text-slate-100" : "text-slate-700"}`}>Achievements</p>
                         </div>
-                        <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${isDark ? "bg-white/10 text-slate-300" : "bg-slate-100 text-slate-700"}`}>
+                        <span className={`text-[11px] font-black px-2.5 py-1 rounded-lg ${isDark ? "bg-white/10 text-slate-300" : "bg-slate-100 text-slate-700"}`}>
                           {(mergedAchievements || []).length}
                         </span>
                       </div>
-                      <div className="mt-3 max-h-40 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
-                        {(mergedAchievements || []).map((a: string, idx: number) => (
-                          <div key={idx} className={`flex items-start gap-2 text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>
-                            <span className="mt-2 w-1.5 h-1.5 rounded-full bg-amber-500/70 flex-shrink-0" />
-                            <span className="leading-relaxed">{a}</span>
+                      <div className={`mt-4 h-px ${isDark ? "bg-white/10" : "bg-slate-200"}`} />
+                      <div className={`${showAllAchievementsCard ? "mt-4 max-h-72 overflow-y-auto pr-1 custom-scrollbar" : "mt-4"}`}>
+                        {(showAllAchievementsCard ? (mergedAchievements || []) : (mergedAchievements || []).slice(0, 4)).map((a: string, idx: number) => (
+                          <div
+                            key={idx}
+                            className={`mb-2.5 px-3.5 py-2.5 rounded-xl border text-xs font-medium leading-relaxed flex items-start gap-2 ${
+                              isDark
+                                ? "bg-white/10 border-white/10 text-slate-100"
+                                : "bg-white border-slate-200 text-slate-700"
+                            }`}
+                          >
+                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-500/70 flex-shrink-0" />
+                            <span className={`${showAllAchievementsCard ? "" : "line-clamp-2"}`}>{a}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (manualEditMode) removeAchievement(a);
+                              }}
+                              title={manualEditMode ? "Remove achievement" : undefined}
+                              className={`ml-auto px-1 py-0.5 rounded ${
+                                manualEditMode
+                                  ? isDark
+                                    ? "text-red-400 hover:text-red-300"
+                                    : "text-red-600 hover:text-red-700"
+                                  : "text-transparent pointer-events-none"
+                              }`}
+                            >
+                              <span className="text-base font-black leading-none">×</span>
+                            </button>
                           </div>
                         ))}
+                        {(mergedAchievements || []).length > 4 && (
+                          <button
+                            type="button"
+                            onClick={() => setShowAllAchievementsCard((v) => !v)}
+                            className={`text-xs font-bold underline-offset-2 hover:underline pl-4 ${isDark ? "text-amber-300" : "text-amber-700"}`}
+                          >
+                            {showAllAchievementsCard ? "Show less" : `Show all ${(mergedAchievements || []).length} achievements`}
+                          </button>
+                        )}
                         {(!mergedAchievements || mergedAchievements.length === 0) && (
                           <div className={`rounded-xl border border-dashed p-4 text-sm ${isDark ? "border-white/10 text-slate-500" : "border-slate-200 text-slate-500"}`}>
                             No achievements yet. Add one above to strengthen your profile.
@@ -2389,71 +2636,6 @@ export default function StudentDashboard() {
                       </Button>
                       </div>
                     </div>
-                  </div>
-                  {/* Skill Progress Panels - Concentric Rings */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {skillProgressPanels.map((panel, idx) => (
-                      <Card key={idx} className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] p-12 overflow-hidden group`}>
-                        <h3 className={`text-sm font-black ${isDark ? "text-white/40" : "text-gray-600/60"} uppercase tracking-[0.2em] mb-12`}>{panel.title}</h3>
-                        <div className="flex items-center justify-center relative">
-                          <div className="mx-auto h-[min(300px,85vw)] w-full max-w-[300px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <PieChart>
-                                {/* Outer Ring (ring1) */}
-                                <Pie
-                                  data={[{ value: panel.ring1 }, { value: 100 - panel.ring1 }]}
-                                  innerRadius="88%"
-                                  outerRadius="100%"
-                                  paddingAngle={0}
-                                  dataKey="value"
-                                  startAngle={90}
-                                  endAngle={-270}
-                                  stroke="none"
-                                >
-                                  <Cell fill={panel.colors[0]} />
-                                  <Cell fill="rgba(255,255,255,0.03)" />
-                                </Pie>
-
-                                {/* Middle Ring (ring2) */}
-                                <Pie
-                                  data={[{ value: panel.ring2 }, { value: 100 - panel.ring2 }]}
-                                  innerRadius="70%"
-                                  outerRadius="82%"
-                                  paddingAngle={0}
-                                  dataKey="value"
-                                  startAngle={90}
-                                  endAngle={-270}
-                                  stroke="none"
-                                >
-                                  <Cell fill={panel.colors[1]} />
-                                  <Cell fill="rgba(255,255,255,0.03)" />
-                                </Pie>
-
-                                {/* Inner Ring (ring3) */}
-                                <Pie
-                                  data={[{ value: panel.ring3 }, { value: 100 - panel.ring3 }]}
-                                  innerRadius="52%"
-                                  outerRadius="64%"
-                                  paddingAngle={0}
-                                  dataKey="value"
-                                  startAngle={90}
-                                  endAngle={-270}
-                                  stroke="none"
-                                >
-                                  <Cell fill={panel.colors[2]} />
-                                  <Cell fill="rgba(255,255,255,0.03)" />
-                                </Pie>
-                              </PieChart>
-                            </ResponsiveContainer>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-                              <span className={`text-3xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tighter leading-tight`}>
-                                {panel.label.split(' ')[0]}<br />{panel.label.split(' ')[1] || ""}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
                   </div>
                   <div className="h-96">
                     {viewMode === "radar" ? (

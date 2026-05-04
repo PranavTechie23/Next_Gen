@@ -11,6 +11,57 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { StudentManagement } from "./StudentManagement";
 import { ApprovalsHub } from "./ApprovalsHub";
 import { deptApi } from "@/services/deptApi";
+import { toast } from "sonner";
+import { performClientLogout } from "@/lib/logout";
+
+/** Readable scores for radar tooltip / labels (no noisy decimals). */
+function formatSkillScore(v: unknown): string {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return "—";
+    const rounded = Math.round(n * 10) / 10;
+    return Number.isInteger(rounded) ? String(Math.round(rounded)) : rounded.toFixed(1);
+}
+
+function SkillsRadarTooltip({
+    active,
+    payload,
+    label,
+}: {
+    active?: boolean;
+    payload?: Array<{ name?: string; value?: number; color?: string; payload?: { skill?: string } }>;
+    label?: string;
+}) {
+    if (!active || !payload?.length) return null;
+    const skillName =
+        (typeof label === "string" && label) ||
+        payload[0]?.payload?.skill ||
+        "Skill";
+
+    return (
+        <div className="min-w-[200px] rounded-xl border border-border/80 bg-background/95 px-4 py-3 shadow-2xl backdrop-blur-xl ring-1 ring-border/30">
+            <p className="mb-2.5 border-b border-border/60 pb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                {skillName}
+            </p>
+            <div className="space-y-2">
+                {payload.map((entry) => (
+                    <div key={String(entry.name)} className="flex items-center justify-between gap-6 text-[13px]">
+                        <span className="flex items-center gap-2 font-medium text-foreground">
+                            <span
+                                className="h-2 w-2 shrink-0 rounded-full ring-2 ring-border"
+                                style={{ backgroundColor: entry.color || "#818cf8" }}
+                            />
+                            <span>{entry.name}</span>
+                        </span>
+                        <span className="tabular-nums text-sm font-semibold tracking-tight text-foreground">
+                            {formatSkillScore(entry.value)}
+                            <span className="ml-0.5 text-[11px] font-normal text-muted-foreground">/100</span>
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
 
 const DEPT_TABS = ["overview", "analytics", "students", "approvals", "reports"] as const;
 type DeptTab = (typeof DEPT_TABS)[number];
@@ -61,6 +112,7 @@ export default function DepartmentDashboard() {
                 setDashboardData(data);
             } catch (error) {
                 console.error("Failed to fetch dashboard stats", error);
+                toast.error("Could not load department overview. Check connection or try refreshing.");
             } finally {
                 setLoadingStats(false);
             }
@@ -136,10 +188,7 @@ export default function DepartmentDashboard() {
 
                             <ThemeToggle />
 
-                            <Button variant="ghost" size="sm" className="shrink-0 touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => {
-                                localStorage.removeItem("userRole");
-                                navigate("/");
-                            }}>
+                            <Button variant="ghost" size="sm" className="shrink-0 touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => performClientLogout(navigate)}>
                                 <LogOut className="h-4 w-4" />
                             </Button>
                         </div>
@@ -327,19 +376,99 @@ export default function DepartmentDashboard() {
                             </CardContent>
                         </Card>
 
-                        <Card className="shadow-lg border-0">
-                            <CardHeader><CardTitle className="text-xl font-bold">Skills Assessment</CardTitle></CardHeader>
-                            <CardContent>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <RadarChart data={skillsRadarData}>
-                                        <PolarGrid />
-                                        <PolarAngleAxis dataKey="skill" />
-                                        <PolarRadiusAxis angle={30} domain={[0, 100]} />
-                                        <Radar name="Dept" dataKey="dept" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
-                                        <Radar name="College" dataKey="collegeAvg" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
-                                        <Legend />
-                                    </RadarChart>
-                                </ResponsiveContainer>
+                        <Card className="relative overflow-hidden border border-border/80 bg-gradient-to-b from-card via-card/95 to-muted/20 shadow-xl backdrop-blur-sm">
+                            <div
+                                className="pointer-events-none absolute inset-0 opacity-[0.65] dark:opacity-100"
+                                style={{
+                                    background:
+                                        "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(99, 102, 241, 0.12), transparent 60%)",
+                                }}
+                            />
+                            <CardHeader className="relative space-y-1.5 pb-2">
+                                <CardTitle className="text-xl font-bold tracking-tight">Skills Assessment</CardTitle>
+                                <CardDescription className="text-sm leading-relaxed">
+                                    Department vs college average scores from performance metrics (0–100).
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="relative pt-0">
+                                {skillsRadarData.length === 0 ? (
+                                    <div className="flex min-h-[300px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/80 bg-muted/15 px-6 py-10 text-center">
+                                        <p className="text-sm font-semibold text-foreground">No skill benchmarks yet</p>
+                                        <p className="max-w-sm text-xs text-muted-foreground">
+                                            When students have performance metrics (e.g. AMCAT), this chart compares your
+                                            department to the college average.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="pl-0 pr-0 sm:pl-1 sm:pr-1">
+                                        <ResponsiveContainer width="100%" height={360}>
+                                            <RadarChart
+                                                cx="50%"
+                                                cy="50%"
+                                                outerRadius="78%"
+                                                data={skillsRadarData}
+                                                margin={{ top: 24, right: 36, bottom: 28, left: 36 }}
+                                            >
+                                                <PolarGrid
+                                                    stroke="var(--border)"
+                                                    strokeOpacity={0.65}
+                                                    strokeDasharray="4 6"
+                                                />
+                                                <PolarAngleAxis
+                                                    dataKey="skill"
+                                                    tickLine={false}
+                                                    tick={{
+                                                        fontSize: 12,
+                                                        fontWeight: 600,
+                                                        fill: "var(--foreground)",
+                                                        opacity: 0.92,
+                                                    }}
+                                                />
+                                                <PolarRadiusAxis
+                                                    domain={[0, 100]}
+                                                    tickCount={5}
+                                                    tick={{ fontSize: 10, fill: "var(--muted-foreground)", opacity: 0.85 }}
+                                                    axisLine={false}
+                                                />
+                                                <Radar
+                                                    name="Department"
+                                                    dataKey="dept"
+                                                    stroke="#818cf8"
+                                                    strokeWidth={2}
+                                                    fill="#818cf8"
+                                                    fillOpacity={0.28}
+                                                    dot={{ r: 3.5, strokeWidth: 2, fill: "var(--background)", stroke: "#818cf8" }}
+                                                    activeDot={{ r: 5.5, strokeWidth: 2, fill: "#818cf8", stroke: "#fff" }}
+                                                />
+                                                <Radar
+                                                    name="College average"
+                                                    dataKey="collegeAvg"
+                                                    stroke="#14b8a6"
+                                                    strokeWidth={2}
+                                                    fill="#2dd4bf"
+                                                    fillOpacity={0.22}
+                                                    dot={{ r: 3.5, strokeWidth: 2, fill: "var(--background)", stroke: "#14b8a6" }}
+                                                    activeDot={{ r: 5.5, strokeWidth: 2, fill: "#14b8a6", stroke: "#fff" }}
+                                                />
+                                                <Tooltip
+                                                    content={(props) => <SkillsRadarTooltip {...props} />}
+                                                    cursor={{ stroke: "var(--border)", strokeOpacity: 0.9 }}
+                                                    wrapperStyle={{ outline: "none" }}
+                                                />
+                                                <Legend
+                                                    verticalAlign="bottom"
+                                                    align="center"
+                                                    iconType="circle"
+                                                    iconSize={9}
+                                                    wrapperStyle={{ paddingTop: 8 }}
+                                                    formatter={(value) => (
+                                                        <span className="text-xs font-semibold text-foreground">{value}</span>
+                                                    )}
+                                                />
+                                            </RadarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </div>
