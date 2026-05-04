@@ -1,4 +1,6 @@
 const db = require('../config/db');
+const multer = require('multer');
+const pdfParse = require('pdf-parse');
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
 
@@ -208,6 +210,40 @@ const upsertStudentPerformance = async (studentId, patch = {}) => {
   );
 
   return getStudentPerformance(studentId);
+};
+
+const amcatUploadMiddleware = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    if (file?.mimetype === 'application/pdf') return cb(null, true);
+    return cb(new Error('Only PDF files are allowed.'), false);
+  },
+}).single('report');
+
+const amcatUploadErrorHandler = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({ message: `Upload error: ${err.message}` });
+  }
+  if (err) {
+    return res.status(400).json({ message: err.message || 'Invalid upload.' });
+  }
+  return next();
+};
+
+const extractScoreByLabel = (text, labelRegex) => {
+  const t = String(text || '');
+  const re = new RegExp(`${labelRegex.source}[\\s\\S]{0,60}?(\\d{1,3})\\s*\\/\\s*100`, 'i');
+  const m = t.match(re);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return Number.isFinite(n) ? clamp(n, 0, 100) : null;
+};
+
+const avg = (...vals) => {
+  const nums = vals.filter((v) => Number.isFinite(Number(v))).map((v) => Number(v));
+  if (nums.length === 0) return null;
+  return clamp(Math.round(nums.reduce((a, b) => a + b, 0) / nums.length), 0, 100);
 };
 
 const computeRoadmap = ({ profileRow, resumeParsedRow, performanceRow }) => {
@@ -495,4 +531,57 @@ exports.upsertPerformance = async (req, res) => {
     return res.status(500).json({ message: 'Failed to update performance metrics' });
   }
 };
+
+// POST /api/student/performance/amcat-report
+exports.uploadAmcatReport = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    if (!req.file?.buffer) {
+      return res.status(400).json({ message: 'AMCAT report PDF file is required.' });
+    }
+
+    const parsed = await pdfParse(req.file.buffer);
+    const text = String(parsed?.text || '').replace(/\r/g, '\n');
+    const firstChunk = text.slice(0, 8000); // score grid is usually on first page/header
+
+    const scores = {
+      criticalReasoning: extractScoreByLabel(firstChunk, /critical\s*reasoning/i),
+      cppProgramming: extractScoreByLabel(firstChunk, /c\+\+\s*programming/i),
+      quantitativeAbility: extractScoreByLabel(firstChunk, /quantitative\s*ability/i),
+      englishComprehension: extractScoreByLabel(firstChunk, /english\s*comprehension/i),
+      logicalAbility: extractScoreByLabel(firstChunk, /logical\s*ability/i),
+      automata: extractScoreByLabel(firstChunk, /automata/i),
+      managerialInbasket: extractScoreByLabel(firstChunk, /managerial\s*in-?basket\s*simulation/i),
+    };
+
+    const patch = {
+      amcat_quant: scores.quantitativeAbility,
+      amcat_verbal: scores.englishComprehension,
+      amcat_logical: avg(scores.logicalAbility, scores.criticalReasoning),
+      coding_test_score: avg(scores.cppProgramming, scores.automata),
+      mock_interview_score: scores.managerialInbasket,
+    };
+
+    const foundCount = Object.values(scores).filter((v) => v !== null).length;
+    if (foundCount === 0) {
+      return res.status(422).json({
+        message: 'Could not detect AMCAT section scores from this PDF. Please upload a report with visible score tiles.',
+      });
+    }
+
+    const updated = await upsertStudentPerformance(studentId, patch);
+    return res.json({
+      message: 'AMCAT report parsed and performance updated.',
+      extracted_scores: scores,
+      mapped_performance: patch,
+      performance: updated,
+    });
+  } catch (err) {
+    console.error('uploadAmcatReport error', err);
+    return res.status(500).json({ message: 'Failed to parse AMCAT report.' });
+  }
+};
+
+exports.amcatUploadMiddleware = amcatUploadMiddleware;
+exports.amcatUploadErrorHandler = amcatUploadErrorHandler;
 
