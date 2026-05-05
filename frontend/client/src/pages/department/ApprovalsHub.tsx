@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle, XCircle, FileText, Linkedin, User,
-  AlertCircle
+  AlertCircle, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +13,18 @@ export function ApprovalsHub() {
   const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | number | null>(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+
+  const totalPages = Math.ceil(pendingApprovals.length / itemsPerPage);
+  const currentApprovals = pendingApprovals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  useEffect(() => {
+    if (currentApprovals.length === 0 && currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
+    }
+  }, [currentApprovals.length, currentPage]);
 
   useEffect(() => {
     fetchApprovals();
@@ -85,9 +97,10 @@ export function ApprovalsHub() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {pendingApprovals.map((student) => (
-            <Card key={student.user_id} className="group overflow-hidden border border-border shadow-sm hover:shadow-md transition-all duration-300 relative">
+        <div className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {currentApprovals.map((student) => (
+              <Card key={student.user_id} className="group overflow-hidden border border-border shadow-sm hover:shadow-md transition-all duration-300 relative">
               
               {/* Decorative top border */}
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-indigo-500"></div>
@@ -165,6 +178,21 @@ export function ApprovalsHub() {
               </CardContent>
             </Card>
           ))}
+          </div>
+          
+          <div className="flex items-center justify-between border-t border-border pt-4 mt-8">
+            <span className="text-sm text-muted-foreground">
+              Showing <span className="font-bold text-foreground">{pendingApprovals.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to <span className="font-bold text-foreground">{Math.min(currentPage * itemsPerPage, pendingApprovals.length)}</span> of <span className="font-bold text-foreground">{pendingApprovals.length}</span> approvals
+            </span>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>
+                <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+              </Button>
+              <Button variant="outline" size="sm" disabled={currentPage === totalPages || totalPages === 0} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>
+                Next <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

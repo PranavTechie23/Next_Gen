@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
+import type { TooltipProps } from "recharts";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
-import { LogOut, Settings, Users, TrendingUp, AlertTriangle, Download, Filter, Search, Bell, ChevronRight, Award, Target, BookOpen, Briefcase, Calendar, TrendingDown, ArrowUpRight, ArrowDownRight, Eye, Upload, FileText, GraduationCap, Building2, BarChart3, Activity, Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram, ExternalLink, Clock, DollarSign, Users2, Plus, Edit, Trash2, MoreVertical, CheckCircle2, XCircle, RefreshCw, FileSpreadsheet, FileBarChart, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, TrendingDown as TrendingDownIcon, Rocket, Shield, Globe, Star, MessageSquare, ArrowLeft, Menu } from "lucide-react";
+import { LogOut, Settings, Users, TrendingUp, AlertTriangle, Download, Filter, Search, Bell, ChevronRight, Award, Target, BookOpen, Briefcase, Calendar, TrendingDown, ArrowUpRight, ArrowDownRight, Eye, Upload, FileText, GraduationCap, Building2, BarChart3, Activity, Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram, ExternalLink, Clock, DollarSign, Users2, Plus, Edit, Trash2, MoreVertical, CheckCircle2, XCircle, RefreshCw, FileSpreadsheet, FileBarChart, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, TrendingDown as TrendingDownIcon, Rocket, Shield, Globe, Star, MessageSquare, ArrowLeft, Menu, Loader2 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useIsMobile } from "@/hooks/useMobile";
@@ -22,19 +23,19 @@ function formatSkillScore(v: unknown): string {
     return Number.isInteger(rounded) ? String(Math.round(rounded)) : rounded.toFixed(1);
 }
 
-function SkillsRadarTooltip({
-    active,
-    payload,
-    label,
-}: {
-    active?: boolean;
-    payload?: Array<{ name?: string; value?: number; color?: string; payload?: { skill?: string } }>;
-    label?: string;
-}) {
+type AtRiskStudent = {
+    id: string;
+    name: string;
+    readiness: number;
+    issues: string[];
+};
+
+function SkillsRadarTooltip({ active, payload, label }: TooltipProps<any, any>) {
     if (!active || !payload?.length) return null;
     const skillName =
         (typeof label === "string" && label) ||
-        payload[0]?.payload?.skill ||
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ((payload[0] as any)?.payload?.skill as string | undefined) ||
         "Skill";
 
     return (
@@ -63,6 +64,13 @@ function SkillsRadarTooltip({
     );
 }
 
+type UpcomingEvent = {
+    date: string;
+    title: string;
+    type: string;
+    attendees: number;
+};
+
 const DEPT_TABS = ["overview", "analytics", "students", "approvals", "reports"] as const;
 type DeptTab = (typeof DEPT_TABS)[number];
 
@@ -74,12 +82,31 @@ function initialDeptTabFromUrl(): DeptTab {
     return "overview";
 }
 
+async function messageFromDeptExportError(err: unknown): Promise<string> {
+    const e = err as { response?: { data?: unknown } };
+    const data = e.response?.data;
+    if (data instanceof Blob) {
+        try {
+            const t = await data.text();
+            const j = JSON.parse(t) as { message?: string };
+            return j.message || "Download failed.";
+        } catch {
+            return "Download failed.";
+        }
+    }
+    if (data && typeof data === "object" && "message" in data) {
+        return String((data as { message?: string }).message || "Download failed.");
+    }
+    return "Download failed. Try again.";
+}
+
 export default function DepartmentDashboard() {
     const { theme } = useTheme();
     const isDark = theme === "dark";
     const [, navigate] = useLocation();
     const [selectedView, setSelectedView] = useState<DeptTab>(() => initialDeptTabFromUrl());
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
     const isMobile = useIsMobile();
     const mainContentRef = useRef<HTMLElement>(null);
 
@@ -103,6 +130,34 @@ export default function DepartmentDashboard() {
 
     const [dashboardData, setDashboardData] = useState<any>(null);
     const [loadingStats, setLoadingStats] = useState(true);
+    const [exportingPdf, setExportingPdf] = useState(false);
+    const [exportingCsv, setExportingCsv] = useState(false);
+
+    const handlePlacementPdf = async () => {
+        try {
+            setExportingPdf(true);
+            await deptApi.downloadPlacementReportPdf();
+            toast.success("Placement report downloaded.");
+        } catch (err) {
+            console.error(err);
+            toast.error(await messageFromDeptExportError(err));
+        } finally {
+            setExportingPdf(false);
+        }
+    };
+
+    const handleReadinessCsv = async () => {
+        try {
+            setExportingCsv(true);
+            await deptApi.downloadStudentReadinessCsv();
+            toast.success("Student readiness export downloaded.");
+        } catch (err) {
+            console.error(err);
+            toast.error(await messageFromDeptExportError(err));
+        } finally {
+            setExportingCsv(false);
+        }
+    };
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -139,9 +194,9 @@ export default function DepartmentDashboard() {
 
     const placementDistribution = dashboardData?.placementDistribution || [];
 
-    const atRiskStudents = dashboardData?.atRiskStudents || [];
+    const atRiskStudents: AtRiskStudent[] = dashboardData?.atRiskStudents || [];
     const topPerformers = dashboardData?.topPerformers || [];
-    const upcomingEvents = dashboardData?.upcomingEvents || [];
+    const upcomingEvents: UpcomingEvent[] = dashboardData?.upcomingEvents || [];
 
     const COLORS = ['#1e3a8a', '#3b82f6', '#60a5fa', '#93c5fd'];
 
@@ -270,8 +325,8 @@ export default function DepartmentDashboard() {
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-4">
-                        {selectedView !== "reports" && (
-                            <Button variant="outline" size="lg" className="gap-2 text-base px-6 py-6">
+                        {selectedView === "students" && (
+                            <Button variant="outline" size="lg" className="gap-2 text-base px-6 py-6" onClick={() => setIsFilterOpen(true)}>
                                 <Filter className="w-5 h-5" />
                                 Filter Data
                             </Button>
@@ -338,7 +393,7 @@ export default function DepartmentDashboard() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-4">
-                                        {upcomingEvents.map((event, idx) => (
+                                        {upcomingEvents.map((event: UpcomingEvent, idx) => (
                                             <div key={idx} className="flex flex-col gap-3 rounded-xl border border-border bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
                                                 <div className="min-w-0">
                                                     <h4 className="text-lg font-bold">{event.title}</h4>
@@ -359,24 +414,49 @@ export default function DepartmentDashboard() {
 
                 {selectedView === "analytics" && (
                     <div className="grid lg:grid-cols-2 gap-8 mb-12">
-                        <Card className="shadow-lg border-0">
-                            <CardHeader><CardTitle className="text-xl font-bold">Dept vs College Statistics</CardTitle></CardHeader>
-                            <CardContent>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <BarChart data={comparisonData}>
-                                        <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                                        <XAxis dataKey="metric" />
-                                        <YAxis />
-                                        <Tooltip />
-                                        <Legend />
-                                        <Bar dataKey="dept" fill="#3b82f6" name="Dept Average" />
-                                        <Bar dataKey="collegeAvg" fill="#9ca3af" name="College Average" />
+                        <Card className="relative overflow-hidden border border-border/80 bg-gradient-to-b from-card via-card/95 to-muted/20 shadow-xl backdrop-blur-sm transition-all hover:shadow-2xl hover:-translate-y-1 duration-300">
+                            <div
+                                className="pointer-events-none absolute inset-0 opacity-[0.65] dark:opacity-100"
+                                style={{
+                                    background:
+                                        "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(59, 130, 246, 0.12), transparent 60%)",
+                                }}
+                            />
+                            <CardHeader className="relative space-y-1.5 pb-2">
+                                <CardTitle className="text-xl font-bold tracking-tight">Dept vs College Statistics</CardTitle>
+                                <CardDescription className="text-sm leading-relaxed">
+                                    Comparing departmental placement metrics against overall college averages.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="relative pt-4">
+                                <ResponsiveContainer width="100%" height={360}>
+                                    <BarChart data={comparisonData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="colorDept" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                                            </linearGradient>
+                                            <linearGradient id="colorCollege" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#9ca3af" stopOpacity={0.6}/>
+                                                <stop offset="95%" stopColor="#9ca3af" stopOpacity={0.1}/>
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} vertical={false} />
+                                        <XAxis dataKey="metric" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} dy={10} />
+                                        <YAxis tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} dx={-10} />
+                                        <Tooltip 
+                                            cursor={{ fill: 'var(--muted)', opacity: 0.4 }}
+                                            contentStyle={{ borderRadius: '12px', border: '1px solid var(--border)', backgroundColor: 'var(--background)/95', backdropFilter: 'blur(8px)', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
+                                        />
+                                        <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
+                                        <Bar dataKey="dept" fill="url(#colorDept)" name="Dept Average" radius={[6, 6, 0, 0]} barSize={32} />
+                                        <Bar dataKey="collegeAvg" fill="url(#colorCollege)" name="College Average" radius={[6, 6, 0, 0]} barSize={32} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </CardContent>
                         </Card>
 
-                        <Card className="relative overflow-hidden border border-border/80 bg-gradient-to-b from-card via-card/95 to-muted/20 shadow-xl backdrop-blur-sm">
+                        <Card className="relative overflow-hidden border border-border/80 bg-gradient-to-b from-card via-card/95 to-muted/20 shadow-xl backdrop-blur-sm transition-all hover:shadow-2xl hover:-translate-y-1 duration-300">
                             <div
                                 className="pointer-events-none absolute inset-0 opacity-[0.65] dark:opacity-100"
                                 style={{
@@ -405,50 +485,58 @@ export default function DepartmentDashboard() {
                                             <RadarChart
                                                 cx="50%"
                                                 cy="50%"
-                                                outerRadius="78%"
+                                                outerRadius="75%"
                                                 data={skillsRadarData}
-                                                margin={{ top: 24, right: 36, bottom: 28, left: 36 }}
+                                                margin={{ top: 20, right: 30, bottom: 10, left: 30 }}
                                             >
+                                                <defs>
+                                                    <radialGradient id="colorDeptRadar" cx="50%" cy="50%" r="50%">
+                                                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                                                        <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                                                    </radialGradient>
+                                                    <radialGradient id="colorCollegeRadar" cx="50%" cy="50%" r="50%">
+                                                        <stop offset="0%" stopColor="#14b8a6" stopOpacity={0.8}/>
+                                                        <stop offset="100%" stopColor="#14b8a6" stopOpacity={0.1}/>
+                                                    </radialGradient>
+                                                </defs>
                                                 <PolarGrid
                                                     stroke="var(--border)"
-                                                    strokeOpacity={0.65}
-                                                    strokeDasharray="4 6"
+                                                    strokeOpacity={0.4}
+                                                    strokeDasharray="none"
                                                 />
                                                 <PolarAngleAxis
                                                     dataKey="skill"
                                                     tickLine={false}
                                                     tick={{
-                                                        fontSize: 12,
-                                                        fontWeight: 600,
+                                                        fontSize: 13,
+                                                        fontWeight: 700,
                                                         fill: "var(--foreground)",
-                                                        opacity: 0.92,
+                                                        dy: 4
                                                     }}
                                                 />
                                                 <PolarRadiusAxis
+                                                    angle={30}
                                                     domain={[0, 100]}
-                                                    tickCount={5}
-                                                    tick={{ fontSize: 10, fill: "var(--muted-foreground)", opacity: 0.85 }}
+                                                    tick={false}
                                                     axisLine={false}
                                                 />
                                                 <Radar
                                                     name="Department"
                                                     dataKey="dept"
-                                                    stroke="#818cf8"
-                                                    strokeWidth={2}
-                                                    fill="#818cf8"
-                                                    fillOpacity={0.28}
-                                                    dot={{ r: 3.5, strokeWidth: 2, fill: "var(--background)", stroke: "#818cf8" }}
-                                                    activeDot={{ r: 5.5, strokeWidth: 2, fill: "#818cf8", stroke: "#fff" }}
+                                                    stroke="#3b82f6"
+                                                    strokeWidth={3}
+                                                    fill="url(#colorDeptRadar)"
+                                                    dot={{ r: 4, strokeWidth: 2, fill: "var(--background)", stroke: "#3b82f6" }}
+                                                    activeDot={{ r: 6, strokeWidth: 0, fill: "#3b82f6" }}
                                                 />
                                                 <Radar
-                                                    name="College average"
+                                                    name="College Average"
                                                     dataKey="collegeAvg"
                                                     stroke="#14b8a6"
-                                                    strokeWidth={2}
-                                                    fill="#2dd4bf"
-                                                    fillOpacity={0.22}
-                                                    dot={{ r: 3.5, strokeWidth: 2, fill: "var(--background)", stroke: "#14b8a6" }}
-                                                    activeDot={{ r: 5.5, strokeWidth: 2, fill: "#14b8a6", stroke: "#fff" }}
+                                                    strokeWidth={3}
+                                                    fill="url(#colorCollegeRadar)"
+                                                    dot={{ r: 4, strokeWidth: 2, fill: "var(--background)", stroke: "#14b8a6" }}
+                                                    activeDot={{ r: 6, strokeWidth: 0, fill: "#14b8a6" }}
                                                 />
                                                 <Tooltip
                                                     content={(props) => <SkillsRadarTooltip {...props} />}
@@ -459,10 +547,10 @@ export default function DepartmentDashboard() {
                                                     verticalAlign="bottom"
                                                     align="center"
                                                     iconType="circle"
-                                                    iconSize={9}
-                                                    wrapperStyle={{ paddingTop: 8 }}
+                                                    iconSize={10}
+                                                    wrapperStyle={{ paddingTop: 24 }}
                                                     formatter={(value) => (
-                                                        <span className="text-xs font-semibold text-foreground">{value}</span>
+                                                        <span className="text-sm font-bold text-foreground px-1">{value}</span>
                                                     )}
                                                 />
                                             </RadarChart>
@@ -475,7 +563,7 @@ export default function DepartmentDashboard() {
                 )}
 
                 {selectedView === "students" && (
-                    <StudentManagement />
+                    <StudentManagement isFilterOpen={isFilterOpen} setIsFilterOpen={setIsFilterOpen} />
                 )}
 
                 {selectedView === "approvals" && (
@@ -485,19 +573,69 @@ export default function DepartmentDashboard() {
                 )}
 
                 {selectedView === "reports" && (
-                    <div className="grid md:grid-cols-3 gap-6">
-                        <Card className="hover:shadow-lg transition-all cursor-pointer">
-                            <CardContent className="pt-6 text-center">
-                                <FileBarChart className="w-12 h-12 mx-auto text-blue-500 mb-4" />
-                                <h3 className="font-bold text-lg mb-2">Dept Placement Report</h3>
-                                <Button className="w-full">Generate PDF</Button>
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <Card className="border-border/80 shadow-lg transition-shadow hover:shadow-xl">
+                            <CardContent className="space-y-4 pt-8 text-center">
+                                <FileBarChart className="mx-auto mb-1 h-12 w-12 text-blue-500" />
+                                <div>
+                                    <h3 className="text-lg font-bold">Dept placement report</h3>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        Summary stats plus every selected offer (roll, email, role, package).
+                                    </p>
+                                </div>
+                                <Button
+                                    className="w-full"
+                                    disabled={exportingPdf}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        void handlePlacementPdf();
+                                    }}
+                                >
+                                    {exportingPdf ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Generating…
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Download className="mr-2 h-4 w-4" />
+                                            Generate PDF
+                                        </>
+                                    )}
+                                </Button>
                             </CardContent>
                         </Card>
-                        <Card className="hover:shadow-lg transition-all cursor-pointer">
-                            <CardContent className="pt-6 text-center">
-                                <Users className="w-12 h-12 mx-auto text-purple-500 mb-4" />
-                                <h3 className="font-bold text-lg mb-2">Student Readiness</h3>
-                                <Button className="w-full">Export CSV</Button>
+                        <Card className="border-border/80 shadow-lg transition-shadow hover:shadow-xl">
+                            <CardContent className="space-y-4 pt-8 text-center">
+                                <Users className="mx-auto mb-1 h-12 w-12 text-purple-500" />
+                                <div>
+                                    <h3 className="text-lg font-bold">Student readiness</h3>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        All students in your department with CGPA, skills, resume flags, and a
+                                        readiness score (same logic as the dashboard).
+                                    </p>
+                                </div>
+                                <Button
+                                    className="w-full"
+                                    variant="secondary"
+                                    disabled={exportingCsv}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        void handleReadinessCsv();
+                                    }}
+                                >
+                                    {exportingCsv ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Exporting…
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                            Export CSV
+                                        </>
+                                    )}
+                                </Button>
                             </CardContent>
                         </Card>
                     </div>

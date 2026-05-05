@@ -17,7 +17,8 @@ const getStudentProfile = async (req, res) => {
                 s.is_debarred, s.debar_reason, s.debar_lift_date,
                 u.email, u.is_active,
                 d.name AS department_name, d.code AS department_code,
-                sp.resume_url, sp.linkedin_url, sp.github_url, sp.address
+                sp.resume_url, sp.linkedin_url, sp.github_url, sp.address,
+                sp.full_name, sp.phone, sp.bio
             FROM students s
             JOIN users u ON s.user_id = u.id
             LEFT JOIN departments d ON s.department_id = d.id
@@ -66,7 +67,7 @@ const updateStudentSubjectiveProfile = async (req, res) => {
     const connection = await db.getConnection();
     try {
         const userId = req.user.id;
-        const { resume_url, linkedin_url, github_url, address, skills, projects, achievements } = req.body;
+        const { fullName, phone, bio, resume_url, linkedin_url, github_url, address, skills, projects, achievements } = req.body;
 
         await connection.beginTransaction();
 
@@ -89,6 +90,9 @@ const updateStudentSubjectiveProfile = async (req, res) => {
         if (linkedin_url !== undefined) { profileUpdateFields.push('linkedin_url = ?'); profileUpdateValues.push(linkedin_url); }
         if (github_url !== undefined) { profileUpdateFields.push('github_url = ?'); profileUpdateValues.push(github_url); }
         if (address !== undefined) { profileUpdateFields.push('address = ?'); profileUpdateValues.push(address); }
+        if (fullName !== undefined) { profileUpdateFields.push('full_name = ?'); profileUpdateValues.push(fullName); }
+        if (phone !== undefined) { profileUpdateFields.push('phone = ?'); profileUpdateValues.push(phone); }
+        if (bio !== undefined) { profileUpdateFields.push('bio = ?'); profileUpdateValues.push(bio); }
 
         if (profileUpdateFields.length > 0) {
             profileUpdateValues.push(userId);
@@ -103,8 +107,8 @@ const updateStudentSubjectiveProfile = async (req, res) => {
             } else {
                 // If profile doesn't exist, create it (should ideally exist from student creation, but just in case)
                 await connection.execute(
-                    `INSERT INTO student_profiles (student_id, resume_url, linkedin_url, github_url, address) VALUES (?, ?, ?, ?, ?)`,
-                    [userId, resume_url || null, linkedin_url || null, github_url || null, address || null]
+                    `INSERT INTO student_profiles (student_id, resume_url, linkedin_url, github_url, address, full_name, phone, bio) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [userId, resume_url || null, linkedin_url || null, github_url || null, address || null, fullName || null, phone || null, bio || null]
                 );
             }
         }

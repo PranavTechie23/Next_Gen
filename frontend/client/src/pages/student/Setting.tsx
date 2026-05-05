@@ -83,7 +83,7 @@ export default function StudentSettings(props: any) {
         setIsLoading(true);
         const data = await studentApi.getProfile();
         setFormData({
-            fullName: data?.user?.email?.split('@')[0] || "Student",
+            fullName: data?.profile?.full_name || data?.user?.email?.split('@')[0] || "Student",
             email: data?.user?.email || "",
             phone: data?.profile?.phone || "",
             location: data?.profile?.address || "Address Not Available",
@@ -172,6 +172,7 @@ export default function StudentSettings(props: any) {
     try {
       // Build subjective profile payload
       const subjectiveData = {
+        fullName: formData.fullName,
         phone: formData.phone,
         address: formData.location,
         bio: formData.bio,
@@ -375,7 +376,7 @@ export default function StudentSettings(props: any) {
 
                 <div className="space-y-5">
                   {[
-                    { label: "Full Name", name: "fullName", icon: User, readOnly: true },
+                    { label: "Full Name", name: "fullName", icon: User },
                     { label: "Email Address", name: "email", icon: Mail, readOnly: true },
                     { label: "Phone Number", name: "phone", icon: Phone },
                     { label: "Location", name: "location", icon: MapPin },

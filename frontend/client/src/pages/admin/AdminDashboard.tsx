@@ -255,7 +255,16 @@ export default function AdminDashboard() {
   const upcomingEvents: any[] = dashboardData?.upcomingEvents || [];
   const recentPlacements: any[] = dashboardData?.recentPlacements || [];
 
-  const COLORS = ['#1e3a8a', '#3b82f6', '#60a5fa', '#93c5fd'];
+  const defaultRadarData = [
+    { skill: "Problem Solving", college: 75, industry: 85 },
+    { skill: "System Design", college: 60, industry: 80 },
+    { skill: "Communication", college: 85, industry: 90 },
+    { skill: "Coding", college: 70, industry: 85 },
+    { skill: "Aptitude", college: 80, industry: 75 }
+  ];
+  const radarDataToUse = skillsRadarData.length > 0 ? skillsRadarData : defaultRadarData;
+
+  const COLORS = ['#1e3a8a', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'];
 
   return (
     <div className="min-h-dvh bg-background transition-colors duration-300">
@@ -1317,19 +1326,34 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={360}>
-                    <BarChart data={branchData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
-                      <XAxis dataKey="branch" tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} />
-                      <YAxis tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} />
+                    <BarChart data={branchData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorStudents" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#9ca3af" stopOpacity={0.6}/>
+                          <stop offset="95%" stopColor="#9ca3af" stopOpacity={0.1}/>
+                        </linearGradient>
+                        <linearGradient id="colorReady" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#1e3a8a" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#1e3a8a" stopOpacity={0.2}/>
+                        </linearGradient>
+                        <linearGradient id="colorPlacedAdmin" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#22c55e" stopOpacity={0.2}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} vertical={false} />
+                      <XAxis dataKey="branch" tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} dy={10} />
+                      <YAxis tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} dx={-10} />
                       <Tooltip
-                        contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px' }}
+                        cursor={{ fill: 'var(--muted)', opacity: 0.4 }}
+                        contentStyle={{ backgroundColor: 'var(--background)/95', backdropFilter: 'blur(8px)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
                         labelStyle={{ fontWeight: 'black', color: 'var(--foreground)' }}
                         itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
                       />
-                      <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase', letterSpacing: '0.05em' }} />
-                      <Bar dataKey="students" fill="#e5e7eb" name="Total Students" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="ready" fill="#1e3a8a" name="Placement Ready" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="placed" fill="#22c55e" name="Placed" radius={[4, 4, 0, 0]} />
+                      <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
+                      <Bar dataKey="students" fill="url(#colorStudents)" name="Total Students" radius={[6, 6, 0, 0]} />
+                      <Bar dataKey="ready" fill="url(#colorReady)" name="Placement Ready" radius={[6, 6, 0, 0]} />
+                      <Bar dataKey="placed" fill="url(#colorPlacedAdmin)" name="Placed" radius={[6, 6, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -1350,17 +1374,18 @@ export default function AdminDashboard() {
                         data={placementDistribution}
                         cx="50%"
                         cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={80}
+                        innerRadius={70}
+                        outerRadius={100}
                         fill="#8884d8"
                         dataKey="value"
+                        paddingAngle={5}
+                        stroke="none"
                       >
                         {placementDistribution.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <Tooltip contentStyle={{ backgroundColor: 'var(--background)/95', backdropFilter: 'blur(8px)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }} />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="mt-6 space-y-3">
@@ -1390,15 +1415,25 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={320}>
-                    <AreaChart data={yearTrend}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis dataKey="year" tick={{ fontSize: 12 }} />
-                      <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
-                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
-                      <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
-                      <Legend wrapperStyle={{ fontSize: '12px' }} />
-                      <Area yAxisId="left" type="monotone" dataKey="placements" stroke="#1e3a8a" fill="#3b82f6" fillOpacity={0.6} name="Placement %" />
-                      <Area yAxisId="right" type="monotone" dataKey="avg_salary" stroke="#d97706" fill="#fbbf24" fillOpacity={0.6} name="Avg Salary (LPA)" />
+                    <AreaChart data={yearTrend} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorPlacements" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorSalary" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#fbbf24" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} vertical={false} />
+                      <XAxis dataKey="year" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} dy={10} />
+                      <YAxis yAxisId="left" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} dx={-10} />
+                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} dx={10} />
+                      <Tooltip contentStyle={{ backgroundColor: 'var(--background)/95', backdropFilter: 'blur(8px)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }} />
+                      <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
+                      <Area yAxisId="left" type="monotone" dataKey="placements" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorPlacements)" name="Placement %" />
+                      <Area yAxisId="right" type="monotone" dataKey="avg_salary" stroke="#fbbf24" strokeWidth={3} fillOpacity={1} fill="url(#colorSalary)" name="Avg Salary (LPA)" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -1414,17 +1449,24 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={320}>
-                    <RadarChart data={skillsRadarData}>
-                      <PolarGrid stroke="var(--border)" opacity={0.3} />
-                      <PolarAngleAxis dataKey="skill" tick={{ fontSize: 10, fill: 'var(--muted-foreground)', fontWeight: 'black' }} />
-                      <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 8, fill: 'var(--muted-foreground)' }} />
-                      <Radar name="College Average" dataKey="college" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.4} />
-                      <Radar name="Industry Standard" dataKey="industry" stroke="#22c55e" fill="#22c55e" fillOpacity={0.4} />
-                      <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase' }} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px' }}
-                        itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
-                      />
+                    <RadarChart data={radarDataToUse} cx="50%" cy="50%" outerRadius="75%" margin={{ top: 20, right: 30, bottom: 10, left: 30 }}>
+                      <defs>
+                        <radialGradient id="colorCollegeRadarAdmin" cx="50%" cy="50%" r="50%">
+                          <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                          <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                        </radialGradient>
+                        <radialGradient id="colorIndustryRadarAdmin" cx="50%" cy="50%" r="50%">
+                          <stop offset="0%" stopColor="#10b981" stopOpacity={0.8}/>
+                          <stop offset="100%" stopColor="#10b981" stopOpacity={0.1}/>
+                        </radialGradient>
+                      </defs>
+                      <PolarGrid stroke="var(--border)" strokeOpacity={0.4} strokeDasharray="none" />
+                      <PolarAngleAxis dataKey="skill" tickLine={false} tick={{ fontSize: 13, fontWeight: 700, fill: "var(--foreground)", dy: 4 }} />
+                      <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                      <Radar name="College Average" dataKey="college" stroke="#3b82f6" strokeWidth={3} fill="url(#colorCollegeRadarAdmin)" activeDot={{ r: 6, strokeWidth: 0, fill: "#3b82f6" }} />
+                      <Radar name="Industry Standard" dataKey="industry" stroke="#10b981" strokeWidth={3} fill="url(#colorIndustryRadarAdmin)" activeDot={{ r: 6, strokeWidth: 0, fill: "#10b981" }} />
+                      <Legend verticalAlign="bottom" align="center" iconType="circle" iconSize={10} wrapperStyle={{ paddingTop: 24 }} formatter={(value) => <span className="text-sm font-bold text-foreground px-1">{value}</span>} />
+                      <Tooltip contentStyle={{ backgroundColor: 'var(--background)/95', backdropFilter: 'blur(8px)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }} />
                     </RadarChart>
                   </ResponsiveContainer>
                 </CardContent>

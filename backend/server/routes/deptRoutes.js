@@ -44,6 +44,20 @@ router.get('/dashboard/stats',
     deptController.getDashboardStats
 );
 
+// GET /api/dept/reports/placement-pdf — Department placement summary + selected offers (PDF)
+router.get('/reports/placement-pdf',
+    protect,
+    authorize('TPO_HEAD'),
+    deptController.exportDeptPlacementReportPdf
+);
+
+// GET /api/dept/reports/student-readiness.csv — Readiness-style export for all dept students
+router.get('/reports/student-readiness.csv',
+    protect,
+    authorize('TPO_HEAD'),
+    deptController.exportStudentReadinessCsv
+);
+
 // GET /api/dept/students/:id - View full details of a specific student
 router.get('/students/:id',
     protect,

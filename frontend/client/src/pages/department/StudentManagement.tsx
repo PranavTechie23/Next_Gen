@@ -19,11 +19,18 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
-export function StudentManagement() {
+export function StudentManagement({ isFilterOpen, setIsFilterOpen }: { isFilterOpen?: boolean; setIsFilterOpen?: (v: boolean) => void }) {
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  const [minCgpa, setMinCgpa] = useState('');
+  const [maxCgpa, setMaxCgpa] = useState('');
+  const [backlogsFilter, setBacklogsFilter] = useState('All');
   
   // Bulk Upload State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -74,8 +81,23 @@ export function StudentManagement() {
       filterStatus === 'Placed' ? student.is_placed === 1 :
       filterStatus === 'Unplaced' ? student.is_placed === 0 : true;
 
-    return matchesSearch && matchesStatus;
+    const matchesMinCgpa = minCgpa ? (student.current_cgpa >= parseFloat(minCgpa)) : true;
+    const matchesMaxCgpa = maxCgpa ? (student.current_cgpa <= parseFloat(maxCgpa)) : true;
+    
+    const matchesBacklogs = 
+      backlogsFilter === 'All' ? true :
+      backlogsFilter === '0' ? (!student.active_backlogs || student.active_backlogs === 0) :
+      backlogsFilter === '1+' ? (student.active_backlogs && student.active_backlogs > 0) : true;
+
+    return matchesSearch && matchesStatus && matchesMinCgpa && matchesMaxCgpa && matchesBacklogs;
   });
+
+  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
+  const currentStudents = filteredStudents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus, minCgpa, maxCgpa, backlogsFilter]);
 
   const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -248,14 +270,14 @@ export function StudentManagement() {
                     </div>
                   </td>
                 </tr>
-              ) : filteredStudents.length === 0 ? (
+              ) : currentStudents.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
                     No students found matching your criteria.
                   </td>
                 </tr>
               ) : (
-                filteredStudents.map((student) => (
+                currentStudents.map((student) => (
                   <tr key={student.user_id} className="hover:bg-muted/20 transition-colors group">
                     <td className="px-6 py-4 font-bold text-foreground">{student.roll_number}</td>
                     <td className="px-6 py-4 text-muted-foreground">{student.email}</td>
@@ -297,13 +319,13 @@ export function StudentManagement() {
         {/* Basic Pagination Header */}
         <div className="p-4 border-t border-border flex items-center justify-between bg-muted/10">
           <span className="text-xs text-muted-foreground">
-            Showing <span className="font-bold text-foreground">{filteredStudents.length}</span> students
+            Showing <span className="font-bold text-foreground">{filteredStudents.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to <span className="font-bold text-foreground">{Math.min(currentPage * itemsPerPage, filteredStudents.length)}</span> of <span className="font-bold text-foreground">{filteredStudents.length}</span> students
           </span>
           <div className="flex gap-1">
-            <Button variant="outline" size="sm" className="h-8 w-8 p-0" disabled>
+            <Button variant="outline" size="sm" className="h-8 w-8 p-0" disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <Button variant="outline" size="sm" className="h-8 w-8 p-0" disabled>
+            <Button variant="outline" size="sm" className="h-8 w-8 p-0" disabled={currentPage === totalPages || totalPages === 0} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
@@ -606,6 +628,46 @@ export function StudentManagement() {
               </ScrollArea>
             </>
           )}
+        </SheetContent>
+      </Sheet>
+      {/* Filter Drawer */}
+      <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+        <SheetContent side="right" className="w-full max-w-[min(100vw,20rem)] sm:max-w-[400px]">
+          <SheetHeader className="mb-6">
+            <SheetTitle>Filter Data</SheetTitle>
+            <SheetDescription>Apply advanced filters to the student list.</SheetDescription>
+          </SheetHeader>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label>CGPA Range</Label>
+              <div className="flex gap-2">
+                <Input type="number" step="0.01" min="0" max="10" placeholder="Min" value={minCgpa} onChange={e => setMinCgpa(e.target.value)} />
+                <Input type="number" step="0.01" min="0" max="10" placeholder="Max" value={maxCgpa} onChange={e => setMaxCgpa(e.target.value)} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Active Backlogs</Label>
+              <select 
+                value={backlogsFilter}
+                onChange={(e) => setBacklogsFilter(e.target.value)}
+                className="w-full p-2 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="All">Any</option>
+                <option value="0">No Backlogs</option>
+                <option value="1+">1 or More Backlogs</option>
+              </select>
+            </div>
+          </div>
+          <SheetFooter className="mt-8 flex gap-2">
+            <Button variant="outline" onClick={() => {
+              setMinCgpa('');
+              setMaxCgpa('');
+              setBacklogsFilter('All');
+              setFilterStatus('All');
+              setSearchTerm('');
+            }}>Reset</Button>
+            <Button onClick={() => setIsFilterOpen?.(false)}>Apply</Button>
+          </SheetFooter>
         </SheetContent>
       </Sheet>
     </div>

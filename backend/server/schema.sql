@@ -146,6 +146,9 @@ CREATE TABLE students (
 
 CREATE TABLE student_profiles (
     student_id INT PRIMARY KEY,
+    full_name VARCHAR(150),
+    phone VARCHAR(20),
+    bio TEXT,
     resume_url VARCHAR(500),
     linkedin_url VARCHAR(255),
     github_url VARCHAR(255),

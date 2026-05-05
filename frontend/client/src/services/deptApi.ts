@@ -80,4 +80,40 @@ export const deptApi = {
     const response = await api.get('/webinars/recommendations');
     return response.data;
   },
+
+  /** Triggers browser download of department placement PDF. */
+  downloadPlacementReportPdf: async () => {
+    const response = await api.get('/reports/placement-pdf', { responseType: 'blob' });
+    const disposition = response.headers['content-disposition'] as string | undefined;
+    let filename = 'dept-placement-report.pdf';
+    const m = disposition?.match(/filename="([^"]+)"/i) || disposition?.match(/filename=([^;\s]+)/i);
+    if (m?.[1]) filename = decodeURIComponent(m[1].replace(/"/g, ''));
+    const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
+
+  /** Triggers browser download of student readiness CSV. */
+  downloadStudentReadinessCsv: async () => {
+    const response = await api.get('/reports/student-readiness.csv', { responseType: 'blob' });
+    const disposition = response.headers['content-disposition'] as string | undefined;
+    let filename = 'student-readiness.csv';
+    const m = disposition?.match(/filename="([^"]+)"/i) || disposition?.match(/filename=([^;\s]+)/i);
+    if (m?.[1]) filename = decodeURIComponent(m[1].replace(/"/g, ''));
+    const url = URL.createObjectURL(new Blob([response.data], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
 };

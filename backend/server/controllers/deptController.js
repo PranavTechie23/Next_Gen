@@ -2,6 +2,7 @@ const db = require('../config/db');
 const xlsx = require('xlsx');
 const bcrypt = require('bcrypt'); // Use the existing bcrypt module
 const crypto = require('crypto');
+const PDFDocument = require('pdfkit');
 const sendEmail = require('../utils/email');
 
 /** Returns true if the current database has the given column (for schema drift / legacy DBs). */
@@ -1036,6 +1037,243 @@ const getDashboardStats = async (req, res) => {
     }
 };
 
+async function resolveHeadDepartment(userId) {
+    const [rows] = await db.execute(
+        `SELECT th.department_id, d.name AS department_name, d.code AS department_code
+         FROM tpo_heads th
+         LEFT JOIN departments d ON d.id = th.department_id
+         WHERE th.user_id = ?`,
+        [userId]
+    );
+    if (!rows.length) return null;
+    return {
+        deptId: rows[0].department_id,
+        departmentName: rows[0].department_name || 'Department',
+        departmentCode: rows[0].department_code || String(rows[0].department_id),
+    };
+}
+
+function escapeCsvField(value) {
+    const s = String(value ?? '');
+    if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+}
+
+/** Same risk heuristic as dashboard “at risk” list (for consistent CSV export). */
+function readinessFromRow(row) {
+    const cgpa = Number(row.current_cgpa || 0);
+    const backlogs = Number(row.active_backlogs || 0);
+    const skills = Number(row.skills_count || 0);
+    const hasResume = Number(row.has_resume || 0) === 1;
+    const riskScore = Math.max(
+        0,
+        Math.min(
+            100,
+            (cgpa > 0 ? (6.0 - Math.min(cgpa, 6.0)) * 25 : 10) +
+                backlogs * 20 +
+                (!hasResume ? 25 : 0) +
+                (skills < 5 ? (5 - skills) * 6 : 0)
+        )
+    );
+    const readiness = Math.max(0, Math.min(100, Math.round(100 - riskScore)));
+    let band = 'On track';
+    if (riskScore >= 60) band = 'Critical';
+    else if (riskScore >= 40) band = 'Needs attention';
+    else if (riskScore >= 25) band = 'At risk';
+    return { riskScore, readiness, band };
+}
+
+/**
+ * GET /api/dept/reports/placement-pdf
+ */
+const exportDeptPlacementReportPdf = async (req, res) => {
+    try {
+        const ctx = await resolveHeadDepartment(req.user.id);
+        if (!ctx) {
+            return res.status(403).json({ message: 'Access denied. Not a valid department head.' });
+        }
+
+        const [[totals]] = await db.execute(
+            `SELECT
+                COUNT(*) AS total_students,
+                COUNT(DISTINCT CASE WHEN a.status = 'SELECTED' THEN s.user_id END) AS placed_students,
+                ROUND(AVG(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS avg_package,
+                ROUND(MAX(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS highest_package
+             FROM students s
+             LEFT JOIN applications a ON a.student_id = s.user_id
+             LEFT JOIN job_postings jp ON jp.id = a.job_id
+             WHERE s.department_id = ?`,
+            [ctx.deptId]
+        );
+
+        const [offerRows] = await db.execute(
+            `SELECT s.roll_number, u.email, jp.job_title, jp.package_value, a.applied_at
+             FROM students s
+             JOIN users u ON u.id = s.user_id
+             JOIN applications a ON a.student_id = s.user_id AND a.status = 'SELECTED'
+             JOIN job_postings jp ON jp.id = a.job_id
+             WHERE s.department_id = ?
+             ORDER BY s.roll_number ASC, jp.package_value DESC`,
+            [ctx.deptId]
+        );
+
+        const totalStudents = Number(totals?.total_students || 0);
+        const placedStudents = Number(totals?.placed_students || 0);
+        const avgPackage = Number(totals?.avg_package || 0);
+        const highestPackage = Number(totals?.highest_package || 0);
+        const placementPct = totalStudents > 0 ? ((placedStudents / totalStudents) * 100).toFixed(1) : '0.0';
+
+        const safeSlug = String(ctx.departmentCode || ctx.deptId).replace(/[^\w.-]+/g, '_');
+        const dateStr = new Date().toISOString().slice(0, 10);
+        const filename = `dept-placement-${safeSlug}-${dateStr}.pdf`;
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+        const doc = new PDFDocument({ size: 'A4', margin: 48 });
+        doc.pipe(res);
+
+        doc.fontSize(18).text('Department placement report', { align: 'center' });
+        doc.moveDown(0.35);
+        doc.fontSize(12).fillColor('#333333').text(ctx.departmentName, { align: 'center' });
+        doc.fillColor('#000000');
+        doc.moveDown(0.75);
+        doc.fontSize(9).text(`Generated: ${new Date().toLocaleString('en-IN', { hour12: true })}`, {
+            align: 'right',
+        });
+        doc.moveDown();
+
+        doc.fontSize(12).text('Summary', { underline: true });
+        doc.moveDown(0.35);
+        doc.fontSize(10);
+        doc.text(`Total students: ${totalStudents}`);
+        doc.text(`Students with at least one selected offer: ${placedStudents}`);
+        doc.text(`Placement rate: ${placementPct}%`);
+        doc.text(`Average package (selected offers, LPA): ${avgPackage.toFixed(2)}`);
+        doc.text(`Highest package (selected offers, LPA): ${highestPackage.toFixed(2)}`);
+        doc.moveDown();
+
+        doc.fontSize(12).text('Selected offers (detail)', { underline: true });
+        doc.moveDown(0.25);
+        doc.fontSize(8).fillColor('#555555').text(
+            'Each line is one selected offer (a student may appear multiple times if they have multiple offers).',
+            { width: doc.page.width - doc.page.margins.left - doc.page.margins.right }
+        );
+        doc.fillColor('#000000').moveDown(0.35);
+
+        const pageBottom = () => doc.page.height - doc.page.margins.bottom - 36;
+        const ensureOfferSpace = (needed = 52) => {
+            if (doc.y + needed > pageBottom()) {
+                doc.addPage();
+                doc.fontSize(11).fillColor('#333333').text('Selected offers (detail) — continued', { underline: true });
+                doc.fillColor('#000000').moveDown(0.4);
+            }
+        };
+
+        if (!offerRows.length) {
+            doc.fontSize(10).fillColor('#555555').text('No selected applications on record for this department.');
+        } else {
+            doc.fontSize(9).fillColor('#000000');
+            offerRows.forEach((r, idx) => {
+                ensureOfferSpace(52);
+                const applied = r.applied_at ? new Date(r.applied_at).toLocaleDateString('en-IN') : '—';
+                doc.text(`${idx + 1}. ${r.roll_number || '—'}  •  ${r.email || ''}`);
+                doc.fontSize(8).fillColor('#333333');
+                doc.text(
+                    `   Role: ${r.job_title || '—'}  |  Package: ${Number(r.package_value || 0).toFixed(2)} LPA  |  Applied: ${applied}`,
+                    { width: doc.page.width - doc.page.margins.left - doc.page.margins.right }
+                );
+                doc.fillColor('#000000').fontSize(9);
+                doc.moveDown(0.35);
+            });
+            ensureOfferSpace(36);
+            doc.fontSize(8).fillColor('#666666').text(
+                `End of list: ${offerRows.length} selected offer row(s); ${placedStudents} distinct student(s) with at least one offer.`
+            );
+        }
+
+        doc.end();
+    } catch (error) {
+        console.error('exportDeptPlacementReportPdf error:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ message: 'Failed to generate placement PDF.' });
+        } else {
+            res.destroy();
+        }
+    }
+};
+
+/**
+ * GET /api/dept/reports/student-readiness.csv
+ */
+const exportStudentReadinessCsv = async (req, res) => {
+    try {
+        const ctx = await resolveHeadDepartment(req.user.id);
+        if (!ctx) {
+            return res.status(403).json({ message: 'Access denied. Not a valid department head.' });
+        }
+
+        const [rows] = await db.execute(
+            `SELECT
+                s.roll_number,
+                u.email,
+                s.current_cgpa,
+                s.active_backlogs,
+                s.is_placed,
+                (SELECT COUNT(*) FROM student_skills ss WHERE ss.student_id = s.user_id) AS skills_count,
+                (CASE WHEN rp.student_id IS NULL THEN 0 ELSE 1 END) AS has_resume
+             FROM students s
+             JOIN users u ON u.id = s.user_id
+             LEFT JOIN resume_parsed_data rp ON rp.student_id = s.user_id
+             WHERE s.department_id = ?
+             ORDER BY s.roll_number ASC`,
+            [ctx.deptId]
+        );
+
+        const header = [
+            'roll_number',
+            'email',
+            'cgpa',
+            'active_backlogs',
+            'skills_count',
+            'has_resume',
+            'is_placed',
+            'readiness_score',
+            'readiness_band',
+        ];
+
+        const lines = [header.join(',')];
+        for (const r of rows) {
+            const { readiness, band } = readinessFromRow(r);
+            lines.push(
+                [
+                    escapeCsvField(r.roll_number),
+                    escapeCsvField(r.email),
+                    escapeCsvField(r.current_cgpa ?? ''),
+                    escapeCsvField(r.active_backlogs ?? ''),
+                    escapeCsvField(r.skills_count ?? ''),
+                    escapeCsvField(Number(r.has_resume || 0) === 1 ? 'yes' : 'no'),
+                    escapeCsvField(r.is_placed ? 'yes' : 'no'),
+                    escapeCsvField(readiness),
+                    escapeCsvField(band),
+                ].join(',')
+            );
+        }
+
+        const safeSlug = String(ctx.departmentCode || ctx.deptId).replace(/[^\w.-]+/g, '_');
+        const dateStr = new Date().toISOString().slice(0, 10);
+        const filename = `student-readiness-${safeSlug}-${dateStr}.csv`;
+
+        const bom = '\uFEFF';
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.send(bom + lines.join('\r\n'));
+    } catch (error) {
+        console.error('exportStudentReadinessCsv error:', error);
+        res.status(500).json({ message: 'Failed to export readiness CSV.' });
+    }
+};
+
 module.exports = {
     uploadStudents,
     getDepartmentStudents,
@@ -1044,5 +1282,7 @@ module.exports = {
     createStudentsManually,
     getRecentlyUpdatedProfiles,
     reviewStudentProfile,
-    getDashboardStats
+    getDashboardStats,
+    exportDeptPlacementReportPdf,
+    exportStudentReadinessCsv,
 };
