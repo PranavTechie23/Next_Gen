@@ -23,23 +23,31 @@ const parseAllowedOrigins = () => {
 const allowedOrigins = parseAllowedOrigins();
 
 // Middleware
-app.use(helmet());
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: false, // Disable CSP for easier debugging during dev/cross-domain
+}));
+
 app.use(cors({
     origin: function(origin, callback) {
-        // Allow server-to-server and health-check requests without origin header.
         if (!origin) return callback(null, true);
-
-        // If no explicit allow-list is provided, allow all origins (backward compatible).
         if (allowedOrigins.length === 0) return callback(null, true);
-
-        if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        // During debugging, if origin is from vercel, we can be more flexible
+        if (origin.includes('vercel.app')) return callback(null, true);
         return callback(new Error(`CORS blocked for origin: ${origin}`), false);
     },
-    credentials: true // Allow cookies to be sent
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
+
+// Simple Request Logger
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - Origin: ${req.headers.origin}`);
+    next();
+});
+
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -49,6 +57,18 @@ app.use(require('cookie-parser')());
 const authRoutes = require('./routes/authRoutes');
 
 app.use('/api/auth', authRoutes);
+
+app.get('/api/auth/me', require('./middleware/authMiddleware').protect, (req, res) => {
+    res.json({
+        authenticated: true,
+        user: {
+            id: req.user.id,
+            email: req.user.email,
+            role: req.user.role,
+            institution_id: req.user.institution_id
+        }
+    });
+});
 
 
 app.get('/', (req, res) => {

@@ -45,6 +45,11 @@ exports.protect = async (req, res, next) => {
                 // 4. Grant Access
                 req.user = currentUser[0];
                 req.token = token; // Attach token for logout
+                
+                // Debug Header for troubleshooting 403s on Render
+                res.setHeader('X-Auth-Role', req.user.role || 'NONE');
+                res.setHeader('X-Auth-Id', req.user.id || 'NONE');
+                
                 next();
 
             } finally {
@@ -67,9 +72,13 @@ exports.authorize = (...roles) => {
             return res.status(401).json({ message: "Not authorized. User not found." });
         }
 
-        if (!roles.includes(req.user.role)) {
+        const userRole = (req.user.role || '').toUpperCase();
+        const requiredRoles = roles.map(r => r.toUpperCase());
+
+        if (!requiredRoles.includes(userRole)) {
             return res.status(403).json({ 
-                message: `User role '${req.user.role}' is not authorized to access this route.` 
+                message: `Access denied. User role '${userRole}' is not authorized. Required: [${requiredRoles.join(', ')}]`,
+                code: 'ROLE_MISMATCH'
             });
         }
         next();

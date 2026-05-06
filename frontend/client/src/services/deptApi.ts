@@ -4,6 +4,7 @@ import { buildApiUrl } from "@/lib/api";
 // Setup axios instance with auth header if needed (assuming token is stored in localStorage or similar)
 const api = axios.create({
   baseURL: buildApiUrl('/dept'),
+  withCredentials: true,
 });
 
 async function downloadDeptBlob(path: string, fallbackFilename: string) {
