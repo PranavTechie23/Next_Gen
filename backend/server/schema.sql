@@ -24,6 +24,7 @@ DROP TABLE IF EXISTS token_blacklist;
 DROP TABLE IF EXISTS tpo_admins;
 DROP TABLE IF EXISTS tpo_heads;
 DROP TABLE IF EXISTS webinars;
+DROP TABLE IF EXISTS dept_events;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS departments;
 DROP TABLE IF EXISTS institutions;
@@ -280,6 +281,19 @@ CREATE TABLE webinars (
     INDEX idx_webinars_status (status),
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE dept_events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    department_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    date DATETIME NOT NULL,
+    type VARCHAR(100) NOT NULL,
+    meeting_link VARCHAR(500),
+    created_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE webinar_registrations (

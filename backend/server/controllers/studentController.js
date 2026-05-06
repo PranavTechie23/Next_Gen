@@ -482,6 +482,40 @@ const withdrawApplication = async (req, res) => {
     }
 };
 
+/**
+ * Get department events for the logged-in student
+ * GET /api/student/dept-events
+ */
+const getDeptEvents = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const [studentResult] = await db.execute(
+            'SELECT department_id FROM students WHERE user_id = ?',
+            [userId]
+        );
+
+        if (studentResult.length === 0) {
+            return res.status(404).json({ message: "Student not found." });
+        }
+
+        const deptId = studentResult[0].department_id;
+
+        const [events] = await db.execute(
+            `SELECT id, title, date, type, meeting_link, mode 
+             FROM dept_events 
+             WHERE department_id = ? AND date >= NOW()
+             ORDER BY date ASC`,
+            [deptId]
+        );
+
+        res.status(200).json(events);
+    } catch (error) {
+        console.error("Error in getDeptEvents (Student):", error);
+        res.status(500).json({ message: "Internal server error while fetching department events" });
+    }
+};
+
 module.exports = {
     getStudentProfile,
     updateStudentSubjectiveProfile,
@@ -489,6 +523,7 @@ module.exports = {
     getJobDetails,
     applyForJob,
     getApplications,
-    withdrawApplication
+    withdrawApplication,
+    getDeptEvents
 };
 

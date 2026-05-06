@@ -11,6 +11,12 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Ensure upload directory exists for storing avatars
+const avatarUploadDir = path.join(__dirname, '../uploads/avatars');
+if (!fs.existsSync(avatarUploadDir)) {
+    fs.mkdirSync(avatarUploadDir, { recursive: true });
+}
+
 // --------------------------------------------------
 // MULTER CONFIGURATION FOR RESUME UPLOAD
 // --------------------------------------------------
@@ -570,7 +576,7 @@ const parseResumeText = (rawText = '') => {
 
     const extractLikelyName = () => {
         const headerWindow = lines.slice(0, 8);
-        const blocked = /(summary|education|skills|experience|projects|certification|address|phone|email|linkedin)/i;
+        const blocked = /(summary|education|skills|experience|projects|certification|address|phone|email|linkedin|developer|engineer|intern|student|bachelor|master|analyst)/i;
         for (const raw of headerWindow) {
             const line = String(raw || '').trim();
             if (!line || blocked.test(line) || line.includes('@') || /\d{3,}/.test(line)) continue;
@@ -1168,11 +1174,78 @@ const updateResumeSections = async (req, res) => {
     }
 };
 
+// --------------------------------------------------
+// AVATAR UPLOAD
+// --------------------------------------------------
+const avatarStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, avatarUploadDir);
+    },
+    filename: (req, file, cb) => {
+        const userId = req.user ? req.user.id : 'unknown';
+        const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+        cb(null, `avatar-${userId}-${Date.now()}${ext}`);
+    }
+});
+
+const avatarFileFilter = (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (allowed.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error('Only image files (JPG, PNG, WEBP, GIF) are allowed!'), false);
+    }
+};
+
+const avatarUpload = multer({
+    storage: avatarStorage,
+    fileFilter: avatarFileFilter,
+    limits: { fileSize: 3 * 1024 * 1024 } // 3MB
+});
+
+const uploadAvatar = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'Image file is required.' });
+        }
+
+        const studentId = req.user.id;
+        const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+
+        // Remove old avatar file if it exists
+        const [existing] = await db.execute(
+            'SELECT avatar_url FROM student_profiles WHERE student_id = ?',
+            [studentId]
+        );
+        if (existing.length && existing[0].avatar_url) {
+            const oldPath = path.join(__dirname, '..', existing[0].avatar_url);
+            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        }
+
+        await db.execute(
+            `INSERT INTO student_profiles (student_id, avatar_url)
+             VALUES (?, ?)
+             ON DUPLICATE KEY UPDATE avatar_url = VALUES(avatar_url)`,
+            [studentId, avatarUrl]
+        );
+
+        return res.status(200).json({
+            message: 'Avatar uploaded successfully.',
+            avatar_url: avatarUrl
+        });
+    } catch (error) {
+        console.error('Error uploading avatar:', error);
+        return res.status(500).json({ message: 'Internal server error while uploading avatar.' });
+    }
+};
+
 module.exports = {
     upsertProfile,
     getProfile,
     uploadResume,
     updateResumeSections,
     resumeUploadMiddleware: upload.single('resume'),
-    uploadErrorHandler
+    uploadErrorHandler,
+    avatarUploadMiddleware: avatarUpload.single('avatar'),
+    uploadAvatar
 };

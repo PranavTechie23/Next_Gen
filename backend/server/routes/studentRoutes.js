@@ -41,6 +41,15 @@ router.put('/profile/resume-sections',
     studentProfileController.updateResumeSections
 );
 
+// POST /api/student/profile/avatar - Upload profile photo
+router.post('/profile/avatar',
+    protect,
+    authorize('STUDENT'),
+    studentProfileController.avatarUploadMiddleware,
+    studentProfileController.uploadAvatar,
+    studentProfileController.uploadErrorHandler
+);
+
 // --------------------------------------------------
 // STUDENT ROADMAP (DYNAMIC) ROUTES
 // --------------------------------------------------
@@ -131,6 +140,13 @@ router.post('/webinars/:id/register',
     protect,
     authorize('STUDENT'),
     webinarController.registerForWebinar
+);
+
+// Department Events
+router.get('/dept-events',
+    protect,
+    authorize('STUDENT'),
+    studentController.getDeptEvents
 );
 
 module.exports = router;

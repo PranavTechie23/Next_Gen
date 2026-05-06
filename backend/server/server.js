@@ -69,7 +69,8 @@ app.use('/api/notifications', notificationRoutes);
 
 
 
-
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Serve frontend in production
 if (process.env.NODE_ENV === 'production') {
