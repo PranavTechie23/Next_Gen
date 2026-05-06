@@ -198,6 +198,10 @@ const LOGO_MAP: Record<string, string> = {
     "Cars24": "cars24.com",
     "PharmEasy": "pharmeasy.in",
     "1mg": "1mg.com",
+    "EY": "ey.com",
+    "Ernst & Young": "ey.com",
+    "Avalara": "avalara.com",
+    "Avalara Technologies": "avalara.com",
     "Practo": "practo.com",
     "CureFit": "cure.fit",
     "Urban Company": "urbancompany.com",
@@ -317,7 +321,8 @@ const LOGO_MAP: Record<string, string> = {
     "Take U Forward": "takeuforward.org",
     "CSES Problem Set": "cses.fi",
     "TLE Eliminators": "tle-eliminators.com",
-    "AtCoder": "atcoder.jp"
+    "AtCoder": "atcoder.jp",
+    "Screen Magic": "screen-magic.com"
 };
 
 
@@ -372,6 +377,13 @@ const MANUAL_LOGOS: Record<string, string> = {
     "FPL Technology": "/logos/fpl_Technology.jpg",
     "Paytm": "/logos/paytm.png",
     "Scalex Technology": "/logos/scalex.png",
+    "EY": "/logos/EY.png",
+    "Ernst & Young": "/logos/EY.png",
+    "Avalara": "/logos/avalara.png",
+    "Avalara Technologies": "/logos/avalara.png",
+    "BMC": "/logos/bmc.png",
+    "BMC Software": "/logos/bmc.png",
+    "Screen Magic": "/logos/screen_magic.jpeg",
 };
 
 // ─── Logo Visibility Configuration ──────────────────────────────────────
@@ -1095,7 +1107,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
 
     // ─── Company List View ────────────────────────────────────────
     return (
-        <div className={isDashboard ? `flex flex-col w-full ${isDark ? "bg-[#0c0c14]" : "bg-white"} -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 min-h-0` : ""}>
+        <div className={isDashboard ? `flex flex-col w-full min-h-0` : ""}>
             {/* Suggestion modal */}
             {showSuggestion && (
                 <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -1197,7 +1209,8 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                     </div>
                 </div>
             )}
-            {/* Header */}
+            {/* Header - Hide in dashboard as it already has a title */}
+            {!isDashboard && (
             <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-6 overflow-hidden">
                 <div className="max-w-2xl text-center md:text-left">
                     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
@@ -1252,6 +1265,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                     </button>
                 </div>
             </div>
+            )}
 
             {/* Stats Row */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

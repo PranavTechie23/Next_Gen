@@ -57,11 +57,16 @@ exports.protect = async (req, res, next) => {
             }
 
         } catch (error) {
-            console.error(error);
-            return res.status(401).json({ message: "Not authorized, token failed." });
+            console.error("Auth Middleware JWT Error:", error.message);
+            // Distinguish between expired and invalid tokens
+            const message = error.name === 'TokenExpiredError' 
+                ? "Your session has expired. Please log in again." 
+                : "Not authorized, token failed.";
+            return res.status(401).json({ message, error: error.message });
         }
     } else {
-        res.status(401).json({ message: "Not authorized, no token." });
+        console.warn("Auth Middleware: No token found in headers or cookies.");
+        res.status(401).json({ message: "Not authorized, no token found." });
     }
 };
 

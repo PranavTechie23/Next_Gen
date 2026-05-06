@@ -150,6 +150,7 @@ export default function Internships(props: {
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<ResumeSections>({});
   const [expandedEdu, setExpandedEdu] = useState<Record<string, boolean>>({});
+  const [expandedProjects, setExpandedProjects] = useState<Record<number, boolean>>({});
   const [lastAddedCustomId, setLastAddedCustomId] = useState<string | null>(null);
   const glassCard = isDark
     ? "border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.07] to-white/[0.04] backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.35)]"
@@ -433,10 +434,23 @@ export default function Internships(props: {
                       </div>
                     ) : (
                       <>
-                        <p className={`font-black text-sm ${isDark ? "text-white" : "text-slate-900"}`}>{p?.title || "Project"}</p>
-                        {Array.isArray(p?.bullets) && p.bullets.length > 0 && (
-                          <ul className={`mt-2 space-y-1 text-xs ${isDark ? "text-slate-300" : "text-slate-700"}`}>
-                            {p.bullets.slice(0, 5).map((b, i) => (
+                        <button
+                          type="button"
+                          onClick={() => setExpandedProjects((prev) => ({ ...prev, [idx]: !prev[idx] }))}
+                          className="w-full text-left flex items-start justify-between gap-3 group"
+                        >
+                          <p className={`font-black text-sm ${isDark ? "text-white" : "text-slate-900"} transition-colors group-hover:text-blue-500`}>
+                            {p?.title || "Project"}
+                          </p>
+                          <ChevronDown
+                            className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isDark ? "text-slate-400" : "text-slate-500"} transition-transform ${
+                              expandedProjects[idx] ? "rotate-180" : ""
+                            }`}
+                          />
+                        </button>
+                        {expandedProjects[idx] && Array.isArray(p?.bullets) && p.bullets.length > 0 && (
+                          <ul className={`mt-3 space-y-2 text-xs ${isDark ? "text-slate-300" : "text-slate-700"} animate-in slide-in-from-top-2 duration-300`}>
+                            {p.bullets.map((b, i) => (
                               <li key={i} className="flex gap-2">
                                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500/70 flex-shrink-0" />
                                 <span>{b}</span>

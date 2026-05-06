@@ -1864,9 +1864,9 @@ export default function StudentDashboard() {
       <main
         ref={mainContentRef}
         data-scroll-container
-        className={`flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar relative bg-transparent ${activeTab === "company-kit" ? "flex flex-col" : "p-4 sm:p-6 lg:p-8"}`}
+        className={`flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar relative bg-transparent ${activeTab === "company-kit" || activeTab === "careers" ? "flex flex-col pt-6 sm:pt-8 lg:pt-10" : "p-4 sm:p-6 lg:p-8"}`}
       >
-        <div className={`${activeTab === "company-kit" ? "w-full px-4 sm:px-6 lg:px-8" : "max-w-[1400px] mx-auto"} ${activeTab === "company-kit" ? "flex flex-col space-y-6 sm:space-y-8 lg:space-y-10 min-h-0" : "space-y-6 sm:space-y-8 lg:space-y-10"}`}>
+        <div className={`${activeTab === "company-kit" ? "w-full px-4 sm:px-6 lg:px-8" : "max-w-[1400px] mx-auto"} ${activeTab === "company-kit" ? "flex flex-col space-y-4 sm:space-y-6 min-h-0" : "space-y-6 sm:space-y-8 lg:space-y-10"}`}>
 
           {loadingProfile ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 animate-in fade-in duration-500">
@@ -1881,166 +1881,169 @@ export default function StudentDashboard() {
             </div>
           ) : (
             <>
-              <header className={`flex items-center justify-between gap-4 sm:gap-6 mb-6 sm:mb-8`}>
-            {/* Desktop header space reserved for toggle when floating nearby */}
-            <div className="hidden lg:block w-16" />
+              {activeTab !== "company-kit" && activeTab !== "careers" && (
+                <header className={`flex items-center justify-between gap-4 sm:gap-6 mb-6 sm:mb-8`}>
+                  {/* Desktop header space reserved for toggle when floating nearby */}
+                  <div className="hidden lg:block w-16" />
 
-            <div className={`flex-1 min-w-0`}>
-              {/* Mobile hamburger */}
-              <div className="flex items-center justify-between gap-3 lg:hidden mb-3">
-                <button
-                  type="button"
-                  onClick={() => setIsMobileSidebarOpen(true)}
-                  className={`h-11 w-11 rounded-2xl flex items-center justify-center transition-colors ${isDark ? "bg-white/5 hover:bg-white/10 text-slate-200" : "bg-slate-100 hover:bg-slate-200 text-slate-800"}`}
-                  aria-label="Open menu"
-                  title="Open menu"
-                >
-                  <Menu className="w-5 h-5" />
-                </button>
-                <div className={`flex-1 h-px ${isDark ? "bg-white/5" : "bg-slate-200"}`} />
-              </div>
-              <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold ${isDark ? "text-white" : "text-slate-900"} tracking-tight capitalize`}>
-                {sidebarLinks.find(l => l.id === activeTab)?.label || activeTab}
-              </h1>
-              <p className={`${isDark ? "text-blue-400" : "text-blue-600"} text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] opacity-90 mt-1 border-b-0 no-underline`}>
-                {activeTab === "overview" ? "Career Readiness Dashboard" :
-                  activeTab === "skills" ? "Skill Architecture Analysis" :
-                    activeTab === "resume" ? "Resume: Projects, Education, Experience" :
-                    activeTab === "opportunities" ? "Placement Drives" :
-                      activeTab === "learning" ? "Learning & Development" :
-                          activeTab === "careers" ? "Career Opportunities & Resources" :
-                            activeTab === "webinars" ? "Live Learning Sessions" :
-                                activeTab === "corporateNews" ? "Industry News & Updates" :
-                                  activeTab === "feedback" ? "Share Your Feedback" :
-                                    activeTab === "assessment-hub" ? "Resources — End-to-End Prep" :
-                                      activeTab === "company-kit" ? "Company Wise Problems & Tracking" :
-                                        "Student Portal"}
-              </p>
-            </div>
+                  <div className={`flex-1 min-w-0`}>
+                    {/* Mobile hamburger */}
+                    <div className="flex items-center justify-between gap-3 lg:hidden mb-3">
+                      <button
+                        type="button"
+                        onClick={() => setIsMobileSidebarOpen(true)}
+                        className={`h-11 w-11 rounded-2xl flex items-center justify-center transition-colors ${isDark ? "bg-white/5 hover:bg-white/10 text-slate-200" : "bg-slate-100 hover:bg-slate-200 text-slate-800"}`}
+                        aria-label="Open menu"
+                        title="Open menu"
+                      >
+                        <Menu className="w-5 h-5" />
+                      </button>
+                      <div className={`flex-1 h-px ${isDark ? "bg-white/5" : "bg-slate-200"}`} />
+                    </div>
+                    <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold ${isDark ? "text-white" : "text-slate-900"} tracking-tight capitalize`}>
+                      {sidebarLinks.find(l => l.id === activeTab)?.label || activeTab}
+                    </h1>
+                    <p className={`${isDark ? "text-blue-400" : "text-blue-600"} text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] opacity-90 mt-1 border-b-0 no-underline`}>
+                      {activeTab === "overview" ? "Career Readiness Dashboard" :
+                        activeTab === "skills" ? "Skill Architecture Analysis" :
+                          activeTab === "resume" ? "Resume: Projects, Education, Experience" :
+                            activeTab === "opportunities" ? "Placement Drives" :
+                              activeTab === "learning" ? "Learning & Development" :
+                                activeTab === "careers" ? "Career Opportunities & Resources" :
+                                  activeTab === "webinars" ? "Live Learning Sessions" :
+                                    activeTab === "corporateNews" ? "Industry News & Updates" :
+                                      activeTab === "feedback" ? "Share Your Feedback" :
+                                        activeTab === "assessment-hub" ? "Resources — End-to-End Prep" :
+                                          activeTab === "company-kit" ? "Company Wise Problems & Tracking" :
+                                            "Student Portal"}
+                    </p>
+                  </div>
 
-            {/* Premium Header Controls - Relocated for better accessibility */}
-            <div className="flex items-center gap-3 sm:gap-4">
-              {/* Quick access button to open Company Wise Kit tab from anywhere */}
-              {activeTab !== "company-kit" && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setActiveTab("company-kit");
-                    const params = new URLSearchParams(window.location.search);
-                    params.set("tab", "company-kit");
-                    const newUrl = `${window.location.pathname}?${params.toString()}`;
-                    window.history.replaceState({ ...window.history.state }, "", newUrl);
-                  }}
-                  className={`hidden md:flex h-11 px-6 rounded-2xl font-bold text-xs uppercase tracking-widest gap-2 transform transition-all hover:scale-105 active:scale-95 ${isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}
-                >
-                  <span>Company Wise Kit</span>
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                </Button>
+                  {/* Premium Header Controls - Relocated for better accessibility */}
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    {/* Quick access button to open Company Wise Kit tab from anywhere */}
+                    {activeTab !== "company-kit" && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setActiveTab("company-kit");
+                          const params = new URLSearchParams(window.location.search);
+                          params.set("tab", "company-kit");
+                          const newUrl = `${window.location.pathname}?${params.toString()}`;
+                          window.history.replaceState({ ...window.history.state }, "", newUrl);
+                        }}
+                        className={`hidden md:flex h-11 px-6 rounded-2xl font-bold text-xs uppercase tracking-widest gap-2 transform transition-all hover:scale-105 active:scale-95 ${isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}
+                      >
+                        <span>Company Wise Kit</span>
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      </Button>
+                    )}
+
+                    <div className={`h-11 w-11 flex items-center justify-center rounded-2xl border transition-all ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}>
+                      <ThemeToggle className="!h-10 !w-10 !rounded-xl border-0 bg-transparent hover:bg-transparent" />
+                    </div>
+
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className={`h-11 w-11 flex items-center justify-center rounded-2xl border transition-all relative group ${isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-white border-slate-200 text-slate-900 shadow-sm hover:bg-slate-50"}`}>
+                          <Bell className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                          <div className="absolute top-2.5 right-2.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-background animate-pulse" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent align="end" sideOffset={12} className={`w-[min(22rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] p-0 rounded-[2rem] overflow-hidden border-0 shadow-[0_20px_50px_rgba(0,0,0,0.3)] sm:w-[380px] sm:max-w-none ${isDark ? "bg-[#0c0c14]" : "bg-white"}`}>
+                        <div className={`p-6 border-b ${isDark ? "border-white/5" : "border-slate-100"}`}>
+                          <div className="flex items-center justify-between mb-1">
+                            <h3 className={`text-lg font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight`}>Profile Checklist</h3>
+                            <div className={`w-10 h-10 rounded-xl ${isDark ? "bg-blue-500/10" : "bg-blue-50"} flex items-center justify-center border ${isDark ? "border-blue-500/20" : "border-blue-100"}`}>
+                              <CheckCircle2 className={`w-5 h-5 ${isDark ? "text-blue-400" : "text-blue-600"}`} />
+                            </div>
+                          </div>
+                          <p className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"} font-bold uppercase tracking-widest`}>Complete these to unlock premium features</p>
+                        </div>
+                        <div className="p-4 space-y-2">
+                          {profileChecklist.map((item, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => navigate(item.path)}
+                              className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-300 group/item cursor-pointer border ${isDark ? "border-white/5 hover:bg-white/5 hover:border-white/10" : "border-slate-100 hover:bg-slate-50 hover:border-slate-200"}`}
+                            >
+                              <div className="flex items-center gap-3">
+                                {item.completed ? (
+                                  <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
+                                    <CheckCircle2 className="w-4 h-4" />
+                                  </div>
+                                ) : (
+                                  <div className={`w-6 h-6 rounded-full border-2 ${isDark ? "border-white/20" : "border-slate-300"} flex items-center justify-center transition-colors group-hover/item:border-blue-500/50`}>
+                                    <div className="w-4 h-4 rounded-full" />
+                                  </div>
+                                )}
+                                <span className={`font-bold text-xs ${item.completed ? (isDark ? "text-slate-500 line-through decoration-slate-700" : "text-slate-400 line-through decoration-slate-200") : (isDark ? "text-slate-200" : "text-slate-700")} group-hover/item:text-blue-500 transition-colors uppercase tracking-tight`}>
+                                  {item.label}
+                                </span>
+                              </div>
+                              {item.completed ? (
+                                <ChevronRight className={`w-3.5 h-3.5 ${isDark ? "text-slate-600" : "text-slate-400"} transition-all duration-300 group-hover/item:translate-x-1 group-hover/item:text-blue-500`} />
+                              ) : (
+                                <ExternalLink className={`w-3.5 h-3.5 text-blue-500 opacity-0 group-hover/item:opacity-100 transition-all duration-300 transform translate-x-1`} />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                        <div className={`p-4 bg-slate-500/5 ${isDark ? "bg-white/5" : "bg-slate-50"} flex items-center justify-center`}>
+                          <button className={`text-[9px] font-black uppercase tracking-[0.2em] ${isDark ? "text-slate-500 hover:text-white" : "text-slate-400 hover:text-slate-900"} transition-all`}>
+                            Dismiss all notifications
+                          </button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="flex items-center gap-3 focus:outline-none group">
+                          <div className="relative">
+                            <Avatar className={`w-11 h-11 rounded-2xl border-2 transition-all group-hover:border-blue-500/50 ${isDark ? "border-white/10" : "border-white shadow-md shadow-slate-200/50"}`}>
+                              <AvatarImage src={studentProfile.avatar} />
+                              <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-sm">{studentProfile.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 ${isDark ? "border-[#0c0c14]" : "border-white"} bg-green-500 shadow-sm`} />
+                          </div>
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" sideOffset={12} className={`w-72 p-3 rounded-3xl animate-in fade-in zoom-in-95 duration-200 border ${isDark ? "bg-[#0c0c14]/90 backdrop-blur-2xl border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] text-white" : "bg-white/90 backdrop-blur-2xl border-slate-200/60 shadow-[0_20px_60px_rgba(0,0,0,0.1)] text-slate-900"}`}>
+                        <DropdownMenuLabel className="p-0 mb-2">
+                          <div className={`flex items-center gap-4 p-3 rounded-2xl transition-colors ${isDark ? "bg-white/5 hover:bg-white/10" : "bg-slate-50 hover:bg-slate-100"}`}>
+                            <Avatar className="w-12 h-12 rounded-xl shadow-inner border border-white/10">
+                              <AvatarImage src={studentProfile.avatar} />
+                              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-black text-lg shadow-inner">{studentProfile.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col min-w-0 text-left justify-center">
+                              <span className={`font-extrabold text-sm tracking-tight truncate ${isDark ? "text-white" : "text-slate-900"}`}>{studentProfile.name}</span>
+                              <span className={`text-xs truncate font-medium mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{studentProfile.email}</span>
+                            </div>
+                          </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator className={`${isDark ? "bg-white/10" : "bg-slate-100"} -mx-3 my-2`} />
+                        <DropdownMenuGroup className="space-y-1">
+                          <DropdownMenuItem onClick={() => navigate("/student/setting")} className={`rounded-2xl flex items-center gap-3 p-3 transition-all cursor-pointer ${isDark ? "hover:bg-white/10 focus:bg-white/10" : "hover:bg-slate-100 focus:bg-slate-100"}`}>
+                            <div className={`w-9 h-9 rounded-xl ${isDark ? "bg-blue-500/10 text-blue-400" : "bg-blue-50 text-blue-600"} flex items-center justify-center shadow-inner`}>
+                              <Settings className="w-4.5 h-4.5" />
+                            </div>
+                            <span className="font-semibold text-sm">Account Settings</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator className={`${isDark ? "bg-white/10" : "bg-slate-100"} -mx-3 my-2`} />
+                        <DropdownMenuItem onClick={() => performClientLogout(navigate)} className={`rounded-2xl flex items-center gap-3 p-3 transition-all cursor-pointer group/signout ${isDark ? "hover:bg-red-500/10 focus:bg-red-500/10 text-red-400" : "hover:bg-red-50 focus:bg-red-50 text-red-600"}`}>
+                          <div className={`w-9 h-9 rounded-xl ${isDark ? "bg-red-500/10 text-red-400" : "bg-red-100 text-red-600"} flex items-center justify-center transition-colors group-hover/signout:bg-red-500/20 group-hover/signout:text-red-500 shadow-inner`}>
+                            <LogOut className="w-4.5 h-4.5" />
+                          </div>
+                          <span className="font-bold text-sm">Sign Out</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </header>
               )}
 
-              <div className={`h-11 w-11 flex items-center justify-center rounded-2xl border transition-all ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}>
-                <ThemeToggle className="!h-10 !w-10 !rounded-xl border-0 bg-transparent hover:bg-transparent" />
-              </div>
-
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button className={`h-11 w-11 flex items-center justify-center rounded-2xl border transition-all relative group ${isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-white border-slate-200 text-slate-900 shadow-sm hover:bg-slate-50"}`}>
-                    <Bell className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                    <div className="absolute top-2.5 right-2.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-background animate-pulse" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent align="end" sideOffset={12} className={`w-[min(22rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] p-0 rounded-[2rem] overflow-hidden border-0 shadow-[0_20px_50px_rgba(0,0,0,0.3)] sm:w-[380px] sm:max-w-none ${isDark ? "bg-[#0c0c14]" : "bg-white"}`}>
-                  <div className={`p-6 border-b ${isDark ? "border-white/5" : "border-slate-100"}`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className={`text-lg font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight`}>Profile Checklist</h3>
-                      <div className={`w-10 h-10 rounded-xl ${isDark ? "bg-blue-500/10" : "bg-blue-50"} flex items-center justify-center border ${isDark ? "border-blue-500/20" : "border-blue-100"}`}>
-                        <CheckCircle2 className={`w-5 h-5 ${isDark ? "text-blue-400" : "text-blue-600"}`} />
-                      </div>
-                    </div>
-                    <p className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"} font-bold uppercase tracking-widest`}>Complete these to unlock premium features</p>
-                  </div>
-                  <div className="p-4 space-y-2">
-                    {profileChecklist.map((item, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => navigate(item.path)}
-                        className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-300 group/item cursor-pointer border ${isDark ? "border-white/5 hover:bg-white/5 hover:border-white/10" : "border-slate-100 hover:bg-slate-50 hover:border-slate-200"}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          {item.completed ? (
-                            <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
-                              <CheckCircle2 className="w-4 h-4" />
-                            </div>
-                          ) : (
-                            <div className={`w-6 h-6 rounded-full border-2 ${isDark ? "border-white/20" : "border-slate-300"} flex items-center justify-center transition-colors group-hover/item:border-blue-500/50`}>
-                              <div className="w-4 h-4 rounded-full" />
-                            </div>
-                          )}
-                          <span className={`font-bold text-xs ${item.completed ? (isDark ? "text-slate-500 line-through decoration-slate-700" : "text-slate-400 line-through decoration-slate-200") : (isDark ? "text-slate-200" : "text-slate-700")} group-hover/item:text-blue-500 transition-colors uppercase tracking-tight`}>
-                            {item.label}
-                          </span>
-                        </div>
-                        {item.completed ? (
-                          <ChevronRight className={`w-3.5 h-3.5 ${isDark ? "text-slate-600" : "text-slate-400"} transition-all duration-300 group-hover/item:translate-x-1 group-hover/item:text-blue-500`} />
-                        ) : (
-                          <ExternalLink className={`w-3.5 h-3.5 text-blue-500 opacity-0 group-hover/item:opacity-100 transition-all duration-300 transform translate-x-1`} />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  <div className={`p-4 bg-slate-500/5 ${isDark ? "bg-white/5" : "bg-slate-50"} flex items-center justify-center`}>
-                    <button className={`text-[9px] font-black uppercase tracking-[0.2em] ${isDark ? "text-slate-500 hover:text-white" : "text-slate-400 hover:text-slate-900"} transition-all`}>
-                      Dismiss all notifications
-                    </button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-3 focus:outline-none group">
-                    <div className="relative">
-                      <Avatar className={`w-11 h-11 rounded-2xl border-2 transition-all group-hover:border-blue-500/50 ${isDark ? "border-white/10" : "border-white shadow-md shadow-slate-200/50"}`}>
-                        <AvatarImage src={studentProfile.avatar} />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-sm">{studentProfile.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 ${isDark ? "border-[#0c0c14]" : "border-white"} bg-green-500 shadow-sm`} />
-                    </div>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" sideOffset={12} className={`w-72 p-3 rounded-3xl animate-in fade-in zoom-in-95 duration-200 border ${isDark ? "bg-[#0c0c14]/90 backdrop-blur-2xl border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] text-white" : "bg-white/90 backdrop-blur-2xl border-slate-200/60 shadow-[0_20px_60px_rgba(0,0,0,0.1)] text-slate-900"}`}>
-                  <DropdownMenuLabel className="p-0 mb-2">
-                    <div className={`flex items-center gap-4 p-3 rounded-2xl transition-colors ${isDark ? "bg-white/5 hover:bg-white/10" : "bg-slate-50 hover:bg-slate-100"}`}>
-                      <Avatar className="w-12 h-12 rounded-xl shadow-inner border border-white/10">
-                        <AvatarImage src={studentProfile.avatar} />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-black text-lg shadow-inner">{studentProfile.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col min-w-0 text-left justify-center">
-                        <span className={`font-extrabold text-sm tracking-tight truncate ${isDark ? "text-white" : "text-slate-900"}`}>{studentProfile.name}</span>
-                        <span className={`text-xs truncate font-medium mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{studentProfile.email}</span>
-                      </div>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator className={`${isDark ? "bg-white/10" : "bg-slate-100"} -mx-3 my-2`} />
-                  <DropdownMenuGroup className="space-y-1">
-                    <DropdownMenuItem onClick={() => navigate("/student/setting")} className={`rounded-2xl flex items-center gap-3 p-3 transition-all cursor-pointer ${isDark ? "hover:bg-white/10 focus:bg-white/10" : "hover:bg-slate-100 focus:bg-slate-100"}`}>
-                      <div className={`w-9 h-9 rounded-xl ${isDark ? "bg-blue-500/10 text-blue-400" : "bg-blue-50 text-blue-600"} flex items-center justify-center shadow-inner`}>
-                        <Settings className="w-4.5 h-4.5" />
-                      </div>
-                      <span className="font-semibold text-sm">Account Settings</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator className={`${isDark ? "bg-white/10" : "bg-slate-100"} -mx-3 my-2`} />
-                  <DropdownMenuItem onClick={() => performClientLogout(navigate)} className={`rounded-2xl flex items-center gap-3 p-3 transition-all cursor-pointer group/signout ${isDark ? "hover:bg-red-500/10 focus:bg-red-500/10 text-red-400" : "hover:bg-red-50 focus:bg-red-50 text-red-600"}`}>
-                    <div className={`w-9 h-9 rounded-xl ${isDark ? "bg-red-500/10 text-red-400" : "bg-red-100 text-red-600"} flex items-center justify-center transition-colors group-hover/signout:bg-red-500/20 group-hover/signout:text-red-500 shadow-inner`}>
-                      <LogOut className="w-4.5 h-4.5" />
-                    </div>
-                    <span className="font-bold text-sm">Sign Out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </header>
 
           {activeTab === "overview" && (
             <div className="space-y-10">
