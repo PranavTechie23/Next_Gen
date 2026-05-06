@@ -27,6 +27,13 @@ router.get('/audit-logs',
     adminController.getAuditLogs
 );
 
+// GET /students - Get all students with filtering
+router.get('/students',
+    protect,
+    authorize("TPO_ADMIN", "TPO_HEAD"),
+    adminController.getStudentsList
+);
+
 // POST /companies - Create a new Company
 router.post('/companies',
     protect,
@@ -121,6 +128,12 @@ router.get('/reports/at-risk-students',
     protect,
     authorize("TPO_ADMIN", "TPO_HEAD"),
     reportsController.getAtRiskStudentsReport
+);
+
+router.get('/reports/shortlisted',
+    protect,
+    authorize("TPO_ADMIN", "TPO_HEAD"),
+    reportsController.getShortlistedStudentsReport
 );
 
 router.post('/reports/custom',

@@ -423,24 +423,22 @@ const updateApplicationStatus = async (req, res) => {
 };
 
 /**
- * Get all applications (Admin View)
+ * Get all student applications (Admin View)
  * GET /api/admin/applications
  */
 const getAllApplications = async (req, res) => {
     try {
         const [applications] = await db.query(`
             SELECT 
-                a.id AS application_id,
+                a.id,
+                a.student_id,
+                u.email AS student_email,
+                sp.full_name AS student_name,
+                j.job_title,
+                r.company_name,
                 a.status,
                 a.current_round,
-                a.applied_at,
-                s.user_id AS student_id,
-                s.roll_number,
-                u.email AS student_email,
-                sp.resume_url,
-                j.job_title,
-                d.drive_name,
-                r.company_name
+                a.applied_at
             FROM applications a
             JOIN students s ON a.student_id = s.user_id
             JOIN users u ON s.user_id = u.id
@@ -453,12 +451,106 @@ const getAllApplications = async (req, res) => {
 
         res.status(200).json({
             count: applications.length,
-            applications: applications
+            applications
         });
 
     } catch (error) {
-        console.error("Error fetching admin applications:", error);
-        res.status(500).json({ message: "Internal server error while fetching all applications" });
+        console.error("Error fetching all applications:", error);
+        res.status(500).json({ message: "Internal server error while fetching applications" });
+    }
+};
+
+/**
+ * Get all students with filtering and pagination (Admin View)
+ * GET /api/admin/students
+ */
+const getStudentsList = async (req, res) => {
+    try {
+        const { 
+            page = 1, 
+            limit = 10, 
+            search = '', 
+            branch = 'all', 
+            status = 'all' 
+        } = req.query;
+
+        const offset = (parseInt(page) - 1) * parseInt(limit);
+        const limitInt = parseInt(limit);
+
+        let whereClauses = [];
+        let queryParams = [];
+
+        // 1. Search filter
+        if (search) {
+            whereClauses.push(`(s.roll_number LIKE ? OR u.email LIKE ? OR sp.full_name LIKE ? OR d.name LIKE ?)`);
+            const searchPattern = `%${search}%`;
+            queryParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
+        }
+
+        // 2. Branch filter
+        if (branch !== 'all') {
+            whereClauses.push(`d.id = ?`);
+            queryParams.push(branch);
+        }
+
+        // 3. Status filter (Simplified for now)
+        if (status === 'placed') {
+            whereClauses.push(`s.is_placed = 1`);
+        } else if (status === 'unplaced') {
+            whereClauses.push(`s.is_placed = 0`);
+        } else if (status === 'at_risk') {
+            whereClauses.push(`(s.current_cgpa < 6.0 OR s.active_backlogs > 0)`);
+        }
+
+        const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+        // Total count query
+        const [countResult] = await db.query(`
+            SELECT COUNT(*) AS total
+            FROM students s
+            JOIN users u ON s.user_id = u.id
+            LEFT JOIN student_profiles sp ON s.user_id = sp.student_id
+            LEFT JOIN departments d ON s.department_id = d.id
+            ${whereSql}
+        `, queryParams);
+
+        const totalItems = countResult[0].total;
+        const totalPages = Math.ceil(totalItems / limitInt);
+
+        // Data query
+        const [students] = await db.query(`
+            SELECT 
+                s.user_id, 
+                s.roll_number, 
+                u.email, 
+                sp.full_name, 
+                d.name AS branch, 
+                s.current_cgpa, 
+                s.active_backlogs, 
+                s.is_placed,
+                (SELECT COUNT(*) FROM student_skills ss WHERE ss.student_id = s.user_id) AS skills_count
+            FROM students s
+            JOIN users u ON s.user_id = u.id
+            LEFT JOIN student_profiles sp ON s.user_id = sp.student_id
+            LEFT JOIN departments d ON s.department_id = d.id
+            ${whereSql}
+            ORDER BY s.roll_number ASC
+            LIMIT ? OFFSET ?
+        `, [...queryParams, limitInt, offset]);
+
+        res.status(200).json({
+            students,
+            pagination: {
+                totalItems,
+                totalPages,
+                currentPage: parseInt(page),
+                limit: limitInt
+            }
+        });
+
+    } catch (error) {
+        console.error("Error fetching students list:", error);
+        res.status(500).json({ message: "Internal server error while fetching students" });
     }
 };
 
@@ -472,5 +564,6 @@ module.exports = {
     getAllDrives,
     updateDriveStatus,
     updateApplicationStatus,
-    getAllApplications
+    getAllApplications,
+    getStudentsList
 };

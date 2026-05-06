@@ -24,6 +24,102 @@ const hasColumn = async (tableName, columnName) => {
     }
 };
 
+function numberValue(value, fallback = 0) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+}
+
+function profileCompletenessFromRow(row) {
+    let score = 0;
+    if (row.resume_url || Number(row.has_resume || 0) === 1) score += 40;
+    if (row.linkedin_url) score += 25;
+    if (row.github_url) score += 20;
+    if (numberValue(row.skills_count) >= 3) score += 15;
+    return Math.min(score, 100);
+}
+
+function readinessFromRow(row) {
+    const cgpa = numberValue(row.current_cgpa);
+    const backlogs = numberValue(row.active_backlogs);
+    const skills = numberValue(row.skills_count);
+    const hasResume = Boolean(row.resume_url) || Number(row.has_resume || 0) === 1;
+    const hasProfileLink = Boolean(row.linkedin_url || row.github_url);
+
+    let readiness = 25;
+    const issues = [];
+
+    if (cgpa >= 8) readiness += 25;
+    else if (cgpa >= 7) readiness += 18;
+    else if (cgpa >= 6) readiness += 10;
+
+    if (!row.current_cgpa) issues.push('CGPA missing');
+    else if (cgpa < 7) issues.push('Below 7.0 CGPA');
+
+    if (backlogs === 0) readiness += 20;
+    else issues.push(`${backlogs} active backlog${backlogs > 1 ? 's' : ''}`);
+
+    if (hasResume) readiness += 15;
+    else issues.push('Resume missing');
+
+    if (hasProfileLink) readiness += 10;
+    else issues.push('Profile links missing');
+
+    if (skills >= 3) readiness += 5;
+    else issues.push('Skills need update');
+
+    readiness = Math.max(0, Math.min(100, Math.round(readiness)));
+
+    let band = 'Needs attention';
+    if (readiness >= 80 && issues.length === 0) band = 'Drive ready';
+    else if (readiness >= 70) band = 'Almost ready';
+    else if (issues.length >= 3 || readiness < 55) band = 'Critical';
+
+    return {
+        readiness,
+        readiness_band: band,
+        profile_completeness: profileCompletenessFromRow(row),
+        issues,
+        issue_count: issues.length,
+    };
+}
+
+async function getDepartmentReadinessRows(deptId) {
+    let hasResumeParsed = false;
+    try {
+        await db.query(`SELECT 1 FROM resume_parsed_data LIMIT 1`);
+        hasResumeParsed = true;
+    } catch {
+        hasResumeParsed = false;
+    }
+
+    const [rows] = await db.execute(
+        `SELECT
+            s.user_id,
+            s.roll_number,
+            u.email,
+            s.current_cgpa,
+            s.active_backlogs,
+            s.is_placed,
+            sp.resume_url,
+            sp.linkedin_url,
+            sp.github_url,
+            (SELECT COUNT(*) FROM student_skills ss WHERE ss.student_id = s.user_id) AS skills_count,
+            ${hasResumeParsed ? `(CASE WHEN rp.student_id IS NULL THEN 0 ELSE 1 END)` : `0`} AS has_resume
+         FROM students s
+         JOIN users u ON u.id = s.user_id
+         LEFT JOIN student_profiles sp ON sp.student_id = s.user_id
+         ${hasResumeParsed ? `LEFT JOIN resume_parsed_data rp ON rp.student_id = s.user_id` : ``}
+         WHERE s.department_id = ?
+         ORDER BY s.roll_number ASC`,
+        [deptId]
+    );
+
+    return (rows || []).map((row) => ({
+        ...row,
+        ...readinessFromRow(row),
+    }));
+}
+
 /**
  * Bulk upload students via Excel file
  * POST /api/dept/students/upload
@@ -256,7 +352,8 @@ const getDepartmentStudents = async (req, res) => {
                 s.is_academic_data_locked,
                 s.is_placed,
                 sp.resume_url,
-                sp.linkedin_url
+                sp.linkedin_url,
+                sp.github_url
             FROM students s
             JOIN users u ON s.user_id = u.id
             LEFT JOIN student_profiles sp ON s.user_id = sp.student_id
@@ -749,6 +846,69 @@ const reviewStudentProfile = async (req, res) => {
     }
 };
 
+const getDeptProfile = async (req, res) => {
+    try {
+        const [rows] = await db.execute(
+            `SELECT
+                u.id,
+                u.email,
+                th.name,
+                th.phone,
+                d.id AS department_id,
+                d.name AS department_name,
+                d.code AS department_code
+             FROM users u
+             JOIN tpo_heads th ON th.user_id = u.id
+             LEFT JOIN departments d ON d.id = th.department_id
+             WHERE u.id = ?`,
+            [req.user.id]
+        );
+
+        if (!rows.length) {
+            return res.status(403).json({ message: "Access denied. Not a valid department head." });
+        }
+
+        res.status(200).json(rows[0]);
+    } catch (error) {
+        console.error("Error fetching dept profile:", error);
+        res.status(500).json({ message: "Internal server error while fetching dept profile" });
+    }
+};
+
+const getReadinessDesk = async (req, res) => {
+    try {
+        const ctx = await resolveHeadDepartment(req.user.id);
+        if (!ctx) {
+            return res.status(403).json({ message: "Access denied. Not a valid department head." });
+        }
+
+        const students = await getDepartmentReadinessRows(ctx.deptId);
+        const activeStudents = students.filter((student) => !student.is_placed);
+
+        const alerts = {
+            critical: activeStudents.filter((student) => student.readiness_band === 'Critical').length,
+            profileGaps: activeStudents.filter((student) =>
+                student.issues.includes('Resume missing') || student.issues.includes('Profile links missing')
+            ).length,
+            driveReady: activeStudents.filter((student) => student.readiness >= 80 && student.issue_count === 0).length,
+            missingResume: activeStudents.filter((student) => student.issues.includes('Resume missing')).length,
+        };
+
+        res.status(200).json({
+            department: {
+                id: ctx.deptId,
+                name: ctx.departmentName,
+                code: ctx.departmentCode,
+            },
+            alerts,
+            students,
+        });
+    } catch (error) {
+        console.error("Error fetching readiness desk:", error);
+        res.status(500).json({ message: "Internal server error while fetching readiness desk" });
+    }
+};
+
 /**
  * Get dashboard statistics for the TPO_HEAD
  * GET /api/dept/dashboard/stats
@@ -792,56 +952,21 @@ const getDashboardStats = async (req, res) => {
         const avgPackage = Number(deptPlacement?.avg_package || 0);
         const highestPackage = Number(deptPlacement?.highest_package || 0);
 
-        const [atRiskRows] = await db.execute(
-            `SELECT
-                s.user_id AS id,
-                s.roll_number,
-                u.email,
-                s.current_cgpa,
-                s.active_backlogs,
-                (SELECT COUNT(*) FROM student_skills ss WHERE ss.student_id = s.user_id) AS skills_count,
-                (CASE WHEN rp.student_id IS NULL THEN 0 ELSE 1 END) AS has_resume
-             FROM students s
-             JOIN users u ON u.id = s.user_id
-             LEFT JOIN resume_parsed_data rp ON rp.student_id = s.user_id
-             WHERE s.department_id = ?`,
-            [deptId]
-        );
+        const readinessRows = await getDepartmentReadinessRows(deptId);
 
-        const atRiskStudentsList = (atRiskRows || [])
+        const atRiskStudentsList = readinessRows
             .map((r) => {
-                const cgpa = Number(r.current_cgpa || 0);
-                const backlogs = Number(r.active_backlogs || 0);
-                const skills = Number(r.skills_count || 0);
-                const hasResume = Number(r.has_resume || 0) === 1;
-                const riskScore = Math.max(
-                    0,
-                    Math.min(
-                        100,
-                        (cgpa > 0 ? (6.0 - Math.min(cgpa, 6.0)) * 25 : 10) +
-                            backlogs * 20 +
-                            (!hasResume ? 25 : 0) +
-                            (skills < 5 ? (5 - skills) * 6 : 0)
-                    )
-                );
-
-                const issues = [];
-                if (cgpa > 0 && cgpa < 6.0) issues.push('Low CGPA');
-                if (backlogs > 0) issues.push('Active backlogs');
-                if (!hasResume) issues.push('Resume not uploaded');
-                if (skills < 5) issues.push('Low skills count');
-
                 return {
-                    id: r.roll_number || String(r.id),
+                    id: r.roll_number || String(r.user_id),
                     name: String(r.email || '').split('@')[0] || r.roll_number || 'Student',
-                    readiness: Number((100 - riskScore).toFixed(0)),
-                    status: riskScore >= 60 ? 'Critical' : 'At Risk',
-                    issues,
+                    readiness: r.readiness,
+                    status: r.readiness_band,
+                    issues: r.issues,
                     lastActivity: 'Recent',
-                    risk_score: riskScore,
+                    risk_score: 100 - r.readiness,
                 };
             })
-            .filter((r) => r.risk_score >= 25)
+            .filter((r) => r.risk_score >= 25 && r.issues.length > 0)
             .sort((a, b) => b.risk_score - a.risk_score);
 
         const [monthlyRows] = await db.execute(
@@ -975,9 +1100,19 @@ const getDashboardStats = async (req, res) => {
             package: Number(r.package || 0),
         }));
 
-        // Webinar schema may be legacy (date_time) or new (starts_at, status). Do not fail the whole dashboard.
+        // Dept-created events plus webinar schema may be legacy (date_time) or new (starts_at, status).
         let upcomingEvents = [];
         try {
+            const [deptEventRows] = await db.execute(
+                `SELECT title, date AS starts_at, type
+                 FROM dept_events
+                 WHERE department_id = ?
+                   AND date >= NOW()
+                 ORDER BY date ASC
+                 LIMIT 5`,
+                [deptId]
+            );
+
             const hasStartsAt = await hasColumn('webinars', 'starts_at');
             const hasStatus = await hasColumn('webinars', 'status');
             const hasLegacyDate = await hasColumn('webinars', 'date_time');
@@ -1002,12 +1137,15 @@ const getDashboardStats = async (req, res) => {
                 );
             }
 
-            upcomingEvents = (eventRows || []).map((e) => ({
+            upcomingEvents = [...(deptEventRows || []), ...(eventRows || [])]
+                .sort((a, b) => new Date(a.starts_at || 0) - new Date(b.starts_at || 0))
+                .slice(0, 5)
+                .map((e) => ({
                 date: e.starts_at
                     ? new Date(e.starts_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                     : '',
                 title: e.title || 'Webinar',
-                type: 'Webinar',
+                type: e.type || 'Webinar',
                 attendees: totalStudents,
             }));
         } catch (webinarErr) {
@@ -1059,28 +1197,14 @@ function escapeCsvField(value) {
     return s;
 }
 
-/** Same risk heuristic as dashboard “at risk” list (for consistent CSV export). */
-function readinessFromRow(row) {
-    const cgpa = Number(row.current_cgpa || 0);
-    const backlogs = Number(row.active_backlogs || 0);
-    const skills = Number(row.skills_count || 0);
-    const hasResume = Number(row.has_resume || 0) === 1;
-    const riskScore = Math.max(
-        0,
-        Math.min(
-            100,
-            (cgpa > 0 ? (6.0 - Math.min(cgpa, 6.0)) * 25 : 10) +
-                backlogs * 20 +
-                (!hasResume ? 25 : 0) +
-                (skills < 5 ? (5 - skills) * 6 : 0)
-        )
-    );
-    const readiness = Math.max(0, Math.min(100, Math.round(100 - riskScore)));
-    let band = 'On track';
-    if (riskScore >= 60) band = 'Critical';
-    else if (riskScore >= 40) band = 'Needs attention';
-    else if (riskScore >= 25) band = 'At risk';
-    return { riskScore, readiness, band };
+function sendCsv(res, filename, header, rows) {
+    const lines = [header.join(',')];
+    for (const row of rows) {
+        lines.push(row.map(escapeCsvField).join(','));
+    }
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send('\uFEFF' + lines.join('\r\n'));
 }
 
 /**
@@ -1213,22 +1337,7 @@ const exportStudentReadinessCsv = async (req, res) => {
             return res.status(403).json({ message: 'Access denied. Not a valid department head.' });
         }
 
-        const [rows] = await db.execute(
-            `SELECT
-                s.roll_number,
-                u.email,
-                s.current_cgpa,
-                s.active_backlogs,
-                s.is_placed,
-                (SELECT COUNT(*) FROM student_skills ss WHERE ss.student_id = s.user_id) AS skills_count,
-                (CASE WHEN rp.student_id IS NULL THEN 0 ELSE 1 END) AS has_resume
-             FROM students s
-             JOIN users u ON u.id = s.user_id
-             LEFT JOIN resume_parsed_data rp ON rp.student_id = s.user_id
-             WHERE s.department_id = ?
-             ORDER BY s.roll_number ASC`,
-            [ctx.deptId]
-        );
+        const rows = await getDepartmentReadinessRows(ctx.deptId);
 
         const header = [
             'roll_number',
@@ -1244,7 +1353,6 @@ const exportStudentReadinessCsv = async (req, res) => {
 
         const lines = [header.join(',')];
         for (const r of rows) {
-            const { readiness, band } = readinessFromRow(r);
             lines.push(
                 [
                     escapeCsvField(r.roll_number),
@@ -1252,10 +1360,10 @@ const exportStudentReadinessCsv = async (req, res) => {
                     escapeCsvField(r.current_cgpa ?? ''),
                     escapeCsvField(r.active_backlogs ?? ''),
                     escapeCsvField(r.skills_count ?? ''),
-                    escapeCsvField(Number(r.has_resume || 0) === 1 ? 'yes' : 'no'),
+                    escapeCsvField((r.resume_url || Number(r.has_resume || 0) === 1) ? 'yes' : 'no'),
                     escapeCsvField(r.is_placed ? 'yes' : 'no'),
-                    escapeCsvField(readiness),
-                    escapeCsvField(band),
+                    escapeCsvField(r.readiness),
+                    escapeCsvField(r.readiness_band),
                 ].join(',')
             );
         }
@@ -1274,6 +1382,216 @@ const exportStudentReadinessCsv = async (req, res) => {
     }
 };
 
+const exportUnplacedStudentsCsv = async (req, res) => {
+    try {
+        const ctx = await resolveHeadDepartment(req.user.id);
+        if (!ctx) return res.status(403).json({ message: 'Access denied. Not a valid department head.' });
+
+        const rows = (await getDepartmentReadinessRows(ctx.deptId)).filter((r) => !r.is_placed);
+        const safeSlug = String(ctx.departmentCode || ctx.deptId).replace(/[^\w.-]+/g, '_');
+        sendCsv(
+            res,
+            `unplaced-students-${safeSlug}-${new Date().toISOString().slice(0, 10)}.csv`,
+            ['roll_number', 'email', 'cgpa', 'active_backlogs', 'readiness_score', 'readiness_band', 'issues'],
+            rows.map((r) => [
+                r.roll_number,
+                r.email,
+                r.current_cgpa ?? '',
+                r.active_backlogs ?? '',
+                r.readiness,
+                r.readiness_band,
+                (r.issues || []).join('; '),
+            ])
+        );
+    } catch (error) {
+        console.error('exportUnplacedStudentsCsv error:', error);
+        res.status(500).json({ message: 'Failed to export unplaced students.' });
+    }
+};
+
+const exportProfileGapsCsv = async (req, res) => {
+    try {
+        const ctx = await resolveHeadDepartment(req.user.id);
+        if (!ctx) return res.status(403).json({ message: 'Access denied. Not a valid department head.' });
+
+        const rows = (await getDepartmentReadinessRows(ctx.deptId)).filter(
+            (r) => !r.is_placed && (r.issues.includes('Resume missing') || r.issues.includes('Profile links missing') || r.issues.includes('Skills need update'))
+        );
+        const safeSlug = String(ctx.departmentCode || ctx.deptId).replace(/[^\w.-]+/g, '_');
+        sendCsv(
+            res,
+            `profile-gaps-${safeSlug}-${new Date().toISOString().slice(0, 10)}.csv`,
+            ['roll_number', 'email', 'has_resume', 'linkedin_url', 'github_url', 'skills_count', 'profile_completeness', 'issues'],
+            rows.map((r) => [
+                r.roll_number,
+                r.email,
+                (r.resume_url || Number(r.has_resume || 0) === 1) ? 'yes' : 'no',
+                r.linkedin_url || '',
+                r.github_url || '',
+                r.skills_count ?? 0,
+                r.profile_completeness,
+                (r.issues || []).join('; '),
+            ])
+        );
+    } catch (error) {
+        console.error('exportProfileGapsCsv error:', error);
+        res.status(500).json({ message: 'Failed to export profile gaps.' });
+    }
+};
+
+const exportPlacedPackagesCsv = async (req, res) => {
+    try {
+        const ctx = await resolveHeadDepartment(req.user.id);
+        if (!ctx) return res.status(403).json({ message: 'Access denied. Not a valid department head.' });
+
+        const [rows] = await db.execute(
+            `SELECT
+                s.roll_number,
+                u.email,
+                rec.company_name,
+                rd.drive_name,
+                jp.job_title,
+                jp.package_value,
+                a.applied_at
+             FROM students s
+             JOIN users u ON u.id = s.user_id
+             JOIN applications a ON a.student_id = s.user_id AND a.status = 'SELECTED'
+             JOIN job_postings jp ON jp.id = a.job_id
+             LEFT JOIN recruitment_drives rd ON rd.id = jp.drive_id
+             LEFT JOIN recruiters rec ON rec.id = rd.recruiter_id
+             WHERE s.department_id = ?
+             ORDER BY jp.package_value DESC, s.roll_number ASC`,
+            [ctx.deptId]
+        );
+        const safeSlug = String(ctx.departmentCode || ctx.deptId).replace(/[^\w.-]+/g, '_');
+        sendCsv(
+            res,
+            `placed-packages-${safeSlug}-${new Date().toISOString().slice(0, 10)}.csv`,
+            ['roll_number', 'email', 'company', 'drive', 'role', 'package_lpa', 'applied_at'],
+            (rows || []).map((r) => [
+                r.roll_number,
+                r.email,
+                r.company_name || '',
+                r.drive_name || '',
+                r.job_title || '',
+                Number(r.package_value || 0).toFixed(2),
+                r.applied_at ? new Date(r.applied_at).toISOString().slice(0, 10) : '',
+            ])
+        );
+    } catch (error) {
+        console.error('exportPlacedPackagesCsv error:', error);
+        res.status(500).json({ message: 'Failed to export placed package report.' });
+    }
+};
+
+const exportEligibilityCsv = async (req, res) => {
+    try {
+        const ctx = await resolveHeadDepartment(req.user.id);
+        if (!ctx) return res.status(403).json({ message: 'Access denied. Not a valid department head.' });
+
+        const minCgpa = numberValue(req.query.minCgpa, 0);
+        const maxBacklogs = numberValue(req.query.maxBacklogs, 0);
+        const minReadiness = numberValue(req.query.minReadiness, 70);
+        const rows = (await getDepartmentReadinessRows(ctx.deptId)).filter((r) => {
+            return !r.is_placed &&
+                numberValue(r.current_cgpa) >= minCgpa &&
+                numberValue(r.active_backlogs) <= maxBacklogs &&
+                numberValue(r.readiness) >= minReadiness;
+        });
+        const safeSlug = String(ctx.departmentCode || ctx.deptId).replace(/[^\w.-]+/g, '_');
+        sendCsv(
+            res,
+            `eligible-students-${safeSlug}-${new Date().toISOString().slice(0, 10)}.csv`,
+            ['roll_number', 'email', 'cgpa', 'active_backlogs', 'readiness_score', 'readiness_band', 'resume_url', 'linkedin_url', 'github_url'],
+            rows.map((r) => [
+                r.roll_number,
+                r.email,
+                r.current_cgpa ?? '',
+                r.active_backlogs ?? '',
+                r.readiness,
+                r.readiness_band,
+                r.resume_url || '',
+                r.linkedin_url || '',
+                r.github_url || '',
+            ])
+        );
+    } catch (error) {
+        console.error('exportEligibilityCsv error:', error);
+        res.status(500).json({ message: 'Failed to export eligibility list.' });
+    }
+};
+
+/**
+ * Create a department event
+ * POST /api/dept/events
+ */
+const createDeptEvent = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { title, date, type, meetingLink, mode } = req.body;
+
+        if (!title || !date || !type) {
+            return res.status(400).json({ message: "Title, date, and type are required." });
+        }
+
+        const [headResult] = await db.execute(
+            'SELECT department_id FROM tpo_heads WHERE user_id = ?',
+            [userId]
+        );
+
+        if (headResult.length === 0) {
+            return res.status(403).json({ message: "Access denied. Not a valid department head." });
+        }
+
+        const deptId = headResult[0].department_id;
+
+        await db.execute(
+            `INSERT INTO dept_events (department_id, title, date, type, meeting_link, mode, created_by) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [deptId, title, date, type, meetingLink || null, mode || 'OFFLINE', userId]
+        );
+
+        res.status(201).json({ message: "Event created successfully." });
+    } catch (error) {
+        console.error("Error in createDeptEvent:", error);
+        res.status(500).json({ message: "Internal server error during event creation" });
+    }
+};
+
+/**
+ * Get department events for the Dept Head
+ * GET /api/dept/events
+ */
+const getDeptEvents = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const [headResult] = await db.execute(
+            'SELECT department_id FROM tpo_heads WHERE user_id = ?',
+            [userId]
+        );
+
+        if (headResult.length === 0) {
+            return res.status(403).json({ message: "Access denied. Not a valid department head." });
+        }
+
+        const deptId = headResult[0].department_id;
+
+        const [events] = await db.execute(
+            `SELECT id, title, date, type, meeting_link 
+             FROM dept_events 
+             WHERE department_id = ? 
+             ORDER BY date ASC`,
+            [deptId]
+        );
+
+        res.status(200).json(events);
+    } catch (error) {
+        console.error("Error in getDeptEvents:", error);
+        res.status(500).json({ message: "Internal server error while fetching events" });
+    }
+};
+
 module.exports = {
     uploadStudents,
     getDepartmentStudents,
@@ -1282,7 +1600,15 @@ module.exports = {
     createStudentsManually,
     getRecentlyUpdatedProfiles,
     reviewStudentProfile,
+    getDeptProfile,
+    getReadinessDesk,
     getDashboardStats,
     exportDeptPlacementReportPdf,
     exportStudentReadinessCsv,
+    exportUnplacedStudentsCsv,
+    exportProfileGapsCsv,
+    exportPlacedPackagesCsv,
+    exportEligibilityCsv,
+    createDeptEvent,
+    getDeptEvents
 };

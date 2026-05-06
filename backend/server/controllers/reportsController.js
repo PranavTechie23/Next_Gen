@@ -281,3 +281,51 @@ exports.getCustomReport = async (req, res) => {
   }
 };
 
+// GET /api/admin/reports/shortlisted
+exports.getShortlistedStudentsReport = async (req, res) => {
+  try {
+    const { minCgpa, maxBacklogs, skills } = req.query;
+    
+    let query = `
+      SELECT 
+        s.user_id AS student_id,
+        s.roll_number,
+        u.email,
+        sp.full_name,
+        d.name AS branch,
+        s.current_cgpa,
+        s.active_backlogs
+      FROM students s
+      JOIN users u ON u.id = s.user_id
+      JOIN student_profiles sp ON sp.student_id = s.user_id
+      LEFT JOIN departments d ON d.id = s.department_id
+      WHERE s.current_cgpa >= ?
+      AND s.active_backlogs <= ?
+    `;
+    
+    const queryParams = [
+      parseFloat(minCgpa || 0),
+      parseInt(maxBacklogs || 99)
+    ];
+
+    if (skills) {
+      const skillList = Array.isArray(skills) ? skills : skills.split(',');
+      if (skillList.length > 0) {
+        query += ` AND EXISTS (
+          SELECT 1 FROM student_skills ss 
+          JOIN skills sk ON ss.skill_id = sk.id
+          WHERE ss.student_id = s.user_id
+          AND sk.name IN (${skillList.map(() => '?').join(',')})
+        )`;
+        queryParams.push(...skillList);
+      }
+    }
+
+    const [rows] = await db.query(query, queryParams);
+
+    return sendReport(req, res, 'shortlisted_students', { rows });
+  } catch (e) {
+    console.error('getShortlistedStudentsReport error', e);
+    return res.status(500).json({ message: 'Failed to generate shortlisted students report' });
+  }
+};

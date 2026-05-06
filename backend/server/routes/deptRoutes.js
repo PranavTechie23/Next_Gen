@@ -44,6 +44,20 @@ router.get('/dashboard/stats',
     deptController.getDashboardStats
 );
 
+// GET /api/dept/me - Current department head profile
+router.get('/me',
+    protect,
+    authorize('TPO_HEAD'),
+    deptController.getDeptProfile
+);
+
+// GET /api/dept/readiness - Department readiness desk data
+router.get('/readiness',
+    protect,
+    authorize('TPO_HEAD'),
+    deptController.getReadinessDesk
+);
+
 // GET /api/dept/reports/placement-pdf — Department placement summary + selected offers (PDF)
 router.get('/reports/placement-pdf',
     protect,
@@ -56,6 +70,30 @@ router.get('/reports/student-readiness.csv',
     protect,
     authorize('TPO_HEAD'),
     deptController.exportStudentReadinessCsv
+);
+
+router.get('/reports/unplaced-students.csv',
+    protect,
+    authorize('TPO_HEAD'),
+    deptController.exportUnplacedStudentsCsv
+);
+
+router.get('/reports/profile-gaps.csv',
+    protect,
+    authorize('TPO_HEAD'),
+    deptController.exportProfileGapsCsv
+);
+
+router.get('/reports/placed-packages.csv',
+    protect,
+    authorize('TPO_HEAD'),
+    deptController.exportPlacedPackagesCsv
+);
+
+router.get('/reports/eligibility.csv',
+    protect,
+    authorize('TPO_HEAD'),
+    deptController.exportEligibilityCsv
 );
 
 // GET /api/dept/students/:id - View full details of a specific student
@@ -105,6 +143,19 @@ router.get('/webinars/recommendations',
     protect,
     authorize('TPO_HEAD'),
     webinarRecommendationController.getDeptWebinarRecommendations
+);
+
+// Department Events
+router.post('/events',
+    protect,
+    authorize('TPO_HEAD'),
+    deptController.createDeptEvent
+);
+
+router.get('/events',
+    protect,
+    authorize('TPO_HEAD'),
+    deptController.getDeptEvents
 );
 
 module.exports = router;
