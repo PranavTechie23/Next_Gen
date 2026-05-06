@@ -759,14 +759,17 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
 
                         <div>
                             <label className={`block text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Target Role</label>
-                            <select value={localPrefs.role} onChange={e => setLocalPrefs({ ...localPrefs, role: e.target.value })}
-                                className={`w-full px-4 py-3 rounded-xl text-sm font-bold outline-none border transition-all ${isDark ? "bg-white/5 border-white/10 text-white focus:border-blue-500" : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500"}`}>
-                                <option value="" disabled>Select a role...</option>
-                                <option value="SDE">Software Development Engineer (SDE)</option>
-                                <option value="Data">Data Scientist / Analyst</option>
-                                <option value="Web">Full Stack Web Developer</option>
-                                <option value="QA">QA / Test Engineer</option>
-                            </select>
+                            <Select value={localPrefs.role} onValueChange={(value) => setLocalPrefs({ ...localPrefs, role: value })}>
+                                <SelectTrigger className={`w-full px-4 py-6 rounded-xl text-sm font-bold outline-none border transition-all ${isDark ? "bg-white/5 border-white/10 text-white focus:border-blue-500" : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500"}`}>
+                                    <SelectValue placeholder="Select a role..." />
+                                </SelectTrigger>
+                                <SelectContent className={isDark ? "bg-slate-900 text-white border-white/10" : "bg-white text-slate-900"}>
+                                    <SelectItem value="SDE">Software Development Engineer (SDE)</SelectItem>
+                                    <SelectItem value="Data">Data Scientist / Analyst</SelectItem>
+                                    <SelectItem value="Web">Full Stack Web Developer</SelectItem>
+                                    <SelectItem value="QA">QA / Test Engineer</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         <div>

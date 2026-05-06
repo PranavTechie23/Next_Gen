@@ -114,6 +114,8 @@ export default function StudentDashboard() {
     mock_interview_score: "",
     coding_test_score: "",
   });
+  const [deptEvents, setDeptEvents] = useState<any[]>([]);
+  const [loadingDeptEvents, setLoadingDeptEvents] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -221,6 +223,23 @@ export default function StudentDashboard() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingProfile, backendProfile]);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoadingDeptEvents(true);
+        const data = await studentApi.getDeptEvents();
+        setDeptEvents(data || []);
+      } catch (err) {
+        console.error("Failed to fetch dept events", err);
+      } finally {
+        setLoadingDeptEvents(false);
+      }
+    };
+    if (activeTab === "overview" && !loadingProfile && backendProfile) {
+      fetchEvents();
+    }
+  }, [activeTab, loadingProfile, backendProfile]);
 
   // Load roadmap on first visit to Mentorship tab (and after resume upload/profile updates)
   useEffect(() => {
@@ -1849,7 +1868,20 @@ export default function StudentDashboard() {
       >
         <div className={`${activeTab === "company-kit" ? "w-full px-4 sm:px-6 lg:px-8" : "max-w-[1400px] mx-auto"} ${activeTab === "company-kit" ? "flex flex-col space-y-6 sm:space-y-8 lg:space-y-10 min-h-0" : "space-y-6 sm:space-y-8 lg:space-y-10"}`}>
 
-          <header className={`flex items-center justify-between gap-4 sm:gap-6 mb-6 sm:mb-8`}>
+          {loadingProfile ? (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 animate-in fade-in duration-500">
+              <div className={`w-24 h-24 rounded-[2rem] flex items-center justify-center relative ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'} border`}>
+                <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-tr from-blue-500/20 to-purple-500/20 animate-pulse" />
+                <Loader2 className={`w-12 h-12 animate-spin ${isDark ? 'text-blue-400' : 'text-blue-600'} relative z-10`} />
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className={`text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Loading Dashboard</h3>
+                <p className={`text-sm font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Synchronizing profile data...</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <header className={`flex items-center justify-between gap-4 sm:gap-6 mb-6 sm:mb-8`}>
             {/* Desktop header space reserved for toggle when floating nearby */}
             <div className="hidden lg:block w-16" />
 
@@ -1976,33 +2008,34 @@ export default function StudentDashboard() {
                     </div>
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" sideOffset={12} className={`w-64 p-2 rounded-2xl animate-in fade-in zoom-in-95 duration-200 ${isDark ? "bg-[#0c0c14] border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] text-white" : "bg-white border-slate-100 shadow-[0_10px_40px_rgba(0,0,0,0.1)] text-slate-900"}`}>
-                  <DropdownMenuLabel className="mb-2">
-                    <div className="flex items-center gap-3 px-2 py-2">
-                      <Avatar className="w-11 h-11 rounded-xl">
-                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-sm">{studentProfile.name.charAt(0)}</AvatarFallback>
+                <DropdownMenuContent align="end" sideOffset={12} className={`w-72 p-3 rounded-3xl animate-in fade-in zoom-in-95 duration-200 border ${isDark ? "bg-[#0c0c14]/90 backdrop-blur-2xl border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] text-white" : "bg-white/90 backdrop-blur-2xl border-slate-200/60 shadow-[0_20px_60px_rgba(0,0,0,0.1)] text-slate-900"}`}>
+                  <DropdownMenuLabel className="p-0 mb-2">
+                    <div className={`flex items-center gap-4 p-3 rounded-2xl transition-colors ${isDark ? "bg-white/5 hover:bg-white/10" : "bg-slate-50 hover:bg-slate-100"}`}>
+                      <Avatar className="w-12 h-12 rounded-xl shadow-inner border border-white/10">
+                        <AvatarImage src={studentProfile.avatar} />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-black text-lg shadow-inner">{studentProfile.name.charAt(0)}</AvatarFallback>
                       </Avatar>
-                      <div className="flex flex-col min-w-0 text-left">
-                        <span className={`font-black text-[11px] uppercase tracking-tight`}>{studentProfile.name}</span>
-                        <span className={`text-[9px] opacity-60 truncate max-w-[140px] font-bold uppercase tracking-widest`}>{studentProfile.email}</span>
+                      <div className="flex flex-col min-w-0 text-left justify-center">
+                        <span className={`font-extrabold text-sm tracking-tight truncate ${isDark ? "text-white" : "text-slate-900"}`}>{studentProfile.name}</span>
+                        <span className={`text-xs truncate font-medium mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{studentProfile.email}</span>
                       </div>
                     </div>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator className={`${isDark ? "bg-white/5" : "bg-slate-100"} -mx-2 my-2`} />
-                  <DropdownMenuGroup className="p-1 space-y-1">
-                    <DropdownMenuItem onClick={() => navigate("/student/setting")} className={`rounded-xl flex items-center gap-3 p-3 transition-all cursor-pointer ${isDark ? "hover:bg-white/5" : "hover:bg-slate-50"}`}>
-                      <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
-                        <User className="w-4 h-4 text-indigo-500" />
+                  <DropdownMenuSeparator className={`${isDark ? "bg-white/10" : "bg-slate-100"} -mx-3 my-2`} />
+                  <DropdownMenuGroup className="space-y-1">
+                    <DropdownMenuItem onClick={() => navigate("/student/setting")} className={`rounded-2xl flex items-center gap-3 p-3 transition-all cursor-pointer ${isDark ? "hover:bg-white/10 focus:bg-white/10" : "hover:bg-slate-100 focus:bg-slate-100"}`}>
+                      <div className={`w-9 h-9 rounded-xl ${isDark ? "bg-blue-500/10 text-blue-400" : "bg-blue-50 text-blue-600"} flex items-center justify-center shadow-inner`}>
+                        <Settings className="w-4.5 h-4.5" />
                       </div>
-                      <span className="font-bold text-[10px] uppercase tracking-widest text-inherit">Profile Setting</span>
+                      <span className="font-semibold text-sm">Account Settings</span>
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
-                  <DropdownMenuSeparator className={`${isDark ? "bg-white/5" : "bg-slate-100"} -mx-2 my-2`} />
-                  <DropdownMenuItem onClick={() => performClientLogout(navigate)} className={`rounded-xl flex items-center gap-3 p-3 transition-all cursor-pointer group/signout ${isDark ? "hover:bg-red-500/10 text-red-400" : "hover:bg-red-50 text-red-500"}`}>
-                    <div className={`w-8 h-8 rounded-lg ${isDark ? "bg-red-500/10" : "bg-red-500/5"} flex items-center justify-center transition-colors group-hover/signout:bg-red-500/20`}>
-                      <LogOut className="w-4 h-4" />
+                  <DropdownMenuSeparator className={`${isDark ? "bg-white/10" : "bg-slate-100"} -mx-3 my-2`} />
+                  <DropdownMenuItem onClick={() => performClientLogout(navigate)} className={`rounded-2xl flex items-center gap-3 p-3 transition-all cursor-pointer group/signout ${isDark ? "hover:bg-red-500/10 focus:bg-red-500/10 text-red-400" : "hover:bg-red-50 focus:bg-red-50 text-red-600"}`}>
+                    <div className={`w-9 h-9 rounded-xl ${isDark ? "bg-red-500/10 text-red-400" : "bg-red-100 text-red-600"} flex items-center justify-center transition-colors group-hover/signout:bg-red-500/20 group-hover/signout:text-red-500 shadow-inner`}>
+                      <LogOut className="w-4.5 h-4.5" />
                     </div>
-                    <span className="font-black text-[10px] uppercase tracking-[0.15em]">Log Out</span>
+                    <span className="font-bold text-sm">Sign Out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -2267,7 +2300,60 @@ export default function StudentDashboard() {
                     </div>
                   </div>
 
-
+                  {/* Upcoming Dept Events */}
+                  <div>
+                    <h3 className={`text-xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tighter mb-4 px-2`}>Dept Events</h3>
+                    <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[2.5rem] overflow-hidden`}>
+                      <CardContent className="p-6">
+                        <div className="space-y-4">
+                          {loadingDeptEvents ? (
+                            <div className="flex flex-col items-center justify-center py-10 space-y-3">
+                              <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Checking for events...</p>
+                            </div>
+                          ) : deptEvents.length > 0 ? (
+                            deptEvents.map((event, idx) => (
+                              <div key={idx} className={`flex items-center gap-4 p-4 rounded-2xl border transition-all hover:scale-[1.02] ${isDark ? "bg-white/5 border-white/5 hover:bg-white/10" : "bg-slate-50 border-slate-100 hover:bg-slate-100 shadow-sm"}`}>
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDark ? "bg-blue-500/10" : "bg-blue-50"}`}>
+                                  <Calendar className="w-6 h-6 text-blue-500" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className={`text-sm font-black truncate ${isDark ? "text-white" : "text-slate-900"}`}>{event.title}</h4>
+                                  <p className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-400"} mt-0.5`}>
+                                    {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                  </p>
+                                </div>
+                                <div className="flex flex-col items-end gap-2">
+                                  <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${isDark ? "bg-blue-500/10 text-blue-400" : "bg-blue-50 text-blue-600"}`}>
+                                    {event.type || 'Event'}
+                                  </div>
+                                  {event.meetingLink && (
+                                    <Button 
+                                      size="sm" 
+                                      className="h-7 px-3 text-[10px] font-bold rounded-lg bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/20"
+                                      onClick={() => window.open(event.meetingLink, '_blank')}
+                                    >
+                                      Join Now
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="flex flex-col items-center justify-center py-10 text-center space-y-3">
+                              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${isDark ? "bg-white/5" : "bg-slate-50"}`}>
+                                <Calendar className="w-8 h-8 text-muted-foreground opacity-20" />
+                              </div>
+                              <div className="space-y-1">
+                                <p className={`text-sm font-bold ${isDark ? "text-slate-400" : "text-slate-500"}`}>No upcoming events</p>
+                                <p className={`text-[10px] font-medium ${isDark ? "text-slate-600" : "text-slate-400"}`}>Your department head hasn't scheduled anything yet.</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
               </div>
 
@@ -3226,6 +3312,8 @@ export default function StudentDashboard() {
                 </div>
               </div>
             </div>
+          )}
+            </>
           )}
         </div>
       </main>

@@ -42,6 +42,7 @@ type Webinar = {
   mom_url?: string | null;
   key_takeaways?: string | null;
   is_registered?: boolean;
+  is_dept_event?: boolean;
 };
 
 /* ─── Helpers ───────────────────────────────────────────────────── */
@@ -190,17 +191,19 @@ function FeaturedCard({
       {/* Top row */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <SpeakerAvatar url={w.speaker_photo_url} name={w.speaker_name} size={52} />
+          <SpeakerAvatar url={w.is_dept_event ? null : w.speaker_photo_url} name={w.is_dept_event ? "DF" : w.speaker_name} size={52} />
           <div>
             <p style={{ fontSize: 14, color: "var(--w-text-main)", fontWeight: 600, marginBottom: 2, letterSpacing: 0.3 }}>
-              {w.speaker_name}
+              {w.is_dept_event ? "Department Faculty" : w.speaker_name}
             </p>
-            {w.speaker_role && (
+            {w.is_dept_event ? (
+               <p style={{ fontSize: 13, color: "var(--accent)", fontWeight: 600, marginBottom: 0 }}>Department Session</p>
+            ) : w.speaker_role && (
               <p style={{ fontSize: 13, color: "var(--w-text-subtle)", marginBottom: 0 }}>{w.speaker_role}</p>
             )}
           </div>
         </div>
-        <ModeBadge mode={w.session_mode} />
+        <ModeBadge mode={w.is_dept_event ? "OFFLINE" : w.session_mode} />
       </div>
 
       {/* Title */}
@@ -231,7 +234,7 @@ function FeaturedCard({
             <GlassButton icon={<LinkIcon className="w-3.5 h-3.5" />} label="Join Session" accent />
           </a>
         )}
-        {w.registration_required && (
+        {w.registration_required && !w.is_dept_event && (
           <button
             disabled={Boolean(w.is_registered) || submitting}
             onClick={() => onRegister(w.id)}
@@ -287,13 +290,19 @@ function CompactCard({
       />
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <SpeakerAvatar url={w.speaker_photo_url} name={w.speaker_name} size={38} />
+          <SpeakerAvatar url={w.is_dept_event ? null : w.speaker_photo_url} name={w.is_dept_event ? "DF" : w.speaker_name} size={38} />
           <div>
-            <p style={{ fontSize: 13, color: "var(--w-text-main)", fontWeight: 600, marginBottom: 1 }}>{w.speaker_name}</p>
-            {w.speaker_role && <p style={{ fontSize: 12, color: "var(--w-text-subtle)" }}>{w.speaker_role}</p>}
+            <p style={{ fontSize: 13, color: "var(--w-text-main)", fontWeight: 600, marginBottom: 1 }}>
+              {w.is_dept_event ? "Department" : w.speaker_name}
+            </p>
+            {w.is_dept_event ? (
+               <p style={{ fontSize: 11, color: "var(--accent)", fontWeight: 600, marginBottom: 0 }}>Internal Session</p>
+            ) : w.speaker_role && (
+               <p style={{ fontSize: 12, color: "var(--w-text-subtle)" }}>{w.speaker_role}</p>
+            )}
           </div>
         </div>
-        <ModeBadge mode={w.session_mode} small />
+        <ModeBadge mode={w.is_dept_event ? "OFFLINE" : w.session_mode} small />
       </div>
 
       <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--w-text-main)", marginBottom: 8, lineHeight: 1.3, fontFamily: "'Instrument Serif', serif" }}>
@@ -315,7 +324,7 @@ function CompactCard({
             <GlassButton icon={<LinkIcon className="w-3 h-3" />} label="Join" small />
           </a>
         )}
-        {w.registration_required && (
+        {w.registration_required && !w.is_dept_event && (
           <button
             disabled={Boolean(w.is_registered) || submitting}
             onClick={() => onRegister(w.id)}
@@ -540,8 +549,22 @@ export default function StudentWebinar(props: { isDashboard?: boolean }) {
   const loadWebinars = async () => {
     try {
       setLoading(true);
-      const response = await studentApi.getWebinars({ scope: "all", search: query || undefined });
-      setAllWebinars(Array.isArray(response?.webinars) ? response.webinars : []);
+      const [webResponse, deptResponse] = await Promise.all([
+        studentApi.getWebinars({ scope: "all", search: query || undefined }),
+        studentApi.getDeptEvents()
+      ]);
+      
+      const webs = Array.isArray(webResponse?.webinars) ? webResponse.webinars : [];
+      const depts = Array.isArray(deptResponse) ? deptResponse.map((d: any) => ({
+        ...d,
+        starts_at: d.date,
+        speaker_name: "Department Faculty",
+        session_mode: d.mode || "OFFLINE",
+        summary: `Departmental ${d.type} session focused on student readiness.`,
+        is_dept_event: true
+      })) : [];
+
+      setAllWebinars([...webs, ...depts].sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime()));
     } catch (error) {
       console.error("Failed to load webinars", error);
       toast.error("Unable to load webinars right now.");

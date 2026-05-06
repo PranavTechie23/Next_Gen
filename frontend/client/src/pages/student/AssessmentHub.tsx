@@ -3,6 +3,14 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
     ExternalLink, Search, Star, TrendingUp, BookOpen, Code, Brain,
     Zap, Users, Target, Award, Globe, Flame, ChevronRight, Filter,
     Rocket, GraduationCap, BarChart, Clock, CheckCircle, Sparkles,
@@ -1088,6 +1096,7 @@ const AssessmentHub: React.FC<AssessmentHubProps> = ({ isDashboard = false, onBa
     const [typeFilter, setTypeFilter] = useState<Platform["type"] | "Any">("Any");
     const [freeOnly, setFreeOnly] = useState(false);
     const [sortBy, setSortBy] = useState<"rating" | "name">("rating");
+    const [showFilters, setShowFilters] = useState(false);
 
     const filteredPlatforms = PLATFORMS.filter((p) => {
         const matchesCategory = activeCategory === "all" || p.category === activeCategory;
@@ -1167,83 +1176,106 @@ const AssessmentHub: React.FC<AssessmentHubProps> = ({ isDashboard = false, onBa
                         />
                     </div>
 
-                    {/* Result count */}
-                    <div className={`flex items-center gap-2 px-5 rounded-xl text-sm font-bold ${isDark ? "bg-white/5 text-slate-300" : "bg-slate-50 text-slate-600"}`}>
-                        <Filter className="w-4 h-4" />
-                        <span>{filteredPlatforms.length} platforms</span>
-                    </div>
+                    <button 
+                        onClick={() => setShowFilters(!showFilters)}
+                        className={`flex items-center gap-2 px-5 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95 ${
+                            showFilters 
+                            ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" 
+                            : isDark ? "bg-white/5 text-slate-300 border border-white/10" : "bg-slate-50 text-slate-600 border border-slate-200"
+                        }`}
+                    >
+                        <Filter className={`w-4 h-4 ${showFilters ? "animate-pulse" : ""}`} />
+                        <span>Filters ({filteredPlatforms.length})</span>
+                        <ChevronRight className={`w-4 h-4 transition-transform duration-300 ${showFilters ? "rotate-90" : "rotate-0"}`} />
+                    </button>
                 </div>
 
                 {/* Advanced Filters */}
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <label className="flex flex-col gap-1.5">
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Difficulty</span>
-                        <select
-                            value={difficultyFilter}
-                            onChange={(e) => setDifficultyFilter(e.target.value as any)}
-                            className={`h-11 px-3 rounded-xl text-sm font-semibold border outline-none ${isDark
-                                ? "bg-white/5 border-white/10 text-white"
-                                : "bg-slate-50 border-slate-200 text-slate-900"
-                                }`}
+                <AnimatePresence>
+                    {showFilters && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                            animate={{ height: "auto", opacity: 1, marginTop: 16 }}
+                            exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            className="overflow-hidden"
                         >
-                            <option value="Any">Any</option>
-                            <option value="Beginner">Beginner</option>
-                            <option value="Intermediate">Intermediate</option>
-                            <option value="Advanced">Advanced</option>
-                            <option value="All Levels">All Levels</option>
-                        </select>
-                    </label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <label className="flex flex-col gap-1.5">
+                                    <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Difficulty</span>
+                                    <Select value={difficultyFilter} onValueChange={(value) => setDifficultyFilter(value as any)}>
+                                        <SelectTrigger className={`h-11 rounded-xl text-sm font-semibold border outline-none transition-all ${isDark
+                                            ? "bg-white/5 border-white/10 text-white focus:ring-blue-500/40"
+                                            : "bg-slate-50 border-slate-200 text-slate-900 focus:ring-blue-500/20"
+                                            }`}>
+                                            <SelectValue placeholder="Select Difficulty" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Any">Any</SelectItem>
+                                            <SelectItem value="Beginner">Beginner</SelectItem>
+                                            <SelectItem value="Intermediate">Intermediate</SelectItem>
+                                            <SelectItem value="Advanced">Advanced</SelectItem>
+                                            <SelectItem value="All Levels">All Levels</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </label>
 
-                    <label className="flex flex-col gap-1.5">
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Type</span>
-                        <select
-                            value={typeFilter}
-                            onChange={(e) => setTypeFilter(e.target.value as any)}
-                            className={`h-11 px-3 rounded-xl text-sm font-semibold border outline-none ${isDark
-                                ? "bg-white/5 border-white/10 text-white"
-                                : "bg-slate-50 border-slate-200 text-slate-900"
-                                }`}
-                        >
-                            <option value="Any">Any</option>
-                            <option value="Platform">Platform</option>
-                            <option value="Course">Course</option>
-                            <option value="Docs">Docs</option>
-                            <option value="Sheet">Sheet</option>
-                            <option value="Roadmap">Roadmap</option>
-                            <option value="Playlist">Playlist</option>
-                        </select>
-                    </label>
+                                <label className="flex flex-col gap-1.5">
+                                    <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Type</span>
+                                    <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as any)}>
+                                        <SelectTrigger className={`h-11 rounded-xl text-sm font-semibold border outline-none transition-all ${isDark
+                                            ? "bg-white/5 border-white/10 text-white focus:ring-blue-500/40"
+                                            : "bg-slate-50 border-slate-200 text-slate-900 focus:ring-blue-500/20"
+                                            }`}>
+                                            <SelectValue placeholder="Select Type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Any">Any</SelectItem>
+                                            <SelectItem value="Platform">Platform</SelectItem>
+                                            <SelectItem value="Course">Course</SelectItem>
+                                            <SelectItem value="Docs">Docs</SelectItem>
+                                            <SelectItem value="Sheet">Sheet</SelectItem>
+                                            <SelectItem value="Roadmap">Roadmap</SelectItem>
+                                            <SelectItem value="Playlist">Playlist</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </label>
 
-                    <label
-                        className={`flex items-center gap-3 h-11 px-4 rounded-xl border cursor-pointer select-none ${isDark
-                            ? "bg-white/5 border-white/10 text-slate-200"
-                            : "bg-slate-50 border-slate-200 text-slate-800"
-                            } mt-5 sm:mt-0 lg:mt-6`}
-                    >
-                        <input
-                            type="checkbox"
-                            checked={freeOnly}
-                            onChange={(e) => setFreeOnly(e.target.checked)}
-                            className="h-4 w-4"
-                        />
-                        <span className="text-sm font-black">Free only</span>
-                    </label>
+                                <div
+                                    className={`flex items-center gap-3 h-11 px-4 rounded-xl border cursor-pointer select-none transition-all ${isDark
+                                        ? "bg-white/5 border-white/10 text-slate-200 hover:bg-white/10"
+                                        : "bg-slate-50 border-slate-200 text-slate-800 hover:bg-slate-100"
+                                        } lg:mt-6`}
+                                    onClick={() => setFreeOnly(!freeOnly)}
+                                >
+                                    <Checkbox
+                                        id="free-only"
+                                        checked={freeOnly}
+                                        onCheckedChange={(checked) => setFreeOnly(checked as boolean)}
+                                        className="transition-all"
+                                    />
+                                    <label htmlFor="free-only" className="text-sm font-black cursor-pointer flex-1">Free only</label>
+                                </div>
 
-                    <label className="flex flex-col gap-1.5">
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Sort</span>
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value as any)}
-                            className={`h-11 px-3 rounded-xl text-sm font-semibold border outline-none ${isDark
-                                ? "bg-white/5 border-white/10 text-white"
-                                : "bg-slate-50 border-slate-200 text-slate-900"
-                                }`}
-                        >
-                            <option value="rating">Top rated</option>
-                            <option value="name">Name (A–Z)</option>
-                        </select>
-                    </label>
-                </div>
+                                <label className="flex flex-col gap-1.5">
+                                    <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Sort</span>
+                                    <Select value={sortBy} onValueChange={(value) => setSortBy(value as any)}>
+                                        <SelectTrigger className={`h-11 rounded-xl text-sm font-semibold border outline-none transition-all ${isDark
+                                            ? "bg-white/5 border-white/10 text-white focus:ring-blue-500/40"
+                                            : "bg-slate-50 border-slate-200 text-slate-900 focus:ring-blue-500/20"
+                                            }`}>
+                                            <SelectValue placeholder="Sort By" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="rating">Top rated</SelectItem>
+                                            <SelectItem value="name">Name (A–Z)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </label>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* Category Pills */}

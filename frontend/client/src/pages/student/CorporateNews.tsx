@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { buildApiUrl } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, ExternalLink, AlertCircle, RefreshCcw, Newspaper, Globe } from "lucide-react";
@@ -27,7 +28,7 @@ export default function CorporateNews({ isDashboard }: CorporateNewsProps = {}) 
       setLoading(true);
       setError(null);
       // Using explicit URL based on user backend requirements
-      const response = await axios.get("/api/tech-news");
+      const response = await axios.get(buildApiUrl("/tech-news"));
       setNews(response.data.articles || []);
     } catch (err: any) {
       console.error("Failed to fetch news:", err);

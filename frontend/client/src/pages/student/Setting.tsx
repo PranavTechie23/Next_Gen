@@ -43,9 +43,10 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { studentApi } from "@/services/studentApi";
 import { toast } from "sonner";
 
@@ -75,6 +76,10 @@ export default function StudentSettings(props: any) {
   });
 
   const [isLoading, setIsLoading] = useState(true);
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [avatarPreview, setAvatarPreview] = useState<string>("");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch student profile on mount
   useEffect(() => {
@@ -98,6 +103,7 @@ export default function StudentSettings(props: any) {
             portfolio: "",
             bio: data?.profile?.bio || ""
         });
+        setAvatarUrl(data?.profile?.avatar_url || "");
       } catch (error: any) {
         console.error("Failed to fetch profile settings", error);
         if (error?.response?.status === 401) {
@@ -168,6 +174,30 @@ export default function StudentSettings(props: any) {
     }));
   };
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.currentTarget.value = "";
+    if (!file) return;
+    // Preview immediately
+    const reader = new FileReader();
+    reader.onload = (ev) => setAvatarPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+    // Upload
+    try {
+      setUploadingAvatar(true);
+      const data = await studentApi.uploadAvatar(file);
+      setAvatarUrl(data.avatar_url);
+      setAvatarPreview("");
+      toast.success("Profile photo updated!");
+    } catch (err) {
+      console.error("Avatar upload failed", err);
+      setAvatarPreview("");
+      toast.error("Failed to upload photo. Please try again.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const handleSave = async () => {
     try {
       // Build subjective profile payload
@@ -176,8 +206,8 @@ export default function StudentSettings(props: any) {
         phone: formData.phone,
         address: formData.location,
         bio: formData.bio,
-        linkedin: formData.linkedIn,
-        github: formData.github
+        linkedin_url: formData.linkedIn,
+        github_url: formData.github
         // Add resume/portfolio mapping logic when supported by backend
       };
       
@@ -319,12 +349,54 @@ export default function StudentSettings(props: any) {
               <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/5 rounded-full -mr-20 -mt-20 blur-[100px] pointer-events-none"></div>
               <div className="flex flex-col md:flex-row items-center md:items-start gap-8 relative z-10">
                 <div className="relative group/avatar">
-                  <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-4xl font-bold shadow-2xl group-hover/avatar:rotate-3 transition-transform duration-500">
-                    {formData.fullName.split(' ').map(n => n[0]).join('')}
+                  {/* Avatar display: photo if available, else initials gradient */}
+                  <div className="w-32 h-32 rounded-2xl overflow-hidden shadow-2xl group-hover/avatar:ring-4 group-hover/avatar:ring-blue-500/40 transition-all duration-500">
+                    {(avatarPreview || avatarUrl) ? (
+                      <img
+                        src={avatarPreview || avatarUrl}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-4xl font-bold">
+                        {formData.fullName.split(' ').map(n => n[0]).join('') || 'S'}
+                      </div>
+                    )}
+                    {/* Upload overlay on hover */}
+                    {!uploadingAvatar && (
+                      <div
+                        onClick={() => avatarInputRef.current?.click()}
+                        className="absolute inset-0 bg-black/50 opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-300 flex items-center justify-center cursor-pointer rounded-2xl"
+                      >
+                        <div className="flex flex-col items-center gap-1">
+                          <Camera className="w-7 h-7 text-white" />
+                          <span className="text-white text-xs font-bold">Change</span>
+                        </div>
+                      </div>
+                    )}
+                    {uploadingAvatar && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-2xl">
+                        <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                      </div>
+                    )}
                   </div>
-                  <button className={`absolute -bottom-2 -right-2 w-10 h-10 bg-blue-600 border-4 ${isDark ? 'border-[#0c0c14]' : 'border-white'} rounded-xl flex items-center justify-center text-white hover:bg-blue-500 transition-all shadow-xl group/cam`}>
+                  {/* Camera trigger button */}
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                    className={`absolute -bottom-2 -right-2 w-10 h-10 bg-blue-600 border-4 ${isDark ? 'border-[#0c0c14]' : 'border-white'} rounded-xl flex items-center justify-center text-white hover:bg-blue-500 transition-all shadow-xl group/cam disabled:opacity-60`}
+                  >
                     <Camera className="w-4 h-4 group-hover/cam:scale-110 transition-transform" />
                   </button>
+                  {/* Hidden file input */}
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                  />
                 </div>
                 <div className="flex-1 text-center md:text-left space-y-4">
                   <div>
@@ -430,22 +502,38 @@ export default function StudentSettings(props: any) {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <label className={`text-xs font-semibold ${isDark ? 'text-white/70' : 'text-slate-700'}`}>Branch</label>
-                      <select name="branch" value={formData.branch} onChange={handleChange} disabled={!isEditing}
-                        className={`w-full ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'} border rounded-xl py-3 px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none`}>
-                        <option className={isDark ? 'bg-[#0c0c14]' : 'bg-white'}>Computer Science</option>
-                        <option className={isDark ? 'bg-[#0c0c14]' : 'bg-white'}>Electronics</option>
-                        <option className={isDark ? 'bg-[#0c0c14]' : 'bg-white'}>Information Technology</option>
-                      </select>
+                      <Select 
+                        value={formData.branch} 
+                        onValueChange={(value) => setFormData({ ...formData, branch: value })}
+                        disabled={!isEditing}
+                      >
+                        <SelectTrigger className={`w-full h-12 ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'} border rounded-xl px-3 text-sm font-medium focus:ring-2 focus:ring-blue-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed`}>
+                          <SelectValue placeholder="Select Branch" />
+                        </SelectTrigger>
+                        <SelectContent className={isDark ? "bg-[#0c0c14] border-white/10 text-white" : "bg-white text-slate-900"}>
+                          <SelectItem value="Computer Science">Computer Science</SelectItem>
+                          <SelectItem value="Electronics">Electronics</SelectItem>
+                          <SelectItem value="Information Technology">Information Technology</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <label className={`text-xs font-semibold ${isDark ? 'text-white/70' : 'text-slate-700'}`}>Level</label>
-                      <select name="year" value={formData.year} onChange={handleChange} disabled={!isEditing}
-                        className={`w-full ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'} border rounded-xl py-3 px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none`}>
-                        <option className={isDark ? 'bg-[#0c0c14]' : 'bg-white'}>First Year</option>
-                        <option className={isDark ? 'bg-[#0c0c14]' : 'bg-white'}>Second Year</option>
-                        <option className={isDark ? 'bg-[#0c0c14]' : 'bg-white'}>Third Year</option>
-                        <option className={isDark ? 'bg-[#0c0c14]' : 'bg-white'}>Final Year</option>
-                      </select>
+                      <Select 
+                        value={formData.year} 
+                        onValueChange={(value) => setFormData({ ...formData, year: value })}
+                        disabled={!isEditing}
+                      >
+                        <SelectTrigger className={`w-full h-12 ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'} border rounded-xl px-3 text-sm font-medium focus:ring-2 focus:ring-blue-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed`}>
+                          <SelectValue placeholder="Select Level" />
+                        </SelectTrigger>
+                        <SelectContent className={isDark ? "bg-[#0c0c14] border-white/10 text-white" : "bg-white text-slate-900"}>
+                          <SelectItem value="First Year">First Year</SelectItem>
+                          <SelectItem value="Second Year">Second Year</SelectItem>
+                          <SelectItem value="Third Year">Third Year</SelectItem>
+                          <SelectItem value="Final Year">Final Year</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
