@@ -298,7 +298,7 @@ exports.requestPasswordReset = async (req, res) => {
 
         if (users.length === 0) {
             // For security, do not reveal if email exists
-            return res.status(200).json({ message: "If your email is registered, you will receive a reset link." });
+            return res.status(200).json({ message: "If your email is registered, you will receive an OTP." });
         }
 
         // 2. Generate Tokens
@@ -319,37 +319,35 @@ exports.requestPasswordReset = async (req, res) => {
 
         await connection.commit();
 
-        // 4. Send Email
+        // 4. Send Email via nodemailer
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: process.env.SMTP_EMAIL || 'your-email@gmail.com',
-                pass: process.env.SMTP_PASSWORD || 'your-app-password'
+                user: process.env.SMTP_EMAIL,
+                pass: process.env.SMTP_PASSWORD
             }
         });
 
-        const frontendUrl = req.headers.origin || 'http://localhost:3001';
-        const resetLink = `${frontendUrl}/forgot-password?token=${resetToken}&email=${email}`;
-
         const mailOptions = {
-            from: process.env.SMTP_EMAIL || 'noreply@placement-cell.com',
+            from: process.env.SMTP_EMAIL,
             to: email,
-            subject: 'Password Reset Request',
-            text: `OTP: ${otp}\nLink: ${resetLink}`,
-            html: `<p>OTP: <strong>${otp}</strong></p><p><a href="${resetLink}">Reset Password</a></p>`
+            subject: 'Password Reset OTP Request',
+            text: `Your OTP for password reset is: ${otp}\nIt is valid for 15 minutes.`,
+            html: `<p>Your OTP for password reset is: <strong style="font-size: 1.2em;">${otp}</strong></p><p>It is valid for 15 minutes.</p>`
         };
 
         try {
-            if (process.env.SMTP_EMAIL && process.env.SMTP_PASSWORD) {
-                 await transporter.sendMail(mailOptions);
-                 res.json({ message: "Password reset link sent to your email." });
-            } else {
-                 console.log(`[MOCK EMAIL] To: ${email}, OTP: ${otp}, Link: ${resetLink}`);
-                 res.json({ message: "Password reset generated. Check server logs." });
-            }
+             await transporter.sendMail(mailOptions);
+             res.json({ message: "Password reset OTP sent to your email." });
         } catch (emailError) {
-             console.error("Email sending failed:", emailError);
-             res.status(500).json({ message: "Error sending email." });
+             console.error("Email sending failed:", emailError.message);
+             // Provide a fallback in the server logs so development isn't blocked by bad SMTP config
+             console.log(`\n=================================================`);
+             console.log(`[FALLBACK] SMTP failed. OTP for ${email} is: ${otp}`);
+             console.log(`=================================================\n`);
+             
+             // Return 200 instead of 500 so the UI advances to Step 2, allowing developer to enter the OTP from the terminal!
+             res.status(200).json({ message: "Email failed, but OTP was printed in the backend terminal." });
         }
 
     } catch (error) {
@@ -360,14 +358,48 @@ exports.requestPasswordReset = async (req, res) => {
         connection.release();
     }
 };
+// --- Verify OTP Only ---
+exports.verifyOtpOnly = async (req, res) => {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+        return res.status(400).json({ message: "Please provide email and otp." });
+    }
+
+    const connection = await db.getConnection();
+
+    try {
+        const [resets] = await connection.execute(
+            'SELECT * FROM password_resets WHERE email = ? AND otp = ?',
+            [email, otp]
+        );
+
+        if (resets.length === 0) {
+            return res.status(400).json({ message: "Invalid OTP." });
+        }
+
+        const resetRecord = resets[0];
+
+        if (new Date() > new Date(resetRecord.expires_at)) {
+            await connection.execute('DELETE FROM password_resets WHERE email = ?', [email]);
+            return res.status(400).json({ message: "OTP has expired. Please request a new one." });
+        }
+
+        res.json({ message: "OTP verified successfully." });
+    } catch (error) {
+        console.error("Error in verifyOtpOnly:", error);
+        res.status(500).json({ message: "Server Error." });
+    } finally {
+        connection.release();
+    }
+};
 
 // --- Verify OTP and Reset Password ---
 exports.verifyAndResetPassword = async (req, res) => {
-    // Assuming the frontend passes token as well
-    const { email, otp, newPassword, token } = req.body;
+    const { email, otp, newPassword } = req.body;
 
-    if (!email || !otp || !newPassword || !token) {
-        return res.status(400).json({ message: "Please provide email, otp, token, and newPassword." });
+    if (!email || !otp || !newPassword) {
+        return res.status(400).json({ message: "Please provide email, otp, and newPassword." });
     }
 
     const connection = await db.getConnection();
@@ -385,13 +417,7 @@ exports.verifyAndResetPassword = async (req, res) => {
 
         const resetRecord = resets[0];
 
-        // 2. Verify token
-        const isTokenValid = await bcrypt.compare(token, resetRecord.token);
-        if (!isTokenValid) {
-            return res.status(400).json({ message: "Invalid Reset Token." });
-        }
-
-        // 3. Check Expiry
+        // 2. Check Expiry
         if (new Date() > new Date(resetRecord.expires_at)) {
             // Cleanup expired token
             await connection.execute('DELETE FROM password_resets WHERE email = ?', [email]);

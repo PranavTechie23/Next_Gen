@@ -77,8 +77,10 @@ exports.authorize = (...roles) => {
             return res.status(401).json({ message: "Not authorized. User not found." });
         }
 
-        const userRole = (req.user.role || '').toUpperCase();
-        const requiredRoles = roles.map(r => r.toUpperCase());
+        // Defensive normalization: DB roles sometimes contain whitespace or mixed case
+        // (e.g. "student", "STUDENT ", "\tSTUDENT"). Normalize to avoid false 403s.
+        const userRole = String(req.user.role || '').trim().toUpperCase();
+        const requiredRoles = roles.map((r) => String(r || '').trim().toUpperCase());
 
         if (!requiredRoles.includes(userRole)) {
             return res.status(403).json({ 

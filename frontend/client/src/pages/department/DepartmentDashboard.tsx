@@ -213,8 +213,7 @@ export default function DepartmentDashboard() {
                 title: newEvent.title,
                 date: newEvent.date,
                 type: newEvent.type,
-                meetingLink: newEvent.meetingLink,
-                mode: newEvent.mode
+                meetingLink: newEvent.meetingLink
             });
             toast.success("Event created successfully! It will be visible to your department students.");
             setIsEventDialogOpen(false);
@@ -1027,18 +1026,22 @@ export default function DepartmentDashboard() {
                 )}
 
                 {selectedView === "reports" && (
-                    <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 mb-16">
-                        <Card className="border border-border/30 shadow-xl transition-shadow hover:shadow-2xl bg-card/60 backdrop-blur-sm">
-                            <CardContent className="space-y-6 pt-10 pb-10 text-center">
-                                <FileBarChart className="mx-auto mb-1 h-12 w-12 text-blue-500" />
-                                <div>
-                                    <h3 className="text-lg font-bold text-foreground">Dept placement report</h3>
-                                    <p className="mt-1 text-xs text-muted-foreground">
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-16">
+                        <Card className="group relative overflow-hidden border border-border/40 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 bg-card/80 backdrop-blur-sm">
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+                            <CardContent className="flex flex-col items-center gap-5 pt-10 pb-8 text-center">
+                                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20 shadow-inner">
+                                    <FileBarChart className="h-8 w-8 text-primary" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <h3 className="text-base font-bold text-foreground">Dept Placement Report</h3>
+                                    <p className="text-xs leading-relaxed text-muted-foreground">
                                         Summary stats plus every selected offer (roll, email, role, package).
                                     </p>
                                 </div>
                                 <Button
-                                    className="w-full"
+                                    className="w-full gap-2 font-bold shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30"
                                     disabled={exportingPdf}
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -1046,33 +1049,29 @@ export default function DepartmentDashboard() {
                                     }}
                                 >
                                     {exportingPdf ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Generating…
-                                        </>
+                                        <><Loader2 className="h-4 w-4 animate-spin" />Generating…</>
                                     ) : (
-                                        <>
-                                            <Download className="mr-2 h-4 w-4" />
-                                            Generate PDF
-                                        </>
+                                        <><Download className="h-4 w-4" />Generate PDF</>
                                     )}
                                 </Button>
                             </CardContent>
                         </Card>
 
-                        <Card className="border border-border/30 shadow-xl transition-shadow hover:shadow-2xl bg-card/60 backdrop-blur-sm">
-                            <CardContent className="space-y-6 pt-10 pb-10 text-center">
-                                <Users className="mx-auto mb-1 h-12 w-12 text-purple-500" />
-                                <div>
-                                    <h3 className="text-lg font-bold text-foreground">Student readiness</h3>
-                                    <p className="mt-1 text-xs text-muted-foreground">
-                                        All students in your department with CGPA, skills, resume flags, and a
-                                        readiness score (same logic as the dashboard).
+                        <Card className="group relative overflow-hidden border border-border/40 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 bg-card/80 backdrop-blur-sm">
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+                            <CardContent className="flex flex-col items-center gap-5 pt-10 pb-8 text-center">
+                                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20 shadow-inner">
+                                    <Users className="h-8 w-8 text-primary" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <h3 className="text-base font-bold text-foreground">Student Readiness</h3>
+                                    <p className="text-xs leading-relaxed text-muted-foreground">
+                                        All students with CGPA, skills, resume flags, and a readiness score.
                                     </p>
                                 </div>
                                 <Button
-                                    className="w-full"
-                                    variant="secondary"
+                                    className="w-full gap-2 font-bold shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30"
                                     disabled={exportingCsv}
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -1080,32 +1079,30 @@ export default function DepartmentDashboard() {
                                     }}
                                 >
                                     {exportingCsv ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Exporting…
-                                        </>
+                                        <><Loader2 className="h-4 w-4 animate-spin" />Exporting…</>
                                     ) : (
-                                        <>
-                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                            Export CSV
-                                        </>
+                                        <><FileSpreadsheet className="h-4 w-4" />Export CSV</>
                                     )}
                                 </Button>
                             </CardContent>
                         </Card>
 
-                        <Card className="border border-border/30 shadow-xl transition-shadow hover:shadow-2xl bg-card/60 backdrop-blur-sm">
-                            <CardContent className="space-y-6 pt-10 pb-10 text-center">
-                                <Target className="mx-auto mb-1 h-12 w-12 text-emerald-500" />
-                                <div>
-                                    <h3 className="text-lg font-bold text-foreground">Eligibility list</h3>
-                                    <p className="mt-1 text-xs text-muted-foreground">
+                        <Card className="group relative overflow-hidden border border-border/40 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 bg-card/80 backdrop-blur-sm">
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+                            <CardContent className="flex flex-col items-center gap-5 pt-10 pb-8 text-center">
+                                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20 shadow-inner">
+                                    <Target className="h-8 w-8 text-primary" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <h3 className="text-base font-bold text-foreground">Eligibility List</h3>
+                                    <p className="text-xs leading-relaxed text-muted-foreground">
                                         Export unplaced students matching company criteria.
                                     </p>
                                 </div>
-                                <div className="grid grid-cols-3 gap-2 text-left">
+                                <div className="grid w-full grid-cols-3 gap-2 text-left">
                                     <div className="space-y-1">
-                                        <Label className="text-xs">CGPA</Label>
+                                        <Label className="text-[11px] font-semibold text-muted-foreground">CGPA</Label>
                                         <Input
                                             type="number"
                                             step="0.1"
@@ -1113,97 +1110,109 @@ export default function DepartmentDashboard() {
                                             max="10"
                                             value={eligibilityCriteria.minCgpa}
                                             onChange={(event) => setEligibilityCriteria({ ...eligibilityCriteria, minCgpa: event.target.value })}
+                                            className="h-9 rounded-lg border-border/50 bg-muted/40 text-sm font-semibold"
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <Label className="text-xs">Backlogs</Label>
+                                        <Label className="text-[11px] font-semibold text-muted-foreground">Backlogs</Label>
                                         <Input
                                             type="number"
                                             min="0"
                                             value={eligibilityCriteria.maxBacklogs}
                                             onChange={(event) => setEligibilityCriteria({ ...eligibilityCriteria, maxBacklogs: event.target.value })}
+                                            className="h-9 rounded-lg border-border/50 bg-muted/40 text-sm font-semibold"
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <Label className="text-xs">Ready %</Label>
+                                        <Label className="text-[11px] font-semibold text-muted-foreground">Ready %</Label>
                                         <Input
                                             type="number"
                                             min="0"
                                             max="100"
                                             value={eligibilityCriteria.minReadiness}
                                             onChange={(event) => setEligibilityCriteria({ ...eligibilityCriteria, minReadiness: event.target.value })}
+                                            className="h-9 rounded-lg border-border/50 bg-muted/40 text-sm font-semibold"
                                         />
                                     </div>
                                 </div>
                                 <Button
-                                    className="w-full"
+                                    className="w-full gap-2 font-bold shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30"
                                     disabled={exportingReport === "eligibility"}
                                     onClick={() => handleReportExport("eligibility", () => deptApi.downloadEligibilityCsv(eligibilityCriteria))}
                                 >
-                                    {exportingReport === "eligibility" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
+                                    {exportingReport === "eligibility" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
                                     Export Eligible CSV
                                 </Button>
                             </CardContent>
                         </Card>
 
-                        <Card className="border border-border/30 shadow-xl transition-shadow hover:shadow-2xl bg-card/60 backdrop-blur-sm">
-                            <CardContent className="space-y-6 pt-10 pb-10 text-center">
-                                <TrendingDownIcon className="mx-auto mb-1 h-12 w-12 text-amber-500" />
-                                <div>
-                                    <h3 className="text-lg font-bold text-foreground">Unplaced students</h3>
-                                    <p className="mt-1 text-xs text-muted-foreground">
+                        <Card className="group relative overflow-hidden border border-border/40 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 bg-card/80 backdrop-blur-sm">
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+                            <CardContent className="flex flex-col items-center gap-5 pt-10 pb-8 text-center">
+                                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20 shadow-inner">
+                                    <TrendingDownIcon className="h-8 w-8 text-primary" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <h3 className="text-base font-bold text-foreground">Unplaced Students</h3>
+                                    <p className="text-xs leading-relaxed text-muted-foreground">
                                         Follow-up list with readiness score and blocker reasons.
                                     </p>
                                 </div>
                                 <Button
-                                    className="w-full"
-                                    variant="secondary"
+                                    className="w-full gap-2 font-bold shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30"
                                     disabled={exportingReport === "unplaced"}
                                     onClick={() => handleReportExport("unplaced", deptApi.downloadUnplacedStudentsCsv)}
                                 >
-                                    {exportingReport === "unplaced" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
+                                    {exportingReport === "unplaced" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
                                     Export CSV
                                 </Button>
                             </CardContent>
                         </Card>
 
-                        <Card className="border border-border/30 shadow-xl transition-shadow hover:shadow-2xl bg-card/60 backdrop-blur-sm">
-                            <CardContent className="space-y-6 pt-10 pb-10 text-center">
-                                <FileText className="mx-auto mb-1 h-12 w-12 text-red-500" />
-                                <div>
-                                    <h3 className="text-lg font-bold text-foreground">Missing profile data</h3>
-                                    <p className="mt-1 text-xs text-muted-foreground">
+                        <Card className="group relative overflow-hidden border border-border/40 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 bg-card/80 backdrop-blur-sm">
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+                            <CardContent className="flex flex-col items-center gap-5 pt-10 pb-8 text-center">
+                                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20 shadow-inner">
+                                    <FileText className="h-8 w-8 text-primary" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <h3 className="text-base font-bold text-foreground">Missing Profile Data</h3>
+                                    <p className="text-xs leading-relaxed text-muted-foreground">
                                         Students missing resume, profile links, or enough skills.
                                     </p>
                                 </div>
                                 <Button
-                                    className="w-full"
-                                    variant="secondary"
+                                    className="w-full gap-2 font-bold shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30"
                                     disabled={exportingReport === "profile"}
                                     onClick={() => handleReportExport("profile", deptApi.downloadProfileGapsCsv)}
                                 >
-                                    {exportingReport === "profile" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
+                                    {exportingReport === "profile" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
                                     Export CSV
                                 </Button>
                             </CardContent>
                         </Card>
 
-                        <Card className="border border-border/30 shadow-xl transition-shadow hover:shadow-2xl bg-card/60 backdrop-blur-sm">
-                            <CardContent className="space-y-6 pt-10 pb-10 text-center">
-                                <DollarSign className="mx-auto mb-1 h-12 w-12 text-green-500" />
-                                <div>
-                                    <h3 className="text-lg font-bold text-foreground">Placed package report</h3>
-                                    <p className="mt-1 text-xs text-muted-foreground">
+                        <Card className="group relative overflow-hidden border border-border/40 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 bg-card/80 backdrop-blur-sm">
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+                            <CardContent className="flex flex-col items-center gap-5 pt-10 pb-8 text-center">
+                                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20 shadow-inner">
+                                    <DollarSign className="h-8 w-8 text-primary" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <h3 className="text-base font-bold text-foreground">Placed Package Report</h3>
+                                    <p className="text-xs leading-relaxed text-muted-foreground">
                                         Selected offers with company, drive, role, and package.
                                     </p>
                                 </div>
                                 <Button
-                                    className="w-full"
-                                    variant="secondary"
+                                    className="w-full gap-2 font-bold shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30"
                                     disabled={exportingReport === "packages"}
                                     onClick={() => handleReportExport("packages", deptApi.downloadPlacedPackagesCsv)}
                                 >
-                                    {exportingReport === "packages" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
+                                    {exportingReport === "packages" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
                                     Export CSV
                                 </Button>
                             </CardContent>

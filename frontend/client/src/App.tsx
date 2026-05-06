@@ -65,8 +65,9 @@ function Router() {
 
 
 
-      <Route path="/webinars" component={Webinar} />
-
+      <Route path="/webinars">
+        <Webinar />
+      </Route>
 
       <Route path="/privacy" component={PrivacyPage} />
 

@@ -551,9 +551,19 @@ export default function StudentDashboard() {
     return out;
   };
 
-  const parsedResumeSkills: string[] = (backendProfile?.resumeParsed?.skills || []).map(cleanSkillToken).filter(Boolean);
-  const profileSkills: string[] = (backendProfile?.skills || []).map((s: any) => cleanSkillToken(s?.name)).filter(Boolean);
-  const baseMergedSkills: string[] = Array.from(new Set([...profileSkills, ...parsedResumeSkills]));
+  const parsedResumeSkills: string[] = (backendProfile?.resumeParsed?.skills || [])
+    .map(cleanSkillToken)
+    .filter(Boolean);
+  const profileSkills: string[] = (backendProfile?.skills || [])
+    .map((s: any) => cleanSkillToken(s?.name))
+    .filter(Boolean);
+
+  // IMPORTANT: `student_skills` is append-only on resume upload (backend uses INSERT IGNORE),
+  // so merging it with parsed skills makes old resume skills stick around.
+  // When we have parsed skills from the latest resume, prefer them as the base display set.
+  const baseMergedSkills: string[] = Array.from(
+    new Set((parsedResumeSkills.length ? parsedResumeSkills : profileSkills) as string[])
+  );
 
   const normalizeAchievementKey = (s: string) =>
     String(s || "")
@@ -1901,7 +1911,7 @@ export default function StudentDashboard() {
                       <div className={`flex-1 h-px ${isDark ? "bg-white/5" : "bg-slate-200"}`} />
                     </div>
                     <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold ${isDark ? "text-white" : "text-slate-900"} tracking-tight capitalize`}>
-                      {sidebarLinks.find(l => l.id === activeTab)?.label || activeTab}
+                      {activeTab === "skills" ? "Skills & Achievements" : (sidebarLinks.find(l => l.id === activeTab)?.label || activeTab)}
                     </h1>
                     <p className={`${isDark ? "text-blue-400" : "text-blue-600"} text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] opacity-90 mt-1 border-b-0 no-underline`}>
                       {activeTab === "overview" ? "Career Readiness Dashboard" :
@@ -2462,7 +2472,6 @@ export default function StudentDashboard() {
                   <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                     <div className="space-y-2">
                       <p className={`text-[11px] font-black uppercase tracking-[0.22em] ${isDark ? "text-slate-400" : "text-slate-500"}`}>Manual Updates</p>
-                      <h3 className={`text-2xl sm:text-3xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Skills & Achievements</h3>
                       <p className={`${isDark ? "text-slate-400" : "text-slate-600"} text-sm max-w-2xl`}>
                         Add only missing items. Keep entries short and relevant.
                       </p>

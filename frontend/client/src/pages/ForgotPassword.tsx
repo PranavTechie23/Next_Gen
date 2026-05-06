@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { buildApiUrl } from "@/lib/api";
 import { useState } from "react";
-import { Mail, ShieldCheck, ArrowRight, ArrowLeft } from "lucide-react";
+import { Mail, ShieldCheck, ArrowRight, ArrowLeft, KeyRound } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -24,6 +24,20 @@ export default function ForgotPassword() {
       setStep(2);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to send OTP.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      await axios.post(buildApiUrl("/auth/verify-otp"), { email, otp });
+      toast.success("OTP verified! Please enter your new password.");
+      setStep(3);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Invalid OTP.");
     } finally {
       setIsLoading(false);
     }
@@ -52,16 +66,18 @@ export default function ForgotPassword() {
               <ArrowLeft className="w-4 h-4 mr-1" /> Back to Login
             </button>
             <h2 className="text-2xl font-bold text-foreground mb-2">
-              {step === 1 ? "Forgot Password" : "Reset Password"}
+              {step === 1 && "Forgot Password"}
+              {step === 2 && "Verify OTP"}
+              {step === 3 && "Set New Password"}
             </h2>
             <p className="text-muted-foreground text-sm">
-              {step === 1 
-                ? "Enter your email address and we'll send you an OTP to reset your password."
-                : "Enter the OTP sent to your email and your new password."}
+              {step === 1 && "Enter your email address and we'll send you an OTP to reset your password."}
+              {step === 2 && "Enter the 6-digit OTP sent to your email."}
+              {step === 3 && "Enter your new password."}
             </p>
           </div>
 
-          {step === 1 ? (
+          {step === 1 && (
             <form onSubmit={handleRequestOtp} className="space-y-6">
               <div className="space-y-2">
                 <label className="text-sm font-semibold">Email Address</label>
@@ -80,8 +96,10 @@ export default function ForgotPassword() {
                 {isLoading ? "Sending..." : "Send OTP"}
               </Button>
             </form>
-          ) : (
-            <form onSubmit={handleResetPassword} className="space-y-6">
+          )}
+
+          {step === 2 && (
+            <form onSubmit={handleVerifyOtp} className="space-y-6">
               <div className="space-y-2">
                 <label className="text-sm font-semibold">OTP</label>
                 <div className="relative">
@@ -91,23 +109,38 @@ export default function ForgotPassword() {
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
                     placeholder="123456"
+                    maxLength={6}
+                    autoComplete="one-time-code"
+                    className="w-full pl-12 pr-4 py-3 border-2 border-border rounded-xl focus:ring-primary focus:border-primary tracking-widest font-mono text-lg"
+                    required
+                  />
+                </div>
+              </div>
+              <Button type="submit" disabled={isLoading} className="w-full py-6 text-lg">
+                {isLoading ? "Verifying..." : "Verify OTP"} <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </form>
+          )}
+
+          {step === 3 && (
+            <form onSubmit={handleResetPassword} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold">New Password</label>
+                <div className="relative">
+                  <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    autoComplete="new-password"
                     className="w-full pl-12 pr-4 py-3 border-2 border-border rounded-xl focus:ring-primary focus:border-primary"
                     required
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold">New Password</label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-border rounded-xl focus:ring-primary focus:border-primary"
-                  required
-                />
-              </div>
               <Button type="submit" disabled={isLoading} className="w-full py-6 text-lg">
-                {isLoading ? "Resetting..." : "Reset Password"} <ArrowRight className="w-5 h-5 ml-2" />
+                {isLoading ? "Resetting..." : "Reset Password"}
               </Button>
             </form>
           )}

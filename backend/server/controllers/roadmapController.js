@@ -19,6 +19,11 @@ const safeJsonValue = (v, fallback) => {
 
 const groqModel = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
 
+// Optional Llama providers (free/low-cost):
+// - GROQ (recommended): set GROQ_API_KEY
+// - OpenRouter: set OPENROUTER_API_KEY + (optional) OPENROUTER_MODEL
+const openRouterModel = process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct:free';
+
 const tryGroqPersonalization = async ({ profileRow, resumeParsedRow, performanceRow, computed }) => {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return null;
@@ -87,6 +92,116 @@ ${JSON.stringify(payload)}
       },
       body: JSON.stringify({
         model: groqModel,
+        temperature: 0.2,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: 'You output only valid JSON.' },
+          { role: 'user', content: prompt },
+        ],
+      }),
+      signal: controller.signal,
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content) return null;
+    const parsed = JSON.parse(content);
+    const recs = Array.isArray(parsed?.recommendations) ? parsed.recommendations : [];
+    const normalized = recs
+      .slice(0, 3)
+      .map((r, idx) => ({
+        id: `llm-${idx + 1}`,
+        title: String(r?.title || '').slice(0, 90),
+        description: String(r?.description || '').slice(0, 180),
+        category: String(r?.category || 'skills'),
+        priority: ['critical', 'high', 'medium'].includes(String(r?.priority || '').toLowerCase())
+          ? String(r.priority).toLowerCase()
+          : 'high',
+        estimatedTime: String(r?.estimatedTime || '2 weeks'),
+        impact: ['High', 'Medium', 'Low'].includes(String(r?.impact || '')) ? r.impact : 'Medium',
+        completion: clamp(Number(r?.completion ?? 15), 5, 80),
+      }))
+      .filter((r) => r.title && r.description);
+
+    return normalized.length > 0 ? normalized : null;
+  } catch (_) {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+const tryOpenRouterPersonalization = async ({ profileRow, resumeParsedRow, performanceRow, computed }) => {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) return null;
+
+  const sections = safeJsonValue(resumeParsedRow?.sections_json, {});
+  const skills = safeJsonValue(resumeParsedRow?.skills_json, []);
+  const topFocus = Array.isArray(computed?.summary?.focus) ? computed.summary.focus.slice(0, 3) : [];
+  const defaultTasks = Array.isArray(computed?.roadmap?.next30Days) ? computed.roadmap.next30Days.slice(0, 3) : [];
+
+  const payload = {
+    profile: {
+      cgpa: Number(profileRow?.current_cgpa ?? 0),
+      backlogs: Number(profileRow?.active_backlogs ?? 0),
+    },
+    performance: {
+      amcat_quant: Number(performanceRow?.amcat_quant ?? 0),
+      amcat_verbal: Number(performanceRow?.amcat_verbal ?? 0),
+      amcat_logical: Number(performanceRow?.amcat_logical ?? 0),
+      endsem_percentage: Number(performanceRow?.endsem_percentage ?? 0),
+      mock_interview_score: Number(performanceRow?.mock_interview_score ?? 0),
+      coding_test_score: Number(performanceRow?.coding_test_score ?? 0),
+    },
+    resume: {
+      skills: Array.isArray(skills) ? skills.slice(0, 40) : [],
+      projects_count: Array.isArray(sections?.projects) ? sections.projects.length : 0,
+      experience_count: Array.isArray(sections?.experience) ? sections.experience.length : 0,
+      certifications_count: Array.isArray(sections?.certifications) ? sections.certifications.length : 0,
+      achievements_count: Array.isArray(sections?.achievements) ? sections.achievements.length : 0,
+    },
+    focus: topFocus,
+    baseline_tasks: defaultTasks,
+  };
+
+  const prompt = `
+You are a placement mentor. Generate exactly 3 personalized actions for this student.
+Return strict JSON with this schema:
+{
+  "recommendations": [
+    {
+      "title": "string (max 90 chars)",
+      "description": "string (max 180 chars)",
+      "category": "coding|aptitude|interview|portfolio|academics|skills",
+      "priority": "critical|high|medium",
+      "estimatedTime": "string like 1 week / 4 weeks",
+      "impact": "High|Medium|Low",
+      "completion": number (10-60)
+    }
+  ]
+}
+Rules:
+- No generic advice; tie to input profile and gaps.
+- Keep language concise and actionable.
+- Do not include markdown.
+Student data:
+${JSON.stringify(payload)}
+  `.trim();
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 9000);
+  try {
+    const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        // Optional but recommended by OpenRouter
+        'HTTP-Referer': process.env.OPENROUTER_REFERER || 'http://localhost',
+        'X-Title': process.env.OPENROUTER_APP_NAME || 'campus-career-platform',
+      },
+      body: JSON.stringify({
+        model: openRouterModel,
         temperature: 0.2,
         response_format: { type: 'json_object' },
         messages: [
@@ -491,12 +606,10 @@ exports.getRoadmap = async (req, res) => {
     const resumeParsedRow = resumeRows && resumeRows[0] ? resumeRows[0] : null;
 
     const computed = computeRoadmap({ profileRow, resumeParsedRow, performanceRow: performance });
-    const llmRecommendations = await tryGroqPersonalization({
-      profileRow,
-      resumeParsedRow,
-      performanceRow: performance,
-      computed,
-    });
+    const llmRecommendations =
+      (await tryGroqPersonalization({ profileRow, resumeParsedRow, performanceRow: performance, computed })) ||
+      (await tryOpenRouterPersonalization({ profileRow, resumeParsedRow, performanceRow: performance, computed })) ||
+      [];
 
     return res.json({
       performance: performance || {
@@ -510,8 +623,8 @@ exports.getRoadmap = async (req, res) => {
       },
       computed: {
         ...computed,
-        llmRecommendations: llmRecommendations || [],
-        llmPersonalizationEnabled: !!process.env.GROQ_API_KEY,
+        llmRecommendations,
+        llmPersonalizationEnabled: !!process.env.GROQ_API_KEY || !!process.env.OPENROUTER_API_KEY,
       },
     });
   } catch (err) {

@@ -21,6 +21,7 @@ export interface Company {
     interviewRounds: string[];
     interviewTips?: string[];
     resources?: { label: string; url: string }[];
+    interviewExperiences?: { title: string; author: string; summary: string; url: string }[];
 }
 
 // ─── Problem Template (no ID — generated per company) ───────────────────

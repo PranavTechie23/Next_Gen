@@ -199,6 +199,20 @@ export const MAJOR_COMPANIES: Company[] = [
             { id: "bc10", title: "Climbing Stairs", difficulty: "Easy", topic: "DP", url: "https://leetcode.com/problems/climbing-stairs/", frequency: "High", acceptance: "53.5%" },
             { id: "bc11", title: "Permutations", difficulty: "Medium", topic: "Backtracking", url: "https://leetcode.com/problems/permutations/", frequency: "High", acceptance: "80.7%" },
             { id: "bc12", title: "Palindrome Linked List", difficulty: "Easy", topic: "Linked List", url: "https://leetcode.com/problems/palindrome-linked-list/", frequency: "High", acceptance: "55.9%" },
+        ],
+        interviewExperiences: [
+            {
+                title: "Barclays Summer Internship Interview Experience (Pune Office)",
+                author: "Ketan bajaj",
+                summary: "Secured a direct interview through Barclays Hack-o-Hire 2024. The technical interview focused on real-world problem-solving and projects.",
+                url: "https://www.pict.live/single/ketan-bajajs-experience-at-barclays-intern-2024-WFFJQx"
+            },
+            {
+                title: "My Barclays Internship Interview Experience",
+                author: "Mansi Apet",
+                summary: "The process involved a technical round and a combined technical + HR round. Emphasizes the value of sharing interview experiences.",
+                url: "https://www.pict.live/single/mansi-apets-experience-at-barclays-intern-2026-N712oP"
+            }
         ]
     },
     {
@@ -283,9 +297,41 @@ export const MAJOR_COMPANIES: Company[] = [
             { id: "ub18", title: "Jump Game II", difficulty: "Medium", topic: "Greedy", url: "https://leetcode.com/problems/jump-game-ii/", frequency: "High", acceptance: "41.5%" },
         ]
     },
-    mkProd("mastercard", "Mastercard", "MC", "from-red-600 to-orange-500", "Global payments technology company", "₹14-25 LPA", 3),
+    {
+        ...mkProd("mastercard", "Mastercard", "MC", "from-red-600 to-orange-500", "Global payments technology company", "₹14-25 LPA", 3),
+        interviewExperiences: [
+            {
+                title: "Tarun Santani Experience at Mastercard (SDE 2025)",
+                author: "Tarun Santani",
+                summary: "Online test followed by 2 technical rounds and 1 HR round. Technical rounds focused on Java concepts, JUnit, testing, and automation.",
+                url: "https://www.pict.live/single/tarun-santani-experience-at-mastercard-sde-2025-aaaaaa"
+            },
+            {
+                title: "Shubham Panchal: Interview Experience for Mastercard - SDE1",
+                author: "Shubham Panchal",
+                summary: "Focused on technical skills and aptitude. Emphasized preparing core CS subjects and real-time problem-solving.",
+                url: "https://www.pict.live/single/shubham-panchals-experience-at-mastercard-sde-2025-QI0IOt"
+            }
+        ]
+    },
     mkProd("amdocs", "Amdocs", "AM", "from-indigo-600 to-blue-500", "IT services for communications and media", "₹8-16 LPA", 4),
-    mkProd("phonePe", "PhonePe", "PP", "from-purple-700 to-indigo-600", "Digital payments and financial services platform", "₹18-30 LPA", 0),
+    {
+        ...mkProd("phonepe", "PhonePe", "PP", "from-purple-700 to-indigo-600", "Digital payments and financial services platform", "₹18-30 LPA", 0),
+        interviewExperiences: [
+            {
+                title: "Lokesh Ghule Interview Experience at PhonePe (SDE)",
+                author: "Lokesh Ghule",
+                summary: "The online coding round consisted of 4 questions to be solved in 90 minutes. Highlights the need for strong competitive programming skills.",
+                url: "https://www.pict.live/single/lokesh-ghule-experience-at-phonepe-sde-2023-llssss"
+            },
+            {
+                title: "My PhonePe Interview Experience",
+                author: "Anish Manwar",
+                summary: "Focused on a full-time SDE role. PhonePe is noted for high-level DSA questions and real-time problem-solving rounds.",
+                url: "https://www.pict.live/single/anish-manwars-experience-at-phonepe-sde-2023-aaaaaa"
+            }
+        ]
+    },
     mkProd("media-net", "Media.net", "MN", "from-blue-600 to-blue-400", "Digital advertising and contextual ads platform", "₹15-25 LPA", 1),
     mkProd("pubmatic", "PubMatic", "PM", "from-blue-500 to-teal-500", "Digital advertising technology platform", "₹12-22 LPA", 2),
     mkProd("mindtickle", "MindTickle", "MT", "from-violet-500 to-purple-500", "Sales readiness and enablement platform", "₹10-18 LPA", 3),
@@ -326,5 +372,21 @@ export const MAJOR_COMPANIES: Company[] = [
     mkFin("rbl", "RBL Bank", "RB", "from-blue-600 to-blue-500", "Private sector banking and financial services", "₹5-10 LPA", 1),
     mkFin("finiq", "FinIQ", "FQ", "from-green-600 to-teal-500", "Financial software for wealth management", "₹6-12 LPA", 0),
     mkFin("flextrade", "FlexTrade", "FT", "from-blue-600 to-cyan-500", "Multi-asset execution management systems", "₹10-18 LPA", 1),
-    mkFin("iongroup", "ION Group", "IO", "from-blue-800 to-blue-600", "Trading and treasury technology solutions", "₹8-16 LPA", 0),
+    {
+        ...mkFin("iongroup", "ION Group", "IO", "from-blue-800 to-blue-600", "Trading and treasury technology solutions", "₹8-16 LPA", 0),
+        interviewExperiences: [
+            {
+                title: "Ayush S Bulbule Interview Experience at Ion",
+                author: "Ayush S Bulbule",
+                summary: "The interview process for the SDE role involved technical rounds focusing on scalable systems and financial technology concepts.",
+                url: "https://www.pict.live/single/ayush-s-bulbules-experience-at-ion-sde-2025-qoPyCd"
+            },
+            {
+                title: "Interview Experience – Ion | SDE",
+                author: "NEERAJ MAGDUM",
+                summary: "A comprehensive 6-round process for the SDE role. Includes details on eligibility and shortlisting for PICT students (Batch 2026).",
+                url: "https://www.pict.live/single/neeraj-magdums-experience-at-ion-sde-2026-azeZ1r"
+            }
+        ]
+    },
 ];

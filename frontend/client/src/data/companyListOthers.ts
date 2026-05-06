@@ -710,7 +710,17 @@ export const OTHER_COMPANIES: Company[] = [
 
     mkStart("enthralltech", "EnthrallTech", "https://logo.clearbit.com/enthralltech.com", "from-green-500 to-emerald-500", "Digital solutions and consultancy", "₹4-7 LPA", 0),
     mkStart("epikindifi", "EPIKInDiFi", "https://logo.clearbit.com/epikindifi.com", "from-purple-600 to-indigo-500", "Fintech and digital finance solutions", "₹5-10 LPA", 1),
-    mkSvc("eqtechnologic", "eQ Technologic", "https://logo.clearbit.com/eqtechnologic.com", "from-blue-700 to-blue-500", "Enterprise data synchronization and analytics", "₹10-19 LPA", 1),
+    {
+        ...mkSvc("eqtechnologic", "eQ Technologic", "https://logo.clearbit.com/eqtechnologic.com", "from-blue-700 to-blue-500", "Enterprise data synchronization and analytics", "₹10-19 LPA", 1),
+        interviewExperiences: [
+            {
+                title: "eQ Technologic Interview Experience (On-Campus SDE)",
+                author: "Anonymous",
+                summary: "The selection process included an online test with aptitude and coding, followed by 2 technical rounds. Core focus was on Java, SQL, and Object-Oriented Programming concepts.",
+                url: "https://www.pict.live/company/eq-technologic"
+            }
+        ]
+    },
     mkStart("eumentis", "Eumentis Cloud", "https://logo.clearbit.com/eumentis.com", "from-sky-500 to-blue-500", "Cloud infrastructure and DevOps", "₹5-10 LPA", 3),
     mkSvc("extramarks", "Extramarks Education", "https://logo.clearbit.com/extramarks.com", "from-orange-500 to-red-500", "Digital learning solutions and edtech platform", "₹6-12 LPA", 1),
     mkStart("fabricinc", "Fabric Inc", "https://logo.clearbit.com/fabric.inc", "from-purple-500 to-violet-500", "Micro-fulfillment technology", "₹6-12 LPA", 1),

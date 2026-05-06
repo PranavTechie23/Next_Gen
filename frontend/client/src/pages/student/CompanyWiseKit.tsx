@@ -1010,6 +1010,33 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                             </div>
                         )}
                     </div>
+                    
+                    {/* Interview Experiences Card */}
+                    {(company.interviewExperiences && company.interviewExperiences.length > 0) && (
+                        <div className={`col-span-1 lg:col-span-2 rounded-3xl p-6 sm:p-8 border h-full transition-all hover:shadow-lg ${isDark ? "bg-purple-500/[0.03] border-purple-500/20 hover:border-purple-500/30" : "bg-gradient-to-br from-purple-50 to-fuchsia-50 border-purple-100 hover:border-purple-200"}`}>
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20 ${isDark ? "bg-purple-500/20 text-purple-400" : "bg-white text-purple-600"}`}>
+                                    <BookOpen className="w-5 h-5" />
+                                </div>
+                                <h3 className={`text-xl font-black ${isDark ? "text-purple-100" : "text-slate-800"}`}>Interview Experiences</h3>
+                            </div>
+                            <div className="grid gap-4 md:grid-cols-2">
+                                {company.interviewExperiences.map((exp, i) => (
+                                    <a key={i} href={exp.url} target="_blank" rel="noopener noreferrer"
+                                        className={`group flex flex-col gap-2 p-5 rounded-2xl border transition-all ${isDark
+                                            ? "bg-white/5 border-white/5 hover:bg-white/10 hover:border-purple-500/30 text-slate-300"
+                                            : "bg-white border-slate-200 hover:border-purple-300 hover:shadow-md text-slate-600"}`}>
+                                        <div className="flex justify-between items-start">
+                                            <span className={`text-base font-black ${isDark ? "text-white" : "text-slate-900"} group-hover:text-purple-500 transition-colors`}>{exp.title}</span>
+                                            <ExternalLink className={`w-4 h-4 flex-shrink-0 mt-1 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 ${isDark ? "text-slate-500 group-hover:text-purple-400" : "text-slate-400 group-hover:text-purple-600"}`} />
+                                        </div>
+                                        <span className={`text-xs font-bold uppercase tracking-widest ${isDark ? "text-purple-400" : "text-purple-600"}`}>{exp.author}</span>
+                                        <p className="text-sm leading-relaxed line-clamp-3 mt-1">{exp.summary}</p>
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Filters */}
