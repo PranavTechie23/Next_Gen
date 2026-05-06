@@ -6,7 +6,7 @@ import { useLocation } from "wouter";
 import { getPlacementDrives, savePlacementDrive, type PlacementDrive } from "@/data/placementDrives";
 import { Textarea } from "@/components/ui/textarea";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
-import { LogOut, Settings, Users, TrendingUp, AlertTriangle, Download, Filter, Search, Bell, ChevronRight, Award, Target, BookOpen, Briefcase, Calendar, TrendingDown, ArrowUpRight, ArrowDownRight, Eye, Upload, FileText, GraduationCap, Building2, BarChart3, Activity, Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram, ExternalLink, Clock, DollarSign, Users2, Plus, Edit, Trash2, MoreVertical, CheckCircle2, XCircle, RefreshCw, FileSpreadsheet, FileBarChart, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, TrendingDown as TrendingDownIcon, Rocket, Shield, Globe, Star, MessageSquare, ArrowLeft } from "lucide-react";
+import { LogOut, Settings, Users, TrendingUp, AlertTriangle, Download, Filter, Search, Bell, ChevronRight, Award, Target, BookOpen, Briefcase, Calendar, TrendingDown, ArrowUpRight, ArrowDownRight, Eye, Upload, FileText, GraduationCap, Building2, BarChart3, Activity, Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram, ExternalLink, Clock, DollarSign, Users2, Plus, Edit, Trash2, MoreVertical, CheckCircle2, XCircle, RefreshCw, FileSpreadsheet, FileBarChart, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, TrendingDown as TrendingDownIcon, Rocket, Shield, Globe, Star, MessageSquare, ArrowLeft, ChevronLeft } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useIsMobile } from "@/hooks/useMobile";
@@ -41,6 +41,15 @@ export default function AdminDashboard() {
   const [timeRange, setTimeRange] = useState("year");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
+
+  // Student management filters & pagination
+  const [studentSearch, setStudentSearch] = useState("");
+  const [branchFilter, setBranchFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [studentsPage, setStudentsPage] = useState(1);
+  const STUDENTS_PER_PAGE = 8;
+  const [studentsData, setStudentsData] = useState<{ students: any[], pagination: any }>({ students: [], pagination: {} });
+  const [loadingStudents, setLoadingStudents] = useState(false);
 
   // Uploads (TPO Head)
   const [uploadDataOpen, setUploadDataOpen] = useState(false);
@@ -105,6 +114,58 @@ export default function AdminDashboard() {
       setGeneratingReport(null);
     }
   };
+
+  const handleExportShortlisted = async () => {
+    try {
+      setGeneratingReport("shortlisted_export");
+      const filters = {
+        minCgpa: jdFilters.cgpa,
+        maxBacklogs: jdFilters.backlogs,
+        skills: jdFilters.skills.join(",")
+      };
+      await adminApi.downloadShortlistedStudentsCsv(filters, `Shortlisted_Students_${new Date().toISOString().slice(0,10)}.csv`);
+      toast.success("Shortlisted students list exported.");
+    } catch (e) {
+      console.error("handleExportShortlisted failed", e);
+      toast.error("Failed to export shortlisted list.");
+    } finally {
+      setGeneratingReport(null);
+    }
+  };
+
+  const fetchStudentsList = async () => {
+    try {
+      setLoadingStudents(true);
+      const data = await adminApi.getStudents({
+        page: studentsPage,
+        limit: STUDENTS_PER_PAGE,
+        search: studentSearch,
+        branch: branchFilter,
+        status: statusFilter
+      });
+      setStudentsData(data);
+    } catch (e) {
+      console.error("fetchStudents failed", e);
+    } finally {
+      setLoadingStudents(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedView === "students") {
+      fetchStudentsList();
+    }
+  }, [selectedView, studentsPage, branchFilter, statusFilter]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (selectedView === "students") {
+        if (studentsPage !== 1) setStudentsPage(1);
+        else fetchStudentsList();
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [studentSearch]);
 
   // Smart JD Filter State
   const [jdFilters, setJdFilters] = useState({
@@ -675,9 +736,14 @@ export default function AdminDashboard() {
                           <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-12 shadow-lg shadow-blue-500/20">
                             Notify Eligible Students
                           </Button>
-                          <Button variant="outline" className="w-full h-12 font-bold">
+                          <Button 
+                            variant="outline" 
+                            className="w-full h-12 font-bold"
+                            onClick={handleExportShortlisted}
+                            disabled={generatingReport === "shortlisted_export"}
+                          >
                             <Download className="w-4 h-4 mr-2" />
-                            Export List to Excel
+                            {generatingReport === "shortlisted_export" ? "Exporting..." : "Export List to Excel"}
                           </Button>
                         </div>
 
@@ -1317,11 +1383,16 @@ export default function AdminDashboard() {
                       <CardTitle className="text-2xl font-black">Branch-wise Performance</CardTitle>
                       <CardDescription className="text-base">Comprehensive placement metrics by department</CardDescription>
                     </div>
-                    <select className="px-4 py-3 border border-border bg-background text-foreground rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary font-medium">
-                      <option>All Metrics</option>
-                      <option>Readiness</option>
-                      <option>Placements</option>
-                    </select>
+                    <Select defaultValue="All Metrics">
+                      <SelectTrigger className="w-[180px] h-12 border border-border bg-background text-foreground rounded-lg text-base focus:ring-2 focus:ring-primary font-medium">
+                        <SelectValue placeholder="All Metrics" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="All Metrics">All Metrics</SelectItem>
+                        <SelectItem value="Readiness">Readiness</SelectItem>
+                        <SelectItem value="Placements">Placements</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -1604,25 +1675,34 @@ export default function AdminDashboard() {
                 <input
                   type="text"
                   placeholder="Search students by name, ID, branch, or email..."
+                  value={studentSearch}
+                  onChange={(e) => setStudentSearch(e.target.value)}
                   className="w-full pl-12 pr-4 py-4 border border-border bg-background text-foreground rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
               <div className="flex gap-3">
-                <select className="px-4 py-4 border border-border bg-background text-foreground rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary font-medium">
-                  <option>All Branches</option>
-                  <option>CSE</option>
-                  <option>ECE</option>
-                  <option>Mechanical</option>
-                  <option>Civil</option>
-                  <option>Electrical</option>
-                </select>
-                <select className="px-4 py-4 border border-border bg-background text-foreground rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary font-medium">
-                  <option>All Status</option>
-                  <option>Placement Ready</option>
-                  <option>At Risk</option>
-                  <option>Placed</option>
-                  <option>Not Ready</option>
-                </select>
+                <Select value={branchFilter} onValueChange={setBranchFilter}>
+                  <SelectTrigger className="w-[200px] h-14 border border-border bg-background text-foreground rounded-xl text-base focus:ring-2 focus:ring-primary font-medium">
+                    <SelectValue placeholder="All Branches" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Branches</SelectItem>
+                    {branchData.map(b => (
+                      <SelectItem key={b.branch} value={b.branch}>{b.branch}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[180px] h-14 border border-border bg-background text-foreground rounded-xl text-base focus:ring-2 focus:ring-primary font-medium">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="placed">Placed</SelectItem>
+                    <SelectItem value="unplaced">Unplaced</SelectItem>
+                    <SelectItem value="at_risk">At Risk</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -1674,113 +1754,163 @@ export default function AdminDashboard() {
               </Card>
             </div>
 
-            {/* At-Risk Students - Full List */}
-            <Card className="mb-8 shadow-lg border-0 border-l-4 border-l-red-500">
-              <CardHeader className="pb-6">
+            {/* All Students Table */}
+            <Card className="mb-12 shadow-lg border-0 overflow-hidden">
+              <CardHeader className="pb-6 border-b border-border">
                 <div className="flex items-center justify-between">
                   <div className="space-y-2">
                     <CardTitle className="text-2xl font-black flex items-center gap-3">
-                      <AlertTriangle className="w-6 h-6 text-red-500" />
-                      At-Risk Students
+                      <Users className="w-6 h-6 text-primary" />
+                      Student Roster
                     </CardTitle>
-                    <CardDescription className="text-base">Students requiring immediate attention</CardDescription>
+                    <CardDescription className="text-base">Manage and track student placement journeys</CardDescription>
                   </div>
-                  <Button variant="outline" size="lg" className="text-base px-5">Export List</Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="lg" className="text-base px-5">
+                      <Download className="w-4 h-4 mr-2" />
+                      Export
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {atRiskStudents.map((student) => (
-                    <div key={student.id} className="p-6 border border-border bg-muted/20 rounded-xl hover:border-red-500/50 hover:shadow-lg transition-all group">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h4 className="font-black text-foreground tracking-tight text-lg mb-1">{student.name}</h4>
-                          <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest mb-2">{student.branch} • {student.id}</p>
-                          <p className="text-sm text-muted-foreground mb-1">Last Activity: {student.lastActivity}</p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className={`text-xs px-3 py-1.5 rounded-lg font-black uppercase tracking-widest ${student.status === "Critical" ? "bg-red-500/10 text-red-500" : "bg-orange-500/10 text-orange-500"
-                            }`}>
-                            {student.status}
-                          </span>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className={`h-full ${student.readiness < 40 ? "bg-red-500" : "bg-orange-500"}`}
-                            style={{ width: `${student.readiness}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-base font-black text-foreground min-w-[3rem]">{student.readiness}% Readiness</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-wrap gap-2">
-                          {student.issues.map((issue: any, idx: number) => (
-                            <span key={idx} className="text-xs px-3 py-1 bg-background border border-border text-muted-foreground font-semibold rounded-lg">
-                              {issue}
-                            </span>
-                          ))}
-                        </div>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" className="gap-1.5">
-                            <Eye className="w-4 h-4" />
-                            View
-                          </Button>
-                          <Button variant="outline" size="sm" className="gap-1.5">
-                            <Edit className="w-4 h-4" />
-                            Edit
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-muted/50 text-muted-foreground uppercase font-black text-xs tracking-widest border-b border-border">
+                      <tr>
+                        <th className="px-6 py-4">Student Info</th>
+                        <th className="px-6 py-4">Branch</th>
+                        <th className="px-6 py-4">Academics</th>
+                        <th className="px-6 py-4">Skills</th>
+                        <th className="px-6 py-4">Status</th>
+                        <th className="px-6 py-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {loadingStudents ? (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-12 text-center">
+                            <div className="flex flex-col items-center gap-3">
+                              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                              <p className="text-muted-foreground font-bold">Loading students...</p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : studentsData.students.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground font-medium">
+                            No students found matching the criteria.
+                          </td>
+                        </tr>
+                      ) : (
+                        studentsData.students.map((student) => (
+                          <tr key={student.user_id} className="hover:bg-muted/30 transition-colors group">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-black text-primary text-xs">
+                                  {student.full_name ? student.full_name.charAt(0) : student.roll_number.charAt(0)}
+                                </div>
+                                <div>
+                                  <p className="font-black text-foreground">{student.full_name || student.roll_number}</p>
+                                  <p className="text-xs text-muted-foreground font-semibold">{student.email}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="text-xs px-2.5 py-1 bg-muted rounded-lg font-black uppercase tracking-tighter text-muted-foreground">
+                                {student.branch || "N/A"}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="space-y-1">
+                                <p className="text-sm font-black text-foreground">{student.current_cgpa} CGPA</p>
+                                <p className="text-xs text-muted-foreground font-bold">{student.active_backlogs} Backlogs</p>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-1.5">
+                                <div className="h-1.5 w-12 bg-muted rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-primary" 
+                                    style={{ width: `${Math.min(student.skills_count * 10, 100)}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-xs font-bold text-muted-foreground">{student.skills_count}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`text-[10px] px-2 py-1 rounded-full font-black uppercase tracking-widest ${
+                                student.is_placed 
+                                  ? "bg-green-500/10 text-green-500" 
+                                  : student.current_cgpa < 6.0 || student.active_backlogs > 0 
+                                    ? "bg-red-500/10 text-red-500"
+                                    : "bg-blue-500/10 text-blue-500"
+                              }`}>
+                                {student.is_placed ? "Placed" : student.current_cgpa < 6.0 || student.active_backlogs > 0 ? "At Risk" : "Available"}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Top Performers - Full List */}
-            <Card className="mb-12 shadow-lg border-0 border-l-4 border-l-green-500">
-              <CardHeader className="pb-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <CardTitle className="text-2xl font-black flex items-center gap-3">
-                      <Award className="w-6 h-6 text-green-500" />
-                      Top Performers
-                    </CardTitle>
-                    <CardDescription className="text-base">Leading students this season</CardDescription>
-                  </div>
-                  <Button variant="outline" size="lg" className="text-base px-5">Export List</Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {topPerformers.map((student) => (
-                    <div key={student.rank} className="flex items-center gap-4 p-5 border border-border bg-muted/10 rounded-xl hover:border-green-500/50 hover:shadow-lg transition-all group">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-white shadow-lg text-lg ${student.rank === 1 ? "bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-yellow-500/20" :
-                        student.rank === 2 ? "bg-gradient-to-br from-slate-400 to-slate-600 shadow-slate-500/20" :
-                          student.rank === 3 ? "bg-gradient-to-br from-amber-700 to-amber-900 shadow-amber-500/20" :
-                            "bg-primary shadow-primary/20"
-                        }`}>
-                        {student.rank}
+                {/* Pagination Controls */}
+                {studentsData.pagination && studentsData.pagination.totalPages > 1 && (
+                  <div className="px-6 py-4 border-t border-border flex items-center justify-between bg-muted/20">
+                    <p className="text-sm text-muted-foreground font-medium">
+                      Showing <span className="font-black text-foreground">{(studentsData.pagination.currentPage - 1) * studentsData.pagination.limit + 1}</span> to <span className="font-black text-foreground">{Math.min(studentsData.pagination.currentPage * studentsData.pagination.limit, studentsData.pagination.totalItems)}</span> of <span className="font-black text-foreground">{studentsData.pagination.totalItems}</span> students
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setStudentsPage(p => Math.max(1, p - 1))}
+                        disabled={studentsData.pagination.currentPage === 1}
+                        className="font-bold"
+                      >
+                        <ChevronLeft className="w-4 h-4 mr-1" />
+                        Prev
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {[...Array(studentsData.pagination.totalPages)].map((_, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setStudentsPage(i + 1)}
+                            className={`w-8 h-8 rounded-lg text-sm font-black transition-all ${
+                              studentsData.pagination.currentPage === i + 1
+                                ? "bg-primary text-white shadow-lg shadow-primary/20"
+                                : "hover:bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {i + 1}
+                          </button>
+                        )).slice(Math.max(0, studentsData.pagination.currentPage - 3), Math.min(studentsData.pagination.totalPages, studentsData.pagination.currentPage + 2))}
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-black text-foreground tracking-tight text-lg mb-1">{student.name}</h4>
-                        <p className="text-xs text-muted-foreground font-black uppercase tracking-widest">{student.branch}</p>
-                      </div>
-                      <div className="text-right mr-4">
-                        <p className="text-base font-black text-foreground mb-1">{student.score} Score</p>
-                        <p className="text-xs text-muted-foreground font-semibold">{student.offers} Offers • {student.package} LPA</p>
-                      </div>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="w-4 h-4" />
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setStudentsPage(p => Math.min(studentsData.pagination.totalPages, p + 1))}
+                        disabled={studentsData.pagination.currentPage === studentsData.pagination.totalPages}
+                        className="font-bold"
+                      >
+                        Next
+                        <ChevronRight className="w-4 h-4 ml-1" />
                       </Button>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </>

@@ -79,6 +79,7 @@ import {
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function CollegeSettings() {
   const [, navigate] = useLocation();
@@ -341,17 +342,18 @@ export default function CollegeSettings() {
           {Icon && <Icon className="w-4 h-4 text-blue-600" />}
           {label}
         </label>
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full px-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all font-medium"
-        >
-          {options.map((option: SelectOption) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <Select value={value} onValueChange={onChange}>
+          <SelectTrigger className="w-full h-[52px] px-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-500/20 transition-all font-medium">
+            <SelectValue placeholder={`Select ${label}`} />
+          </SelectTrigger>
+          <SelectContent className="bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700">
+            {options.map((option: SelectOption) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     );
   };
@@ -451,30 +453,33 @@ export default function CollegeSettings() {
   };
 
   return (
-    <div className="min-h-dvh overflow-x-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+    <div className="min-h-dvh bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/40 backdrop-blur-3xl border-b border-slate-200 dark:border-white/5 transition-all duration-500">
-        <div className="max-w-[1700px] mx-auto px-6 sm:px-10">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center gap-6">
+      <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between h-16 sm:h-20">
+            <div className="flex items-center gap-4 sm:gap-6">
               <button
-                onClick={() => navigate('/college/dashboard')}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white rounded-xl font-black text-sm tracking-tight hover:shadow-[0_10px_30_rgba(37,99,235,0.4)] transition-all flex items-center gap-2 hover:scale-105 active:scale-95 group"
+                onClick={() => navigate('/admin/dashboard')}
+                className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-bold text-xs sm:text-sm transition-all active:scale-95 border border-slate-200 dark:border-slate-700"
               >
-                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                Back
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden xs:inline">Back</span>
               </button>
-              <div className="h-10 w-px bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
-              <div className="flex items-center gap-0">
-                <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-14 w-14 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
-                <div className="flex flex-col -gap-1">
-                  <span className="font-black text-2xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-tighter">NextGen</span>
-                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">College Settings</span>
+              
+              <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 hidden xs:block"></div>
+              
+              <div className="flex items-center gap-2 cursor-pointer group" onClick={() => navigate("/")}>
+                <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-8 w-8 sm:h-10 sm:w-10 object-contain transition-transform group-hover:scale-110" />
+                <div className="flex flex-col leading-none">
+                  <span className="font-black text-lg sm:text-xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-tighter">NextGen</span>
+                  <span className="text-[8px] sm:text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">College Settings</span>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <ThemeToggle className="!h-12 !w-12 bg-slate-100 dark:bg-white/5 backdrop-blur-md border border-slate-200 dark:border-white/10 hover:border-blue-500/30 !rounded-xl transition-all flex items-center justify-center shadow-lg hover:scale-110 text-slate-600 dark:text-white" />
+            
+            <div className="flex items-center gap-2 sm:gap-4">
+              <ThemeToggle className="!h-10 !w-10 sm:!h-12 sm:!w-12 bg-slate-100 dark:bg-slate-800/50 backdrop-blur-md border border-slate-200 dark:border-slate-700 !rounded-xl transition-all shadow-sm hover:scale-110" />
             </div>
           </div>
         </div>

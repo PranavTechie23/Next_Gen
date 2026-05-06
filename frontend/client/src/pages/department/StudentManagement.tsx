@@ -18,8 +18,17 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export function StudentManagement({ isFilterOpen, setIsFilterOpen }: { isFilterOpen?: boolean; setIsFilterOpen?: (v: boolean) => void }) {
+export function StudentManagement({
+  isFilterOpen,
+  setIsFilterOpen,
+  externalSearch = '',
+}: {
+  isFilterOpen?: boolean;
+  setIsFilterOpen?: (v: boolean) => void;
+  externalSearch?: string;
+}) {
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -57,6 +66,12 @@ export function StudentManagement({ isFilterOpen, setIsFilterOpen }: { isFilterO
   useEffect(() => {
     fetchStudents();
   }, []);
+
+  useEffect(() => {
+    if (externalSearch) {
+      setSearchTerm(externalSearch);
+    }
+  }, [externalSearch]);
 
   const fetchStudents = async () => {
     try {
@@ -201,9 +216,9 @@ export function StudentManagement({ isFilterOpen, setIsFilterOpen }: { isFilterO
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Top Action Bar */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5">
         <div className="flex flex-1 w-full gap-4">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -212,28 +227,29 @@ export function StudentManagement({ isFilterOpen, setIsFilterOpen }: { isFilterO
               placeholder="Search by Roll Number or Email..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary focus:outline-none transition-all" 
+              className="w-full pl-10 pr-4 py-3 rounded-xl border border-border/40 bg-muted/30 text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-primary focus:outline-none focus:border-border/60 transition-all shadow-sm" 
             />
           </div>
-          <select 
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="p-2 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="All">All Status</option>
-            <option value="Placed">Placed</option>
-            <option value="Unplaced">Unplaced</option>
-          </select>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-[140px] h-[44px] rounded-xl border border-border/40 bg-muted/30 focus:ring-2 focus:ring-primary shadow-sm">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All Status</SelectItem>
+              <SelectItem value="Placed">Placed</SelectItem>
+              <SelectItem value="Unplaced">Unplaced</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button className="gap-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:opacity-90 text-white border-0 shadow-lg shadow-purple-500/20">
-              <Plus className="w-4 h-4" />
+            <Button className="gap-2 h-11 px-6 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:shadow-lg hover:shadow-purple-500/30 hover:scale-105 text-white border-0 shadow-lg shadow-purple-500/20 transition-all active:scale-95 font-semibold">
+              <Plus className="w-5 h-5" />
               Add Student
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 bg-background/80 backdrop-blur-xl border-border">
+          <DropdownMenuContent align="end" className="w-48 bg-background/95 backdrop-blur-xl border-border/40 shadow-xl">
             <DropdownMenuItem className="cursor-pointer font-medium" onClick={openAddForm}>
               <UserPlus className="w-4 h-4 mr-2" />
               Single Entry
@@ -247,20 +263,20 @@ export function StudentManagement({ isFilterOpen, setIsFilterOpen }: { isFilterO
       </div>
 
       {/* Data Table */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-card/80 backdrop-blur-sm border border-border/30 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-shadow">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
+            <thead className="text-xs text-muted-foreground uppercase bg-gradient-to-r from-muted/60 to-muted/40 border-b border-border/30 font-semibold tracking-wider">
               <tr>
-                <th className="px-6 py-4 font-bold">Roll Number</th>
-                <th className="px-6 py-4 font-bold">Email</th>
-                <th className="px-6 py-4 font-bold">CGPA</th>
-                <th className="px-6 py-4 font-bold">Backlogs</th>
-                <th className="px-6 py-4 font-bold text-center">Status</th>
-                <th className="px-6 py-4 font-bold text-right">Actions</th>
+                <th className="px-8 py-5 font-bold text-foreground">Roll Number</th>
+                <th className="px-8 py-5 font-bold text-foreground">Email</th>
+                <th className="px-8 py-5 font-bold text-foreground">CGPA</th>
+                <th className="px-8 py-5 font-bold text-foreground">Backlogs</th>
+                <th className="px-8 py-5 font-bold text-center text-foreground">Status</th>
+                <th className="px-8 py-5 font-bold text-right text-foreground">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-border/20">
               {loading ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
@@ -278,28 +294,36 @@ export function StudentManagement({ isFilterOpen, setIsFilterOpen }: { isFilterO
                 </tr>
               ) : (
                 currentStudents.map((student) => (
-                  <tr key={student.user_id} className="hover:bg-muted/20 transition-colors group">
-                    <td className="px-6 py-4 font-bold text-foreground">{student.roll_number}</td>
-                    <td className="px-6 py-4 text-muted-foreground">{student.email}</td>
-                    <td className="px-6 py-4">{student.current_cgpa || 'N/A'}</td>
-                    <td className="px-6 py-4">{student.active_backlogs || 0}</td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                        student.is_placed 
-                          ? 'bg-green-500/10 text-green-500' 
-                          : 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-500'
+                  <tr key={student.user_id} className="hover:bg-muted/40 transition-all border-b border-border/20 group">
+                    <td className="px-8 py-5 font-bold text-foreground">{student.roll_number}</td>
+                    <td className="px-8 py-5 text-muted-foreground">{student.email}</td>
+                    <td className="px-8 py-5 font-semibold text-foreground">{student.current_cgpa || 'N/A'}</td>
+                    <td className="px-8 py-5">
+                      <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold ${
+                        student.active_backlogs > 0
+                          ? 'bg-red-500/15 text-red-600 dark:text-red-400'
+                          : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                       }`}>
-                        {student.is_placed ? 'Placed' : 'Unplaced'}
+                        {student.active_backlogs || 0}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-8 py-5 text-center">
+                      <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold ${
+                        student.is_placed 
+                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' 
+                          : 'bg-amber-500/15 text-amber-600 dark:text-amber-500'
+                      }`}>
+                        {student.is_placed ? '✓ Placed' : 'Searching'}
+                      </span>
+                    </td>
+                    <td className="px-8 py-5 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="group-hover:bg-muted/50 rounded-lg">
-                            <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                          <Button variant="ghost" size="icon" className="group-hover:bg-primary/10 rounded-lg hover:text-primary transition-all">
+                            <MoreVertical className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-background/80 backdrop-blur-xl border-border">
+                        <DropdownMenuContent align="end" className="bg-background/95 backdrop-blur-xl border-border/40 shadow-xl">
                           <DropdownMenuItem className="cursor-pointer" onClick={() => openStudentDetails(student.user_id)}>
                             <Eye className="w-4 h-4 mr-2" /> View Details
                           </DropdownMenuItem>
@@ -317,15 +341,15 @@ export function StudentManagement({ isFilterOpen, setIsFilterOpen }: { isFilterO
         </div>
         
         {/* Basic Pagination Header */}
-        <div className="p-4 border-t border-border flex items-center justify-between bg-muted/10">
-          <span className="text-xs text-muted-foreground">
+        <div className="p-6 border-t border-border/20 flex items-center justify-between bg-gradient-to-r from-muted/20 to-muted/10">
+          <span className="text-sm text-muted-foreground font-medium">
             Showing <span className="font-bold text-foreground">{filteredStudents.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to <span className="font-bold text-foreground">{Math.min(currentPage * itemsPerPage, filteredStudents.length)}</span> of <span className="font-bold text-foreground">{filteredStudents.length}</span> students
           </span>
-          <div className="flex gap-1">
-            <Button variant="outline" size="sm" className="h-8 w-8 p-0" disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="h-9 w-9 p-0 rounded-lg border-border/40 hover:bg-muted/50" disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <Button variant="outline" size="sm" className="h-8 w-8 p-0" disabled={currentPage === totalPages || totalPages === 0} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>
+            <Button variant="outline" size="sm" className="h-9 w-9 p-0 rounded-lg border-border/40 hover:bg-muted/50" disabled={currentPage === totalPages || totalPages === 0} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
@@ -337,9 +361,9 @@ export function StudentManagement({ isFilterOpen, setIsFilterOpen }: { isFilterO
         setIsUploadModalOpen(open);
         if (!open) setSelectedFile(null);
       }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md border-border/40 bg-background/95 backdrop-blur-xl shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-xl">Bulk Upload Students</DialogTitle>
+            <DialogTitle className="text-2xl font-bold">Bulk Upload Students</DialogTitle>
             <DialogDescription>
               Upload an Excel (.xlsx, .xls) or CSV file containing student details.
               Required columns: <b>roll_number, email</b>.
@@ -347,8 +371,8 @@ export function StudentManagement({ isFilterOpen, setIsFilterOpen }: { isFilterO
           </DialogHeader>
 
           <div 
-            className={`mt-4 border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
-              selectedFile ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-muted/10'
+            className={`mt-6 border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer ${
+              selectedFile ? 'border-emerald-500/60 bg-emerald-500/10 shadow-lg shadow-emerald-500/10' : 'border-border/40 hover:border-primary/60 hover:bg-primary/5'
             }`}
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleFileDrop}
@@ -363,32 +387,32 @@ export function StudentManagement({ isFilterOpen, setIsFilterOpen }: { isFilterO
             />
             
             {selectedFile ? (
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-12 h-12 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center">
-                  <FileSpreadsheet className="w-6 h-6" />
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-14 h-14 bg-emerald-500/25 text-emerald-500 rounded-full flex items-center justify-center shadow-lg">
+                  <FileSpreadsheet className="w-7 h-7" />
                 </div>
-                <p className="font-bold text-sm text-foreground">{selectedFile.name}</p>
+                <p className="font-bold text-base text-foreground">{selectedFile.name}</p>
                 <p className="text-xs text-muted-foreground">Click or drag to replace</p>
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
-                  <UploadCloud className="w-6 h-6 text-muted-foreground" />
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-14 h-14 bg-primary/15 rounded-full flex items-center justify-center">
+                  <UploadCloud className="w-7 h-7 text-primary" />
                 </div>
-                <p className="font-bold text-sm text-foreground">Click to upload or drag and drop</p>
+                <p className="font-bold text-base text-foreground">Click to upload or drag and drop</p>
                 <p className="text-xs text-muted-foreground">Excel or CSV (max. 5MB)</p>
               </div>
             )}
           </div>
 
-          <DialogFooter className="mt-6 flex gap-3 sm:justify-end">
-            <Button variant="outline" onClick={() => setIsUploadModalOpen(false)}>
+          <DialogFooter className="mt-8 flex gap-3 sm:justify-end">
+            <Button variant="outline" onClick={() => setIsUploadModalOpen(false)} className="rounded-lg border-border/40 hover:bg-muted/50">
               Cancel
             </Button>
             <Button 
               onClick={handleUpload} 
               disabled={!selectedFile || isUploading}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:shadow-lg hover:shadow-emerald-500/30 rounded-lg font-semibold px-6 h-10"
             >
               {isUploading ? (
                 <>
@@ -405,9 +429,9 @@ export function StudentManagement({ isFilterOpen, setIsFilterOpen }: { isFilterO
 
       {/* Single Entry / Edit Sheet */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent side="right" className="w-full max-w-[min(100vw,24rem)] overflow-y-auto sm:max-w-[540px] sm:w-[540px]">
-          <SheetHeader className="mb-6">
-            <SheetTitle>{isEditing ? 'Edit Academic Data' : 'Add New Student'}</SheetTitle>
+        <SheetContent side="right" className="w-full max-w-[min(100vw,24rem)] overflow-y-auto sm:max-w-[540px] sm:w-[540px] border-border/40 bg-background/95">
+          <SheetHeader className="mb-8">
+            <SheetTitle className="text-2xl font-bold">{isEditing ? 'Edit Academic Data' : 'Add New Student'}</SheetTitle>
             <SheetDescription>
               {isEditing 
                 ? 'Modify the academic records for this student. Note: Subjective data (resume, skills) is edited by the student.' 
@@ -415,33 +439,35 @@ export function StudentManagement({ isFilterOpen, setIsFilterOpen }: { isFilterO
             </SheetDescription>
           </SheetHeader>
 
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="roll_number">Roll Number <span className="text-red-500">*</span></Label>
+          <div className="space-y-8">
+            <div className="space-y-3">
+              <Label htmlFor="roll_number" className="text-sm font-bold">Roll Number <span className="text-red-500">*</span></Label>
               <Input 
                 id="roll_number" 
                 placeholder="e.g., CS2026001" 
                 value={formData.roll_number}
                 onChange={(e) => setFormData({...formData, roll_number: e.target.value.toUpperCase()})}
-                disabled={isEditing} // Cannot change roll number after creation
+                disabled={isEditing}
+                className="h-11 rounded-lg border-border/40 bg-muted/30 focus:ring-2 focus:ring-primary"
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
+            <div className="space-y-3">
+              <Label htmlFor="email" className="text-sm font-bold">Email Address <span className="text-red-500">*</span></Label>
               <Input 
                 id="email" 
                 type="email"
                 placeholder="student@college.edu" 
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
-                disabled={isEditing} // Email tied to auth, shouldn't change easily here
+                disabled={isEditing}
+                className="h-11 rounded-lg border-border/40 bg-muted/30 focus:ring-2 focus:ring-primary"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="cgpa">Current CGPA</Label>
+            <div className="grid grid-cols-2 gap-5">
+              <div className="space-y-3">
+                <Label htmlFor="cgpa" className="text-sm font-bold">Current CGPA</Label>
                 <Input 
                   id="cgpa" 
                   type="number"
@@ -450,10 +476,11 @@ export function StudentManagement({ isFilterOpen, setIsFilterOpen }: { isFilterO
                   placeholder="e.g., 8.5" 
                   value={formData.current_cgpa}
                   onChange={(e) => setFormData({...formData, current_cgpa: e.target.value})}
+                  className="h-11 rounded-lg border-border/40 bg-muted/30 focus:ring-2 focus:ring-primary"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="backlogs">Active Backlogs</Label>
+              <div className="space-y-3">
+                <Label htmlFor="backlogs" className="text-sm font-bold">Active Backlogs</Label>
                 <Input 
                   id="backlogs" 
                   type="number"
@@ -461,14 +488,17 @@ export function StudentManagement({ isFilterOpen, setIsFilterOpen }: { isFilterO
                   placeholder="e.g., 0" 
                   value={formData.active_backlogs}
                   onChange={(e) => setFormData({...formData, active_backlogs: e.target.value})}
+                  className="h-11 rounded-lg border-border/40 bg-muted/30 focus:ring-2 focus:ring-primary"
                 />
               </div>
             </div>
           </div>
 
-          <SheetFooter className="mt-8">
-            <Button variant="outline" onClick={() => setIsSheetOpen(false)}>Cancel</Button>
-            <Button onClick={handleFormSubmit} disabled={isUploading}>
+          <SheetFooter className="mt-10 flex gap-3">
+            <Button variant="outline" onClick={() => setIsSheetOpen(false)} className="rounded-lg border-border/40 hover:bg-muted/50">
+              Cancel
+            </Button>
+            <Button onClick={handleFormSubmit} disabled={isUploading} className="bg-primary text-white hover:shadow-lg hover:shadow-primary/30 rounded-lg font-semibold px-6 h-10">
               {isUploading ? 'Saving...' : 'Save Student Data'}
             </Button>
           </SheetFooter>
@@ -480,7 +510,7 @@ export function StudentManagement({ isFilterOpen, setIsFilterOpen }: { isFilterO
         setIsDetailsOpen(open);
         if (!open) setDetailedStudent(null);
       }}>
-        <SheetContent side="right" className="flex w-full max-w-[min(100vw,24rem)] flex-col p-0 sm:max-w-[540px] sm:w-[540px]">
+        <SheetContent side="right" className="flex w-full max-w-[min(100vw,24rem)] flex-col p-0 sm:max-w-[540px] sm:w-[540px] border-border/40 bg-background/95">
           {isFetchingDetails || !detailedStudent ? (
              <div className="flex-1 flex items-center justify-center p-6">
                <div className="flex flex-col items-center gap-4">
@@ -490,69 +520,71 @@ export function StudentManagement({ isFilterOpen, setIsFilterOpen }: { isFilterO
              </div>
           ) : (
             <>
-              <SheetHeader className="p-6 pb-0">
+              <SheetHeader className="p-8 pb-0 border-b border-border/20">
                 <div className="flex justify-between items-start">
                   <div>
-                    <SheetTitle className="text-2xl">{detailedStudent.email?.split('@')[0] || 'Student Profile'}</SheetTitle>
-                    <SheetDescription className="mt-1 flex items-center gap-2">
-                       <Badge variant="outline" className="font-mono">{detailedStudent.roll_number}</Badge>
-                       <span className="text-muted-foreground">{detailedStudent.department_name}</span>
+                    <SheetTitle className="text-3xl font-bold">{detailedStudent.email?.split('@')[0] || 'Student Profile'}</SheetTitle>
+                    <SheetDescription className="mt-2 flex items-center gap-3">
+                       <Badge variant="outline" className="font-mono rounded-lg border-border/40">{detailedStudent.roll_number}</Badge>
+                       <span className="text-muted-foreground text-sm">{detailedStudent.department_name}</span>
                     </SheetDescription>
                   </div>
-                  <Badge className={detailedStudent.is_placed ? 'bg-green-500 hover:bg-green-600 text-white' : 'bg-yellow-500 hover:bg-yellow-600 text-white'}>
-                    {detailedStudent.is_placed ? 'Placed' : 'Searching'}
+                  <Badge className={`rounded-lg font-semibold ${
+                    detailedStudent.is_placed ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                  }`}>
+                    {detailedStudent.is_placed ? '✓ Placed' : 'Searching'}
                   </Badge>
                 </div>
               </SheetHeader>
 
-              <ScrollArea className="flex-1 p-6">
-                <div className="space-y-8 pb-6">
+              <ScrollArea className="flex-1 p-8">
+                <div className="space-y-10 pb-8">
                   
                   {/* Academic Data (Editable via the other sheet) */}
                   <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-bold flex items-center gap-2">
-                        <GraduationCap className="w-5 h-5 text-primary" />
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-lg font-bold flex items-center gap-3">
+                        <GraduationCap className="w-6 h-6 text-primary" />
                         Academic Records
                       </h3>
                       <Button variant="outline" size="sm" onClick={() => {
                         setIsDetailsOpen(false);
                         openEditForm(detailedStudent);
-                      }}>
-                        <Edit className="w-4 h-4 mr-2" /> Edit Records
+                      }} className="rounded-lg border-border/40 hover:bg-muted/50 h-9">
+                        <Edit className="w-4 h-4 mr-2" /> Edit
                       </Button>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border">
+                    <div className="grid grid-cols-2 gap-5 bg-gradient-to-br from-muted/30 to-muted/10 p-6 rounded-2xl border border-border/30 shadow-sm">
                       <div>
-                        <p className="text-sm text-muted-foreground mb-1">Current CGPA</p>
-                        <p className="font-bold text-lg">{detailedStudent.current_cgpa || 'N/A'}</p>
+                        <p className="text-xs font-bold uppercase text-muted-foreground mb-2 tracking-wide">Current CGPA</p>
+                        <p className="font-bold text-2xl text-primary">{detailedStudent.current_cgpa || 'N/A'}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground mb-1">Active Backlogs</p>
-                        <p className="font-bold text-lg text-red-500 dark:text-red-400">{detailedStudent.active_backlogs || 0}</p>
+                        <p className="text-xs font-bold uppercase text-muted-foreground mb-2 tracking-wide">Active Backlogs</p>
+                        <p className="font-bold text-2xl text-red-500 dark:text-red-400">{detailedStudent.active_backlogs || 0}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground mb-1">10th Marks</p>
-                        <p className="font-medium">{detailedStudent.tenth_marks ? `${detailedStudent.tenth_marks}%` : 'N/A'}</p>
+                        <p className="text-xs font-bold uppercase text-muted-foreground mb-2 tracking-wide">10th Marks</p>
+                        <p className="font-bold text-lg text-foreground">{detailedStudent.tenth_marks ? `${detailedStudent.tenth_marks}%` : 'N/A'}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground mb-1">12th Marks</p>
-                        <p className="font-medium">{detailedStudent.twelfth_marks ? `${detailedStudent.twelfth_marks}%` : 'N/A'}</p>
+                        <p className="text-xs font-bold uppercase text-muted-foreground mb-2 tracking-wide">12th Marks</p>
+                        <p className="font-bold text-lg text-foreground">{detailedStudent.twelfth_marks ? `${detailedStudent.twelfth_marks}%` : 'N/A'}</p>
                       </div>
                     </div>
                   </div>
 
-                  <Separator />
+                  <Separator className="bg-border/20" />
 
                   {/* Subjective Data (Read-only for Dept Head) */}
                   <div>
-                    <h3 className="text-lg font-bold flex items-center gap-2 mb-4">
-                      <FileText className="w-5 h-5 text-indigo-500" />
+                    <h3 className="text-lg font-bold flex items-center gap-3 mb-6">
+                      <FileText className="w-6 h-6 text-indigo-500" />
                       Subjective Profile
                     </h3>
-                    <div className="space-y-6">
-                      <div className="flex flex-wrap gap-4 pt-2">
+                    <div className="space-y-8">
+                      <div className="flex flex-wrap gap-3 pt-2">
                         {detailedStudent.resume_url ? (
                           <a href={detailedStudent.resume_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-sm font-medium transition-colors border border-blue-200">
                             <FileText className="w-4 h-4" /> View Resume
@@ -632,41 +664,46 @@ export function StudentManagement({ isFilterOpen, setIsFilterOpen }: { isFilterO
       </Sheet>
       {/* Filter Drawer */}
       <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-        <SheetContent side="right" className="w-full max-w-[min(100vw,20rem)] sm:max-w-[400px]">
-          <SheetHeader className="mb-6">
-            <SheetTitle>Filter Data</SheetTitle>
-            <SheetDescription>Apply advanced filters to the student list.</SheetDescription>
+        <SheetContent side="right" className="w-full max-w-[min(100vw,20rem)] sm:max-w-[400px] border-border/40 bg-background/95">
+          <SheetHeader className="mb-8 border-b border-border/20 pb-6">
+            <SheetTitle className="text-2xl font-bold">Filter Data</SheetTitle>
+            <SheetDescription className="text-sm">Apply advanced filters to the student list.</SheetDescription>
           </SheetHeader>
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label>CGPA Range</Label>
-              <div className="flex gap-2">
-                <Input type="number" step="0.01" min="0" max="10" placeholder="Min" value={minCgpa} onChange={e => setMinCgpa(e.target.value)} />
-                <Input type="number" step="0.01" min="0" max="10" placeholder="Max" value={maxCgpa} onChange={e => setMaxCgpa(e.target.value)} />
+          <div className="space-y-8">
+            <div className="space-y-3">
+              <Label className="text-sm font-bold">CGPA Range</Label>
+              <div className="flex gap-3">
+                <Input type="number" step="0.01" min="0" max="10" placeholder="Min" value={minCgpa} onChange={e => setMinCgpa(e.target.value)} className="h-10 rounded-lg border-border/40 bg-muted/30 focus:ring-2 focus:ring-primary" />
+                <Input type="number" step="0.01" min="0" max="10" placeholder="Max" value={maxCgpa} onChange={e => setMaxCgpa(e.target.value)} className="h-10 rounded-lg border-border/40 bg-muted/30 focus:ring-2 focus:ring-primary" />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Active Backlogs</Label>
-              <select 
-                value={backlogsFilter}
-                onChange={(e) => setBacklogsFilter(e.target.value)}
-                className="w-full p-2 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="All">Any</option>
-                <option value="0">No Backlogs</option>
-                <option value="1+">1 or More Backlogs</option>
-              </select>
+            <div className="space-y-3">
+              <Label className="text-sm font-bold">Active Backlogs</Label>
+              <Select value={backlogsFilter} onValueChange={setBacklogsFilter}>
+                <SelectTrigger className="h-10 rounded-lg border-border/40 bg-muted/30 focus:ring-2 focus:ring-primary">
+                  <SelectValue placeholder="Any" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">Any</SelectItem>
+                  <SelectItem value="0">No Backlogs</SelectItem>
+                  <SelectItem value="1+">1 or More Backlogs</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          <SheetFooter className="mt-8 flex gap-2">
+          <SheetFooter className="mt-10 flex gap-3">
             <Button variant="outline" onClick={() => {
               setMinCgpa('');
               setMaxCgpa('');
               setBacklogsFilter('All');
               setFilterStatus('All');
               setSearchTerm('');
-            }}>Reset</Button>
-            <Button onClick={() => setIsFilterOpen?.(false)}>Apply</Button>
+            }} className="rounded-lg border-border/40 hover:bg-muted/50 flex-1">
+              Reset
+            </Button>
+            <Button onClick={() => setIsFilterOpen?.(false)} className="bg-primary text-white hover:shadow-lg hover:shadow-primary/30 rounded-lg font-semibold flex-1 h-10">
+              Apply
+            </Button>
           </SheetFooter>
         </SheetContent>
       </Sheet>
