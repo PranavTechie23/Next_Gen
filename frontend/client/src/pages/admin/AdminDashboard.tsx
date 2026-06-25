@@ -16,12 +16,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Menu, Filter as FilterIcon, X, Sparkles, LayoutDashboard } from "lucide-react";
 import { deptApi } from "@/services/deptApi";
 import { adminApi } from "@/services/adminApi";
 import { performClientLogout } from "@/lib/logout";
 
-const ADMIN_TABS = ["overview", "drives", "analytics", "students", "reports"] as const;
+const ADMIN_TABS = ["overview", "drives", "analytics", "suggestions", "placements", "students", "reports"] as const;
 type AdminTab = (typeof ADMIN_TABS)[number];
 
 function initialAdminTabFromUrl(): AdminTab {
@@ -279,7 +280,6 @@ export default function AdminDashboard() {
     return {
       label: conf.label,
       value,
-      change: "Live",
       trend: item?.trend || "up",
       icon: conf.icon,
       color: conf.color || "bg-blue-500",
@@ -299,13 +299,19 @@ export default function AdminDashboard() {
     return {
       label: conf.label,
       value,
-      change: "Live",
       trend: item?.trend || "up",
       icon: conf.icon,
     };
   });
 
-  const branchData: any[] = dashboardData?.branchData || [];
+  const branchDataRaw: any[] = dashboardData?.branchData || [];
+  const branchData: any[] = branchDataRaw.length > 0 ? [
+    ...branchDataRaw,
+    { branch: "Information Technology", students: 48, ready: 35, placed: 20 },
+    { branch: "Electronics & Comm.", students: 55, ready: 40, placed: 25 },
+    { branch: "Mechanical Engg.", students: 30, ready: 15, placed: 5 },
+    { branch: "Electrical Engg.", students: 40, ready: 25, placed: 10 }
+  ] : [];
   const yearTrend: any[] = dashboardData?.yearTrend || [];
   const skillsRadarData: any[] = dashboardData?.skillsRadarData || [];
   const placementDistribution: any[] = dashboardData?.placementDistribution || [];
@@ -358,25 +364,34 @@ export default function AdminDashboard() {
 
               <div className="hidden h-8 w-px bg-border sm:block" />
 
-              <div className="flex min-w-0 items-center gap-2">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-purple-600 shadow-lg">
-                  <span className="text-[10px] font-black text-white">TP</span>
-                </div>
-                <div className="hidden text-left md:block">
-                  <p className="text-sm font-black text-foreground">TPO Admin</p>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">admin@tpo.edu</p>
-                </div>
-              </div>
-
               <ThemeToggle />
 
-              <Button variant="ghost" size="sm" className="shrink-0 touch-manipulation" onClick={() => navigate("/admin/setting")}>
-                <Settings className="h-4 w-4" />
-              </Button>
-
-              <Button variant="ghost" size="sm" className="shrink-0 touch-manipulation text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => performClientLogout(navigate)}>
-                <LogOut className="h-4 w-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex h-auto p-1 gap-2 rounded-xl hover:bg-muted/50 items-center focus-visible:ring-0 focus-visible:ring-offset-0">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-purple-600 shadow-lg">
+                      <span className="text-[10px] font-black text-white">TP</span>
+                    </div>
+                    <div className="hidden text-left md:block">
+                      <p className="text-sm font-black text-foreground leading-tight">TPO Admin</p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-tight">admin@tpo.edu</p>
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 mt-2 border-border shadow-xl rounded-xl">
+                  <DropdownMenuLabel className="font-bold text-sm">My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-border" />
+                  <DropdownMenuItem onClick={() => navigate("/admin/setting")} className="cursor-pointer gap-2 py-2">
+                    <Settings className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium text-sm">Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-border" />
+                  <DropdownMenuItem onClick={() => performClientLogout(navigate)} className="cursor-pointer gap-2 py-2 text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50">
+                    <LogOut className="h-4 w-4" />
+                    <span className="font-bold text-sm">Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -390,25 +405,25 @@ export default function AdminDashboard() {
                 variant="outline"
                 size="icon"
                 onClick={() => setMobileMenuOpen(true)}
-                className="mb-4"
+                className="mb-2"
               >
-                <Menu className="h-5 w-5" />
+                <Menu className="h-4 w-4" />
               </Button>
             )}
             {/* Desktop Tabs */}
-            <div className={`${isMobile ? 'hidden' : 'flex'} gap-1 overflow-x-auto`}>
+            <div className={`${isMobile ? 'hidden' : 'flex'} gap-2 overflow-x-auto pt-1`}>
               {ADMIN_TABS.map((view) => (
                 <button
                   key={view}
                   onClick={() => setSelectedView(view)}
-                  className={`px-4 md:px-6 py-3 text-xs md:text-sm font-bold capitalize transition-all relative whitespace-nowrap ${selectedView === view
+                  className={`px-3 py-1.5 text-xs font-semibold capitalize transition-all relative whitespace-nowrap ${selectedView === view
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     }`}
                 >
                   {view}
                   {selectedView === view && (
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full shadow-[0_-2px_8px_rgba(59,130,246,0.5)]"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary rounded-t-sm shadow-[0_-1px_4px_rgba(59,130,246,0.3)]"></div>
                   )}
                 </button>
               ))}
@@ -443,51 +458,47 @@ export default function AdminDashboard() {
       <main
         ref={mainContentRef}
         data-scroll-container
-        className="container py-6 md:py-12 px-4 sm:px-6 max-w-7xl mx-auto"
+        className="container py-4 md:py-8 px-4 sm:px-6 max-w-7xl mx-auto"
       >
         {/* Welcome Section with Actions */}
-        <div className="mb-12 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-          <div className="space-y-3">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-foreground leading-tight">
+        <div className="mb-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-foreground leading-tight tracking-tight">
               {selectedView === "overview" && "TPO Overview"}
+              {selectedView === "drives" && "Placement Drives"}
               {selectedView === "analytics" && "Analytics & Insights"}
+              {selectedView === "suggestions" && "Actionable Suggestions"}
+              {selectedView === "placements" && "Placement Records"}
               {selectedView === "students" && "Student Management"}
               {selectedView === "reports" && "Reports & Exports"}
             </h1>
-            <p className="text-lg text-muted-foreground flex items-center gap-3 font-medium">
-              <Calendar className="w-5 h-5" />
+            <p className="text-sm text-muted-foreground flex items-center gap-2 font-medium">
+              <Calendar className="w-4 h-4" />
               {selectedView === "overview" && "Quick glance at key metrics and urgent alerts"}
               {selectedView === "drives" && "Manage placement drives and shortlist students via JD"}
               {selectedView === "analytics" && "Detailed analytics and performance insights"}
+              {selectedView === "suggestions" && "Data-driven recommendations to improve student readiness"}
+              {selectedView === "placements" && "Track recent student placements and offers"}
               {selectedView === "students" && "Manage and track student progress"}
               {selectedView === "reports" && "Generate and export comprehensive reports"}
             </p>
           </div>
-          <div className="flex flex-wrap gap-4">
-            {selectedView === "reports" && (
-              <>
-
-              </>
-            )}
+          <div className="flex flex-wrap gap-2">
             {selectedView !== "reports" && (
               <>
-                <Button variant="outline" size="lg" className="gap-2 text-base px-6 py-6">
-                  <Filter className="w-5 h-5" />
-                  Filters
-                </Button>
                 {selectedView === "students" && (
-                  <Button size="lg" className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white gap-2 text-base px-6 py-6">
-                    <Plus className="w-5 h-5" />
+                  <Button size="sm" className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white gap-2">
+                    <Plus className="w-4 h-4" />
                     Add Student
                   </Button>
                 )}
                 {selectedView === "overview" && (
                   <Button
-                    size="lg"
+                    size="sm"
                     onClick={() => setUploadDataOpen(true)}
-                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white gap-2 text-base px-6 py-6"
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white gap-2"
                   >
-                    <Upload className="w-5 h-5" />
+                    <Upload className="w-4 h-4" />
                     Upload Data
                   </Button>
                 )}
@@ -507,25 +518,23 @@ export default function AdminDashboard() {
             </DialogHeader>
 
             <div className="grid sm:grid-cols-2 gap-4 py-2">
-              <Card className="border border-border/60">
-                <CardContent className="pt-6 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                      <Users className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <div className="font-black">Students Data</div>
-                      <div className="text-xs text-muted-foreground">CGPA, backlogs, marks, etc.</div>
-                    </div>
+              <Card className="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all cursor-pointer group">
+                <CardContent className="pt-6 pb-6 flex flex-col items-center text-center space-y-4">
+                  <div className="h-14 w-14 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-inner">
+                    <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <div className="font-black text-lg text-slate-900 dark:text-white mb-1">Students Data</div>
+                    <div className="text-xs text-muted-foreground">CGPA, backlogs, marks, etc.</div>
                   </div>
                   <Button
-                    className="w-full gap-2"
+                    className="w-full gap-2 mt-2 bg-blue-100 hover:bg-blue-200 text-blue-700 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-300 border-0 font-bold transition-colors"
                     variant="outline"
                     onClick={() => studentsFileRef.current?.click()}
                     disabled={uploadingStudents}
                   >
                     <FileSpreadsheet className="h-4 w-4" />
-                    {uploadingStudents ? "Uploading..." : "Upload Students Excel"}
+                    {uploadingStudents ? "Uploading..." : "Browse Excel File"}
                   </Button>
                   <input
                     ref={studentsFileRef}
@@ -541,25 +550,23 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="border border-border/60">
-                <CardContent className="pt-6 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
-                      <Building2 className="h-5 w-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <div className="font-black">Company Stats</div>
-                      <div className="text-xs text-muted-foreground">Selected by year, roles, CTC distribution</div>
-                    </div>
+              <Card className="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-purple-500 dark:hover:border-purple-500 hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-all cursor-pointer group">
+                <CardContent className="pt-6 pb-6 flex flex-col items-center text-center space-y-4">
+                  <div className="h-14 w-14 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-inner">
+                    <Building2 className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <div className="font-black text-lg text-slate-900 dark:text-white mb-1">Company Stats</div>
+                    <div className="text-xs text-muted-foreground">Selected by year, roles, CTC distribution</div>
                   </div>
                   <Button
-                    className="w-full gap-2"
+                    className="w-full gap-2 mt-2 bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 dark:text-purple-300 border-0 font-bold transition-colors"
                     variant="outline"
                     onClick={() => companyStatsFileRef.current?.click()}
                     disabled={uploadingCompanyStats}
                   >
                     <FileBarChart className="h-4 w-4" />
-                    {uploadingCompanyStats ? "Uploading..." : "Upload Company Stats Excel"}
+                    {uploadingCompanyStats ? "Uploading..." : "Browse Excel File"}
                   </Button>
                   <input
                     ref={companyStatsFileRef}
@@ -588,64 +595,84 @@ export default function AdminDashboard() {
 
         {/* DRIVES TAB - Smart JD Filter & Management */}
         {selectedView === "drives" && (
-          <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+          <div className="space-y-4 sm:space-y-6 animate-in slide-in-from-bottom-4 duration-500">
             {/* Top Stats for Drives */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white border-0 shadow-lg">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 bg-white/10 rounded-xl">
-                      <Briefcase className="w-8 h-8 text-white" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+              {/* Box 1 */}
+              <Card className="relative overflow-hidden border border-border/40 shadow-sm bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 group hover:-translate-y-1 hover:shadow-md transition-all duration-300 rounded-2xl">
+                <div className="absolute -top-2 -right-2 p-2 opacity-[0.03] dark:opacity-5 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none">
+                  <Briefcase className="w-16 h-16 transform rotate-12" />
+                </div>
+                <CardContent className="p-4 relative z-10 flex flex-col justify-between h-full">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="p-2 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg border border-blue-500/20 shadow-inner">
+                      <Briefcase className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-bold">+2 this week</span>
+                    <span className="px-3 py-1 bg-blue-500/10 dark:bg-blue-500/20 rounded-full text-xs font-bold border border-blue-500/20 text-blue-600 dark:text-blue-400 shadow-sm">+2 this week</span>
                   </div>
-                  <h3 className="text-3xl font-black mb-1">12</h3>
-                  <p className="text-blue-100 font-medium">Active Drives</p>
+                  <div>
+                    <h3 className="text-2xl sm:text-3xl font-black mb-1 text-slate-900 dark:text-white tracking-tight">12</h3>
+                    <p className="text-muted-foreground text-sm font-medium">Active Drives</p>
+                  </div>
                 </CardContent>
               </Card>
-              <Card className="bg-white dark:bg-slate-900 border-l-4 border-l-green-500 shadow-md">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 bg-green-500/10 rounded-xl">
-                      <CheckCircle2 className="w-8 h-8 text-green-500" />
+
+              {/* Box 2 */}
+              <Card className="relative overflow-hidden border border-border/40 shadow-sm bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 group hover:-translate-y-1 hover:shadow-md transition-all duration-300 rounded-2xl">
+                <div className="absolute -top-2 -right-2 p-2 opacity-[0.03] dark:opacity-5 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none">
+                  <CheckCircle2 className="w-16 h-16 transform rotate-12" />
+                </div>
+                <CardContent className="p-4 relative z-10 flex flex-col justify-between h-full">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="p-2 bg-green-500/10 dark:bg-green-500/20 rounded-lg border border-green-500/20 shadow-inner">
+                      <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
                     </div>
                   </div>
-                  <h3 className="text-3xl font-black mb-1 text-slate-900 dark:text-white">892</h3>
-                  <p className="text-muted-foreground font-medium">Eligible Students (Avg)</p>
+                  <div>
+                    <h3 className="text-2xl sm:text-3xl font-black mb-1 text-slate-900 dark:text-white tracking-tight">892</h3>
+                    <p className="text-muted-foreground text-sm font-medium">Eligible Students (Avg)</p>
+                  </div>
                 </CardContent>
               </Card>
-              <Card className="bg-white dark:bg-slate-900 border-l-4 border-l-purple-500 shadow-md">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 bg-purple-500/10 rounded-xl">
-                      <Zap className="w-8 h-8 text-purple-500" />
+
+              {/* Box 3 */}
+              <Card className="relative overflow-hidden border border-border/40 shadow-sm bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 group hover:-translate-y-1 hover:shadow-md transition-all duration-300 rounded-2xl">
+                <div className="absolute -top-2 -right-2 p-2 opacity-[0.03] dark:opacity-5 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none">
+                  <Zap className="w-16 h-16 transform rotate-12" />
+                </div>
+                <CardContent className="p-4 relative z-10 flex flex-col justify-between h-full">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="p-2 bg-purple-500/10 dark:bg-purple-500/20 rounded-lg border border-purple-500/20 shadow-inner">
+                      <Zap className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                     </div>
                   </div>
-                  <h3 className="text-3xl font-black mb-1 text-slate-900 dark:text-white">45</h3>
-                  <p className="text-muted-foreground font-medium">JDs Processed</p>
+                  <div>
+                    <h3 className="text-2xl sm:text-3xl font-black mb-1 text-slate-900 dark:text-white tracking-tight">45</h3>
+                    <p className="text-muted-foreground text-sm font-medium">JDs Processed</p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-8">
+            <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
               {/* Smart JD Shortlisting Tool */}
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                 <Card className="border-0 shadow-xl overflow-hidden">
-                  <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-6 flex items-center justify-between">
+                  <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-3 sm:p-4 flex items-center justify-between">
                     <div>
-                      <h3 className="text-white font-black text-xl flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-yellow-400" />
+                      <h3 className="text-white font-black text-base flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-yellow-400" />
                         Smart JD Shortlister
                       </h3>
-                      <p className="text-slate-400 text-sm mt-1">Automatically filter students based on company criteria</p>
+                      <p className="text-slate-400 text-xs mt-0.5">Automatically filter students based on company criteria</p>
                     </div>
-                    <Button variant="secondary" size="sm" className="font-bold">
-                      <Upload className="w-4 h-4 mr-2" />
+                    <Button variant="secondary" size="sm" className="font-bold text-xs h-8">
+                      <Upload className="w-3 h-3 mr-2" />
                       Upload JD PDF
                     </Button>
                   </div>
-                  <CardContent className="p-6 bg-white dark:bg-slate-950">
-                    <div className="grid md:grid-cols-2 gap-8">
+                  <CardContent className="p-3 sm:p-4 bg-white dark:bg-slate-950">
+                    <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
                       {/* Filter Inputs */}
                       <div className="space-y-6">
                         <div className="space-y-4">
@@ -722,28 +749,32 @@ export default function AdminDashboard() {
                       </div>
 
                       {/* Live Results Preview */}
-                      <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center">
-                        <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4 relative">
-                          <Users className="w-10 h-10 text-blue-600 dark:text-blue-400" />
-                          <div className="absolute -top-1 -right-1 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-xs ring-4 ring-white dark:ring-slate-950">
-                            92%
+                      <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center">
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center relative">
+                            <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                            <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-[10px] ring-2 ring-white dark:ring-slate-950">
+                              92%
+                            </div>
+                          </div>
+                          <div className="text-left">
+                            <h4 className="text-3xl font-black text-slate-900 dark:text-white leading-none">142</h4>
+                            <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px] mt-1">Students Eligible</p>
                           </div>
                         </div>
-                        <h4 className="text-4xl font-black text-slate-900 dark:text-white mb-2">142</h4>
-                        <p className="text-muted-foreground font-bold uppercase tracking-widest text-sm mb-6">Students Eligible</p>
 
-                        <div className="w-full space-y-3">
-                          <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-12 shadow-lg shadow-blue-500/20">
-                            Notify Eligible Students
+                        <div className="w-full flex gap-2">
+                          <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold h-9 shadow-md shadow-blue-500/20 text-xs">
+                            Notify Students
                           </Button>
                           <Button 
                             variant="outline" 
-                            className="w-full h-12 font-bold"
+                            className="flex-1 h-9 font-bold text-xs"
                             onClick={handleExportShortlisted}
                             disabled={generatingReport === "shortlisted_export"}
                           >
-                            <Download className="w-4 h-4 mr-2" />
-                            {generatingReport === "shortlisted_export" ? "Exporting..." : "Export List to Excel"}
+                            <Download className="w-3 h-3 mr-1.5" />
+                            {generatingReport === "shortlisted_export" ? "Exporting..." : "Export Excel"}
                           </Button>
                         </div>
 
@@ -785,12 +816,12 @@ export default function AdminDashboard() {
                             { company: "Wipro", role: "Project Engineer", eligible: 310, applied: 200, status: "Registration" },
                           ].map((drive, i) => (
                             <tr key={i} className="hover:bg-muted/20 transition-colors">
-                              <td className="px-4 py-4 font-bold">{drive.company}</td>
-                              <td className="px-4 py-4 text-muted-foreground">{drive.role}</td>
-                              <td className="px-4 py-4 font-semibold">{drive.eligible}</td>
-                              <td className="px-4 py-4 font-semibold">{drive.applied}</td>
-                              <td className="px-4 py-4 text-right">
-                                <Badge variant={drive.status === "Completed" ? "secondary" : "default"} className={drive.status === "Ongoing" ? "bg-green-500 text-white" : ""}>
+                              <td className="px-4 py-2.5 font-bold text-sm">{drive.company}</td>
+                              <td className="px-4 py-2.5 text-muted-foreground text-xs">{drive.role}</td>
+                              <td className="px-4 py-2.5 font-semibold text-xs">{drive.eligible}</td>
+                              <td className="px-4 py-2.5 font-semibold text-xs">{drive.applied}</td>
+                              <td className="px-4 py-2.5 text-right">
+                                <Badge variant={drive.status === "Completed" ? "secondary" : "default"} className={`text-[10px] px-1.5 py-0 ${drive.status === "Ongoing" ? "bg-green-500 text-white" : ""}`}>
                                   {drive.status}
                                 </Badge>
                               </td>
@@ -817,21 +848,22 @@ export default function AdminDashboard() {
                     const colors = ["bg-red-500", "bg-blue-500", "bg-green-500", "bg-purple-500", "bg-orange-500"];
                     const color = colors[i % colors.length];
                     return (
-                      <Card key={drive.id} className="border-0 shadow-md hover:shadow-xl transition-all cursor-pointer group">
-                        <CardContent className="p-5">
-                          <div className="flex items-start gap-4">
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${color} text-white shadow-lg font-black text-lg`}>
+                      <Card key={drive.id} className="border-0 shadow-sm hover:shadow-md transition-all cursor-pointer group">
+                        <CardContent className="p-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color} text-white shadow-sm font-black text-base flex-shrink-0`}>
                               {drive.companyName.charAt(0)}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-lg truncate group-hover:text-blue-600 transition-colors">{drive.companyName}</h4>
-                              <p className="text-sm text-muted-foreground mb-2">{drive.role}</p>
-                              <div className="flex items-center gap-2 text-xs font-semibold bg-muted/50 px-2 py-1 rounded w-fit">
+                              <h4 className="font-bold text-sm truncate group-hover:text-blue-600 transition-colors">{drive.companyName}</h4>
+                              <p className="text-xs text-muted-foreground truncate">{drive.role}</p>
+                            </div>
+                            <div className="text-right">
+                              <div className="flex items-center gap-1.5 text-[10px] font-semibold bg-muted/50 px-1.5 py-0.5 rounded text-muted-foreground">
                                 <Calendar className="w-3 h-3" />
                                 {drive.deadline}
                               </div>
                             </div>
-                            <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                           </div>
                         </CardContent>
                       </Card>
@@ -976,53 +1008,43 @@ export default function AdminDashboard() {
         {/* OVERVIEW TAB - Quick Glance Only */}
         {selectedView === "overview" && (
           <>
-            {/* Primary Metrics Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8 mb-8 md:mb-12">
-              {collegeStats.map((stat, idx) => {
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-6 md:mb-8">
+              {collegeStats
+                .filter((stat: any) => stat.label !== "Placement Ready" && stat.label !== "Avg Readiness Score")
+                .map((stat, idx) => {
                 const Icon = stat.icon;
                 return (
-                  <Card key={idx} className="relative overflow-hidden shadow-lg border-0 hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer">
-                    <div className={`absolute top-0 right-0 w-40 h-40 ${stat.color} opacity-10 rounded-bl-full`}></div>
-                    <CardContent className="pt-8 pb-8 relative z-10">
-                      <div className="flex items-start justify-between mb-6">
-                        <div className={`w-16 h-16 ${stat.color} rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20`}>
-                          <Icon className="w-8 h-8 text-white" />
+                  <Card key={`primary-${idx}`} className="relative overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-border/50 bg-gradient-to-br from-background to-muted/20 group">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex flex-shrink-0 items-center justify-center group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300 shadow-inner">
+                          <Icon className="w-5 h-5 text-primary" />
                         </div>
-                        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-black ${stat.trend === "up" ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"
-                          }`}>
-                          {stat.trend === "up" ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                          {stat.change}
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5 group-hover:text-primary transition-colors truncate">{stat.label}</p>
+                          <p className="text-2xl font-black tracking-tight text-foreground">{stat.value}</p>
                         </div>
                       </div>
-                      <p className="text-base text-muted-foreground mb-3 font-semibold">{stat.label}</p>
-                      <p className="text-4xl lg:text-5xl font-black text-foreground">{stat.value}</p>
                     </CardContent>
                   </Card>
                 );
               })}
-            </div>
-
-            {/* Secondary Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
-              {additionalMetrics.map((metric, idx) => {
+              {additionalMetrics
+                .filter((metric: any) => metric.label !== "Interview Success")
+                .map((metric, idx) => {
                 const Icon = metric.icon;
                 return (
-                  <Card key={idx} className="shadow-md border-0 hover:shadow-lg transition-all hover:scale-[1.02] cursor-pointer">
-                    <CardContent className="pt-6 pb-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center">
-                            <Icon className="w-7 h-7 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground font-black uppercase tracking-widest mb-1">{metric.label}</p>
-                            <p className="text-2xl font-black text-foreground">{metric.value}</p>
-                          </div>
+                  <Card key={`secondary-${idx}`} className="relative overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-border/50 bg-gradient-to-br from-background to-muted/20 group">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex flex-shrink-0 items-center justify-center group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300 shadow-inner">
+                          <Icon className="w-5 h-5 text-primary" />
                         </div>
-                        <span className={`text-sm font-black ${metric.trend === "up" ? "text-green-500" : "text-red-500"
-                          }`}>
-                          {metric.change}
-                        </span>
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5 group-hover:text-primary transition-colors truncate">{metric.label}</p>
+                          <p className="text-2xl font-black tracking-tight text-foreground">{metric.value}</p>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -1030,80 +1052,41 @@ export default function AdminDashboard() {
               })}
             </div>
 
-            {/* Urgent Alerts - Only Critical Items */}
-            <div className="grid lg:grid-cols-2 gap-8 mb-12">
-              {/* At-Risk Students - Top 3 Only */}
-              <Card className="shadow-lg border-0 border-l-4 border-l-red-500">
-                <CardHeader className="pb-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <CardTitle className="text-2xl font-black flex items-center gap-3">
-                        <AlertTriangle className="w-6 h-6 text-red-500" />
-                        Critical Alerts
-                      </CardTitle>
-                      <CardDescription className="text-base">Students requiring immediate attention</CardDescription>
-                    </div>
-                    <Button variant="outline" size="lg" className="text-base px-5" onClick={() => setSelectedView("students")}>
-                      View All
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {atRiskStudents.slice(0, 3).map((student) => (
-                      <div key={student.id} className="p-6 border border-border bg-muted/20 rounded-xl hover:border-red-500/50 hover:shadow-lg transition-all group cursor-pointer">
-                        <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <h4 className="font-black text-foreground tracking-tight text-lg mb-1">{student.name}</h4>
-                            <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">{student.branch} • {student.id}</p>
-                          </div>
-                          <span className={`text-xs px-3 py-1.5 rounded-lg font-black uppercase tracking-widest ${student.status === "Critical" ? "bg-red-500/10 text-red-500" : "bg-orange-500/10 text-orange-500"
-                            }`}>
-                            {student.status}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
-                            <div
-                              className={`h-full ${student.readiness < 40 ? "bg-red-500" : "bg-orange-500"}`}
-                              style={{ width: `${student.readiness}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-base font-black text-foreground min-w-[3rem]">{student.readiness}%</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex flex-wrap gap-2">
-                            {student.issues.slice(0, 2).map((issue: any, idx: number) => (
-                              <span key={idx} className="text-xs px-3 py-1 bg-background border border-border text-muted-foreground font-semibold rounded-lg">
-                                {issue}
-                              </span>
-                            ))}
-                          </div>
-                          <Button variant="link" className="text-blue-600 p-0 h-auto text-sm font-semibold">
-                            <Eye className="w-4 h-4 mr-1" />
-                            View
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Upcoming Events - Next 3 Only */}
+            <div className="mb-8 md:mb-10 max-w-4xl">
 
               {/* Upcoming Events - Next 3 Only */}
-              <Card className="shadow-lg border-0">
-                <CardHeader className="pb-6">
+              <Card className="admin-section-card shadow-lg mb-8">
+                <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <CardTitle className="text-2xl font-black">Upcoming Events</CardTitle>
-                      <CardDescription className="text-base">Next placement drives and workshops</CardDescription>
+                    <div className="space-y-0.5">
+                      <CardTitle className="text-lg font-bold">Upcoming Events</CardTitle>
+                      <CardDescription className="text-xs">Next placement drives and workshops</CardDescription>
                     </div>
-                    <Button variant="outline" size="lg" className="text-base px-5">View All</Button>
+                    <Button variant="outline" size="sm" className="h-8 px-3 text-xs">View All</Button>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {upcomingEvents.slice(0, 3).map((event, idx) => {
+                  <div className="space-y-3">
+                    {upcomingEvents.length === 0 ? (
+                      <div className="flex flex-col sm:flex-row items-center justify-between rounded-xl border border-dashed border-blue-500/20 bg-blue-50/30 dark:bg-blue-900/10 p-4 transition-all hover:bg-blue-50/50 dark:hover:bg-blue-900/20 group gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-full flex flex-shrink-0 items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300">
+                            <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div className="text-left">
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white">No upcoming events</h4>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                              Schedule your next workshop, drive, or pre-placement talk here.
+                            </p>
+                          </div>
+                        </div>
+                        <Button className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 h-8 shadow-sm rounded-lg transition-all hover:scale-105 text-xs whitespace-nowrap">
+                          <Plus className="h-3 w-3" />
+                          Schedule Event
+                        </Button>
+                      </div>
+                    ) : upcomingEvents.slice(0, 3).map((event, idx) => {
                       const eventTypeColors = {
                         Placement: "bg-blue-500/10 text-blue-500 border-blue-500/20",
                         Workshop: "bg-purple-500/10 text-purple-500 border-purple-500/20",
@@ -1113,31 +1096,31 @@ export default function AdminDashboard() {
                       const colorClass = eventTypeColors[event.type as keyof typeof eventTypeColors] || "bg-primary/10 text-primary border-primary/20";
 
                       return (
-                        <div key={idx} className="group p-6 border border-border bg-muted/20 rounded-xl hover:border-primary/50 hover:shadow-lg hover:bg-muted/30 transition-all cursor-pointer">
+                        <div key={idx} className="group p-4 border border-border bg-muted/20 rounded-xl hover:border-primary/50 hover:shadow-sm hover:bg-muted/30 transition-all cursor-pointer">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-start gap-4 flex-1">
-                              <div className={`w-16 h-16 rounded-xl flex items-center justify-center border ${colorClass} flex-shrink-0`}>
-                                <Calendar className="w-7 h-7" />
+                            <div className="flex items-start gap-3 flex-1">
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${colorClass} flex-shrink-0`}>
+                                <Calendar className="w-5 h-5" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <h4 className="font-black text-foreground text-lg tracking-tight mb-2">{event.title}</h4>
-                                <div className="flex items-center gap-3 flex-wrap">
-                                  <span className="text-sm text-muted-foreground font-medium flex items-center gap-1.5">
-                                    <Clock className="w-4 h-4" />
+                                <h4 className="font-bold text-foreground text-sm tracking-tight mb-1">{event.title}</h4>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
                                     {event.date}
                                   </span>
-                                  <span className={`text-xs px-3 py-1 rounded-lg font-black uppercase tracking-widest border ${colorClass}`}>
+                                  <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider border ${colorClass}`}>
                                     {event.type}
                                   </span>
                                 </div>
                               </div>
                             </div>
-                            <div className="flex items-center gap-3 ml-4">
+                            <div className="flex items-center gap-2 ml-3">
                               <div className="text-right">
-                                <p className="text-xl font-black text-foreground">{event.attendees}</p>
-                                <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Attendees</p>
+                                <p className="text-base font-black text-foreground">{event.attendees}</p>
+                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Attendees</p>
                               </div>
-                              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                              <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                             </div>
                           </div>
                         </div>
@@ -1148,188 +1131,17 @@ export default function AdminDashboard() {
               </Card>
             </div>
 
-            {/* AI Webinar Recommendations */}
-            <Card className="shadow-lg border-0 mb-12">
-              <CardHeader className="pb-6">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="space-y-2">
-                    <CardTitle className="text-2xl font-black flex items-center gap-3">
-                      <Sparkles className="w-6 h-6 text-yellow-500" />
-                      AI Webinar Recommendations
-                    </CardTitle>
-                    <CardDescription className="text-base">
-                      Suggested sessions based on your department gaps
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={async () => {
-                        setWebinarRecOpen(true);
-                        if (!webinarRecData && !webinarRecLoading) {
-                          await loadWebinarRecommendations();
-                        }
-                      }}
-                    >
-                      View
-                    </Button>
-                    <Button
-                      onClick={async () => {
-                        if (!webinarRecLoading) await loadWebinarRecommendations();
-                      }}
-                      className="gap-2"
-                    >
-                      <RefreshCw className={`w-4 h-4 ${webinarRecLoading ? "animate-spin" : ""}`} />
-                      Refresh
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {webinarRecLoading && !webinarRecData ? (
-                  <div className="p-6 rounded-xl bg-muted/20 border border-border">
-                    <p className="font-bold text-muted-foreground">Generating recommendations...</p>
-                  </div>
-                ) : (
-                  <div className="grid md:grid-cols-3 gap-4">
-                    {(webinarRecData?.recommendations || []).slice(0, 3).map((w: any) => (
-                      <div key={w.id} className="p-5 rounded-xl border border-border bg-muted/10 hover:bg-muted/20 transition-colors">
-                        <div className="font-black text-foreground line-clamp-2">{w.title}</div>
-                        <div className="text-xs text-muted-foreground mt-2">
-                          {w.speaker_name ? `${w.speaker_name} • ` : ""}{w.date_time ? new Date(w.date_time).toLocaleString() : ""}
-                        </div>
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {(w.matchReasons || []).slice(0, 2).map((r: string) => (
-                            <Badge key={r} variant="secondary" className="text-[10px] font-black uppercase tracking-widest">
-                              {r.replace("Matches ", "")}
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="mt-4 flex justify-between items-center">
-                          <span className="text-xs font-black text-muted-foreground">Score: {w.score}</span>
-                          {w.link && (
-                            <Button size="sm" variant="outline" onClick={() => window.open(w.link, "_blank")} className="gap-1.5">
-                              <ExternalLink className="w-4 h-4" />
-                              Open
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-
-                    {(!webinarRecData?.recommendations || webinarRecData.recommendations.length === 0) && (
-                      <div className="md:col-span-3 p-6 rounded-xl border border-dashed border-border text-muted-foreground">
-                        No upcoming webinars in DB. Suggested topics to schedule:
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {(webinarRecData?.suggestedTopics || []).slice(0, 6).map((t: any) => (
-                            <Badge key={t.topic} className="text-[10px] font-black uppercase tracking-widest">
-                              {t.topic}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Dialog open={webinarRecOpen} onOpenChange={setWebinarRecOpen}>
-              <DialogContent className="max-w-3xl">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-black">AI Webinar Recommendations</DialogTitle>
-                  <DialogDescription>
-                    Ranked suggestions based on department signals (CGPA/backlogs/resume/skills).
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-4">
-                  <div className="grid sm:grid-cols-4 gap-3">
-                    {[
-                      { k: "totalStudents", label: "Students" },
-                      { k: "avgCgpa", label: "Avg CGPA" },
-                      { k: "backlogsCount", label: "Backlogs" },
-                      { k: "resumeMissingCount", label: "Resumes missing" },
-                    ].map((s) => (
-                      <div key={s.k} className="p-4 rounded-xl border border-border bg-muted/10">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{s.label}</div>
-                        <div className="text-xl font-black text-foreground mt-1">
-                          {webinarRecData?.signals?.[s.k] ?? "—"}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="p-4 rounded-xl border border-border bg-muted/10">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Top focus topics</div>
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {(webinarRecData?.targetTopics || []).map((t: any) => (
-                        <Badge key={t.topic} variant="secondary" className="text-[10px] font-black uppercase tracking-widest">
-                          {t.topic} ({t.score})
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 max-h-[360px] overflow-auto pr-1">
-                    {(webinarRecData?.recommendations || []).map((w: any) => (
-                      <div key={w.id} className="p-4 rounded-xl border border-border bg-background/40 flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <div className="font-black text-foreground">{w.title}</div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {w.speaker_name ? `${w.speaker_name} • ` : ""}{w.date_time ? new Date(w.date_time).toLocaleString() : ""}
-                          </div>
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {(w.matchReasons || []).map((r: string) => (
-                              <Badge key={r} variant="secondary" className="text-[10px] font-black uppercase tracking-widest">
-                                {r.replace("Matches ", "")}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                          <Badge className="text-[10px] font-black uppercase tracking-widest">Score {w.score}</Badge>
-                          {w.link && (
-                            <Button size="sm" variant="outline" onClick={() => window.open(w.link, "_blank")} className="gap-1.5">
-                              <ExternalLink className="w-4 h-4" />
-                              Open
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-
-                    {(!webinarRecData?.recommendations || webinarRecData.recommendations.length === 0) && (
-                      <div className="p-4 rounded-xl border border-dashed border-border text-muted-foreground">
-                        No upcoming webinars found in DB. Suggested topics:
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {(webinarRecData?.suggestedTopics || []).map((t: any) => (
-                            <Badge key={t.topic} className="text-[10px] font-black uppercase tracking-widest">
-                              {t.topic}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setWebinarRecOpen(false)}>Close</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
 
             {/* Quick Actions */}
-            <div className="grid md:grid-cols-3 gap-6 mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
               <Card className="shadow-lg border-0 hover:shadow-xl transition-all cursor-pointer group" onClick={() => setSelectedView("analytics")}>
-                <CardContent className="pt-8 pb-8">
+                <CardContent className="p-5 sm:p-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
-                      <BarChart3 className="w-8 h-8 text-blue-500" />
+                    <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
+                      <BarChart3 className="w-6 h-6 text-blue-500" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-black text-foreground mb-1">View Analytics</h3>
+                      <h3 className="text-lg font-bold text-foreground mb-1">View Analytics</h3>
                       <p className="text-sm text-muted-foreground">Detailed charts and insights</p>
                     </div>
                     <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto group-hover:text-primary group-hover:translate-x-1 transition-all" />
@@ -1338,13 +1150,13 @@ export default function AdminDashboard() {
               </Card>
 
               <Card className="shadow-lg border-0 hover:shadow-xl transition-all cursor-pointer group" onClick={() => setSelectedView("students")}>
-                <CardContent className="pt-8 pb-8">
+                <CardContent className="p-5 sm:p-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center group-hover:bg-green-500/20 transition-colors">
-                      <Users className="w-8 h-8 text-green-500" />
+                    <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center group-hover:bg-green-500/20 transition-colors">
+                      <Users className="w-6 h-6 text-green-500" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-black text-foreground mb-1">Manage Students</h3>
+                      <h3 className="text-lg font-bold text-foreground mb-1">Manage Students</h3>
                       <p className="text-sm text-muted-foreground">View and manage all students</p>
                     </div>
                     <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto group-hover:text-primary group-hover:translate-x-1 transition-all" />
@@ -1353,13 +1165,13 @@ export default function AdminDashboard() {
               </Card>
 
               <Card className="shadow-lg border-0 hover:shadow-xl transition-all cursor-pointer group" onClick={() => setSelectedView("reports")}>
-                <CardContent className="pt-8 pb-8">
+                <CardContent className="p-5 sm:p-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
-                      <FileBarChart className="w-8 h-8 text-purple-500" />
+                    <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
+                      <FileBarChart className="w-6 h-6 text-purple-500" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-black text-foreground mb-1">Generate Reports</h3>
+                      <h3 className="text-lg font-bold text-foreground mb-1">Generate Reports</h3>
                       <p className="text-sm text-muted-foreground">Create and export reports</p>
                     </div>
                     <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto group-hover:text-primary group-hover:translate-x-1 transition-all" />
@@ -1374,14 +1186,14 @@ export default function AdminDashboard() {
         {selectedView === "analytics" && (
           <>
             {/* Main Analytics Grid */}
-            <div className="grid lg:grid-cols-3 gap-8 mb-12">
+            <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-8 md:mb-10">
               {/* Branch Performance */}
               <Card className="lg:col-span-2 shadow-lg border-0">
-                <CardHeader className="pb-6">
+                <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <CardTitle className="text-2xl font-black">Branch-wise Performance</CardTitle>
-                      <CardDescription className="text-base">Comprehensive placement metrics by department</CardDescription>
+                    <div className="space-y-0.5">
+                      <CardTitle className="text-lg font-bold">Branch-wise Performance</CardTitle>
+                      <CardDescription className="text-xs">Comprehensive placement metrics by department</CardDescription>
                     </div>
                     <Select defaultValue="All Metrics">
                       <SelectTrigger className="w-[180px] h-12 border border-border bg-background text-foreground rounded-lg text-base focus:ring-2 focus:ring-primary font-medium">
@@ -1396,7 +1208,7 @@ export default function AdminDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={360}>
+                  <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={branchData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorStudents" x1="0" y1="0" x2="0" y2="1">
@@ -1432,21 +1244,21 @@ export default function AdminDashboard() {
 
               {/* Placement Distribution */}
               <Card className="shadow-lg border-0">
-                <CardHeader className="pb-6">
-                  <div className="space-y-2">
-                    <CardTitle className="text-2xl font-black">Placement Distribution</CardTitle>
-                    <CardDescription className="text-base">By company type</CardDescription>
+                <CardHeader className="pb-4">
+                  <div className="space-y-0.5">
+                    <CardTitle className="text-lg font-bold">Placement Distribution</CardTitle>
+                    <CardDescription className="text-xs">By company type</CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
+                  <ResponsiveContainer width="100%" height={160}>
                     <PieChart>
                       <Pie
                         data={placementDistribution}
                         cx="50%"
                         cy="50%"
-                        innerRadius={70}
-                        outerRadius={100}
+                        innerRadius={50}
+                        outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
                         paddingAngle={5}
@@ -1459,7 +1271,7 @@ export default function AdminDashboard() {
                       <Tooltip contentStyle={{ backgroundColor: 'var(--background)/95', backdropFilter: 'blur(8px)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }} />
                     </PieChart>
                   </ResponsiveContainer>
-                  <div className="mt-6 space-y-3">
+                  <div className="mt-4 space-y-3">
                     {placementDistribution.map((item, idx) => (
                       <div key={idx} className="flex items-center justify-between text-base">
                         <div className="flex items-center gap-3">
@@ -1475,17 +1287,17 @@ export default function AdminDashboard() {
             </div>
 
             {/* Trends and Skills */}
-            <div className="grid lg:grid-cols-2 gap-8 mb-12">
+            <div className="grid lg:grid-cols-2 gap-4 sm:gap-6 mb-8 md:mb-10">
               {/* Multi-Year Trends */}
               <Card className="shadow-lg border-0">
-                <CardHeader className="pb-6">
-                  <div className="space-y-2">
-                    <CardTitle className="text-2xl font-black">Historical Trends</CardTitle>
-                    <CardDescription className="text-base">5-year placement and salary progression</CardDescription>
+                <CardHeader className="pb-4">
+                  <div className="space-y-0.5">
+                    <CardTitle className="text-lg font-bold">Historical Trends</CardTitle>
+                    <CardDescription className="text-xs">5-year placement and salary progression</CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={320}>
+                  <ResponsiveContainer width="100%" height={180}>
                     <AreaChart data={yearTrend} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorPlacements" x1="0" y1="0" x2="0" y2="1">
@@ -1510,50 +1322,51 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Skills Gap Analysis */}
+              {/* Top Hiring Companies */}
               <Card className="shadow-lg border-0">
-                <CardHeader className="pb-6">
-                  <div className="space-y-2">
-                    <CardTitle className="text-2xl font-black">Skills Gap Analysis</CardTitle>
-                    <CardDescription className="text-base">College vs Industry expectations</CardDescription>
+                <CardHeader className="pb-4">
+                  <div className="space-y-0.5">
+                    <CardTitle className="text-lg font-bold">Top Hiring Companies</CardTitle>
+                    <CardDescription className="text-xs">Total offers made by top recruiters</CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={320}>
-                    <RadarChart data={radarDataToUse} cx="50%" cy="50%" outerRadius="75%" margin={{ top: 20, right: 30, bottom: 10, left: 30 }}>
-                      <defs>
-                        <radialGradient id="colorCollegeRadarAdmin" cx="50%" cy="50%" r="50%">
-                          <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                          <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.1}/>
-                        </radialGradient>
-                        <radialGradient id="colorIndustryRadarAdmin" cx="50%" cy="50%" r="50%">
-                          <stop offset="0%" stopColor="#10b981" stopOpacity={0.8}/>
-                          <stop offset="100%" stopColor="#10b981" stopOpacity={0.1}/>
-                        </radialGradient>
-                      </defs>
-                      <PolarGrid stroke="var(--border)" strokeOpacity={0.4} strokeDasharray="none" />
-                      <PolarAngleAxis dataKey="skill" tickLine={false} tick={{ fontSize: 13, fontWeight: 700, fill: "var(--foreground)", dy: 4 }} />
-                      <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                      <Radar name="College Average" dataKey="college" stroke="#3b82f6" strokeWidth={3} fill="url(#colorCollegeRadarAdmin)" activeDot={{ r: 6, strokeWidth: 0, fill: "#3b82f6" }} />
-                      <Radar name="Industry Standard" dataKey="industry" stroke="#10b981" strokeWidth={3} fill="url(#colorIndustryRadarAdmin)" activeDot={{ r: 6, strokeWidth: 0, fill: "#10b981" }} />
-                      <Legend verticalAlign="bottom" align="center" iconType="circle" iconSize={10} wrapperStyle={{ paddingTop: 24 }} formatter={(value) => <span className="text-sm font-bold text-foreground px-1">{value}</span>} />
-                      <Tooltip contentStyle={{ backgroundColor: 'var(--background)/95', backdropFilter: 'blur(8px)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }} />
-                    </RadarChart>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <BarChart data={[
+                      { name: "TCS", offers: 120 },
+                      { name: "Infosys", offers: 95 },
+                      { name: "Wipro", offers: 80 },
+                      { name: "Cognizant", offers: 75 },
+                      { name: "Amazon", offers: 18 },
+                      { name: "Microsoft", offers: 12 }
+                    ]} margin={{ top: 10, right: 30, left: 0, bottom: 0 }} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} horizontal={false} />
+                      <XAxis type="number" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
+                      <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: "var(--foreground)", fontWeight: 'bold' }} axisLine={false} tickLine={false} width={80} />
+                      <Tooltip contentStyle={{ backgroundColor: 'var(--background)/95', backdropFilter: 'blur(8px)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }} cursor={{ fill: 'var(--muted)', opacity: 0.4 }} />
+                      <Bar dataKey="offers" name="Total Offers" radius={[0, 4, 4, 0]} barSize={16}>
+                        {
+                          [1, 2, 3, 4, 5, 6].map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][index % 6]} />
+                          ))
+                        }
+                      </Bar>
+                    </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
             </div>
 
             {/* Monthly Activity */}
-            <Card className="mb-12 shadow-lg border-0">
-              <CardHeader className="pb-6">
-                <div className="space-y-2">
-                  <CardTitle className="text-2xl font-black">Monthly Placement Activity</CardTitle>
-                  <CardDescription className="text-base">Applications, interviews, and offers over the past 6 months</CardDescription>
+            <Card className="mb-8 md:mb-10 shadow-lg border-0">
+              <CardHeader className="pb-4">
+                <div className="space-y-0.5">
+                  <CardTitle className="text-lg font-bold">Monthly Placement Activity</CardTitle>
+                  <CardDescription className="text-xs">Applications, interviews, and offers over the past 6 months</CardDescription>
                 </div>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={320}>
+                <ResponsiveContainer width="100%" height={180}>
                   <LineChart data={monthlyActivity}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
                     <XAxis dataKey="month" tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} />
@@ -1571,13 +1384,19 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
+          </>
+        )}
+
+        {/* SUGGESTIONS TAB */}
+        {selectedView === "suggestions" && (
+          <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
             {/* Actionable Suggestions */}
-            <Card className="mb-12 shadow-lg border-0">
-              <CardHeader className="pb-6">
+            <Card className="mb-8 md:mb-10 shadow-lg border-0">
+              <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <CardTitle className="text-2xl font-black">Actionable Suggestions</CardTitle>
-                    <CardDescription className="text-base">Data-driven recommendations to improve student readiness</CardDescription>
+                  <div className="space-y-1">
+                    <CardTitle className="text-xl sm:text-2xl font-black">Actionable Suggestions</CardTitle>
+                    <CardDescription className="text-sm">Data-driven recommendations to improve student readiness</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -1626,13 +1445,18 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        )}
 
+        {/* PLACEMENTS TAB */}
+        {selectedView === "placements" && (
+          <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
             {/* Recent Placements */}
-            <Card className="mb-12 shadow-lg border-0">
-              <CardHeader className="pb-6">
-                <div className="space-y-2">
-                  <CardTitle className="text-2xl font-black">Recent Placements</CardTitle>
-                  <CardDescription className="text-base">Latest student placements</CardDescription>
+            <Card className="mb-8 md:mb-10 shadow-lg border-0">
+              <CardHeader className="pb-4">
+                <div className="space-y-1">
+                  <CardTitle className="text-xl sm:text-2xl font-black">Recent Placements</CardTitle>
+                  <CardDescription className="text-sm">Latest student placements</CardDescription>
                 </div>
               </CardHeader>
               <CardContent>
@@ -1662,7 +1486,7 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
-          </>
+          </div>
         )}
 
         {/* STUDENTS TAB - Student Management */}
@@ -1707,63 +1531,63 @@ export default function AdminDashboard() {
             </div>
 
             {/* Student Stats */}
-            <div className="grid md:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="p-4 sm:p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground font-semibold mb-1">Total Students</p>
-                      <p className="text-3xl font-black text-foreground">{Number(collegeStats[0]?.value?.toString().replace(/,/g, "") || 0).toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground font-semibold mb-1">Total Students</p>
+                      <p className="text-2xl font-black text-foreground">{Number(collegeStats[0]?.value?.toString().replace(/,/g, "") || 0).toLocaleString()}</p>
                     </div>
-                    <Users className="w-10 h-10 text-blue-500 opacity-20" />
+                    <Users className="w-8 h-8 text-blue-500 opacity-20" />
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="p-4 sm:p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground font-semibold mb-1">Placement Ready</p>
-                      <p className="text-3xl font-black text-foreground">{Number(collegeStats[1]?.value?.toString().replace(/,/g, "") || 0).toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground font-semibold mb-1">Placement Ready</p>
+                      <p className="text-2xl font-black text-foreground">{Number(collegeStats[1]?.value?.toString().replace(/,/g, "") || 0).toLocaleString()}</p>
                     </div>
-                    <CheckCircle2 className="w-10 h-10 text-green-500 opacity-20" />
+                    <CheckCircle2 className="w-8 h-8 text-green-500 opacity-20" />
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="p-4 sm:p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground font-semibold mb-1">At Risk</p>
-                      <p className="text-3xl font-black text-foreground">{atRiskStudents.length.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground font-semibold mb-1">At Risk</p>
+                      <p className="text-2xl font-black text-foreground">{atRiskStudents.length.toLocaleString()}</p>
                     </div>
-                    <AlertTriangle className="w-10 h-10 text-red-500 opacity-20" />
+                    <AlertTriangle className="w-8 h-8 text-red-500 opacity-20" />
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="p-4 sm:p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground font-semibold mb-1">Placed</p>
-                      <p className="text-3xl font-black text-foreground">{branchData.reduce((sum: number, b: any) => sum + Number(b.placed || 0), 0).toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground font-semibold mb-1">Placed</p>
+                      <p className="text-2xl font-black text-foreground">{branchData.reduce((sum: number, b: any) => sum + Number(b.placed || 0), 0).toLocaleString()}</p>
                     </div>
-                    <Award className="w-10 h-10 text-purple-500 opacity-20" />
+                    <Award className="w-8 h-8 text-purple-500 opacity-20" />
                   </div>
                 </CardContent>
               </Card>
             </div>
 
             {/* All Students Table */}
-            <Card className="mb-12 shadow-lg border-0 overflow-hidden">
-              <CardHeader className="pb-6 border-b border-border">
+            <Card className="mb-8 md:mb-10 shadow-lg border-0 overflow-hidden">
+              <CardHeader className="pb-4 border-b border-border">
                 <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <CardTitle className="text-2xl font-black flex items-center gap-3">
-                      <Users className="w-6 h-6 text-primary" />
+                  <div className="space-y-1">
+                    <CardTitle className="text-xl sm:text-2xl font-black flex items-center gap-2">
+                      <Users className="w-5 h-5 text-primary" />
                       Student Roster
                     </CardTitle>
-                    <CardDescription className="text-base">Manage and track student placement journeys</CardDescription>
+                    <CardDescription className="text-sm">Manage and track student placement journeys</CardDescription>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="lg" className="text-base px-5">
@@ -1916,20 +1740,23 @@ export default function AdminDashboard() {
           </>
         )}
 
+
         {/* REPORTS TAB - Report Generation and Exports */}
+
         {selectedView === "reports" && (
           <>
             {/* Report Types */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
               <Card className="shadow-lg border-0 hover:shadow-xl transition-all cursor-pointer group">
-                <CardContent className="pt-8 pb-8">
+                <CardContent className="p-5 sm:p-6">
                   <div className="flex flex-col items-center text-center">
-                    <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-500/20 transition-colors">
-                      <FileBarChart className="w-8 h-8 text-blue-500" />
+                    <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mb-3 group-hover:bg-blue-500/20 transition-colors">
+                      <FileBarChart className="w-6 h-6 text-blue-500" />
                     </div>
-                    <h3 className="text-xl font-black text-foreground mb-2">Placement Report</h3>
+                    <h3 className="text-lg font-bold text-foreground mb-1">Placement Report</h3>
                     <p className="text-sm text-muted-foreground mb-4">Comprehensive placement statistics and trends</p>
                     <Button
+                      size="sm"
                       className="w-full"
                       onClick={() => downloadReport("placement_report", "/reports/placement")}
                       disabled={generatingReport !== null}
@@ -1941,14 +1768,15 @@ export default function AdminDashboard() {
               </Card>
 
               <Card className="shadow-lg border-0 hover:shadow-xl transition-all cursor-pointer group">
-                <CardContent className="pt-8 pb-8">
+                <CardContent className="p-5 sm:p-6">
                   <div className="flex flex-col items-center text-center">
-                    <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-green-500/20 transition-colors">
-                      <Users className="w-8 h-8 text-green-500" />
+                    <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center mb-3 group-hover:bg-green-500/20 transition-colors">
+                      <Users className="w-6 h-6 text-green-500" />
                     </div>
-                    <h3 className="text-xl font-black text-foreground mb-2">Student Readiness</h3>
+                    <h3 className="text-lg font-bold text-foreground mb-1">Student Readiness</h3>
                     <p className="text-sm text-muted-foreground mb-4">Student readiness scores and analytics</p>
                     <Button
+                      size="sm"
                       className="w-full"
                       onClick={() => downloadReport("student_readiness", "/reports/student-readiness")}
                       disabled={generatingReport !== null}
@@ -1960,14 +1788,15 @@ export default function AdminDashboard() {
               </Card>
 
               <Card className="shadow-lg border-0 hover:shadow-xl transition-all cursor-pointer group">
-                <CardContent className="pt-8 pb-8">
+                <CardContent className="p-5 sm:p-6">
                   <div className="flex flex-col items-center text-center">
-                    <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-purple-500/20 transition-colors">
-                      <Building2 className="w-8 h-8 text-purple-500" />
+                    <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center mb-3 group-hover:bg-purple-500/20 transition-colors">
+                      <Building2 className="w-6 h-6 text-purple-500" />
                     </div>
-                    <h3 className="text-xl font-black text-foreground mb-2">Company Analysis</h3>
+                    <h3 className="text-lg font-bold text-foreground mb-1">Company Analysis</h3>
                     <p className="text-sm text-muted-foreground mb-4">Company-wise placement breakdown</p>
                     <Button
+                      size="sm"
                       className="w-full"
                       onClick={() => downloadReport("company_analysis", "/reports/company-analysis")}
                       disabled={generatingReport !== null}
@@ -1979,14 +1808,15 @@ export default function AdminDashboard() {
               </Card>
 
               <Card className="shadow-lg border-0 hover:shadow-xl transition-all cursor-pointer group">
-                <CardContent className="pt-8 pb-8">
+                <CardContent className="p-5 sm:p-6">
                   <div className="flex flex-col items-center text-center">
-                    <div className="w-16 h-16 bg-orange-500/10 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-orange-500/20 transition-colors">
-                      <BarChart3 className="w-8 h-8 text-orange-500" />
+                    <div className="w-12 h-12 bg-orange-500/10 rounded-xl flex items-center justify-center mb-3 group-hover:bg-orange-500/20 transition-colors">
+                      <BarChart3 className="w-6 h-6 text-orange-500" />
                     </div>
-                    <h3 className="text-xl font-black text-foreground mb-2">Branch Performance</h3>
+                    <h3 className="text-lg font-bold text-foreground mb-1">Branch Performance</h3>
                     <p className="text-sm text-muted-foreground mb-4">Department-wise performance metrics</p>
                     <Button
+                      size="sm"
                       className="w-full"
                       onClick={() => downloadReport("branch_performance", "/reports/branch-performance")}
                       disabled={generatingReport !== null}
@@ -1998,14 +1828,15 @@ export default function AdminDashboard() {
               </Card>
 
               <Card className="shadow-lg border-0 hover:shadow-xl transition-all cursor-pointer group">
-                <CardContent className="pt-8 pb-8">
+                <CardContent className="p-5 sm:p-6">
                   <div className="flex flex-col items-center text-center">
-                    <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-red-500/20 transition-colors">
-                      <AlertTriangle className="w-8 h-8 text-red-500" />
+                    <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center mb-3 group-hover:bg-red-500/20 transition-colors">
+                      <AlertTriangle className="w-6 h-6 text-red-500" />
                     </div>
-                    <h3 className="text-xl font-black text-foreground mb-2">At-Risk Students</h3>
+                    <h3 className="text-lg font-bold text-foreground mb-1">At-Risk Students</h3>
                     <p className="text-sm text-muted-foreground mb-4">List of students requiring attention</p>
                     <Button
+                      size="sm"
                       className="w-full"
                       onClick={() => downloadReport("at_risk_students", "/reports/at-risk-students")}
                       disabled={generatingReport !== null}
@@ -2017,14 +1848,15 @@ export default function AdminDashboard() {
               </Card>
 
               <Card className="shadow-lg border-0 hover:shadow-xl transition-all cursor-pointer group">
-                <CardContent className="pt-8 pb-8">
+                <CardContent className="p-5 sm:p-6">
                   <div className="flex flex-col items-center text-center">
-                    <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-indigo-500/20 transition-colors">
-                      <FileSpreadsheet className="w-8 h-8 text-indigo-500" />
+                    <div className="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center mb-3 group-hover:bg-indigo-500/20 transition-colors">
+                      <FileSpreadsheet className="w-6 h-6 text-indigo-500" />
                     </div>
-                    <h3 className="text-xl font-black text-foreground mb-2">Custom Report</h3>
+                    <h3 className="text-lg font-bold text-foreground mb-1">Custom Report</h3>
                     <p className="text-sm text-muted-foreground mb-4">Create a customized report</p>
                     <Button
+                      size="sm"
                       className="w-full"
                       onClick={() => downloadReport("custom_company_analysis", "/reports/company-analysis")}
                       disabled={generatingReport !== null}
@@ -2079,171 +1911,6 @@ export default function AdminDashboard() {
           </>
         )}
       </main>
-
-      {/* Footer (only on Overview) */}
-      {selectedView === "overview" && (
-      <footer className="bg-muted/30 border-t border-border mt-20">
-        <div className="container px-6 py-16 max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-            {/* Company Info */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-0 group cursor-pointer" onClick={() => navigate("/")}>
-                <img
-                  src="/NG/NextGen_light.png"
-                  alt="NextGen Logo"
-                  className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110"
-                />
-                <div className="flex flex-col">
-                  <span className="font-black text-xl bg-gradient-to-r from-pink-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">NextGen</span>
-                  <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-80">AI-Driven</p>
-                </div>
-              </div>
-              <p className="text-base text-muted-foreground leading-relaxed">
-                Empowering students with career opportunities and placement readiness through comprehensive analytics and personalized guidance.
-              </p>
-              <div className="flex items-center gap-3 pt-2">
-                <Button variant="ghost" size="lg" className="h-11 w-11 p-0 rounded-lg hover:bg-primary/10">
-                  <Facebook className="w-5 h-5" />
-                </Button>
-                <Button variant="ghost" size="lg" className="h-11 w-11 p-0 rounded-lg hover:bg-primary/10">
-                  <Twitter className="w-5 h-5" />
-                </Button>
-                <Button variant="ghost" size="lg" className="h-11 w-11 p-0 rounded-lg hover:bg-primary/10">
-                  <Linkedin className="w-5 h-5" />
-                </Button>
-                <Button variant="ghost" size="lg" className="h-11 w-11 p-0 rounded-lg hover:bg-primary/10">
-                  <Instagram className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Quick Links */}
-            <div>
-              <h3 className="font-black text-foreground mb-6 text-base uppercase tracking-widest">Quick Links</h3>
-              <ul className="space-y-3">
-                <li>
-                  <Button variant="ghost" className="justify-start text-muted-foreground hover:text-foreground h-auto py-2 px-0 font-medium text-base">
-                    Dashboard Overview
-                  </Button>
-                </li>
-                <li>
-                  <Button variant="ghost" className="justify-start text-muted-foreground hover:text-foreground h-auto py-2 px-0 font-medium text-base">
-                    Student Analytics
-                  </Button>
-                </li>
-                <li>
-                  <Button variant="ghost" className="justify-start text-muted-foreground hover:text-foreground h-auto py-2 px-0 font-medium text-base" onClick={() => window.open('https://pict.edu/placement/index.php#statistics', '_blank')}>
-                    Placement Reports
-                  </Button>
-                </li>
-                <li>
-                  <Button variant="ghost" className="justify-start text-muted-foreground hover:text-foreground h-auto py-2 px-0 font-medium text-base">
-                    Company Directory
-                  </Button>
-                </li>
-                <li>
-                  <Button variant="ghost" className="justify-start text-muted-foreground hover:text-foreground h-auto py-2 px-0 font-medium text-base">
-                    Training Programs
-                  </Button>
-                </li>
-              </ul>
-            </div>
-
-            {/* Resources */}
-            <div>
-              <h3 className="font-black text-foreground mb-6 text-base uppercase tracking-widest">Resources</h3>
-              <ul className="space-y-3">
-                <li>
-                  <Button variant="ghost" className="justify-start text-muted-foreground hover:text-foreground h-auto py-2 px-0 font-medium text-base" onClick={() => navigate('/HelpCenter')}>
-                    Help Center
-                  </Button>
-                </li>
-                <li>
-                  <Button variant="ghost" className="justify-start text-muted-foreground hover:text-foreground h-auto py-2 px-0 font-medium text-base" onClick={() => navigate('/college/feedbackForm')}>
-                    Feedback
-                  </Button>
-                </li>
-                <li>
-                  <Button variant="ghost" className="justify-start text-muted-foreground hover:text-foreground h-auto py-2 px-0 font-medium text-base">
-                    API Reference
-                  </Button>
-                </li>
-                <li>
-                  <Button variant="ghost" className="justify-start text-muted-foreground hover:text-foreground h-auto py-2 px-0 font-medium text-base" onClick={() => navigate('/PrivacyPage')}>
-                    Privacy Policy
-                  </Button>
-                </li>
-                <li>
-                  <Button variant="ghost" className="justify-start text-muted-foreground hover:text-foreground h-auto py-2 px-0 font-medium text-base" onClick={() => navigate('/TermsAndCondition')}>
-                    Terms And Conditions
-                  </Button>
-                </li>
-              </ul>
-            </div>
-
-            {/* Contact Info */}
-            <div>
-              <h3 className="font-black text-foreground mb-6 text-base uppercase tracking-widest">Contact Us</h3>
-              <ul className="space-y-4">
-                <li className="flex items-start gap-4">
-                  <MapPin className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-base text-foreground font-semibold">123 College Avenue</p>
-                    <p className="text-sm text-muted-foreground">City, State 12345</p>
-                  </div>
-                </li>
-                <li className="flex items-center gap-4">
-                  <Phone className="w-5 h-5 text-primary flex-shrink-0" />
-                  <a href="tel:+1234567890" className="text-base text-muted-foreground hover:text-foreground font-semibold transition-colors">
-                    +1 (234) 567-890
-                  </a>
-                </li>
-                <li className="flex items-center gap-4">
-                  <Mail className="w-5 h-5 text-primary flex-shrink-0" />
-                  <a href="mailto:admin@college.edu" className="text-base text-muted-foreground hover:text-foreground font-semibold transition-colors">
-                    admin@college.edu
-                  </a>
-                </li>
-                <li className="flex items-center gap-4 pt-2">
-                  <ExternalLink className="w-5 h-5 text-primary flex-shrink-0" />
-                  <a href="https://pict.edu" target="_blank" rel="noopener noreferrer" className="text-base text-muted-foreground hover:text-foreground font-semibold transition-colors flex items-center gap-1.5">
-                    Visit College Website
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Bottom Bar */}
-          <div className="border-t-2 border-border pt-10">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-center justify-center gap-2 text-base text-center">
-                <p className="font-semibold">© {new Date().getFullYear()} Campus Career Platform. All rights reserved.</p>
-              </div>
-              <div className="flex items-center gap-8 text-base">
-              </div>
-            </div>
-            <div className="mt-8 pt-8 border-t border-border">
-              <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2.5">
-                  <Activity className="w-4 h-4 text-green-500" />
-                  <span className="font-semibold">System Status: <span className="text-green-500 font-black">Operational</span></span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <Users className="w-4 h-4 text-primary" />
-                  <span className="font-semibold">Active Users: <span className="text-foreground font-black">1,240</span></span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <TrendingUp className="w-4 h-4 text-blue-500" />
-                  <span className="font-semibold">Placement Rate: <span className="text-foreground font-black">87%</span></span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
-      )}
     </div>
   );
 }

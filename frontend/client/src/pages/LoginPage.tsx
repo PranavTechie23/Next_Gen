@@ -7,10 +7,14 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { buildApiUrl } from "@/lib/api";
 import axios from "axios";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
+import { useUser } from "@/contexts/UserContext";
 
 const REMEMBERED_EMAIL_KEY = "rememberedEmail";
 
 export default function LoginPage() {
+  const [, navigate] = useLocation();
+  const { refreshUser } = useUser();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [email, setEmail] = useState("");
@@ -53,26 +57,30 @@ export default function LoginPage() {
           localStorage.removeItem(REMEMBERED_EMAIL_KEY);
         }
         
-        // INTERCEPT: If they must change password (first login), redirect them immediately
+        // INTERCEPT: If they must change password (first login), navigate them immediately
         if (user.must_change_password) {
           toast("Please change your default password to continue", { icon: "🔒" });
-          window.location.href = "/change-password";
+          navigate("/change-password");
           return;
+        }
+
+        if (user.role === 'STUDENT') {
+          await refreshUser();
         }
 
         // Ensure consistent role mapping between backend roles and frontend redirects
         switch (user.role) {
           case 'STUDENT':
-            window.location.href = "/student/dashboard?tab=overview";
+            navigate("/student/dashboard?tab=overview");
             break;
           case 'TPO_ADMIN':
-            window.location.href = "/admin/dashboard?tab=overview";
+            navigate("/admin/dashboard?tab=overview");
             break;
           case 'TPO_HEAD':
-            window.location.href = "/department/dashboard?tab=overview";
+            navigate("/department/dashboard?tab=overview");
             break;
           default:
-            window.location.href = "/student/dashboard?tab=overview";
+            navigate("/student/dashboard?tab=overview");
         }
       }
     } catch (error: any) {
@@ -84,7 +92,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-x-hidden bg-background p-4 py-12 transition-colors duration-300 md:py-4">
+    <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-x-hidden bg-background px-4 py-16 transition-colors duration-300 md:py-6">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/10 dark:from-primary/10 dark:via-background dark:to-accent/10" />
       {/* Theme Toggle */}
       <div className="absolute top-4 right-4 z-20">
@@ -127,42 +135,40 @@ export default function LoginPage() {
         }
       `}</style>
 
-      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-8 items-center relative z-10 my-auto">
+      <div className="w-full max-w-5xl grid md:grid-cols-2 gap-6 items-center relative z-10 my-auto">
         {/* Left side - Branding and Features */}
-        <div className="hidden md:block space-y-8 slide-in">
-          <div className="float">
-            <div className="flex items-center gap-0 mb-6 group cursor-pointer transition-all duration-300" onClick={() => window.location.href = "/"}>
-              <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-24 w-24 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
+        <div className="hidden md:block space-y-5 slide-in">
+          <div className="flex items-center gap-0 mb-4 group cursor-pointer transition-all duration-300" onClick={() => window.location.href = "/"}>
+              <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-16 w-16 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
               <div className="flex flex-col justify-center leading-tight">
-                <h1 className="text-4xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
+                <h1 className="text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
                   NextGen
                 </h1>
-                <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest mt-0.5 opacity-80">
+                <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest mt-0.5 opacity-80">
                   AI-Driven
                 </p>
               </div>
             </div>
-          </div>
 
-          <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-foreground leading-tight">
+          <div className="space-y-3">
+            <h2 className="text-xl font-bold text-foreground leading-tight">
               Welcome to the NextGen Portal 👋
             </h2>
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              Sign in to your account. Whether you are a student exploring placements, a department head managing batches, or a TPO admin directing the campus drive, everything you need is right here.
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Sign in to your account. Whether you are a student, department head, or TPO admin{" — "}everything you need is right here.
             </p>
 
-            <div className="space-y-4 pt-4">
+            <div className="space-y-2 pt-2">
               {[
-                { icon: Sparkles, text: "Centralized Placement Drives", color: "blue" },
-                { icon: Shield, text: "Role-Based Secure Access", color: "green" },
-                { icon: CheckCircle, text: "Comprehensive Analytics & Tracking", color: "purple" }
+                { icon: Sparkles, text: "Centralized Placement Drives" },
+                { icon: Shield, text: "Role-Based Secure Access" },
+                { icon: CheckCircle, text: "Comprehensive Analytics & Tracking" }
               ].map((feature, idx) => (
-                <div key={idx} className="flex items-center gap-4 p-4 bg-card/60 backdrop-blur-md rounded-xl border border-border shadow-sm hover:shadow-md transition-all group">
-                  <div className={`w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                    <feature.icon className={`w-6 h-6 text-primary`} />
+                <div key={idx} className="flex items-center gap-3 p-3 bg-card/60 backdrop-blur-md rounded-lg border border-border shadow-sm hover:shadow-md transition-all group">
+                  <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                    <feature.icon className="w-4 h-4 text-primary" />
                   </div>
-                  <span className="font-semibold text-foreground">{feature.text}</span>
+                  <span className="text-sm font-semibold text-foreground">{feature.text}</span>
                 </div>
               ))}
             </div>
@@ -170,62 +176,62 @@ export default function LoginPage() {
         </div>
 
         {/* Right side - Login Form */}
-        <Card className="shadow-xl border border-border bg-white dark:bg-slate-900 rounded-2xl slide-in overflow-hidden w-full max-w-md mx-auto md:max-w-none" style={{ animationDelay: '0.2s' }}>
-          <CardContent className="p-6 sm:p-8 md:p-10">
+        <Card className="shadow-xl border border-border bg-white dark:bg-slate-900 rounded-2xl slide-in overflow-hidden w-full max-w-sm mx-auto md:max-w-none" style={{ animationDelay: '0.2s' }}>
+          <CardContent className="p-6 sm:p-8">
             {/* Mobile Logo */}
-            <div className="md:hidden text-center mb-8 flex flex-col items-center">
+            <div className="md:hidden text-center mb-6 flex flex-col items-center">
               <div className="flex items-center gap-0 justify-center mb-4 transition-transform hover:scale-105 cursor-pointer" onClick={() => window.location.href = "/"}>
-                <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-16 w-16 object-contain flex-shrink-0" />
+                <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-12 w-12 object-contain flex-shrink-0" />
                 <div className="flex flex-col items-start">
                   <h1 className="text-2xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
                     NextGen
                   </h1>
-                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">AI-Driven</p>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">Data-Driven</p>
                 </div>
               </div>
             </div>
 
-            <div className="mb-8">
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Portal Login</h2>
-              <p className="text-sm sm:text-base text-muted-foreground">Use your registered email and password to securely log in.</p>
+            <div className="mb-5">
+              <h2 className="text-xl font-bold text-foreground mb-1">Portal Login</h2>
+              <p className="text-xs text-muted-foreground">Use your registered email and password to securely log in.</p>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-5 sm:space-y-6">
+            <form onSubmit={handleLogin} className="space-y-4">
               {/* Email Input */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-foreground/80">Email Address</label>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-foreground/80">Email Address</label>
                 <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <input
                     type="email"
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm sm:text-base"
+                    className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
                     required
                   />
                 </div>
               </div>
 
               {/* Password Input */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-foreground/80">Password</label>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-foreground/80">Password</label>
                 <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-12 pr-12 py-3.5 border-2 border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm sm:text-base"
+                    className="w-full pl-9 pr-10 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
@@ -250,7 +256,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white py-4 rounded-xl font-semibold text-base sm:text-lg shadow-lg shadow-primary/20 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white py-2.5 rounded-lg font-semibold text-sm shadow-md shadow-primary/20 hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -266,7 +272,7 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <p className="text-center text-sm text-muted-foreground mt-8 font-medium">
+            <p className="text-center text-xs text-muted-foreground mt-5 font-medium">
               Is your institution not registered yet?{" "}
               <a href="/signup" className="font-bold text-primary hover:text-primary/80 transition-colors">
                 Register as TPO Admin
@@ -275,10 +281,6 @@ export default function LoginPage() {
 
           </CardContent>
         </Card>
-      </div>
-      {/* Bottom Info */}
-      <div className="mt-8 text-center text-sm text-muted-foreground font-medium relative z-10">
-        <p>© {new Date().getFullYear()} NextGen Platform. All rights reserved.</p>
       </div>
     </div>
   );

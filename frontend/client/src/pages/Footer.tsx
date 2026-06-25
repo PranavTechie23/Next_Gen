@@ -15,8 +15,7 @@
  * // For college dashboard/pages
  * <Footer role="college" />
  * 
- * // For admin dashboard/pages
- * <Footer role="admin" />
+ * // Authenticated app shells: use AppShellFooter instead (see @/components/AppShellFooter)
  * 
  * // With custom className
  * <Footer role="public" className="mt-20" />
@@ -39,6 +38,7 @@
 
 import { Link } from "wouter";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useBranding } from "@/contexts/BrandingContext";
 import {
   Linkedin,
   Twitter,
@@ -49,6 +49,8 @@ import {
   MapPin,
   Phone,
   ExternalLink,
+  ArrowRight,
+  Youtube,
 } from "lucide-react";
 
 export type UserRole = "public" | "student" | "college" | "admin";
@@ -147,190 +149,80 @@ const footerConfig = {
 
 export default function Footer({ role = "public", className = "" }: FooterProps) {
   const { theme } = useTheme();
+  const { config: branding } = useBranding();
   const isDark = theme === "dark";
 
-  // Get role-specific links or use common links
-  const roleSpecificLinks = role !== "public" ? footerConfig.roleLinks[role] : null;
-  const quickLinks = roleSpecificLinks?.quickLinks || footerConfig.commonLinks.company;
-  const resources = roleSpecificLinks?.resources || footerConfig.commonLinks.resources;
-
-  // Determine footer styling based on theme
-  const footerBg = isDark ? "bg-slate-900" : "bg-white";
+  const footerBg = "bg-transparent";
   const footerBorder = isDark ? "border-slate-800" : "border-slate-200";
-  const textPrimary = isDark ? "text-white" : "text-gray-900";
-  const textSecondary = isDark ? "text-slate-400" : "text-gray-600";
-  const textMuted = isDark ? "text-slate-500" : "text-gray-500";
-  const hoverText = isDark ? "hover:text-white" : "hover:text-gray-900";
-  const socialBg = isDark ? "bg-slate-800 hover:bg-slate-700" : "bg-gray-100 hover:bg-gray-200";
+  const textPrimary = isDark ? "text-white" : "text-slate-900";
+  const textLinks = isDark ? "text-slate-300" : "text-slate-600";
+  const textHover = isDark ? "hover:text-white" : "hover:text-slate-900";
+  const textDivider = isDark ? "text-slate-700" : "text-slate-300";
+  const textMuted = isDark ? "text-slate-500" : "text-slate-400";
 
   return (
-    <footer className={`${isDark ? 'bg-background' : 'bg-white'} ${footerBorder} border-t py-12 mt-16 ${className}`}>
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-          {/* Company Info */}
-          <div>
-            <div className="flex items-center gap-0 group cursor-pointer" onClick={() => window.location.href = "/"}>
-              <img
-                src="/NG/NextGen_light.png"
-                alt="NextGen Logo"
-                className="h-12 w-12 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110"
-              />
-              <div className="flex flex-col justify-center leading-tight">
-                <span className="font-black text-xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">NextGen</span>
-                <p className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mt-0.5">AI-Driven</p>
-              </div>
+    <footer className={`${footerBg} py-10 w-full ${className}`}>
+      <div className="container mx-auto px-4 lg:px-8 max-w-[90rem]">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-center gap-8 w-full">
+          
+          {/* Left: Logo */}
+          <div className="flex items-center gap-3 cursor-pointer justify-center lg:justify-start" onClick={() => window.location.href = "/"}>
+            <img
+              src={branding.APP_LOGO_URL || "/NG/NextGen_light.png"}
+              alt={`${branding.APP_NAME} Logo`}
+              className="h-7 w-7 object-contain"
+            />
+            <span className={`font-semibold text-lg tracking-tight ${textPrimary}`}>{branding.APP_NAME?.replace(/\s*AI\s*$/i, '')}</span>
+          </div>
+
+          {/* Middle: Links & Copyright */}
+          <div className={`flex flex-col items-center justify-center text-sm ${textLinks}`}>
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 mb-2.5">
+              <Link href="/about"><span className={`${textHover} transition-colors cursor-pointer`}>About</span></Link>
+              <span className={textDivider}>|</span>
+              <Link href="/contact"><span className={`${textHover} transition-colors cursor-pointer`}>Contact us</span></Link>
+              <span className={textDivider}>|</span>
+              <Link href="/pricing"><span className={`${textHover} transition-colors cursor-pointer`}>Pricing</span></Link>
+              <span className={textDivider}>|</span>
+              <Link href="/privacy"><span className={`${textHover} transition-colors cursor-pointer`}>Privacy Policy</span></Link>
+              <span className={textDivider}>|</span>
+              <Link href="/terms"><span className={`${textHover} transition-colors cursor-pointer`}>Terms and Conditions</span></Link>
+              <span className={textDivider}>|</span>
             </div>
-            {role !== "public" && (
-              <p className={`text-xs ${textMuted} font-bold uppercase tracking-widest mb-2`}>
-                {role === "student" && "Student Portal"}
-                {role === "college" && "College Portal"}
-                {role === "admin" && "Admin Portal"}
-              </p>
-            )}
-            <p className={`${textSecondary} text-sm leading-relaxed`}>
-              {footerConfig.company.tagline}
-            </p>
-            {/* Social Media Links */}
-            <div className="flex gap-3 mt-6">
-              <a
-                href={footerConfig.social.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`w-10 h-10 ${socialBg} rounded-lg flex items-center justify-center transition-colors`}
-                aria-label="LinkedIn"
-              >
-                <Linkedin className="w-5 h-5" />
-              </a>
-              <a
-                href={footerConfig.social.twitter}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`w-10 h-10 ${socialBg} rounded-lg flex items-center justify-center transition-colors`}
-                aria-label="Twitter"
-              >
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a
-                href={footerConfig.social.facebook}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`w-10 h-10 ${socialBg} rounded-lg flex items-center justify-center transition-colors`}
-                aria-label="Facebook"
-              >
-                <Facebook className="w-5 h-5" />
-              </a>
-              <a
-                href={footerConfig.social.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`w-10 h-10 ${socialBg} rounded-lg flex items-center justify-center transition-colors`}
-                aria-label="Instagram"
-              >
-                <Instagram className="w-5 h-5" />
-              </a>
-              {role === "admin" && (
-                <a
-                  href={footerConfig.social.github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`w-10 h-10 ${socialBg} rounded-lg flex items-center justify-center transition-colors`}
-                  aria-label="GitHub"
-                >
-                  <Github className="w-5 h-5" />
-                </a>
-              )}
+            
+            <div className="mb-4">
+              <Link href="/refund"><span className={`${textHover} transition-colors cursor-pointer ${textMuted}`}>Cancellation and Refund Policy</span></Link>
+            </div>
+            
+            <div className={`${textMuted} italic text-[13px]`}>
+              Copyright &copy; {new Date().getFullYear()} {branding.APP_NAME?.replace(/\s*AI\s*$/i, '')} Private Limited | All rights reserved
             </div>
           </div>
 
-          {/* Quick Links */}
-          <div>
-            <h3 className={`text-lg font-bold mb-4 ${textPrimary}`}>
-              {role === "public" ? "Company" : "Quick Links"}
-            </h3>
-            <ul className="space-y-2.5 text-base">
-              {quickLinks.map((link, index) => (
-                <li key={index}>
-                  {('external' in link && link.external) ? (
-                    <a
-                      href={link.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`${textSecondary} ${hoverText} transition-colors flex items-center gap-1`}
-                    >
-                      {link.label}
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  ) : (
-                    <Link href={link.href}>
-                      <span className={`${textSecondary} ${hoverText} transition-colors cursor-pointer`}>
-                        {link.label}
-                      </span>
-                    </Link>
-                  )}
-                </li>
-              ))}
-            </ul>
+          {/* Right: Social Icons */}
+          <div className="flex items-center gap-3 justify-center lg:justify-end">
+            {/* Instagram */}
+            <a href={footerConfig.social.instagram} target="_blank" rel="noopener noreferrer" 
+               className="w-7 h-7 rounded bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 flex items-center justify-center text-white hover:opacity-90 transition-opacity">
+              <Instagram className="w-4 h-4" />
+            </a>
+            {/* X (Twitter) */}
+            <a href={footerConfig.social.twitter} target="_blank" rel="noopener noreferrer" 
+               className="w-7 h-7 rounded bg-black flex items-center justify-center text-white hover:bg-slate-800 transition-colors">
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="w-3 h-3 fill-current"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 22.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.008 5.96H5.078z"></path></svg>
+            </a>
+            {/* LinkedIn */}
+            <a href={footerConfig.social.linkedin} target="_blank" rel="noopener noreferrer" 
+               className="w-7 h-7 rounded bg-[#0077b5] flex items-center justify-center text-white hover:bg-[#005e93] transition-colors">
+               <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+            </a>
+            {/* YouTube */}
+            <a href="#" target="_blank" rel="noopener noreferrer" 
+               className="w-7 h-7 rounded bg-[#ff0000] flex items-center justify-center text-white hover:bg-[#cc0000] transition-colors">
+              <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current pl-[2px]"><path d="M8 5v14l11-7z"/></svg>
+            </a>
           </div>
 
-          {/* Resources */}
-          <div>
-            <h3 className={`text-lg font-bold mb-4 ${textPrimary}`}>Resources</h3>
-            <ul className="space-y-2.5 text-base">
-              {resources.map((link, index) => (
-                <li key={index}>
-                  <Link href={link.href}>
-                    <span className={`${textSecondary} ${hoverText} transition-colors cursor-pointer`}>
-                      {link.label}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Contact Info */}
-          <div>
-            <h3 className={`text-lg font-bold mb-4 ${textPrimary}`}>Contact Us</h3>
-            <ul className={`space-y-3 text-base ${textSecondary}`}>
-              <li className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <span>{footerConfig.contact.address}</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Phone className="w-4 h-4 flex-shrink-0" />
-                <a href={`tel:${footerConfig.contact.phone.replace(/\s/g, "")}`} className={`${hoverText} transition-colors`}>
-                  {footerConfig.contact.phone}
-                </a>
-              </li>
-              <li className="flex items-center gap-3">
-                <Mail className="w-4 h-4 flex-shrink-0" />
-                <a href={`mailto:${footerConfig.contact.email}`} className={`${hoverText} transition-colors`}>
-                  {footerConfig.contact.email}
-                </a>
-              </li>
-              {role === "college" && (
-                <li className="flex items-center gap-3 pt-2">
-                  <ExternalLink className="w-4 h-4 flex-shrink-0" />
-                  <a
-                    href={footerConfig.contact.collegeWebsite}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`${hoverText} transition-colors flex items-center gap-1`}
-                  >
-                    Visit College Website
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                </li>
-              )}
-            </ul>
-          </div>
-        </div>
-
-        {/* Bottom Bar */}
-        <div className={`border-t ${footerBorder} mt-8 pt-8 text-center`}>
-          <p className={`${textMuted} text-sm`}>
-            &copy; {new Date().getFullYear()} {footerConfig.company.name}. All rights reserved.
-          </p>
         </div>
       </div>
     </footer>
@@ -339,4 +231,5 @@ export default function Footer({ role = "public", className = "" }: FooterProps)
 
 // Export configuration for easy updates
 export { footerConfig };
+
 
