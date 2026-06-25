@@ -112,19 +112,25 @@ function Router() {
     </Switch>
   );
 }
+import { BrandingProvider } from "./contexts/BrandingContext";
+import { UserProvider } from "./contexts/UserContext";
 
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="light" switchable={true}>
-        <TooltipProvider>
-          <ScrollToTop />
-          <Toaster />
-          <div className="min-h-dvh w-full min-w-0 overflow-x-hidden">
-            <Router />
-          </div>
-        </TooltipProvider>
-      </ThemeProvider>
+      <BrandingProvider>
+        <UserProvider>
+          <ThemeProvider defaultTheme="light" switchable={true}>
+            <TooltipProvider>
+              <ScrollToTop />
+              <Toaster />
+              <div className="min-h-dvh w-full min-w-0 overflow-x-hidden">
+                <Router />
+              </div>
+            </TooltipProvider>
+          </ThemeProvider>
+        </UserProvider>
+      </BrandingProvider>
     </ErrorBoundary>
   );
 }
