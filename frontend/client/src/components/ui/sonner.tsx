@@ -20,8 +20,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
         classNames: {
           success:
             "!bg-emerald-600 !text-white !border !border-emerald-500 shadow-lg shadow-emerald-900/30",
-          title: "!text-white !font-bold",
-          description: "!text-emerald-50",
+          error:
+            "!bg-destructive !text-destructive-foreground !border !border-destructive/50 shadow-lg shadow-destructive/20",
+          title: "!font-bold",
+          description: "!opacity-90",
         },
       }}
       className="toaster group"

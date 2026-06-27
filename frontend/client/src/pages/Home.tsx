@@ -93,7 +93,7 @@ export default function PremiumLandingPage() {
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const [comparisonView, setComparisonView] = useState("after");
-  const [audience, setAudience] = useState<"colleges" | "placements" | "students">("colleges");
+  const [audience, setAudience] = useState<"placements" | "students">("placements");
   const [activeFeatureTab, setActiveFeatureTab] = useState(0);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [demoOpen, setDemoOpen] = useState(false);
@@ -141,12 +141,6 @@ export default function PremiumLandingPage() {
       subtitle: "AI-powered preparation",
       description: "Get personalized skill assessments, industry benchmarking, and a clear roadmap to crack top tech companies. Join 50,000+ students already preparing smarter.",
       cta: "Start your journey",
-    },
-    colleges: {
-      title: "Bridge the Student-Industry Gap with",
-      subtitle: "Intelligent Analytics",
-      description: "Transform placement outcomes with intelligent skill mapping, real-time industry benchmarking, and personalized career guidance powered by advanced machine learning.",
-      cta: "Request a Demo",
     },
     placements: {
       title: "Make data-driven decisions with",
@@ -602,20 +596,43 @@ export default function PremiumLandingPage() {
       <section className="relative overflow-hidden px-4 pb-12 pt-28 sm:pt-32 lg:pt-36">
         <div className="container mx-auto max-w-7xl relative z-10 text-center">
 
-          <motion.div
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="flex justify-center mb-10"
+            className="text-5xl sm:text-6xl md:text-7xl font-extrabold leading-[1.1] mb-8 tracking-tight px-2"
           >
-            <Tabs value={audience} onValueChange={(v) => setAudience(v as "colleges" | "placements" | "students")} className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl p-1.5 rounded-full border border-slate-200/50 dark:border-white/10 shadow-2xl mx-auto w-fit">
+            <span className="bg-gradient-to-r from-slate-900 via-slate-600 to-slate-900 dark:from-white dark:via-slate-300 dark:to-white bg-clip-text text-transparent">
+              <Typewriter text={heroCopy[audience].title} speed={100} />
+            </span>
+            <br />
+            <motion.span
+              key={audience}
+              initial={{ opacity: 0, filter: "blur(10px)" }}
+              animate={{ opacity: 1, filter: "blur(0px)" }}
+              className={`bg-gradient-to-r ${audience === 'placements' ? 'from-purple-600 to-pink-600' : 'from-pink-400 to-rose-600'} bg-clip-text text-transparent drop-shadow-sm`}
+            >
+              <Typewriter text={heroCopy[audience].subtitle} speed={100} delay={2500} />
+            </motion.span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-base sm:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto leading-relaxed mb-10 font-medium px-4 md:px-0 min-h-[140px] sm:min-h-[100px]"
+          >
+            <Typewriter text={heroCopy[audience].description} speed={40} delay={5000} />
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="flex justify-center mb-16"
+          >
+            <Tabs value={audience} onValueChange={(v) => setAudience(v as "placements" | "students")} className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl p-1.5 rounded-full border border-slate-200/50 dark:border-white/10 shadow-2xl mx-auto w-fit">
               <TabsList className="bg-transparent h-10 sm:h-12 gap-1 sm:gap-2">
-                <TabsTrigger
-                  value="colleges"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25 text-slate-600 dark:text-slate-400 font-bold rounded-full px-4 sm:px-6 text-xs sm:text-sm transition-all hover:text-slate-900 dark:hover:text-white"
-                >
-                  Colleges
-                </TabsTrigger>
                 <TabsTrigger
                   value="placements"
                   className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/25 text-slate-600 dark:text-slate-400 font-bold rounded-full px-4 sm:px-6 text-xs sm:text-sm transition-all hover:text-slate-900 dark:hover:text-white"
@@ -631,63 +648,22 @@ export default function PremiumLandingPage() {
               </TabsList>
             </Tabs>
           </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-4xl sm:text-5xl font-extrabold leading-[1.1] mb-5 tracking-tight px-2"
-          >
-            <span className="bg-gradient-to-r from-slate-900 via-slate-600 to-slate-900 dark:from-white dark:via-slate-300 dark:to-white bg-clip-text text-transparent">
-              <Typewriter text={heroCopy[audience].title} speed={100} />
-            </span>
-            <br />
-            <motion.span
-              key={audience}
-              initial={{ opacity: 0, filter: "blur(10px)" }}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              className={`bg-gradient-to-r ${audience === 'colleges' ? 'from-blue-600 to-cyan-600' : audience === 'placements' ? 'from-purple-600 to-pink-600' : 'from-pink-400 to-rose-600'} bg-clip-text text-transparent drop-shadow-sm`}
-            >
-              <Typewriter text={heroCopy[audience].subtitle} speed={100} delay={2500} />
-            </motion.span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-base sm:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto leading-relaxed mb-10 font-medium px-4 md:px-0"
-          >
-            <Typewriter text={heroCopy[audience].description} speed={40} delay={5000} />
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 px-4"
-          >
-            <Button size="lg" className="w-full sm:w-auto h-11 px-6 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm rounded-full" onClick={() => navigate("/login")}>
-              {heroCopy[audience].cta}
-              <ArrowRight className="w-4 h-4 ml-1.5" />
-            </Button>
-            <Button size="lg" variant="outline" className="w-full sm:w-auto h-11 px-6 text-sm font-medium border border-slate-200 dark:border-white/20 hover:bg-slate-50 dark:hover:bg-white/10 dark:text-white text-slate-700 rounded-full" onClick={() => setDemoOpen(true)}>
-              <Play className="w-3.5 h-3.5 mr-1.5" />
-              Watch Demo
-            </Button>
-          </motion.div>
-
-
         </div>
       </section>
 
       {/* Features Grid and Tabs */}
       <section className="pt-0 pb-12 px-4 sm:px-6 relative" id="features">
         <div className="container mx-auto max-w-7xl">
-          <div className="text-center mb-10 px-4">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-10 px-4"
+          >
             <h2 className="text-3xl sm:text-5xl font-black mb-4 text-slate-900 dark:text-white leading-tight">Built for High-Growth Careers</h2>
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">Everything you need to transform career readiness and institutional outcomes.</p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16 px-4">
             {features.slice(0, 3).map((feature, idx) => (
@@ -724,7 +700,13 @@ export default function PremiumLandingPage() {
       <section className="py-16 relative overflow-hidden transition-colors duration-500">
 
         <div className="container mx-auto max-w-5xl px-4 relative z-10">
-          <div className="text-center mb-16">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
 
             <h2 className="text-3xl sm:text-4xl font-extrabold mb-6 tracking-tight text-slate-900 dark:text-white leading-tight px-4">
               The Competitive Advantage
@@ -768,7 +750,7 @@ export default function PremiumLandingPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* COMPARISON CARDS */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-stretch px-4 mt-8">
@@ -859,10 +841,16 @@ export default function PremiumLandingPage() {
       <section className="relative overflow-hidden px-4 pt-20 pb-0 sm:px-6 sm:pt-32 lg:px-8" id="how-it-works" ref={journeySectionRef}>
 
         <div className="container mx-auto max-w-7xl relative z-10 text-center">
-          <div className="mb-16 px-2 text-center sm:mb-24 sm:px-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 40 }}
+            whileInView={{ opacity: 1, scale: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.7 }}
+            className="mb-16 px-2 text-center sm:mb-24 sm:px-4"
+          >
             <h2 className="mb-6 text-3xl font-black leading-tight tracking-tighter text-slate-900 dark:text-white sm:mb-8 sm:text-5xl md:text-7xl">Your Path to Excellence</h2>
             <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed">Watch your career trajectory transform from a student to a professional with AI at every turn.</p>
-          </div>
+          </motion.div>
 
           <div className="relative min-h-[2500px] overflow-hidden py-6 sm:min-h-[2800px] sm:py-10 md:min-h-[2800px]">
             {/* The Winding Path SVG */}
@@ -1178,8 +1166,8 @@ export default function PremiumLandingPage() {
 
                     <Badge className="mb-2 sm:mb-3 rounded-full border border-pink-200 dark:border-pink-500/30 bg-pink-50 dark:bg-pink-500/10 px-3 py-1 font-black uppercase tracking-tighter text-pink-600 dark:text-pink-400 text-[9px] sm:text-[10px]">Mission Accomplished</Badge>
 
-                    <h3 className="mb-1 sm:mb-2 text-lg sm:text-2xl font-black tracking-tighter text-slate-900 dark:text-white">Job Offer</h3>
-                    <p className="mb-3 sm:mb-4 font-black text-sm sm:text-base text-slate-600 dark:text-slate-400">₹42.5 LPA • SDE-1</p>
+                    <h3 className="mb-1 sm:mb-2 text-3xl sm:text-4xl font-black tracking-tighter text-slate-900 dark:text-white">Job Offer</h3>
+                    <p className="mb-3 sm:mb-4 font-black text-base sm:text-lg text-slate-600 dark:text-slate-400">₹42.5 LPA • SDE-1</p>
 
                     <div className="rounded-xl border border-pink-200 dark:border-pink-500/20 bg-pink-50 dark:bg-pink-500/10 p-2 sm:p-3 max-w-[140px] sm:max-w-[160px] mx-auto w-full mt-2">
                       <p className="mb-0.5 text-center text-[7px] sm:text-[8px] font-black uppercase tracking-[0.2em] text-pink-600 dark:text-pink-400">Career Growth</p>
@@ -1234,12 +1222,24 @@ export default function PremiumLandingPage() {
       {/* Testimonials */}
       <section className="py-16 px-4 sm:px-6 relative" id="testimonials" >
         <div className="container mx-auto max-w-7xl">
-          <div className="text-center mb-12 px-4">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12 px-4"
+          >
             <h2 className="text-3xl sm:text-4xl font-extrabold mb-4 text-slate-900 dark:text-white leading-tight">Proven Breakthroughs</h2>
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 leading-relaxed">Trusted by tier-1 institutions and high-growth recruiters.</p>
-          </div>
+          </motion.div>
 
-          <div className="max-w-4xl mx-auto px-2 sm:px-0">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 30 }}
+            whileInView={{ opacity: 1, scale: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="max-w-4xl mx-auto px-2 sm:px-0"
+          >
             <Card className="p-6 sm:p-8 lg:p-10 bg-white/70 dark:bg-slate-900/80 backdrop-blur-2xl border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden rounded-3xl">
               <div className="absolute top-0 right-0 p-8 opacity-5 hidden sm:block">
                 <Quote className="w-24 h-24 text-slate-900 dark:text-white" />
@@ -1273,7 +1273,7 @@ export default function PremiumLandingPage() {
                 <button key={i} onClick={() => setActiveTestimonial(i)} className={`h-2 sm:h-3 rounded-full transition-all ${i === activeTestimonial ? 'w-12 sm:w-20 bg-blue-600' : 'w-2 sm:w-3 bg-slate-300 dark:bg-slate-800'}`} />
               ))}
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -1319,16 +1319,28 @@ export default function PremiumLandingPage() {
       {/* FAQ */}
       <section className="py-16 px-4 sm:px-6 relative overflow-hidden transition-colors duration-500" id="faq">
         <div className="container mx-auto max-w-6xl relative z-10 px-4">
-          <div className="mb-10 sm:mb-16">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6 }}
+            className="mb-10 sm:mb-16"
+          >
             <h2 className="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
               Frequently Asked <br className="hidden sm:block" />
               Questions
             </h2>
-          </div>
+          </motion.div>
           <div className="flex flex-col lg:flex-row gap-12 lg:gap-20">
 
             {/* Left Sidebar: Categories */}
-            <div className="w-full lg:w-1/3">
+            <motion.div 
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="w-full lg:w-1/3"
+            >
               <div className="flex flex-col items-start gap-3 sticky top-32">
                 {faqCategories.map((category, i) => (
                   <button
@@ -1354,10 +1366,16 @@ export default function PremiumLandingPage() {
                   </button>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
             {/* Right Content Area: Accordion */}
-            <div className="w-full lg:w-2/3 min-h-[400px]">
+            <motion.div 
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="w-full lg:w-2/3 min-h-[400px]"
+            >
               <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0c0814] divide-y divide-slate-100 dark:divide-white/5 overflow-hidden shadow-sm">
                 <AnimatePresence mode="wait">
                   {faqs.filter(faq => faq.category === activeCategory).map((faq, i) => (
@@ -1401,7 +1419,7 @@ export default function PremiumLandingPage() {
                   ))}
                 </AnimatePresence>
               </div>
-            </div>
+            </motion.div>
 
           </div>
         </div>
@@ -1411,16 +1429,34 @@ export default function PremiumLandingPage() {
       <section className="py-8 sm:py-10 px-4 sm:px-6 relative overflow-hidden">
         <div className="container mx-auto max-w-4xl relative z-10 text-center px-4">
 
-          <h2 className="mb-3 sm:mb-4 px-1 text-2xl font-extrabold leading-tight tracking-tight text-slate-900 dark:text-white sm:text-3xl md:text-4xl">
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.6 }}
+            className="mb-3 sm:mb-4 px-1 text-2xl font-extrabold leading-tight tracking-tight text-slate-900 dark:text-white sm:text-3xl md:text-4xl"
+          >
             Ready to Accelerate Your{" "}
             <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent underline decoration-blue-500/20 dark:decoration-white/20">
               Future?
             </span>
-          </h2>
-          <p className="mx-auto mb-6 sm:mb-8 max-w-2xl px-2 text-sm font-semibold leading-relaxed text-slate-600 dark:text-slate-300 sm:text-base">
+          </motion.h2>
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mx-auto mb-6 sm:mb-8 max-w-2xl px-2 text-sm font-semibold leading-relaxed text-slate-600 dark:text-slate-300 sm:text-base"
+          >
             Join 50,000+ students already using AI to unlock their peak placement potential.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+          </motion.p>
+          <motion.div 
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4"
+          >
             <Button size="lg" className="w-full sm:w-auto h-10 sm:h-12 px-6 text-sm sm:text-base font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:scale-105 transition-all group rounded-full" onClick={() => navigate("/login")}>
               Get Started Now
               <Rocket className="w-4 h-4 ml-2 group-hover:translate-x-1" />
@@ -1429,7 +1465,7 @@ export default function PremiumLandingPage() {
               <MessageSquare className="w-4 h-4 mr-2" />
               Contact Sales
             </Button>
-          </div>
+          </motion.div>
         </div>
       </section>
 
