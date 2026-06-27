@@ -13,7 +13,13 @@ async function downloadDeptBlob(path: string, fallbackFilename: string) {
   let filename = fallbackFilename;
   const m = disposition?.match(/filename="([^"]+)"/i) || disposition?.match(/filename=([^;\s]+)/i);
   if (m?.[1]) filename = decodeURIComponent(m[1].replace(/"/g, ''));
-  const type = response.headers['content-type'] || 'application/octet-stream';
+  const rawType = response.headers['content-type'];
+  const type =
+    typeof rawType === 'string'
+      ? rawType
+      : Array.isArray(rawType)
+        ? rawType[0]
+        : 'application/octet-stream';
   const url = URL.createObjectURL(new Blob([response.data], { type }));
   const a = document.createElement('a');
   a.href = url;

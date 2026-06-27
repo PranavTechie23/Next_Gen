@@ -66,6 +66,11 @@ export const studentApi = {
     return response.data;
   },
 
+  evaluateTargetRole: async (targetRole: string) => {
+    const response = await api.post('profile/target-role', { target_role: targetRole });
+    return response.data;
+  },
+
   // Dynamic Roadmap (Mentorship)
   getRoadmap: async () => {
     const response = await api.get('roadmap');
@@ -128,4 +133,10 @@ export const studentApi = {
     const response = await api.get('dept-events');
     return response.data;
   },
+
+  getAnnouncements: async () => {
+    const response = await api.get('announcements');
+    return response.data;
+  },
 };
+
