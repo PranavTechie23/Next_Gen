@@ -107,30 +107,35 @@ export default function CorporateNews({ isDashboard }: CorporateNewsProps = {}) 
           const fallbackImage = "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800";
           
           return (
-            <Card key={index} className="overflow-hidden flex flex-col h-full bg-card hover:shadow-lg transition-all duration-300 border-border group hover:-translate-y-1">
-              <div className="relative h-48 w-full bg-muted overflow-hidden">
+            <Card key={index} className="overflow-hidden flex flex-col h-full bg-white/80 dark:bg-[#0c0c14]/40 backdrop-blur-2xl hover:bg-white dark:hover:bg-[#0c0c14]/60 transition-all duration-500 border border-slate-200 dark:border-white/5 hover:border-blue-500/30 dark:hover:border-blue-500/30 group hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/10 rounded-2xl">
+              <div className="relative h-52 w-full bg-slate-100 dark:bg-slate-900 overflow-hidden">
                 <img
                   src={article.urlToImage || fallbackImage}
                   alt={article.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = fallbackImage;
                   }}
                 />
-                <div className="absolute top-3 left-3 px-2.5 py-1 bg-background/90 backdrop-blur-sm text-xs font-semibold rounded-md shadow-sm">
+                {/* Gradient overlay for smooth transition into content */}
+                <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#0c0c14] via-transparent to-transparent opacity-0 group-hover:opacity-40 transition-opacity duration-500" />
+                
+                <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/60 dark:bg-black/80 backdrop-blur-md text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-lg border border-white/10">
                   {article.source.name}
                 </div>
               </div>
               
-              <CardContent className="flex flex-col flex-grow p-5 space-y-4">
+              <CardContent className="flex flex-col flex-grow p-6 space-y-4">
                 <div className="space-y-3 flex-grow">
-                  <div className="flex justify-between items-center text-xs text-muted-foreground font-medium">
-                    <span className="text-primary/80">{new Date(article.publishedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-blue-600 dark:text-blue-400 font-black uppercase tracking-widest text-[10px] bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded-md">
+                      {new Date(article.publishedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
                   </div>
-                  <h3 className="font-bold text-lg leading-snug line-clamp-2 group-hover:text-primary transition-colors" title={article.title}>
+                  <h3 className="font-black text-lg leading-tight line-clamp-2 text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" title={article.title}>
                     {article.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground/90 line-clamp-3 leading-relaxed">
+                  <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed font-medium">
                     {article.description || "Click 'Read full article' to learn more about this headline."}
                   </p>
                 </div>
@@ -139,9 +144,9 @@ export default function CorporateNews({ isDashboard }: CorporateNewsProps = {}) 
                   href={article.url} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="inline-flex items-center text-sm font-semibold text-primary hover:text-primary/80 transition-colors mt-auto pt-4 border-t border-border/50 w-fit"
+                  className="inline-flex items-center text-xs font-black text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors mt-auto pt-5 border-t border-slate-200 dark:border-white/5 w-full uppercase tracking-widest group-hover:pl-2 duration-300"
                 >
-                  Read full article <ExternalLink className="w-4 h-4 ml-1.5" />
+                  Read full article <ExternalLink className="w-4 h-4 ml-1.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </a>
               </CardContent>
             </Card>

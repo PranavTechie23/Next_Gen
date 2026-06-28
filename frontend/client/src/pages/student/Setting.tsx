@@ -49,6 +49,7 @@ import { motion } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { studentApi } from "@/services/studentApi";
 import { toast } from "sonner";
+import { useUser } from "@/contexts/UserContext";
 
 export default function StudentSettings(props: any) {
   const isDashboard = props?.isDashboard || false;
@@ -58,6 +59,7 @@ export default function StudentSettings(props: any) {
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
 
+  const { user: profileData, loading: isUserLoading, refreshUser, updateUserLocally } = useUser();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -81,43 +83,36 @@ export default function StudentSettings(props: any) {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch student profile on mount
+  // Initialize form data from context
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        setIsLoading(true);
-        const data = await studentApi.getProfile();
-        setFormData({
-            fullName: data?.profile?.full_name || data?.user?.email?.split('@')[0] || "Student",
-            email: data?.user?.email || "",
-            phone: data?.profile?.phone || "",
-            location: data?.profile?.address || "Address Not Available",
-            college: "NextGen University", // Assuming static or from institution table
-            branch: data?.department?.name || "Engineering",
-            year: "Final Year",
-            cgpa: data?.student?.current_cgpa || "0",
-            graduationYear: data?.student?.expected_graduation_year || "2025",
-            targetRole: "Software Engineer",
-            linkedIn: data?.profile?.linkedin_url || "",
-            github: data?.profile?.github_url || "",
-            portfolio: "",
-            bio: data?.profile?.bio || ""
-        });
-        setAvatarUrl(data?.profile?.avatar_url || "");
-      } catch (error: any) {
-        console.error("Failed to fetch profile settings", error);
-        if (error?.response?.status === 401) {
-          toast.error("Session expired. Please login again.");
-          window.location.href = "/login";
-          return;
-        }
-        toast.error("Failed to load profile data.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchProfile();
-  }, []);
+    if (profileData) {
+      setFormData({
+        fullName: profileData?.profile?.full_name || profileData?.user?.email?.split('@')[0] || "Student",
+        email: profileData?.user?.email || "",
+        phone: profileData?.profile?.phone || "",
+        location: profileData?.profile?.address || "Address Not Available",
+        college: "NextGen University",
+        branch: profileData?.department?.name || "Engineering",
+        year: "Final Year",
+        cgpa: profileData?.student?.current_cgpa || "0",
+        graduationYear: profileData?.student?.expected_graduation_year || "2025",
+        targetRole: "Software Engineer",
+        linkedIn: profileData?.profile?.linkedin_url || "",
+        github: profileData?.profile?.github_url || "",
+        portfolio: "",
+        bio: profileData?.profile?.bio || ""
+      });
+      setAvatarUrl(profileData?.profile?.avatar_url || "");
+      setIsLoading(false);
+    }
+  }, [profileData]);
+
+  // If user is loading in context, show loading state
+  useEffect(() => {
+    if (isUserLoading) {
+      setIsLoading(true);
+    }
+  }, [isUserLoading]);
 
   const [privacySettings, setPrivacySettings] = useState({
     analyzeLearning: true,
@@ -188,6 +183,10 @@ export default function StudentSettings(props: any) {
       const data = await studentApi.uploadAvatar(file);
       setAvatarUrl(data.avatar_url);
       setAvatarPreview("");
+      // Update global context immediately
+      updateUserLocally({
+        profile: { ...profileData.profile, avatar_url: data.avatar_url }
+      });
       toast.success("Profile photo updated!");
     } catch (err) {
       console.error("Avatar upload failed", err);
@@ -212,6 +211,9 @@ export default function StudentSettings(props: any) {
       };
       
       await studentApi.updateSubjectiveProfile(subjectiveData);
+      
+      // Update global context
+      await refreshUser();
       
       setSaved(true);
       setIsEditing(false);

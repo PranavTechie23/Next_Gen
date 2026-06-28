@@ -390,9 +390,12 @@ const MANUAL_LOGOS: Record<string, string> = {
 const INVERT_IN_DARK = new Set(["Amazon", "Uber", "CRED", "Cred", "Tesla", "Sony", "Samsung", "HP", "Dell", "IBM", "Intel", "Cisco", "Oracle", "Fabric Inc", "GNS Engineering India", "Cakesoft Tech", "TCS Ninja", "CodeVita", "Cyient", "HCL", "ElasticRun", "Amura", "Infogen Labs", "IDFC First Bank", "IDFC FIRST Bank", "Quantiphi", "Quantphi", "64squares", "eQ Technologic", "eQ Technology", "TCS Digital", "se2", "SE2", "Winjit", "Winjit Technology", "Scalex Technology", "IQ Digital", "iq digital", "Codevita Live", "Flo Group", "BNY", "BNY Mellon", "BMC", "BMC Software", "ProcDNA", "Sarvatra", "Sarvatra Technologies", "Fractal", "Fractal AI", "Concord AI", "Uptiq", "Ideas", "General Mills", "FPL Technology", "FPL Technologies"]);
 const INVERT_IN_LIGHT = new Set(["Apple", "Github"]);
 
-const CompanyLogo = ({ name, logoValue, textSize = "text-lg", padding = "p-2" }: { name: string; logoValue: string; textSize?: string; padding?: string }) => {
+const CompanyLogo = ({ name: rawName, logoValue: rawLogoValue, textSize = "text-lg", padding = "p-2" }: { name: string; logoValue: string; textSize?: string; padding?: string }) => {
+    const name = rawName || "Company";
+    const logoValue = rawLogoValue || "";
+
     // 1. Resolve domain from either explicit URL or known mapping
-    const isExplicitUrl = logoValue.length > 5 && (logoValue.startsWith("http://") || logoValue.startsWith("https://"));
+    const isExplicitUrl = logoValue.length > 5 && (logoValue.startsWith("http://") || logoValue.startsWith("https://") || logoValue.startsWith("/"));
 
     let domain = "";
     if (isExplicitUrl) {
@@ -421,18 +424,28 @@ const CompanyLogo = ({ name, logoValue, textSize = "text-lg", padding = "p-2" }:
     // Priority: Manual Override (local or curated) -> Explicit URL from data -> Clearbit -> Google Favicon
 
     const manualLogo = MANUAL_LOGOS[name];
+    const hasValidSource = manualLogo || isExplicitUrl;
+
+    const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+    const canFetchOnline = !isOffline && !hasValidSource;
 
     // Initial Source based on priority
     const getInitialSrc = () => {
         if (manualLogo) return manualLogo;
         if (isExplicitUrl) return logoValue;
-        return `https://logo.clearbit.com/${domain}`;
+        if (canFetchOnline) return `https://logo.clearbit.com/${domain}`;
+        return "";
     };
 
     const [src, setSrc] = useState(getInitialSrc());
-    const [hasError, setHasError] = useState(false);
+    const [hasError, setHasError] = useState(!hasValidSource && isOffline);
 
     const handleError = () => {
+        if (isOffline) {
+            setHasError(true);
+            return;
+        }
+
         // 1) If manual logo failed, try Clearbit
         if (src === manualLogo) {
             setSrc(`https://logo.clearbit.com/${domain}`);
@@ -488,6 +501,15 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
     const { theme } = useTheme();
     const isDark = theme === "dark";
 
+    const scrollToTop = (smooth = true) => {
+        const container = document.querySelector('main') || document.querySelector('[data-scroll-container]');
+        if (container) {
+            container.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'auto' });
+        } else {
+            window.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'auto' });
+        }
+    };
+
     const userRole = (() => {
         try { return String(localStorage.getItem("userRole") || "STUDENT"); } catch { return "STUDENT"; }
     })();
@@ -532,9 +554,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
     // Scroll to top when a company is selected
     useEffect(() => {
         if (selectedCompany) {
-            // Instant scroll to top (no animation)
-            topRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
-            window.scrollTo(0, 0);
+            scrollToTop(false);
         }
     }, [selectedCompany]);
 
@@ -654,7 +674,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
             const searchTerm = search.toLowerCase();
             const matchesSearch = search === "" ||
                 c.name.toLowerCase().includes(searchTerm) ||
-                c.problems.some(p => p.title.toLowerCase().includes(searchTerm));
+                (c.problems || []).some(p => p.title.toLowerCase().includes(searchTerm));
 
             return matchesTier && matchesSearch;
         });
@@ -671,7 +691,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
         if (sortMode === "az") {
             safeList.sort((a, b) => a.name.localeCompare(b.name));
         } else if (sortMode === "problems_desc") {
-            safeList.sort((a, b) => b.problems.length - a.problems.length);
+            safeList.sort((a, b) => (b.problems?.length || 0) - (a.problems?.length || 0));
         } else if (sortMode === "package_desc") {
             safeList.sort((a, b) => getPackageValue(b.avgPackage) - getPackageValue(a.avgPackage));
         } else {
@@ -689,7 +709,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
     }, [tierFilter, search, sortMode, preferences, companies]);
 
     const filteredProblems = useMemo(() => {
-        if (!company) return [];
+        if (!company || !company.problems) return [];
         return company.problems.filter(p => {
             const matchesDiff = diffFilter === "all" || p.difficulty === diffFilter;
             const matchesTopic = topicFilter === "all" || p.topic === topicFilter;
@@ -699,14 +719,14 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
     }, [company, diffFilter, topicFilter, search]);
 
     const allTopics = useMemo(() => {
-        if (!company) return [];
+        if (!company || !company.problems) return [];
         return Array.from(new Set(company.problems.map(p => p.topic))).sort();
     }, [company]);
 
     // Use TITLE for checking solved status
-    const solvedCount = company ? company.problems.filter(p => solvedTitles.has(p.title)).length : 0;
+    const solvedCount = (company && company.problems) ? company.problems.filter(p => solvedTitles.has(p.title)).length : 0;
     // Calculate unique problems count across all companies
-    const totalProblems = useMemo(() => new Set(companies.flatMap(c => c.problems.map(p => p.title))).size, [companies]);
+    const totalProblems = useMemo(() => new Set(companies.flatMap(c => (c.problems || []).map(p => p.title))).size, [companies]);
     const uniqueSolvedCount = solvedTitles.size;
 
     const handleSubmitSuggestion = (e: React.FormEvent) => {
@@ -811,10 +831,10 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
 
     // ─── Company Detail View ─────────────────────────────────────
     if (company) {
-        const progress = company.problems.length > 0 ? Math.round((solvedCount / company.problems.length) * 100) : 0;
-        const easyCount = company.problems.filter(p => p.difficulty === "Easy").length;
-        const medCount = company.problems.filter(p => p.difficulty === "Medium").length;
-        const hardCount = company.problems.filter(p => p.difficulty === "Hard").length;
+        const progress = (company.problems && company.problems.length > 0) ? Math.round((solvedCount / company.problems.length) * 100) : 0;
+        const easyCount = (company.problems || []).filter(p => p.difficulty === "Easy").length;
+        const medCount = (company.problems || []).filter(p => p.difficulty === "Medium").length;
+        const hardCount = (company.problems || []).filter(p => p.difficulty === "Hard").length;
 
         return (
             <div ref={topRef} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -825,14 +845,14 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                         <ChevronRight className="w-4 h-4 rotate-180" /> Back to Companies
                     </button>
 
-                    <div className={`rounded-3xl p-6 sm:p-8 border ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-slate-200 shadow-lg"}`}>
-                        <div className="flex flex-col sm:flex-row items-start gap-6">
+                    <div className={`rounded-3xl p-5 sm:p-6 border ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-white border-slate-200 shadow-lg"}`}>
+                        <div className="flex flex-col sm:flex-row items-start gap-5">
                             <div className={`w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden`}>
                                 <CompanyLogo name={company.name} logoValue={company.logo} textSize="text-2xl" padding="p-0" />
                             </div>
                             <div className="flex-1">
                                 <div className="flex flex-wrap items-center gap-3 mb-2">
-                                    <h2 className={`text-2xl sm:text-3xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>{company.name}</h2>
+                                    <h2 className={`text-2xl sm:text-2xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>{company.name}</h2>
                                     <Badge className={`${TIER_COLORS[company.tier]} font-black text-[10px] uppercase tracking-widest`}>{company.tier}</Badge>
                                 </div>
                                 <p className={`text-sm mb-4 ${isDark ? "text-slate-400" : "text-slate-600"}`}>{company.description}</p>
@@ -841,7 +861,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                                         💰 {company.avgPackage}
                                     </Badge>
                                     <Badge variant="outline" className={`${isDark ? "border-white/10 text-slate-300" : "border-slate-200 text-slate-600"} font-bold text-xs`}>
-                                        📝 {company.problems.length} Problems
+                                        📝 {(company.problems?.length || 0)} Problems
                                     </Badge>
                                     <Badge variant="outline" className={`${isDark ? "border-white/10 text-slate-300" : "border-slate-200 text-slate-600"} font-bold text-xs`}>
                                         ✅ {solvedCount} Solved
@@ -868,7 +888,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                         <div className={`mt-6 pt-6 border-t ${isDark ? "border-white/5" : "border-slate-100"}`}>
                             <p className={`text-xs font-black uppercase tracking-widest mb-3 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Interview Process</p>
                             <div className="flex flex-wrap gap-2">
-                                {company.interviewRounds.map((round, i) => (
+                                {(company.interviewRounds || []).map((round, i) => (
                                     <div key={i} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold ${isDark ? "bg-white/5 text-slate-300" : "bg-slate-100 text-slate-700"}`}>
                                         <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black bg-gradient-to-br ${company.gradient} text-white`}>{i + 1}</span>
                                         {round}
@@ -900,7 +920,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                                     <div className={`rounded-2xl p-5 border ${isDark ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"}`}>
                                         <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Selected by year</p>
                                         <div className="mt-3 space-y-2">
-                                            {companyStats.yearly.slice(0, 6).map((y: any) => (
+                                            {(companyStats?.yearly || []).slice(0, 6).map((y: any) => (
                                                 <div key={y.year} className="flex items-center justify-between">
                                                     <span className={`text-sm font-bold ${isDark ? "text-slate-300" : "text-slate-700"}`}>{y.year}</span>
                                                     <span className={`text-sm font-black ${isDark ? "text-white" : "text-slate-900"}`}>{y.selected}</span>
@@ -912,7 +932,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                                     <div className={`rounded-2xl p-5 border ${isDark ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"}`}>
                                         <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Role mix</p>
                                         <div className="mt-3 space-y-2">
-                                            {(companyStats.roles || []).slice(0, 6).map((r: any) => (
+                                            {(companyStats?.roles || []).slice(0, 6).map((r: any) => (
                                                 <div key={r.role} className="flex items-center justify-between">
                                                     <span className={`text-sm font-bold ${isDark ? "text-slate-300" : "text-slate-700"}`}>{r.role}</span>
                                                     <span className={`text-sm font-black ${isDark ? "text-white" : "text-slate-900"}`}>{r.count}</span>
@@ -924,7 +944,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                                     <div className={`rounded-2xl p-5 border ${isDark ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"}`}>
                                         <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>CTC distribution (LPA)</p>
                                         <div className="mt-3 space-y-2">
-                                            {Object.entries(companyStats.ctcBuckets || {}).map(([k, v]) => (
+                                            {Object.entries(companyStats?.ctcBuckets || {}).map(([k, v]) => (
                                                 <div key={k} className="flex items-center justify-between">
                                                     <span className={`text-sm font-bold ${isDark ? "text-slate-300" : "text-slate-700"}`}>{k}</span>
                                                     <span className={`text-sm font-black ${isDark ? "text-white" : "text-slate-900"}`}>{Number(v)}</span>
@@ -957,9 +977,9 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                 </div>
 
                 {/* ─── INSIDE SCOOP: Tips & Resources ───────────────────────────── */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
                     {/* Interview Tips Card */}
-                    <div className={`rounded-3xl p-6 sm:p-8 border h-full transition-all hover:shadow-lg ${isDark ? "bg-amber-500/[0.03] border-amber-500/20 hover:border-amber-500/30" : "bg-gradient-to-br from-amber-50 to-orange-50 border-orange-100 hover:border-orange-200"}`}>
+                    <div className={`rounded-3xl p-5 sm:p-6 border h-full transition-all hover:shadow-lg ${isDark ? "bg-amber-500/[0.03] border-amber-500/20 hover:border-amber-500/30" : "bg-gradient-to-br from-amber-50 to-orange-50 border-orange-100 hover:border-orange-200"}`}>
                         <div className="flex items-center gap-3 mb-6">
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20 ${isDark ? "bg-amber-500/20 text-amber-400" : "bg-white text-orange-500"}`}>
                                 <Lightbulb className="w-5 h-5" />
@@ -969,7 +989,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
 
                         {(company.interviewTips && company.interviewTips.length > 0) ? (
                             <ul className="space-y-4">
-                                {company.interviewTips.map((tip, i) => (
+                                {company.interviewTips?.map((tip, i) => (
                                     <li key={i} className="flex gap-3">
                                         <div className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${isDark ? "bg-amber-500" : "bg-orange-500"}`} />
                                         <p className={`text-sm font-medium leading-relaxed ${isDark ? "text-slate-300" : "text-slate-700"}`}>{tip}</p>
@@ -984,7 +1004,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                     </div>
 
                     {/* Resources Card */}
-                    <div className={`rounded-3xl p-6 sm:p-8 border h-full transition-all hover:shadow-lg ${isDark ? "bg-blue-500/[0.03] border-blue-500/20 hover:border-blue-500/30" : "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100 hover:border-blue-200"}`}>
+                    <div className={`rounded-3xl p-5 sm:p-6 border h-full transition-all hover:shadow-lg ${isDark ? "bg-blue-500/[0.03] border-blue-500/20 hover:border-blue-500/30" : "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100 hover:border-blue-200"}`}>
                         <div className="flex items-center gap-3 mb-6">
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 ${isDark ? "bg-blue-500/20 text-blue-400" : "bg-white text-blue-600"}`}>
                                 <BookOpen className="w-5 h-5" />
@@ -994,7 +1014,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
 
                         {(company.resources && company.resources.length > 0) ? (
                             <div className="grid gap-3">
-                                {company.resources.map((res, i) => (
+                                {company.resources?.map((res, i) => (
                                     <a key={i} href={res.url} target="_blank" rel="noopener noreferrer"
                                         className={`group flex items-center justify-between p-4 rounded-xl border transition-all ${isDark
                                             ? "bg-white/5 border-white/5 hover:bg-white/10 hover:border-blue-500/30 text-slate-300 hover:text-white"
@@ -1013,7 +1033,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                     
                     {/* Interview Experiences Card */}
                     {(company.interviewExperiences && company.interviewExperiences.length > 0) && (
-                        <div className={`col-span-1 lg:col-span-2 rounded-3xl p-6 sm:p-8 border h-full transition-all hover:shadow-lg ${isDark ? "bg-purple-500/[0.03] border-purple-500/20 hover:border-purple-500/30" : "bg-gradient-to-br from-purple-50 to-fuchsia-50 border-purple-100 hover:border-purple-200"}`}>
+                        <div className={`col-span-1 lg:col-span-2 rounded-3xl p-5 sm:p-6 border h-full transition-all hover:shadow-lg ${isDark ? "bg-purple-500/[0.03] border-purple-500/20 hover:border-purple-500/30" : "bg-gradient-to-br from-purple-50 to-fuchsia-50 border-purple-100 hover:border-purple-200"}`}>
                             <div className="flex items-center gap-3 mb-6">
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20 ${isDark ? "bg-purple-500/20 text-purple-400" : "bg-white text-purple-600"}`}>
                                     <BookOpen className="w-5 h-5" />
@@ -1021,7 +1041,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                                 <h3 className={`text-xl font-black ${isDark ? "text-purple-100" : "text-slate-800"}`}>Interview Experiences</h3>
                             </div>
                             <div className="grid gap-4 md:grid-cols-2">
-                                {company.interviewExperiences.map((exp, i) => (
+                                {company.interviewExperiences?.map((exp, i) => (
                                     <a key={i} href={exp.url} target="_blank" rel="noopener noreferrer"
                                         className={`group flex flex-col gap-2 p-5 rounded-2xl border transition-all ${isDark
                                             ? "bg-white/5 border-white/5 hover:bg-white/10 hover:border-purple-500/30 text-slate-300"
@@ -1394,8 +1414,8 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
             {/* Company Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                 {filteredCompanies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(c => {
-                    const cSolved = c.problems.filter(p => solvedTitles.has(p.title)).length;
-                    const cProgress = c.problems.length > 0 ? Math.round((cSolved / c.problems.length) * 100) : 0;
+                    const cSolved = (c.problems || []).filter(p => solvedTitles.has(p.title)).length;
+                    const cProgress = (c.problems && c.problems.length > 0) ? Math.round((cSolved / c.problems.length) * 100) : 0;
                     // Check if company matches preferences
                     const isRecommended = preferences.tiers.includes(c.tier);
 
@@ -1433,7 +1453,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                                         <div className="flex items-center gap-3">
                                             <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md ${isDark ? "bg-white/5" : "bg-slate-100"}`}>
                                                 <Code className="w-3 h-3 text-blue-500" />
-                                                <span className={`text-[10px] font-bold ${isDark ? "text-slate-300" : "text-slate-700"}`}>{c.problems.length} Qs</span>
+                                                <span className={`text-[10px] font-bold ${isDark ? "text-slate-300" : "text-slate-700"}`}>{c.problems?.length || 0} Qs</span>
                                             </div>
                                             {cSolved > 0 && (
                                                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-green-500/10">
@@ -1461,7 +1481,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                         variant="outline"
                         onClick={() => {
                             setCurrentPage(prev => Math.max(prev - 1, 1));
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            scrollToTop(true);
                         }}
                         disabled={currentPage === 1}
                         className={isDark ? "border-white/10 text-white hover:bg-white/10" : "border-slate-200 text-slate-700"}
@@ -1475,7 +1495,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                         variant="outline"
                         onClick={() => {
                             setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredCompanies.length / itemsPerPage)));
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            scrollToTop(true);
                         }}
                         disabled={currentPage === Math.ceil(filteredCompanies.length / itemsPerPage)}
                         className={isDark ? "border-white/10 text-white hover:bg-white/10" : "border-slate-200 text-slate-700"}

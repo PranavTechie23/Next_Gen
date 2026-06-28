@@ -152,6 +152,8 @@ export default function Internships(props: {
   const [expandedEdu, setExpandedEdu] = useState<Record<string, boolean>>({});
   const [expandedProjects, setExpandedProjects] = useState<Record<number, boolean>>({});
   const [lastAddedCustomId, setLastAddedCustomId] = useState<string | null>(null);
+  const [showAllProjects, setShowAllProjects] = useState(false);
+  const [showAllExperiences, setShowAllExperiences] = useState(false);
   const glassCard = isDark
     ? "border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.07] to-white/[0.04] backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.35)]"
     : "border border-slate-200/80 bg-gradient-to-br from-white via-slate-50 to-slate-100/80 backdrop-blur-xl shadow-[0_10px_30px_rgba(15,23,42,0.08)]";
@@ -342,54 +344,51 @@ export default function Internships(props: {
   };
 
   return (
-    <div className="space-y-8">
-      <Card className={`${isDark ? "bg-[#0c0c14]/50" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/10" : "border-gray-200"} rounded-[2rem] overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.25)]`}>
-        <CardContent className="p-6 sm:p-10">
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-            <div className="space-y-2">
-              <p className={`text-xs font-black uppercase tracking-[0.2em] ${isDark ? "text-slate-500" : "text-slate-500"}`}>Internships</p>
-              <h2 className={`text-2xl sm:text-3xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Projects & Internships</h2>
-              <p className={`${isDark ? "text-slate-400" : "text-slate-600"} text-sm max-w-2xl`}>
-                Details are auto-extracted from your resume. If anything is missed or incorrect, edit or add it manually.
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto shrink-0">
-              {!isEditing ? (
-                <Button onClick={() => setIsEditing(true)} className="h-12 rounded-2xl font-black" variant="secondary">
-                  <Pencil className="w-4 h-4 mr-2" />
-                  Edit Details
-                </Button>
-              ) : (
-                <>
-                  <Button onClick={addCustomSection} disabled={saving} className="h-12 rounded-2xl font-black" variant="outline">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Section
-                  </Button>
-                  <Button onClick={saveChanges} disabled={saving} className="h-12 rounded-2xl font-black">
-                    <Save className="w-4 h-4 mr-2" />
-                    {saving ? "Saving..." : "Save Changes"}
-                  </Button>
-                  <Button onClick={cancelEdit} disabled={saving} className="h-12 rounded-2xl font-black" variant="secondary">
-                    <X className="w-4 h-4 mr-2" />
-                    Cancel
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
+    <div className="space-y-4">
+      <div className="flex justify-end mb-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto shrink-0">
+          {!isEditing ? (
+            <Button onClick={() => setIsEditing(true)} className="h-12 rounded-2xl font-black" variant="secondary">
+              <Pencil className="w-4 h-4 mr-2" />
+              Edit Details
+            </Button>
+          ) : (
+            <>
+              <Button onClick={addCustomSection} disabled={saving} className="h-12 rounded-2xl font-black" variant="outline">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Section
+              </Button>
+              <Button onClick={saveChanges} disabled={saving} className="h-12 rounded-2xl font-black">
+                <Save className="w-4 h-4 mr-2" />
+                {saving ? "Saving..." : "Save Changes"}
+              </Button>
+              <Button onClick={cancelEdit} disabled={saving} className="h-12 rounded-2xl font-black" variant="secondary">
+                <X className="w-4 h-4 mr-2" />
+                Cancel
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
 
-          <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
-            <div className="space-y-5">
-            <div className={`self-start h-fit rounded-2xl p-5 ${glassCard}`}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+        <div className="space-y-5">
+          <div className={`self-start h-fit rounded-2xl p-5 ${glassCard}`}>
+            <div className="flex items-center justify-between w-full">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-blue-500/10" : "bg-blue-50"}`}>
                   <Code className="w-5 h-5 text-blue-500" />
                 </div>
-                <div>
-                  <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Projects</p>
-                  <p className={`${isDark ? "text-white" : "text-slate-900"} font-black text-sm`}>{projects.length} detected</p>
-                </div>
+                <h3 className={`text-base sm:text-lg font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight`}>
+                  Projects
+                </h3>
               </div>
+              <div className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider ${
+                isDark ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" : "bg-blue-50 text-blue-600 border border-blue-100"
+              }`}>
+                {projects.length} detected
+              </div>
+            </div>
 
               <div className="mt-4 space-y-3">
                 {isEditing && (
@@ -398,142 +397,161 @@ export default function Internships(props: {
                     Add Project
                   </Button>
                 )}
-                {projects.slice(0, 8).map((p, idx) => (
-                  <div key={idx} className={`${isDark ? "bg-black/20 border-white/10" : "bg-slate-50 border-slate-200"} rounded-xl p-4 border`}>
-                    {isEditing ? (
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <input
-                            value={p?.title || ""}
-                            onChange={(e) => updateProject(idx, { title: e.target.value })}
-                            placeholder="Project title"
-                            className={`w-full h-10 px-3 rounded-xl text-sm border outline-none ${
+                <div className={!isEditing ? `flex flex-col space-y-1` : `space-y-3`}>
+                  {(isEditing || showAllProjects ? projects : projects.slice(0, 3)).map((p, idx) => (
+                    <div key={idx} className={isEditing ? `${isDark ? "bg-black/20 border-white/10" : "bg-slate-50 border-slate-200"} rounded-xl p-4 border` : `border-b last:border-0 ${isDark ? "border-white/10" : "border-slate-200"} py-3 first:pt-1 last:pb-1`}>
+                      {isEditing ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <input
+                              value={p?.title || ""}
+                              onChange={(e) => updateProject(idx, { title: e.target.value })}
+                              placeholder="Project title"
+                              className={`w-full h-10 px-3 rounded-xl text-sm border outline-none ${
+                                isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
+                              }`}
+                            />
+                            <Button variant="ghost" size="icon" onClick={() => deleteProject(idx)} className="h-9 w-9">
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </div>
+                          <textarea
+                            value={Array.isArray(p?.bullets) ? p.bullets.join("\n") : ""}
+                            onChange={(e) =>
+                              updateProject(idx, {
+                                bullets: e.target.value
+                                  .split("\n")
+                                  .map((x) => x.trim())
+                                  .filter(Boolean),
+                              })
+                            }
+                            placeholder="One bullet per line"
+                            rows={4}
+                            className={`w-full px-3 py-2 rounded-xl text-sm border outline-none ${
                               isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
                             }`}
                           />
-                          <Button variant="ghost" size="icon" onClick={() => deleteProject(idx)} className="h-9 w-9">
-                            <Trash2 className="w-4 h-4 text-red-500" />
-                          </Button>
                         </div>
-                        <textarea
-                          value={Array.isArray(p?.bullets) ? p.bullets.join("\n") : ""}
-                          onChange={(e) =>
-                            updateProject(idx, {
-                              bullets: e.target.value
-                                .split("\n")
-                                .map((x) => x.trim())
-                                .filter(Boolean),
-                            })
-                          }
-                          placeholder="One bullet per line"
-                          rows={4}
-                          className={`w-full px-3 py-2 rounded-xl text-sm border outline-none ${
-                            isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
-                          }`}
-                        />
-                      </div>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => setExpandedProjects((prev) => ({ ...prev, [idx]: !prev[idx] }))}
-                          className="w-full text-left flex items-start justify-between gap-3 group"
-                        >
-                          <p className={`font-black text-sm ${isDark ? "text-white" : "text-slate-900"} transition-colors group-hover:text-blue-500`}>
-                            {p?.title || "Project"}
-                          </p>
-                          <ChevronDown
-                            className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isDark ? "text-slate-400" : "text-slate-500"} transition-transform ${
-                              expandedProjects[idx] ? "rotate-180" : ""
-                            }`}
-                          />
-                        </button>
-                        {expandedProjects[idx] && Array.isArray(p?.bullets) && p.bullets.length > 0 && (
-                          <ul className={`mt-3 space-y-2 text-xs ${isDark ? "text-slate-300" : "text-slate-700"} animate-in slide-in-from-top-2 duration-300`}>
-                            {p.bullets.map((b, i) => (
-                              <li key={i} className="flex gap-2">
-                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500/70 flex-shrink-0" />
-                                <span>{b}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </>
-                    )}
-                  </div>
-                ))}
-                {projects.length === 0 && (
-                  <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No projects extracted yet.</p>
-                )}
+                      ) : (
+                        <div className="-mx-2 px-2">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedProjects((prev) => ({ ...prev, [idx]: !prev[idx] }))}
+                            className="w-full text-left flex items-start justify-between gap-3 group rounded-lg hover:bg-slate-500/5 p-2 -mx-2 transition-colors"
+                          >
+                            <p className={`font-bold text-sm ${isDark ? "text-white" : "text-slate-800"} transition-colors group-hover:text-blue-500`}>
+                              {p?.title || "Project"}
+                            </p>
+                            <ChevronDown
+                              className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isDark ? "text-slate-400" : "text-slate-500"} transition-transform ${
+                                expandedProjects[idx] ? "rotate-180" : ""
+                              }`}
+                            />
+                          </button>
+                          {expandedProjects[idx] && Array.isArray(p?.bullets) && p.bullets.length > 0 && (
+                            <ul className={`mt-2 mb-2 px-2 space-y-2 text-xs ${isDark ? "text-slate-300" : "text-slate-600"} animate-in slide-in-from-top-2 duration-300`}>
+                              {p.bullets.map((b, i) => (
+                                <li key={i} className="flex gap-2">
+                                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500/70 flex-shrink-0" />
+                                  <span>{b}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {!isEditing && projects.length > 3 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllProjects(!showAllProjects)}
+                      className={`mt-3 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border border-dashed transition-all self-start h-auto ${isDark ? "bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20" : "bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100"}`}
+                    >
+                      {showAllProjects ? "Show Less" : `+${projects.length - 3} more projects`}
+                    </button>
+                  )}
+                  {projects.length === 0 && (
+                    <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm py-2`}>No projects extracted yet.</p>
+                  )}
+                </div>
               </div>
             </div>
             <div className={`self-start h-fit rounded-2xl p-5 ${glassCard}`}>
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-purple-500/10" : "bg-purple-50"}`}>
-                  <GraduationCap className="w-5 h-5 text-purple-500" />
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-purple-500/10" : "bg-purple-50"}`}>
+                    <GraduationCap className="w-5 h-5 text-purple-500" />
+                  </div>
+                  <h3 className={`text-base sm:text-lg font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight`}>
+                    Education
+                  </h3>
                 </div>
-                <div>
-                  <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Education</p>
-                  <p className={`${isDark ? "text-white" : "text-slate-900"} font-black text-sm`}>{educationEntries.length} entries</p>
+                <div className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider ${
+                  isDark ? "bg-purple-500/10 text-purple-400 border border-purple-500/20" : "bg-purple-50 text-purple-600 border border-purple-100"
+                }`}>
+                  {educationEntries.length} entries
                 </div>
               </div>
               <div className="mt-4 space-y-2">
                 {!isEditing && (
-                  <div className="space-y-2">
+                  <div className="flex flex-col space-y-1">
                     {educationEntries.length > 0 ? (
                       educationEntries.slice(0, 6).map((entry) => {
                         const isOpen = Boolean(expandedEdu[entry.id]);
                         return (
                           <div
                             key={entry.id}
-                            className={`${isDark ? "bg-black/20 border-white/10" : "bg-white/70 border-slate-200"} rounded-xl border p-3`}
+                            className={`border-b last:border-0 ${isDark ? "border-white/10" : "border-slate-200"} py-3 first:pt-1 last:pb-1`}
                           >
-                            <button
-                              type="button"
-                              onClick={() => setExpandedEdu((prev) => ({ ...(prev || {}), [entry.id]: !isOpen }))}
-                              className="w-full text-left flex items-start justify-between gap-3"
-                            >
-                              <div className="min-w-0">
-                                <p className={`${isDark ? "text-slate-50" : "text-slate-900"} font-black text-sm leading-snug truncate`}>
-                                  {entry.institute}
-                                </p>
-                                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-                                  {entry.headline && (
-                                    <span className={`${isDark ? "text-slate-200" : "text-slate-700"} text-xs font-semibold`}>
-                                      {entry.headline}
-                                    </span>
-                                  )}
-                                  {entry.years && (
-                                    <span className={`${isDark ? "text-slate-300" : "text-slate-600"} text-xs`}>
-                                      {entry.years}
-                                    </span>
+                            <div className="-mx-2 px-2">
+                              <button
+                                type="button"
+                                onClick={() => setExpandedEdu((prev) => ({ ...(prev || {}), [entry.id]: !isOpen }))}
+                                className="w-full text-left flex items-start justify-between gap-3 rounded-lg hover:bg-slate-500/5 p-2 -mx-2 transition-colors group"
+                              >
+                                <div className="min-w-0">
+                                  <p className={`${isDark ? "text-slate-100" : "text-slate-800"} font-bold text-sm leading-snug truncate group-hover:text-blue-500 transition-colors`}>
+                                    {entry.institute}
+                                  </p>
+                                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                                    {entry.headline && (
+                                      <span className={`${isDark ? "text-slate-300" : "text-slate-600"} text-xs font-medium`}>
+                                        {entry.headline}
+                                      </span>
+                                    )}
+                                    {entry.years && (
+                                      <span className={`${isDark ? "text-slate-400" : "text-slate-500"} text-xs`}>
+                                        {entry.years}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <ChevronDown
+                                  className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isDark ? "text-slate-400" : "text-slate-500"} transition-transform ${
+                                    isOpen ? "rotate-180" : ""
+                                  }`}
+                                />
+                              </button>
+
+                              {isOpen && (
+                                <div className="mt-2 mb-2 px-2 space-y-1">
+                                  {(entry.detailLines || []).slice(0, 10).map((line, i) => (
+                                    <div key={i} className={`text-xs leading-relaxed ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                                      {line}
+                                    </div>
+                                  ))}
+                                  {(entry.detailLines || []).length === 0 && (
+                                    <div className={`${isDark ? "text-slate-400" : "text-slate-500"} text-xs`}>No extra details.</div>
                                   )}
                                 </div>
-                              </div>
-                              <ChevronDown
-                                className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isDark ? "text-slate-200" : "text-slate-700"} transition-transform ${
-                                  isOpen ? "rotate-180" : ""
-                                }`}
-                              />
-                            </button>
-
-                            {isOpen && (
-                              <div className="mt-3 space-y-1">
-                                {(entry.detailLines || []).slice(0, 10).map((line, i) => (
-                                  <div key={i} className={`text-xs leading-relaxed ${isDark ? "text-slate-200/95" : "text-slate-700"}`}>
-                                    {line}
-                                  </div>
-                                ))}
-                                {(entry.detailLines || []).length === 0 && (
-                                  <div className={`${isDark ? "text-slate-400" : "text-slate-500"} text-xs`}>No extra details.</div>
-                                )}
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
                         );
                       })
                     ) : (
-                      <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No education extracted yet.</p>
+                      <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm py-2`}>No education extracted yet.</p>
                     )}
                   </div>
                 )}
@@ -563,26 +581,39 @@ export default function Internships(props: {
             </div>
 
             <div className="space-y-5">
-            <div className={`self-start h-fit rounded-2xl p-5 ${glassCard}`}>
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-emerald-500/10" : "bg-emerald-50"}`}>
-                  <Briefcase className="w-5 h-5 text-emerald-500" />
+              <div className={`self-start h-fit rounded-2xl p-5 ${glassCard}`}>
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-emerald-500/10" : "bg-emerald-50"}`}>
+                      <Briefcase className="w-5 h-5 text-emerald-500" />
+                    </div>
+                    <h3 className={`text-base sm:text-lg font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight`}>
+                      Internships / Experience
+                    </h3>
+                  </div>
+                  <div className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider ${
+                    isDark ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                  }`}>
+                    {((experience || []).length + (extracurricular || []).length) || 0} detected
+                  </div>
                 </div>
-                <div>
-                  <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Internships / Experience</p>
-                  <p className={`${isDark ? "text-white" : "text-slate-900"} font-black text-sm`}>
-                    {(experience.length + extracurricular.length) || 0} detected
-                  </p>
-                </div>
-              </div>
 
               <div className="mt-4 space-y-2">
-                {!isEditing && [...experience, ...extracurricular].slice(0, 18).map((e, idx) => (
+                {!isEditing && (showAllExperiences ? [...experience, ...extracurricular] : [...experience, ...extracurricular].slice(0, 3)).map((e, idx) => (
                   <div key={idx} className={`flex items-start gap-2 text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>
                     <span className="mt-2 w-1.5 h-1.5 rounded-full bg-emerald-500/70 flex-shrink-0" />
                     <span>{e}</span>
                   </div>
                 ))}
+                {!isEditing && [...experience, ...extracurricular].length > 3 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllExperiences(!showAllExperiences)}
+                    className={`mt-3 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border border-dashed transition-all self-start h-auto ${isDark ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20" : "bg-emerald-50 border-emerald-200 text-emerald-600 hover:bg-emerald-100"}`}
+                  >
+                    {showAllExperiences ? "Show Less" : `+${[...experience, ...extracurricular].length - 3} more experiences`}
+                  </button>
+                )}
                 {isEditing && (
                   <div className="space-y-4">
                     <div>
@@ -642,13 +673,19 @@ export default function Internships(props: {
               </div>
             </div>
             <div className={`self-start h-fit rounded-2xl p-5 ${glassCard}`}>
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-amber-500/10" : "bg-amber-50"}`}>
-                  <Briefcase className="w-5 h-5 text-amber-500" />
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-amber-500/10" : "bg-amber-50"}`}>
+                    <Briefcase className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <h3 className={`text-base sm:text-lg font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight`}>
+                    Certifications
+                  </h3>
                 </div>
-                <div>
-                  <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Certifications</p>
-                  <p className={`${isDark ? "text-white" : "text-slate-900"} font-black text-sm`}>{certifications.length} lines</p>
+                <div className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider ${
+                  isDark ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" : "bg-amber-50 text-amber-600 border border-amber-100"
+                }`}>
+                  {(certifications || []).length} lines
                 </div>
               </div>
               <div className="mt-4 space-y-2">
@@ -690,32 +727,41 @@ export default function Internships(props: {
                 key={stableId}
                 className={`self-start h-fit rounded-2xl p-5 ${glassCard} ${isJustAdded ? "ring-2 ring-violet-500/60" : ""}`}
               >
-                <div className="flex items-center gap-3 justify-between">
-                  <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-cyan-500/10" : "bg-cyan-50"}`}>
                       <Briefcase className="w-5 h-5 text-cyan-500" />
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       {isEditing ? (
                         <input
                           value={section?.title || ""}
                           onChange={(e) => updateCustomSection(sectionIndex, { title: e.target.value })}
-                          className={`w-full h-9 px-2 rounded-lg text-sm border outline-none ${
+                          className={`w-full h-10 px-3 rounded-xl text-sm border outline-none ${
                             isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
                           }`}
                         />
                       ) : (
-                        <p className={`${isDark ? "text-white" : "text-slate-900"} font-black text-sm truncate`}>
+                        <h3 className={`text-base sm:text-lg font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight truncate`}>
                           {section?.title || "Custom Section"}
-                        </p>
+                        </h3>
                       )}
                     </div>
                   </div>
-                  {isEditing && (
-                    <Button variant="ghost" size="icon" onClick={() => deleteCustomSection(sectionIndex)} className="h-8 w-8">
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {!isEditing && (
+                      <div className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider ${
+                        isDark ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" : "bg-cyan-50 text-cyan-600 border border-cyan-100"
+                      }`}>
+                        {((section?.lines || []).length)} {section?.lines?.length === 1 ? "item" : "items"}
+                      </div>
+                    )}
+                    {isEditing && (
+                      <Button variant="ghost" size="icon" onClick={() => deleteCustomSection(sectionIndex)} className="h-8 w-8">
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <div className="mt-4 space-y-2">
                   {!isEditing &&
@@ -756,8 +802,6 @@ export default function Internships(props: {
             })}
             </div>
           </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

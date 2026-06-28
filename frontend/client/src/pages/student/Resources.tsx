@@ -1106,25 +1106,7 @@ const AssessmentHub: React.FC<AssessmentHubProps> = ({ isDashboard = false, onBa
 
     return (
         <div className={`${isDashboard ? "" : "min-h-dvh overflow-x-hidden"} ${isDark ? "" : ""}`}>
-            {/* Hero / Header */}
-            <div className="mb-8 flex flex-col items-center justify-center gap-4 text-center overflow-hidden">
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="flex flex-col items-center"
-                >
-                    <div className="flex items-center gap-3 mb-4">
-                    </div>
 
-                    <TypewriterText
-                        text="Practice on the world's best platforms. From aptitude to system design — everything you need to crack any interview, all in one place."
-                        speed={30}
-                        delay={300}
-                        className={`text-base sm:text-lg font-black leading-relaxed max-w-3xl bg-gradient-to-r ${isDark ? "from-blue-300 via-purple-300 to-pink-300" : "from-blue-600 via-purple-600 to-pink-600"} bg-clip-text text-transparent`}
-                    />
-                </motion.div>
-            </div>
 
             {/* Quick Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
