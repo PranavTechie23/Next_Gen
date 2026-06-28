@@ -636,8 +636,8 @@ export default function StudentWebinar(props: { isDashboard?: boolean }) {
           --w-text-main: #f8fafc;
           --w-text-muted: rgba(226,232,240,0.92);
           --w-text-subtle: rgba(203,213,225,0.85);
-          --w-card-bg: rgba(17,24,39,0.72);
-          --w-card-border: rgba(255,255,255,0.07);
+          --w-card-bg: rgba(12, 12, 20, 0.4);
+          --w-card-border: rgba(255,255,255,0.05);
           --w-card-border-hover: rgba(139,92,246,0.4);
           --w-card-shadow: none;
           --w-card-shadow-hover: 0 8px 40px rgba(139,92,246,0.15), inset 0 0 0 1px rgba(139,92,246,0.1);
@@ -675,7 +675,7 @@ export default function StudentWebinar(props: { isDashboard?: boolean }) {
                   Live Learning Sessions
                 </span>
               </div>
-              <h1 style={{ fontSize: 44, fontWeight: 700, color: "var(--w-text-main)", lineHeight: 1.1, fontFamily: "'Instrument Serif', serif", letterSpacing: -0.8, margin: 0 }}>
+              <h1 style={{ fontSize: 44, fontWeight: 900, color: "var(--w-text-main)", lineHeight: 1.1, fontFamily: "'DM Sans', sans-serif", letterSpacing: -1.2, margin: 0 }}>
                 Webinars
               </h1>
               <p style={{ fontSize: 16, color: "var(--w-text-muted)", marginTop: 10 }}>
@@ -714,9 +714,18 @@ export default function StudentWebinar(props: { isDashboard?: boolean }) {
           <button
             type="submit"
             style={{
-              padding: "10px 22px", borderRadius: 10, fontSize: 14, fontWeight: 700,
-              background: "rgba(139,92,246,0.8)", border: "1px solid rgba(139,92,246,0.6)",
-              color: "#fff", cursor: "pointer", transition: "background 0.2s",
+              padding: "10px 24px", borderRadius: 12, fontSize: 14, fontWeight: 700,
+              background: "linear-gradient(135deg, #4c1d95, #7c3aed)", border: "1px solid rgba(139,92,246,0.6)",
+              color: "#fff", cursor: "pointer", transition: "transform 0.2s, box-shadow 0.2s",
+              boxShadow: "0 4px 14px rgba(124, 58, 237, 0.3)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-1px)";
+              e.currentTarget.style.boxShadow = "0 6px 20px rgba(124, 58, 237, 0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 4px 14px rgba(124, 58, 237, 0.3)";
             }}
           >
             Search
@@ -784,7 +793,7 @@ function SectionHeader({ label, count, sublabel, accent }: { label: string; coun
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
       <div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <h2 style={{ fontSize: 24, fontWeight: 700, color: "var(--w-text-main)", margin: 0, fontFamily: "'Instrument Serif', serif" }}>
+          <h2 style={{ fontSize: 24, fontWeight: 900, color: "var(--w-text-main)", margin: 0, fontFamily: "'DM Sans', sans-serif", letterSpacing: -0.5 }}>
             {label}
           </h2>
           {count > 0 && (
@@ -810,13 +819,22 @@ function EmptyState({ message }: { message: string }) {
     <div
       style={{
         ...glass,
-        padding: "40px 24px",
+        padding: "60px 24px",
         textAlign: "center",
         color: "var(--w-text-subtle)",
         fontSize: 16,
+        fontWeight: 600,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(139,92,246,0.03)",
+        border: "1px dashed rgba(139,92,246,0.2)",
       }}
     >
-      <Video style={{ width: 28, height: 28, margin: "0 auto 10px", opacity: 0.2 }} />
+      <div style={{ width: 64, height: 64, borderRadius: 24, background: "rgba(139,92,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+        <Video style={{ width: 32, height: 32, color: "rgba(139,92,246,0.7)" }} />
+      </div>
       {message}
     </div>
   );

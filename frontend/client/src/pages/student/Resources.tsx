@@ -977,24 +977,24 @@ function PlatformCard({ platform, isDark }: { platform: Platform; isDark: boolea
             onMouseLeave={() => setIsHovered(false)}
             className="group"
         >
-            <div className={`relative rounded-3xl overflow-hidden border transition-all duration-500 h-full flex flex-col ${isDark
+            <div className={`relative rounded-2xl overflow-hidden border transition-all duration-500 h-full flex flex-col ${isDark
                 ? "bg-white/[0.03] border-white/[0.06] hover:border-white/20 hover:bg-white/[0.06]"
-                : "bg-white border-slate-200/80 hover:border-blue-300 hover:shadow-2xl hover:shadow-blue-500/10"
+                : "bg-white border-slate-200/80 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-500/10"
                 }`}>
                 {/* Top gradient accent */}
                 <div className={`h-1.5 w-full bg-gradient-to-r ${platform.gradient}`} />
 
-                <div className="p-6 sm:p-7 flex flex-col flex-1">
+                <div className="p-5 sm:p-6 flex flex-col flex-1">
                     {/* Header */}
-                    <div className="flex items-start justify-between mb-5">
-                        <div className="flex items-center gap-4">
-                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:scale-110`}>
+                    <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:scale-110`}>
                                 <PlatformLogo platform={platform} />
                             </div>
 
 
                             <div>
-                                <h3 className={`text-lg font-black ${isDark ? "text-white" : "text-slate-900"} group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors`}>
+                                <h3 className={`text-base font-black ${isDark ? "text-white" : "text-slate-900"} group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors`}>
                                     {platform.name}
                                 </h3>
                                 <div className="flex items-center gap-2 mt-1">
@@ -1017,37 +1017,32 @@ function PlatformCard({ platform, isDark }: { platform: Platform; isDark: boolea
                     </div>
 
                     {/* Description */}
-                    <p className={`text-sm leading-relaxed mb-5 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                        {isHovered ? platform.longDescription : platform.description}
+                    <p className={`text-xs leading-relaxed mb-4 line-clamp-2 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                        {platform.description}
                     </p>
 
                     {/* Tags */}
-                    <div className="flex flex-wrap gap-2 mb-5">
-                        {platform.tags.map((tag) => (
-                            <span key={tag} className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${isDark ? "bg-white/5 text-slate-300" : "bg-slate-100 text-slate-600"}`}>
+                    <div className="flex flex-wrap gap-1.5 mb-4 flex-1 content-start">
+                        {platform.tags.slice(0, 3).map((tag) => (
+                            <span key={tag} className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${isDark ? "bg-white/5 text-slate-300" : "bg-slate-100 text-slate-600"}`}>
                                 {tag}
                             </span>
                         ))}
-                    </div>
-
-                    {/* Features */}
-                    <div className="space-y-2 mb-6 flex-1">
-                        {platform.features.map((feature) => (
-                            <div key={feature} className="flex items-center gap-2">
-                                <CheckCircle className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
-                                <span className={`text-xs font-semibold ${isDark ? "text-slate-300" : "text-slate-600"}`}>{feature}</span>
-                            </div>
-                        ))}
+                        {platform.tags.length > 3 && (
+                            <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${isDark ? "bg-white/5 text-slate-500" : "bg-slate-100 text-slate-400"}`}>
+                                +{platform.tags.length - 3}
+                            </span>
+                        )}
                     </div>
 
                     {/* Footer */}
-                    <div className={`flex items-center justify-between pt-5 border-t ${isDark ? "border-white/5" : "border-slate-100"}`}>
-                        <div className="flex items-center gap-4">
+                    <div className={`flex items-center justify-between pt-4 border-t ${isDark ? "border-white/5" : "border-slate-100"}`}>
+                        <div className="flex items-center gap-3">
                             <div className="flex items-center gap-1.5">
                                 <Users className={`w-3.5 h-3.5 ${isDark ? "text-slate-400" : "text-slate-500"}`} />
-                                <span className={`text-xs font-bold ${isDark ? "text-slate-400" : "text-slate-500"}`}>{platform.users}</span>
+                                <span className={`text-[11px] font-bold ${isDark ? "text-slate-400" : "text-slate-500"}`}>{platform.users}</span>
                             </div>
-                            <Badge variant="outline" className={`text-[10px] font-bold ${isDark ? "border-white/10 text-slate-400" : "border-slate-200 text-slate-500"}`}>
+                            <Badge variant="outline" className={`text-[9px] font-bold px-1.5 py-0 ${isDark ? "border-white/10 text-slate-400" : "border-slate-200 text-slate-500"}`}>
                                 {platform.difficulty}
                             </Badge>
                         </div>
@@ -1059,7 +1054,7 @@ function PlatformCard({ platform, isDark }: { platform: Platform; isDark: boolea
                         >
                             <Button
                                 size="sm"
-                                className={`h-9 px-5 rounded-xl font-black text-xs uppercase tracking-wider gap-2 transition-all group-hover:scale-105 ${isDark
+                                className={`h-8 px-4 rounded-xl font-black text-[10px] uppercase tracking-wider gap-2 transition-all group-hover:scale-105 ${isDark
                                     ? "bg-white/10 hover:bg-white/20 text-white border border-white/10"
                                     : "bg-slate-900 hover:bg-blue-600 text-white shadow-md"
                                     }`}
@@ -1068,12 +1063,6 @@ function PlatformCard({ platform, isDark }: { platform: Platform; isDark: boolea
                                 <ExternalLink className="w-3 h-3" />
                             </Button>
                         </a>
-                    </div>
-
-                    {/* Best For Tooltip */}
-                    <div className={`mt-4 px-4 py-2.5 rounded-xl text-[11px] font-bold flex items-start gap-2 ${isDark ? "bg-blue-500/5 text-blue-300" : "bg-blue-50 text-blue-700"}`}>
-                        <Sparkles className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                        <span>Best for: {platform.bestFor}</span>
                     </div>
                 </div>
             </div>
@@ -1118,58 +1107,58 @@ const AssessmentHub: React.FC<AssessmentHubProps> = ({ isDashboard = false, onBa
     return (
         <div className={`${isDashboard ? "" : "min-h-dvh overflow-x-hidden"} ${isDark ? "" : ""}`}>
             {/* Hero / Header */}
-            <div className="mb-12 flex flex-col items-center justify-center gap-6 text-center overflow-hidden">
+            <div className="mb-8 flex flex-col items-center justify-center gap-4 text-center overflow-hidden">
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
                     className="flex flex-col items-center"
                 >
-                    <div className="flex items-center gap-3 mb-6">
+                    <div className="flex items-center gap-3 mb-4">
                     </div>
 
                     <TypewriterText
                         text="Practice on the world's best platforms. From aptitude to system design — everything you need to crack any interview, all in one place."
                         speed={30}
                         delay={300}
-                        className={`text-lg sm:text-xl font-black leading-relaxed max-w-3xl bg-gradient-to-r ${isDark ? "from-blue-300 via-purple-300 to-pink-300" : "from-blue-600 via-purple-600 to-pink-600"} bg-clip-text text-transparent`}
+                        className={`text-base sm:text-lg font-black leading-relaxed max-w-3xl bg-gradient-to-r ${isDark ? "from-blue-300 via-purple-300 to-pink-300" : "from-blue-600 via-purple-600 to-pink-600"} bg-clip-text text-transparent`}
                     />
                 </motion.div>
             </div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
                 {QUICK_STATS.map((stat) => (
                     <div
                         key={stat.label}
-                        className={`rounded-2xl p-5 flex items-center gap-4 border transition-all hover:scale-[1.02] ${isDark
+                        className={`rounded-2xl p-4 flex items-center gap-3 border transition-all hover:scale-[1.02] ${isDark
                             ? "bg-white/[0.03] border-white/[0.06] hover:border-white/15"
                             : "bg-white border-slate-200 shadow-sm hover:shadow-md"
                             }`}
                     >
-                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-md`}>
-                            <stat.icon className="w-6 h-6 text-white" />
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-md`}>
+                            <stat.icon className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                            <p className={`text-2xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>{stat.value}</p>
-                            <p className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>{stat.label}</p>
+                            <p className={`text-xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>{stat.value}</p>
+                            <p className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>{stat.label}</p>
                         </div>
                     </div>
                 ))}
             </div>
 
             {/* Search & Filter Bar */}
-            <div className={`rounded-2xl p-4 sm:p-5 mb-8 border ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-white border-slate-200 shadow-sm"}`}>
+            <div className={`rounded-2xl p-4 mb-6 border ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-white border-slate-200 shadow-sm"}`}>
                 <div className="flex flex-col sm:flex-row gap-4">
                     {/* Search */}
                     <div className="relative flex-1">
-                        <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${isDark ? "text-slate-400" : "text-slate-400"}`} />
+                        <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? "text-slate-400" : "text-slate-400"}`} />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search platforms, skills, or tags..."
-                            className={`w-full pl-12 pr-4 py-3.5 rounded-xl font-semibold text-sm border transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${isDark
+                            className={`w-full pl-10 pr-4 py-3 rounded-xl font-semibold text-sm border transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${isDark
                                 ? "bg-white/5 border-white/10 text-white placeholder:text-slate-500"
                                 : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400"
                                 }`}
@@ -1279,21 +1268,21 @@ const AssessmentHub: React.FC<AssessmentHubProps> = ({ isDashboard = false, onBa
             </div>
 
             {/* Category Pills */}
-            <div className="flex flex-wrap gap-2 sm:gap-3 mb-8">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-6">
                 {CATEGORIES.map((cat) => {
                     const isActive = activeCategory === cat.id;
                     return (
                         <button
                             key={cat.id}
                             onClick={() => setActiveCategory(cat.id)}
-                            className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold uppercase tracking-wider transition-all ${isActive
+                            className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all ${isActive
                                 ? `bg-gradient-to-r ${cat.color} text-white shadow-lg shadow-blue-500/20 scale-105`
                                 : isDark
                                     ? "bg-white/5 text-slate-300 hover:bg-white/10 border border-white/5"
                                     : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 shadow-sm"
                                 }`}
                         >
-                            <cat.icon className="w-4 h-4" />
+                            <cat.icon className="w-3.5 h-3.5" />
                             {cat.label}
                         </button>
                     );
@@ -1308,7 +1297,7 @@ const AssessmentHub: React.FC<AssessmentHubProps> = ({ isDashboard = false, onBa
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+                        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5"
                     >
                         {filteredPlatforms.map((platform) => (
                             <PlatformCard key={platform.id} platform={platform} isDark={isDark} />
@@ -1318,10 +1307,10 @@ const AssessmentHub: React.FC<AssessmentHubProps> = ({ isDashboard = false, onBa
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className={`text-center py-20 rounded-3xl border ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-white border-slate-200"}`}
+                        className={`text-center py-12 rounded-2xl border ${isDark ? "bg-white/[0.02] border-white/[0.06]" : "bg-white border-slate-200"}`}
                     >
-                        <Search className={`w-16 h-16 mx-auto mb-6 ${isDark ? "text-slate-600" : "text-slate-300"}`} />
-                        <h3 className={`text-xl font-black mb-2 ${isDark ? "text-white" : "text-slate-900"}`}>No platforms found</h3>
+                        <Search className={`w-12 h-12 mx-auto mb-4 ${isDark ? "text-slate-600" : "text-slate-300"}`} />
+                        <h3 className={`text-lg font-black mb-2 ${isDark ? "text-white" : "text-slate-900"}`}>No platforms found</h3>
                         <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                             Try adjusting your search or filter criteria.
                         </p>
@@ -1330,22 +1319,22 @@ const AssessmentHub: React.FC<AssessmentHubProps> = ({ isDashboard = false, onBa
             </AnimatePresence>
 
             {/* Bottom CTA */}
-            <div className={`mt-12 rounded-3xl p-8 sm:p-10 relative overflow-hidden ${isDark ? "bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border border-white/5" : "bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 border border-slate-200"}`}>
+            <div className={`mt-8 rounded-2xl p-6 sm:p-8 relative overflow-hidden ${isDark ? "bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border border-white/5" : "bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 border border-slate-200"}`}>
                 <div className={`absolute inset-0 ${isDark ? "bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-600/5 via-transparent to-transparent" : ""}`} />
-                <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
+                <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-4 sm:gap-5">
                     <div>
-                        <h3 className={`text-2xl sm:text-3xl font-black mb-2 ${isDark ? "text-white" : "text-slate-900"} tracking-tight`}>
+                        <h3 className={`text-xl sm:text-2xl font-black mb-2 ${isDark ? "text-white" : "text-slate-900"} tracking-tight`}>
                             Can't find what you need? 🤔
                         </h3>
-                        <p className={`text-sm sm:text-base ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                        <p className={`text-xs sm:text-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>
                             Suggest a platform and we'll integrate it. We're building the most comprehensive preparation hub.
                         </p>
                     </div>
                     <Button
                         onClick={() => onBack?.()}
-                        className="h-14 px-8 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:opacity-90 transition-all gap-2 flex-shrink-0"
+                        className="h-11 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:opacity-90 transition-all gap-2 flex-shrink-0"
                     >
-                        <FileText className="w-5 h-5" />
+                        <FileText className="w-4 h-4" />
                         Share Feedback
                     </Button>
                 </div>
