@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { studentApi } from '@/services/studentApi';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -337,10 +338,93 @@ const careerPaths: CareerPath[] = [
           { id: 'b9', name: 'MongoDB/PostgreSQL', status: 'locked', estimatedWeeks: 3, category: 'Database' },
           { id: 'b10', name: 'API Development', status: 'locked', estimatedWeeks: 4, category: 'API' }
         ]
+      },
+      {
+        level: 3,
+        title: 'Advanced',
+        duration: '6-10 months',
+        skills: [
+          { id: 'b11', name: 'Caching with Redis', status: 'locked', estimatedWeeks: 2, category: 'Performance' },
+          { id: 'b12', name: 'Message Queues', status: 'locked', estimatedWeeks: 2, category: 'Systems' },
+          { id: 'b13', name: 'Testing APIs', status: 'locked', estimatedWeeks: 2, category: 'Testing' },
+          { id: 'b14', name: 'ORMs and Query Optimization', status: 'locked', estimatedWeeks: 3, category: 'Database' },
+          { id: 'b15', name: 'Docker Basics', status: 'locked', estimatedWeeks: 2, category: 'DevOps' }
+        ]
+      },
+      {
+        level: 4,
+        title: 'Production Ready',
+        duration: '10-14 months',
+        skills: [
+          { id: 'b16', name: 'System Design Fundamentals', status: 'locked', estimatedWeeks: 4, category: 'Architecture' },
+          { id: 'b17', name: 'Monitoring and Logging', status: 'locked', estimatedWeeks: 2, category: 'Operations' },
+          { id: 'b18', name: 'Security Hardening', status: 'locked', estimatedWeeks: 2, category: 'Security' },
+          { id: 'b19', name: 'CI/CD for Services', status: 'locked', estimatedWeeks: 2, category: 'DevOps' },
+          { id: 'b20', name: 'Scalable Service Patterns', status: 'locked', estimatedWeeks: 3, category: 'Architecture' }
+        ]
       }
     ],
-    projects: [],
-    learningResources: [],
+    projects: [
+      {
+        id: 'bp1',
+        title: 'REST API for Student Portal',
+        difficulty: 'beginner',
+        skillsUsed: ['Node.js Basics', 'Express.js/FastAPI', 'SQL Fundamentals'],
+        estimatedHours: 18,
+        status: 'not-started',
+        description: 'Build CRUD endpoints for students, departments, and placement records.'
+      },
+      {
+        id: 'bp2',
+        title: 'Authentication Service',
+        difficulty: 'intermediate',
+        skillsUsed: ['Authentication & Authorization', 'MongoDB/PostgreSQL', 'API Development'],
+        estimatedHours: 28,
+        status: 'not-started',
+        description: 'Create login, signup, forgot-password, and role-based access flows.'
+      },
+      {
+        id: 'bp3',
+        title: 'Scalable Job Queue API',
+        difficulty: 'advanced',
+        skillsUsed: ['Message Queues', 'Caching with Redis', 'Docker Basics'],
+        estimatedHours: 40,
+        status: 'not-started',
+        description: 'Design a backend service that processes email and notification jobs asynchronously.'
+      }
+    ],
+    learningResources: [
+      {
+        id: 'blr1',
+        title: 'Node.js and Express From Scratch',
+        type: 'course',
+        platform: 'Udemy',
+        isFree: false,
+        url: '#',
+        duration: '32 hours',
+        rating: 4.7
+      },
+      {
+        id: 'blr2',
+        title: 'PostgreSQL Tutorial',
+        type: 'documentation',
+        platform: 'PostgreSQL Docs',
+        isFree: true,
+        url: '#',
+        duration: 'Self-paced',
+        rating: 4.8
+      },
+      {
+        id: 'blr3',
+        title: 'Backend Interview Practice',
+        type: 'practice',
+        platform: 'freeCodeCamp',
+        isFree: true,
+        url: '#',
+        duration: '120 hours',
+        rating: 4.6
+      }
+    ],
     topCompanies: ['Amazon', 'Google', 'Microsoft', 'Netflix', 'Uber', 'Stripe'],
     relatedPaths: ['Full Stack Developer', 'DevOps Engineer', 'Cloud Architect']
   },
@@ -362,9 +446,105 @@ const careerPaths: CareerPath[] = [
     difficulty: 'Hard',
     demandTrend: 'up',
     remotePercentage: 60,
-    levels: [],
-    projects: [],
-    learningResources: [],
+    levels: [
+      {
+        level: 1,
+        title: 'Foundations',
+        duration: '0-4 months',
+        skills: [
+          { id: 'fs1', name: 'HTML, CSS, JavaScript', status: 'locked', estimatedWeeks: 4, category: 'Frontend' },
+          { id: 'fs2', name: 'Git Workflow', status: 'locked', estimatedWeeks: 1, category: 'Tools' },
+          { id: 'fs3', name: 'Node.js Basics', status: 'locked', estimatedWeeks: 3, category: 'Backend' },
+          { id: 'fs4', name: 'SQL and Data Modeling', status: 'locked', estimatedWeeks: 3, category: 'Database' },
+          { id: 'fs5', name: 'HTTP and APIs', status: 'locked', estimatedWeeks: 2, category: 'Systems' }
+        ]
+      },
+      {
+        level: 2,
+        title: 'Product Building',
+        duration: '4-8 months',
+        skills: [
+          { id: 'fs6', name: 'React.js', status: 'locked', estimatedWeeks: 5, category: 'Frontend' },
+          { id: 'fs7', name: 'Express.js', status: 'locked', estimatedWeeks: 4, category: 'Backend' },
+          { id: 'fs8', name: 'Authentication', status: 'locked', estimatedWeeks: 2, category: 'Security' },
+          { id: 'fs9', name: 'REST and State Management', status: 'locked', estimatedWeeks: 3, category: 'Frontend' },
+          { id: 'fs10', name: 'PostgreSQL/MongoDB', status: 'locked', estimatedWeeks: 3, category: 'Database' }
+        ]
+      },
+      {
+        level: 3,
+        title: 'Deployment and Scale',
+        duration: '8-14 months',
+        skills: [
+          { id: 'fs11', name: 'Next.js or Remix', status: 'locked', estimatedWeeks: 4, category: 'Framework' },
+          { id: 'fs12', name: 'TypeScript', status: 'locked', estimatedWeeks: 3, category: 'Language' },
+          { id: 'fs13', name: 'Docker and CI/CD', status: 'locked', estimatedWeeks: 3, category: 'DevOps' },
+          { id: 'fs14', name: 'Caching and Performance', status: 'locked', estimatedWeeks: 2, category: 'Performance' },
+          { id: 'fs15', name: 'System Design', status: 'locked', estimatedWeeks: 4, category: 'Architecture' }
+        ]
+      }
+    ],
+    projects: [
+      {
+        id: 'fsp1',
+        title: 'Full Stack Task Manager',
+        difficulty: 'beginner',
+        skillsUsed: ['React.js', 'Express.js', 'PostgreSQL/MongoDB'],
+        estimatedHours: 24,
+        status: 'not-started',
+        description: 'Build a task manager with auth, CRUD, and personalized dashboards.'
+      },
+      {
+        id: 'fsp2',
+        title: 'E-learning Platform',
+        difficulty: 'intermediate',
+        skillsUsed: ['Next.js or Remix', 'Authentication', 'REST and State Management'],
+        estimatedHours: 42,
+        status: 'not-started',
+        description: 'Create course listings, student progress tracking, and instructor workflows.'
+      },
+      {
+        id: 'fsp3',
+        title: 'Placement Analytics Suite',
+        difficulty: 'advanced',
+        skillsUsed: ['System Design', 'Caching and Performance', 'Docker and CI/CD'],
+        estimatedHours: 55,
+        status: 'not-started',
+        description: 'Ship a production-style platform with reports, notifications, and analytics APIs.'
+      }
+    ],
+    learningResources: [
+      {
+        id: 'fslr1',
+        title: 'The Odin Project Full Stack Path',
+        type: 'course',
+        platform: 'The Odin Project',
+        isFree: true,
+        url: '#',
+        duration: 'Self-paced',
+        rating: 4.9
+      },
+      {
+        id: 'fslr2',
+        title: 'Full Stack Open',
+        type: 'course',
+        platform: 'University of Helsinki',
+        isFree: true,
+        url: '#',
+        duration: '250 hours',
+        rating: 4.8
+      },
+      {
+        id: 'fslr3',
+        title: 'Designing Data-Intensive Applications Notes',
+        type: 'article',
+        platform: 'Community Notes',
+        isFree: true,
+        url: '#',
+        duration: '20 hours',
+        rating: 4.7
+      }
+    ],
     topCompanies: ['Shopify', 'Atlassian', 'Spotify', 'Slack', 'GitHub', 'Notion'],
     relatedPaths: ['Frontend Developer', 'Backend Developer', 'DevOps Engineer']
   },
@@ -386,9 +566,105 @@ const careerPaths: CareerPath[] = [
     difficulty: 'Hard',
     demandTrend: 'up',
     remotePercentage: 55,
-    levels: [],
-    projects: [],
-    learningResources: [],
+    levels: [
+      {
+        level: 1,
+        title: 'Math and Python Base',
+        duration: '0-4 months',
+        skills: [
+          { id: 'ds1', name: 'Python for Data Work', status: 'locked', estimatedWeeks: 4, category: 'Language' },
+          { id: 'ds2', name: 'Statistics Basics', status: 'locked', estimatedWeeks: 3, category: 'Math' },
+          { id: 'ds3', name: 'Linear Algebra Basics', status: 'locked', estimatedWeeks: 3, category: 'Math' },
+          { id: 'ds4', name: 'SQL for Analysis', status: 'locked', estimatedWeeks: 2, category: 'Database' },
+          { id: 'ds5', name: 'Pandas and NumPy', status: 'locked', estimatedWeeks: 3, category: 'Libraries' }
+        ]
+      },
+      {
+        level: 2,
+        title: 'Analysis and Visualization',
+        duration: '4-8 months',
+        skills: [
+          { id: 'ds6', name: 'Exploratory Data Analysis', status: 'locked', estimatedWeeks: 3, category: 'Analysis' },
+          { id: 'ds7', name: 'Matplotlib and Seaborn', status: 'locked', estimatedWeeks: 2, category: 'Visualization' },
+          { id: 'ds8', name: 'Feature Engineering', status: 'locked', estimatedWeeks: 3, category: 'ML' },
+          { id: 'ds9', name: 'Hypothesis Testing', status: 'locked', estimatedWeeks: 2, category: 'Statistics' },
+          { id: 'ds10', name: 'Business Storytelling', status: 'locked', estimatedWeeks: 2, category: 'Communication' }
+        ]
+      },
+      {
+        level: 3,
+        title: 'Machine Learning',
+        duration: '8-14 months',
+        skills: [
+          { id: 'ds11', name: 'Supervised Learning', status: 'locked', estimatedWeeks: 4, category: 'ML' },
+          { id: 'ds12', name: 'Model Evaluation', status: 'locked', estimatedWeeks: 2, category: 'ML' },
+          { id: 'ds13', name: 'Scikit-learn Pipelines', status: 'locked', estimatedWeeks: 3, category: 'Libraries' },
+          { id: 'ds14', name: 'Intro to Deep Learning', status: 'locked', estimatedWeeks: 4, category: 'AI' },
+          { id: 'ds15', name: 'Model Deployment Basics', status: 'locked', estimatedWeeks: 2, category: 'MLOps' }
+        ]
+      }
+    ],
+    projects: [
+      {
+        id: 'dsp1',
+        title: 'Student Placement Dashboard',
+        difficulty: 'beginner',
+        skillsUsed: ['Python for Data Work', 'Pandas and NumPy', 'Matplotlib and Seaborn'],
+        estimatedHours: 20,
+        status: 'not-started',
+        description: 'Analyze placement data and build a visual dashboard of trends and outcomes.'
+      },
+      {
+        id: 'dsp2',
+        title: 'Customer Churn Predictor',
+        difficulty: 'intermediate',
+        skillsUsed: ['Supervised Learning', 'Feature Engineering', 'Model Evaluation'],
+        estimatedHours: 35,
+        status: 'not-started',
+        description: 'Train and evaluate a churn model using a realistic tabular dataset.'
+      },
+      {
+        id: 'dsp3',
+        title: 'Resume Shortlisting Model',
+        difficulty: 'advanced',
+        skillsUsed: ['Scikit-learn Pipelines', 'Hypothesis Testing', 'Model Deployment Basics'],
+        estimatedHours: 48,
+        status: 'not-started',
+        description: 'Build an end-to-end model that ranks candidates for a target role.'
+      }
+    ],
+    learningResources: [
+      {
+        id: 'dslr1',
+        title: 'Python for Data Science',
+        type: 'course',
+        platform: 'Coursera',
+        isFree: false,
+        url: '#',
+        duration: '45 hours',
+        rating: 4.7
+      },
+      {
+        id: 'dslr2',
+        title: 'Hands-On Machine Learning Notes',
+        type: 'article',
+        platform: 'Community Notes',
+        isFree: true,
+        url: '#',
+        duration: '18 hours',
+        rating: 4.8
+      },
+      {
+        id: 'dslr3',
+        title: 'Kaggle Micro-Courses',
+        type: 'practice',
+        platform: 'Kaggle',
+        isFree: true,
+        url: '#',
+        duration: '60 hours',
+        rating: 4.9
+      }
+    ],
     topCompanies: ['Google', 'Amazon', 'Microsoft', 'Meta', 'Netflix', 'Uber'],
     relatedPaths: ['Machine Learning Engineer', 'AI Engineer', 'Data Analyst']
   },
@@ -410,9 +686,105 @@ const careerPaths: CareerPath[] = [
     difficulty: 'Medium',
     demandTrend: 'stable',
     remotePercentage: 50,
-    levels: [],
-    projects: [],
-    learningResources: [],
+    levels: [
+      {
+        level: 1,
+        title: 'App Foundations',
+        duration: '0-4 months',
+        skills: [
+          { id: 'mb1', name: 'JavaScript or Dart Basics', status: 'locked', estimatedWeeks: 3, category: 'Language' },
+          { id: 'mb2', name: 'Mobile UI Principles', status: 'locked', estimatedWeeks: 2, category: 'Design' },
+          { id: 'mb3', name: 'React Native or Flutter Setup', status: 'locked', estimatedWeeks: 3, category: 'Framework' },
+          { id: 'mb4', name: 'Navigation Patterns', status: 'locked', estimatedWeeks: 2, category: 'Framework' },
+          { id: 'mb5', name: 'State Management Basics', status: 'locked', estimatedWeeks: 2, category: 'Framework' }
+        ]
+      },
+      {
+        level: 2,
+        title: 'Native Features',
+        duration: '4-8 months',
+        skills: [
+          { id: 'mb6', name: 'Working with APIs', status: 'locked', estimatedWeeks: 2, category: 'Backend' },
+          { id: 'mb7', name: 'Local Storage and Caching', status: 'locked', estimatedWeeks: 2, category: 'Performance' },
+          { id: 'mb8', name: 'Device Permissions', status: 'locked', estimatedWeeks: 2, category: 'Platform' },
+          { id: 'mb9', name: 'Animations and Gestures', status: 'locked', estimatedWeeks: 2, category: 'UI' },
+          { id: 'mb10', name: 'App Testing', status: 'locked', estimatedWeeks: 2, category: 'Testing' }
+        ]
+      },
+      {
+        level: 3,
+        title: 'Release Ready',
+        duration: '8-12 months',
+        skills: [
+          { id: 'mb11', name: 'Performance Optimization', status: 'locked', estimatedWeeks: 2, category: 'Performance' },
+          { id: 'mb12', name: 'Push Notifications', status: 'locked', estimatedWeeks: 2, category: 'Platform' },
+          { id: 'mb13', name: 'App Store Deployment', status: 'locked', estimatedWeeks: 3, category: 'Release' },
+          { id: 'mb14', name: 'Crash Monitoring', status: 'locked', estimatedWeeks: 1, category: 'Operations' },
+          { id: 'mb15', name: 'Offline-first Patterns', status: 'locked', estimatedWeeks: 2, category: 'Architecture' }
+        ]
+      }
+    ],
+    projects: [
+      {
+        id: 'mbp1',
+        title: 'Habit Tracker App',
+        difficulty: 'beginner',
+        skillsUsed: ['React Native or Flutter Setup', 'Navigation Patterns', 'Local Storage and Caching'],
+        estimatedHours: 20,
+        status: 'not-started',
+        description: 'Build a daily habit tracker with streaks and clean mobile interactions.'
+      },
+      {
+        id: 'mbp2',
+        title: 'Food Delivery UI Clone',
+        difficulty: 'intermediate',
+        skillsUsed: ['Animations and Gestures', 'Working with APIs', 'State Management Basics'],
+        estimatedHours: 32,
+        status: 'not-started',
+        description: 'Create a production-style ordering flow with API-backed restaurant data.'
+      },
+      {
+        id: 'mbp3',
+        title: 'Campus Companion App',
+        difficulty: 'advanced',
+        skillsUsed: ['Push Notifications', 'Offline-first Patterns', 'App Store Deployment'],
+        estimatedHours: 44,
+        status: 'not-started',
+        description: 'Ship a campus utility app with notices, schedules, and offline access.'
+      }
+    ],
+    learningResources: [
+      {
+        id: 'mblr1',
+        title: 'React Native - The Practical Guide',
+        type: 'course',
+        platform: 'Udemy',
+        isFree: false,
+        url: '#',
+        duration: '35 hours',
+        rating: 4.7
+      },
+      {
+        id: 'mblr2',
+        title: 'Flutter Codelabs',
+        type: 'documentation',
+        platform: 'Flutter',
+        isFree: true,
+        url: '#',
+        duration: 'Self-paced',
+        rating: 4.8
+      },
+      {
+        id: 'mblr3',
+        title: 'Mobile UI Challenge Set',
+        type: 'practice',
+        platform: 'Frontend Mentor',
+        isFree: true,
+        url: '#',
+        duration: '50 hours',
+        rating: 4.6
+      }
+    ],
     topCompanies: ['Google', 'Meta', 'Uber', 'Swiggy', 'Zomato', 'PayTM'],
     relatedPaths: ['Frontend Developer', 'Full Stack Developer', 'UI/UX Designer']
   },
@@ -434,9 +806,105 @@ const careerPaths: CareerPath[] = [
     difficulty: 'Hard',
     demandTrend: 'up',
     remotePercentage: 75,
-    levels: [],
-    projects: [],
-    learningResources: [],
+    levels: [
+      {
+        level: 1,
+        title: 'Linux and Networking',
+        duration: '0-4 months',
+        skills: [
+          { id: 'do1', name: 'Linux Command Line', status: 'locked', estimatedWeeks: 3, category: 'Systems' },
+          { id: 'do2', name: 'Networking Basics', status: 'locked', estimatedWeeks: 2, category: 'Networking' },
+          { id: 'do3', name: 'Git and Bash Scripting', status: 'locked', estimatedWeeks: 2, category: 'Tools' },
+          { id: 'do4', name: 'Cloud Fundamentals', status: 'locked', estimatedWeeks: 3, category: 'Cloud' },
+          { id: 'do5', name: 'Containers Intro', status: 'locked', estimatedWeeks: 2, category: 'Containers' }
+        ]
+      },
+      {
+        level: 2,
+        title: 'Automation and Delivery',
+        duration: '4-8 months',
+        skills: [
+          { id: 'do6', name: 'Docker', status: 'locked', estimatedWeeks: 3, category: 'Containers' },
+          { id: 'do7', name: 'CI/CD Pipelines', status: 'locked', estimatedWeeks: 3, category: 'Automation' },
+          { id: 'do8', name: 'Infrastructure as Code', status: 'locked', estimatedWeeks: 3, category: 'IaC' },
+          { id: 'do9', name: 'Kubernetes Basics', status: 'locked', estimatedWeeks: 4, category: 'Orchestration' },
+          { id: 'do10', name: 'Secrets and Access Control', status: 'locked', estimatedWeeks: 2, category: 'Security' }
+        ]
+      },
+      {
+        level: 3,
+        title: 'Reliability Engineering',
+        duration: '8-14 months',
+        skills: [
+          { id: 'do11', name: 'Observability', status: 'locked', estimatedWeeks: 2, category: 'Monitoring' },
+          { id: 'do12', name: 'Incident Response', status: 'locked', estimatedWeeks: 2, category: 'Operations' },
+          { id: 'do13', name: 'Cloud Cost Optimization', status: 'locked', estimatedWeeks: 2, category: 'Cloud' },
+          { id: 'do14', name: 'Advanced Kubernetes', status: 'locked', estimatedWeeks: 3, category: 'Orchestration' },
+          { id: 'do15', name: 'Platform Engineering Basics', status: 'locked', estimatedWeeks: 3, category: 'Architecture' }
+        ]
+      }
+    ],
+    projects: [
+      {
+        id: 'dop1',
+        title: 'CI/CD for Portfolio App',
+        difficulty: 'beginner',
+        skillsUsed: ['Git and Bash Scripting', 'Docker', 'CI/CD Pipelines'],
+        estimatedHours: 18,
+        status: 'not-started',
+        description: 'Automate build, test, and deploy for a small web application.'
+      },
+      {
+        id: 'dop2',
+        title: 'Kubernetes Demo Cluster',
+        difficulty: 'intermediate',
+        skillsUsed: ['Kubernetes Basics', 'Observability', 'Secrets and Access Control'],
+        estimatedHours: 34,
+        status: 'not-started',
+        description: 'Deploy a small service stack and add health checks, logs, and dashboards.'
+      },
+      {
+        id: 'dop3',
+        title: 'Infrastructure as Code Platform',
+        difficulty: 'advanced',
+        skillsUsed: ['Infrastructure as Code', 'Cloud Cost Optimization', 'Advanced Kubernetes'],
+        estimatedHours: 48,
+        status: 'not-started',
+        description: 'Provision repeatable cloud environments and document an incident-ready workflow.'
+      }
+    ],
+    learningResources: [
+      {
+        id: 'dolr1',
+        title: 'DevOps Bootcamp',
+        type: 'course',
+        platform: 'KodeKloud',
+        isFree: false,
+        url: '#',
+        duration: '55 hours',
+        rating: 4.8
+      },
+      {
+        id: 'dolr2',
+        title: 'Docker Documentation',
+        type: 'documentation',
+        platform: 'Docker',
+        isFree: true,
+        url: '#',
+        duration: 'Self-paced',
+        rating: 4.8
+      },
+      {
+        id: 'dolr3',
+        title: 'Kubernetes Hands-on Labs',
+        type: 'practice',
+        platform: 'Play with Kubernetes',
+        isFree: true,
+        url: '#',
+        duration: '40 hours',
+        rating: 4.7
+      }
+    ],
     topCompanies: ['Amazon', 'Google', 'Microsoft', 'Netflix', 'Atlassian', 'HashiCorp'],
     relatedPaths: ['Backend Developer', 'Cloud Architect', 'Site Reliability Engineer']
   },
@@ -458,9 +926,105 @@ const careerPaths: CareerPath[] = [
     difficulty: 'Medium',
     demandTrend: 'up',
     remotePercentage: 60,
-    levels: [],
-    projects: [],
-    learningResources: [],
+    levels: [
+      {
+        level: 1,
+        title: 'Design Basics',
+        duration: '0-3 months',
+        skills: [
+          { id: 'ux1', name: 'Visual Hierarchy', status: 'locked', estimatedWeeks: 2, category: 'Design' },
+          { id: 'ux2', name: 'Typography and Color', status: 'locked', estimatedWeeks: 2, category: 'Design' },
+          { id: 'ux3', name: 'Figma Fundamentals', status: 'locked', estimatedWeeks: 3, category: 'Tools' },
+          { id: 'ux4', name: 'Wireframing', status: 'locked', estimatedWeeks: 2, category: 'UX' },
+          { id: 'ux5', name: 'Design Critique Basics', status: 'locked', estimatedWeeks: 1, category: 'Communication' }
+        ]
+      },
+      {
+        level: 2,
+        title: 'User Experience',
+        duration: '3-7 months',
+        skills: [
+          { id: 'ux6', name: 'User Research', status: 'locked', estimatedWeeks: 3, category: 'UX' },
+          { id: 'ux7', name: 'Information Architecture', status: 'locked', estimatedWeeks: 2, category: 'UX' },
+          { id: 'ux8', name: 'Interaction Design', status: 'locked', estimatedWeeks: 3, category: 'UX' },
+          { id: 'ux9', name: 'Prototyping', status: 'locked', estimatedWeeks: 2, category: 'Tools' },
+          { id: 'ux10', name: 'Accessibility', status: 'locked', estimatedWeeks: 2, category: 'Quality' }
+        ]
+      },
+      {
+        level: 3,
+        title: 'Product Design',
+        duration: '7-12 months',
+        skills: [
+          { id: 'ux11', name: 'Design Systems', status: 'locked', estimatedWeeks: 3, category: 'Systems' },
+          { id: 'ux12', name: 'Usability Testing', status: 'locked', estimatedWeeks: 2, category: 'Research' },
+          { id: 'ux13', name: 'Design Handoff', status: 'locked', estimatedWeeks: 1, category: 'Collaboration' },
+          { id: 'ux14', name: 'Microcopy and UX Writing', status: 'locked', estimatedWeeks: 2, category: 'Content' },
+          { id: 'ux15', name: 'Product Thinking', status: 'locked', estimatedWeeks: 2, category: 'Strategy' }
+        ]
+      }
+    ],
+    projects: [
+      {
+        id: 'uxp1',
+        title: 'Redesign a College Website',
+        difficulty: 'beginner',
+        skillsUsed: ['Wireframing', 'Typography and Color', 'Figma Fundamentals'],
+        estimatedHours: 16,
+        status: 'not-started',
+        description: 'Rework a messy college landing page into a cleaner, student-friendly experience.'
+      },
+      {
+        id: 'uxp2',
+        title: 'Food Ordering App Prototype',
+        difficulty: 'intermediate',
+        skillsUsed: ['Interaction Design', 'Prototyping', 'Information Architecture'],
+        estimatedHours: 28,
+        status: 'not-started',
+        description: 'Design a complete order flow from browsing to checkout with interactive screens.'
+      },
+      {
+        id: 'uxp3',
+        title: 'Design System Starter Kit',
+        difficulty: 'advanced',
+        skillsUsed: ['Design Systems', 'Accessibility', 'Design Handoff'],
+        estimatedHours: 36,
+        status: 'not-started',
+        description: 'Create a reusable component library with tokens, patterns, and documentation.'
+      }
+    ],
+    learningResources: [
+      {
+        id: 'uxlr1',
+        title: 'Google UX Design Certificate',
+        type: 'course',
+        platform: 'Coursera',
+        isFree: false,
+        url: '#',
+        duration: '120 hours',
+        rating: 4.7
+      },
+      {
+        id: 'uxlr2',
+        title: 'Laws of UX',
+        type: 'article',
+        platform: 'Laws of UX',
+        isFree: true,
+        url: '#',
+        duration: '8 hours',
+        rating: 4.8
+      },
+      {
+        id: 'uxlr3',
+        title: 'Figma Community Practice Files',
+        type: 'practice',
+        platform: 'Figma',
+        isFree: true,
+        url: '#',
+        duration: '45 hours',
+        rating: 4.8
+      }
+    ],
     topCompanies: ['Apple', 'Google', 'Airbnb', 'Adobe', 'Figma', 'Spotify'],
     relatedPaths: ['Frontend Developer', 'Product Designer', 'Graphic Designer']
   },
@@ -482,9 +1046,105 @@ const careerPaths: CareerPath[] = [
     difficulty: 'Hard',
     demandTrend: 'up',
     remotePercentage: 45,
-    levels: [],
-    projects: [],
-    learningResources: [],
+    levels: [
+      {
+        level: 1,
+        title: 'Security Foundations',
+        duration: '0-4 months',
+        skills: [
+          { id: 'cy1', name: 'Networking Fundamentals', status: 'locked', estimatedWeeks: 3, category: 'Networking' },
+          { id: 'cy2', name: 'Linux and Windows Basics', status: 'locked', estimatedWeeks: 3, category: 'Systems' },
+          { id: 'cy3', name: 'Security Concepts', status: 'locked', estimatedWeeks: 2, category: 'Security' },
+          { id: 'cy4', name: 'Python Scripting', status: 'locked', estimatedWeeks: 3, category: 'Automation' },
+          { id: 'cy5', name: 'OWASP Top 10', status: 'locked', estimatedWeeks: 2, category: 'Web Security' }
+        ]
+      },
+      {
+        level: 2,
+        title: 'Defense and Testing',
+        duration: '4-8 months',
+        skills: [
+          { id: 'cy6', name: 'Vulnerability Scanning', status: 'locked', estimatedWeeks: 2, category: 'Testing' },
+          { id: 'cy7', name: 'SIEM Basics', status: 'locked', estimatedWeeks: 2, category: 'Monitoring' },
+          { id: 'cy8', name: 'Incident Response Workflow', status: 'locked', estimatedWeeks: 2, category: 'Operations' },
+          { id: 'cy9', name: 'Identity and Access Control', status: 'locked', estimatedWeeks: 2, category: 'Security' },
+          { id: 'cy10', name: 'Secure Configuration', status: 'locked', estimatedWeeks: 2, category: 'Hardening' }
+        ]
+      },
+      {
+        level: 3,
+        title: 'Advanced Security Ops',
+        duration: '8-14 months',
+        skills: [
+          { id: 'cy11', name: 'Threat Modeling', status: 'locked', estimatedWeeks: 2, category: 'Strategy' },
+          { id: 'cy12', name: 'Cloud Security Basics', status: 'locked', estimatedWeeks: 3, category: 'Cloud' },
+          { id: 'cy13', name: 'Malware Analysis Intro', status: 'locked', estimatedWeeks: 3, category: 'Analysis' },
+          { id: 'cy14', name: 'Penetration Testing Workflow', status: 'locked', estimatedWeeks: 3, category: 'Testing' },
+          { id: 'cy15', name: 'Security Reporting', status: 'locked', estimatedWeeks: 1, category: 'Communication' }
+        ]
+      }
+    ],
+    projects: [
+      {
+        id: 'cyp1',
+        title: 'Basic Security Audit',
+        difficulty: 'beginner',
+        skillsUsed: ['Security Concepts', 'Secure Configuration', 'OWASP Top 10'],
+        estimatedHours: 18,
+        status: 'not-started',
+        description: 'Audit a sample web app and document risks, fixes, and severity.'
+      },
+      {
+        id: 'cyp2',
+        title: 'SOC Alert Triage Lab',
+        difficulty: 'intermediate',
+        skillsUsed: ['SIEM Basics', 'Incident Response Workflow', 'Identity and Access Control'],
+        estimatedHours: 30,
+        status: 'not-started',
+        description: 'Simulate alerts, classify incidents, and produce an analyst report.'
+      },
+      {
+        id: 'cyp3',
+        title: 'Cloud Hardening Playbook',
+        difficulty: 'advanced',
+        skillsUsed: ['Cloud Security Basics', 'Threat Modeling', 'Security Reporting'],
+        estimatedHours: 40,
+        status: 'not-started',
+        description: 'Create a hands-on playbook for securing cloud workloads and access patterns.'
+      }
+    ],
+    learningResources: [
+      {
+        id: 'cylr1',
+        title: 'Google Cybersecurity Certificate',
+        type: 'course',
+        platform: 'Coursera',
+        isFree: false,
+        url: '#',
+        duration: '90 hours',
+        rating: 4.7
+      },
+      {
+        id: 'cylr2',
+        title: 'OWASP Web Security Testing Guide',
+        type: 'documentation',
+        platform: 'OWASP',
+        isFree: true,
+        url: '#',
+        duration: 'Self-paced',
+        rating: 4.9
+      },
+      {
+        id: 'cylr3',
+        title: 'TryHackMe Security Paths',
+        type: 'practice',
+        platform: 'TryHackMe',
+        isFree: false,
+        url: '#',
+        duration: '100 hours',
+        rating: 4.8
+      }
+    ],
     topCompanies: ['Google', 'Microsoft', 'Amazon', 'Cisco', 'Palo Alto', 'CrowdStrike'],
     relatedPaths: ['Network Engineer', 'Ethical Hacker', 'Security Analyst']
   }
@@ -547,11 +1207,29 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
     timeline: '12 months'
   });
 
-  // TODO: Replace with actual API call
-  // useEffect(() => {
-  //   fetchUserProfile();
-  //   fetchCareerPaths();
-  // }, []);
+  // Hydrate dashboard profile from student API; career path catalog remains static educational content.
+  useEffect(() => {
+    if (!isDashboard) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const profile = await studentApi.getProfile();
+        if (cancelled || !profile) return;
+        setUserProfile((prev) => ({
+          ...prev,
+          name: profile.full_name || profile.name || prev.name,
+          currentSkills: Array.isArray(profile.skills) && profile.skills.length > 0
+            ? profile.skills.map((s: { name?: string } | string) => (typeof s === 'string' ? s : s.name || '')).filter(Boolean)
+            : prev.currentSkills,
+        }));
+      } catch {
+        // Keep static defaults when profile is unavailable (e.g. public /careers page).
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isDashboard]);
 
   // Computed values
   const selectedPathData = careerPaths.find(p => p.id === selectedPath);
@@ -572,6 +1250,7 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
   // Calculate overall progress for a path
   const calculateProgress = (path: CareerPath) => {
     const allSkills = path.levels.flatMap(level => level.skills);
+    if (allSkills.length === 0) return 0;
     const completedSkills = allSkills.filter(s => s.status === 'completed').length;
     return Math.round((completedSkills / allSkills.length) * 100);
   };
@@ -602,6 +1281,17 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
     }
   };
 
+  const getTrendLabel = (trend: CareerPath['demandTrend']) => {
+    switch (trend) {
+      case 'up':
+        return 'Growing';
+      case 'down':
+        return 'Cooling';
+      default:
+        return 'Stable';
+    }
+  };
+
   // Toggle comparison
   const toggleComparison = (pathId: string) => {
     if (comparisonPaths.includes(pathId)) {
@@ -613,13 +1303,11 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
 
   return (
     <div className={isDashboard ? "bg-transparent p-0" : "min-h-dvh overflow-x-hidden bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 px-4 py-6 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 sm:p-6"}>
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className={isDashboard ? "w-full space-y-6" : "mx-auto max-w-7xl space-y-6"}>
 
-        {/* Header Section */}
+        {!isDashboard && (
         <div className="text-center space-y-4">
-
-
-          <h1 className="text-3xl font-black sm:text-5xl md:text-6xl">
+          <h1 className="text-3xl font-black sm:text-4xl md:text-5xl">
             <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
               Find Your Perfect
             </span>
@@ -634,20 +1322,22 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
           {/* User Stats */}
 
         </div>
+        )}
 
         {/* Search and Filters */}
-        <Card className="border-2 border-slate-200 dark:border-slate-800">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-4">
+        {!selectedPath && (
+        <Card className="w-full gap-0 rounded-3xl border border-slate-200/80 bg-white/95 py-0 shadow-[0_10px_30px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-950/85">
+          <CardContent className="px-5 py-4 sm:px-6 sm:py-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               {/* Search */}
-              <div className="flex-1 relative">
+              <div className="relative w-full md:max-w-[45%]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search career paths..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-[15px] outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900"
                 />
                 {searchQuery && (
                   <button
@@ -660,60 +1350,64 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
               </div>
 
               {/* Filter Toggle */}
-              <Button
-                variant="outline"
-                onClick={() => setShowFilters(!showFilters)}
-                className="border-2"
-              >
-                <Filter className="mr-2 h-4 w-4" />
-                Filters
-                {(filterDifficulty !== 'all' || filterTrend !== 'all') && (
-                  <Badge variant="secondary" className="ml-2 bg-blue-500 text-white h-5 w-5 p-0 flex items-center justify-center rounded-full">
-                    {[filterDifficulty !== 'all', filterTrend !== 'all'].filter(Boolean).length}
-                  </Badge>
-                )}
-                <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-              </Button>
-
-              {/* View Toggle */}
-              <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('grid')}
-                  className="h-8"
+                  variant="outline"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="h-10 rounded-xl border-slate-200 px-4 dark:border-slate-700"
                 >
-                  <LayoutGrid className="h-4 w-4" />
+                  <Filter className="mr-2 h-4 w-4" />
+                  Filters
+                  {(filterDifficulty !== 'all' || filterTrend !== 'all') && (
+                    <Badge variant="secondary" className="ml-2 bg-blue-500 text-white h-5 w-5 p-0 flex items-center justify-center rounded-full">
+                      {[filterDifficulty !== 'all', filterTrend !== 'all'].filter(Boolean).length}
+                    </Badge>
+                  )}
+                  <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
                 </Button>
+
+                {/* View Toggle */}
+                <div className="flex items-center gap-1.5 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('grid')}
+                    className="h-8 rounded-lg"
+                    aria-label="Grid view"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className="h-8 rounded-lg"
+                    aria-label="List view"
+                  >
+                    <LayoutList className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Comparison Toggle */}
                 <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className="h-8"
+                  variant={showComparison ? 'default' : 'outline'}
+                  onClick={() => setShowComparison(!showComparison)}
+                  className="h-10 rounded-xl border-slate-200 px-4 dark:border-slate-700"
                 >
-                  <LayoutList className="h-4 w-4" />
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Compare
+                  {comparisonPaths.length > 0 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {comparisonPaths.length}
+                    </Badge>
+                  )}
                 </Button>
               </div>
-
-              {/* Comparison Toggle */}
-              <Button
-                variant={showComparison ? 'default' : 'outline'}
-                onClick={() => setShowComparison(!showComparison)}
-                className="border-2"
-              >
-                <BarChart3 className="mr-2 h-4 w-4" />
-                Compare
-                {comparisonPaths.length > 0 && (
-                  <Badge variant="secondary" className="ml-2">
-                    {comparisonPaths.length}
-                  </Badge>
-                )}
-              </Button>
             </div>
 
             {/* Filter Options */}
             {showFilters && (
-              <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700 space-y-4">
+              <div className="mt-5 pt-5 border-t border-slate-200 dark:border-slate-700 space-y-4">
                 <div>
                   <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 block">
                     Difficulty Level
@@ -767,6 +1461,7 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Comparison View */}
         {showComparison && comparisonPaths.length > 0 && (
@@ -876,149 +1571,102 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
 
         {/* Career Paths Grid/List */}
         {!selectedPath ? (
-          <div className={viewMode === 'grid' ? 'grid md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
+          <div className={viewMode === 'grid' ? 'mx-auto grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 overflow-x-hidden' : 'mx-auto w-full max-w-[1100px] space-y-4'}>
             {filteredPaths.map((path, index) => {
               const Icon = path.icon;
-              const progress = calculateProgress(path);
               const isTopMatch = index === 0;
 
               return (
                 <Card
                   key={path.id}
-                  className={`group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 border-2 ${isTopMatch
-                    ? 'border-yellow-400 dark:border-yellow-600 bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20'
+                  className={`w-full group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 border-2 ${isTopMatch
+                    ? 'border-yellow-400/80 dark:border-yellow-600 bg-gradient-to-br from-yellow-50/30 to-orange-50/10 dark:from-yellow-950/10 dark:to-orange-950/10'
                     : 'border-slate-200 dark:border-slate-800 hover:border-blue-500'
                     }`}
                   onClick={() => setSelectedPath(path.id)}
                 >
-                  {/* Top Match Badge */}
-                  {isTopMatch && (
-                    <div className="absolute top-4 right-4 z-10">
-                      <Badge className="bg-yellow-500 text-white font-bold shadow-lg">
-                        <Trophy className="h-3 w-3 mr-1" />
-                        BEST MATCH
-                      </Badge>
-                    </div>
-                  )}
-
                   {/* Gradient Background */}
                   <div className={`absolute inset-0 bg-gradient-to-br ${path.color} opacity-0 group-hover:opacity-5 transition-opacity`} />
 
-                  <CardHeader>
-                    {/* Icon & Title */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${path.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
-                        <Icon className="h-7 w-7 text-white" />
+                  <CardHeader className="p-3 pb-0">
+                    {/* Row 1: Icon, Title & Badges */}
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${path.color} flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-105 transition-transform`}>
+                          <Icon className="h-5.5 w-5.5 text-white" />
+                        </div>
+                        <div className="min-w-0">
+                          <CardTitle className="text-base font-black truncate group-hover:text-blue-600 transition-colors leading-tight">
+                            {path.name}
+                          </CardTitle>
+                          {/* Clamped description directly under title */}
+                          <p className="text-[11px] leading-normal line-clamp-1 text-slate-500 dark:text-slate-400 mt-0.5">
+                            {path.description}
+                          </p>
+                        </div>
                       </div>
 
-                      {showComparison && (
-                        <Button
-                          variant={comparisonPaths.includes(path.id) ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleComparison(path.id);
-                          }}
-                          disabled={!comparisonPaths.includes(path.id) && comparisonPaths.length >= 3}
-                        >
-                          {comparisonPaths.includes(path.id) ? <CheckCircle className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                        </Button>
-                      )}
-                    </div>
-
-                    <CardTitle className="text-2xl mb-2 group-hover:text-blue-600 transition-colors">
-                      {path.name}
-                    </CardTitle>
-
-                    <CardDescription className="text-sm leading-relaxed">
-                      {path.description}
-                    </CardDescription>
-
-                    {/* Match Score */}
-                    <div className="mt-4 flex items-center gap-2">
-                      <div className="flex-1 bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
-                        <div
-                          className={`h-full bg-gradient-to-r ${path.color} transition-all duration-500`}
-                          style={{ width: `${path.matchScore}%` }}
-                        />
+                      {/* Top Match / Comparison or Match % Badge */}
+                      <div className="flex-shrink-0 flex items-center gap-1">
+                        {isTopMatch && (
+                          <Badge className="bg-yellow-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 shrink-0 shadow-sm">
+                            BEST
+                          </Badge>
+                        )}
+                        <Badge variant="secondary" className="bg-blue-500/10 text-blue-500 dark:bg-blue-500/20 text-[9px] font-extrabold px-1.5 py-0.5 shrink-0">
+                          {path.matchScore}%
+                        </Badge>
+                        {showComparison && (
+                          <Button
+                            variant={comparisonPaths.includes(path.id) ? 'default' : 'outline'}
+                            size="sm"
+                            className="h-6 w-6 p-0 rounded-md"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleComparison(path.id);
+                            }}
+                            disabled={!comparisonPaths.includes(path.id) && comparisonPaths.length >= 3}
+                          >
+                            {comparisonPaths.includes(path.id) ? <CheckCircle className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                          </Button>
+                        )}
                       </div>
-                      <Badge variant="secondary" className="bg-blue-500 text-white font-bold">
-                        {path.matchScore}% Match
-                      </Badge>
                     </div>
                   </CardHeader>
 
-                  <CardContent className="space-y-4">
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1">
-                          <Clock className="h-3 w-3" />
-                          Time to Ready
-                        </div>
-                        <div className="font-bold text-slate-900 dark:text-white">
-                          {path.timeToJobReady}
-                        </div>
+                  <CardContent className="p-3 pt-1 space-y-2 pb-3">
+                    {/* Key Metrics Row */}
+                    <div className="flex items-center justify-between p-2 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[9px] uppercase font-black tracking-wider text-slate-400">Avg Salary</span>
+                        <span className="text-xs font-extrabold text-green-600 leading-none">{path.avgSalary.fresher}</span>
                       </div>
-
-                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1">
-                          <DollarSign className="h-3 w-3" />
-                          Avg Salary
-                        </div>
-                        <div className="font-bold text-green-600">
-                          {path.avgSalary.fresher}
-                        </div>
-                      </div>
-
-                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1">
-                          <Briefcase className="h-3 w-3" />
-                          Job Openings
-                        </div>
-                        <div className="font-bold text-slate-900 dark:text-white">
-                          {path.jobOpenings.toLocaleString()}
-                        </div>
-                      </div>
-
-                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1">
-                          <TrendingUp className="h-3 w-3" />
-                          Demand
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {getTrendIcon(path.demandTrend)}
-                          <span className="font-bold text-slate-900 dark:text-white capitalize">
-                            {path.demandTrend}
-                          </span>
-                        </div>
+                      <div className="w-px h-5 bg-slate-200 dark:bg-slate-700" />
+                      <div className="flex flex-col gap-0.5 items-end">
+                        <span className="text-[9px] uppercase font-black tracking-wider text-slate-400">Openings</span>
+                        <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 leading-none">{path.jobOpenings.toLocaleString()}</span>
                       </div>
                     </div>
 
-                    {/* Badges */}
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="secondary" className={
-                        path.difficulty === 'Easy' ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' :
-                          path.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400' :
-                            'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
-                      }>
-                        {path.difficulty}
-                      </Badge>
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
-                        {path.remotePercentage}% Remote
-                      </Badge>
-                      {progress > 0 && (
-                        <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">
-                          {progress}% Complete
+                    {/* Bottom Row: Badges on left, Explore link on right */}
+                    <div className="flex items-center justify-between gap-2 pt-0.5">
+                      <div className="flex flex-wrap gap-1">
+                        <Badge variant="secondary" className={`text-[9px] font-extrabold py-0.5 px-1.5 ${
+                          path.difficulty === 'Easy' ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' :
+                            path.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400' :
+                              'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+                        }`}>
+                          {path.difficulty}
                         </Badge>
-                      )}
-                    </div>
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 text-[9px] font-extrabold py-0.5 px-1.5">
+                          {path.remotePercentage}% Remote
+                        </Badge>
+                      </div>
 
-                    {/* Action Button */}
-                    <Button className={`w-full bg-gradient-to-r ${path.color} hover:opacity-90 text-white shadow-lg`}>
-                      Explore Roadmap
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                      <div className="text-[11px] font-black text-blue-500 group-hover:text-blue-600 transition-colors flex items-center gap-0.5 flex-shrink-0">
+                        Explore <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -1026,13 +1674,13 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
           </div>
         ) : (
           /* Detailed Path View */
-          <div className="space-y-6">
+          <div className="w-full space-y-6">
             {/* Back Button & Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <Button
                 variant="outline"
                 onClick={() => setSelectedPath(null)}
-                className="border-2"
+                className="w-fit border-2"
               >
                 <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
                 Back to All Paths
@@ -1051,84 +1699,65 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
             {selectedPathData && (
               <>
                 {/* Path Header Card */}
-                <Card className="border-2 border-slate-200 dark:border-slate-800 overflow-hidden">
-                  <div className={`h-2 bg-gradient-to-r ${selectedPathData.color}`} />
-                  <CardHeader>
-                    <div className="flex items-start gap-6">
-                      <div className={`w-20 h-20 rounded-3xl bg-gradient-to-br ${selectedPathData.color} flex items-center justify-center shadow-xl`}>
-                        <selectedPathData.icon className="h-10 w-10 text-white" />
+                <Card className="border-2 border-slate-200 dark:border-slate-800 overflow-hidden shadow-md">
+                  <div className={`h-1.5 bg-gradient-to-r ${selectedPathData.color}`} />
+                  <CardHeader className="p-4 sm:p-5">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${selectedPathData.color} flex flex-shrink-0 items-center justify-center shadow-lg`}>
+                        <selectedPathData.icon className="h-7 w-7 text-white" />
                       </div>
 
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                           <div>
-                            <CardTitle className="text-4xl mb-2">{selectedPathData.name}</CardTitle>
-                            <CardDescription className="text-lg">{selectedPathData.description}</CardDescription>
+                            <CardTitle className="mb-1 text-2xl font-black">{selectedPathData.name}</CardTitle>
+                            <CardDescription className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                              {selectedPathData.description}
+                            </CardDescription>
                           </div>
 
-                          <Badge className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-lg px-4 py-2">
-                            <Trophy className="h-4 w-4 mr-2" />
+                          <Badge className="shrink-0 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-black px-3 py-1.5 rounded-lg shadow-md mt-1 lg:mt-0">
+                            <Trophy className="h-3.5 w-3.5 mr-1.5" />
                             {selectedPathData.matchScore}% Match
                           </Badge>
                         </div>
 
-                        {/* Quick Stats */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
-                            <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 mb-1">
-                              <Clock className="h-4 w-4" />
-                              Timeline
-                            </div>
-                            <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                              {selectedPathData.timeToJobReady}
-                            </div>
+                        {/* Quick Stats (Inline Row) */}
+                        <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-bold">
+                          <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+                            <Clock className="h-4 w-4" />
+                            <span className="text-slate-500 dark:text-slate-400 font-medium">Timeline:</span>
+                            <span className="text-slate-800 dark:text-slate-200">{selectedPathData.timeToJobReady}</span>
                           </div>
-
-                          <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-xl p-4 border border-green-200 dark:border-green-800">
-                            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 mb-1">
-                              <DollarSign className="h-4 w-4" />
-                              Fresher Salary
-                            </div>
-                            <div className="text-2xl font-bold text-green-600">
-                              {selectedPathData.avgSalary.fresher}
-                            </div>
+                          <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                            <DollarSign className="h-4 w-4" />
+                            <span className="text-slate-500 dark:text-slate-400 font-medium">Fresher Salary:</span>
+                            <span className="text-green-600">{selectedPathData.avgSalary.fresher}</span>
                           </div>
-
-                          <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800">
-                            <div className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400 mb-1">
-                              <Briefcase className="h-4 w-4" />
-                              Openings
-                            </div>
-                            <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                              {selectedPathData.jobOpenings.toLocaleString()}
-                            </div>
+                          <div className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400">
+                            <Briefcase className="h-4 w-4" />
+                            <span className="text-slate-500 dark:text-slate-400 font-medium">Openings:</span>
+                            <span className="text-slate-800 dark:text-slate-200">{selectedPathData.jobOpenings.toLocaleString()}</span>
                           </div>
-
-                          <div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 rounded-xl p-4 border border-orange-200 dark:border-orange-800">
-                            <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400 mb-1">
-                              <TrendingUp className="h-4 w-4" />
-                              Demand
-                            </div>
-                            <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 text-orange-600 dark:text-orange-400">
+                            <TrendingUp className="h-4 w-4" />
+                            <span className="text-slate-500 dark:text-slate-400 font-medium">Demand:</span>
+                            <div className="flex items-center gap-1">
                               {getTrendIcon(selectedPathData.demandTrend)}
-                              <span className="text-2xl font-bold text-slate-900 dark:text-white capitalize">
-                                {selectedPathData.demandTrend}
-                              </span>
+                              <span className="text-slate-800 dark:text-slate-200">{getTrendLabel(selectedPathData.demandTrend)}</span>
                             </div>
                           </div>
                         </div>
 
                         {/* Overall Progress */}
-                        <div className="mt-6">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                              Your Progress
-                            </span>
-                            <span className="text-sm font-bold text-blue-600">
-                              {calculateProgress(selectedPathData)}%
-                            </span>
-                          </div>
-                          <Progress value={calculateProgress(selectedPathData)} className="h-3" />
+                        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-4">
+                          <span className="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0">
+                            Your Progress
+                          </span>
+                          <Progress value={calculateProgress(selectedPathData)} className="h-2 flex-1" />
+                          <span className="text-xs font-black text-blue-600 shrink-0">
+                            {calculateProgress(selectedPathData)}%
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1136,7 +1765,7 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
                 </Card>
 
                 {/* Tabs */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                <div className="flex items-center justify-center gap-2 overflow-x-auto pb-2">
                   {[
                     { id: 'overview', label: 'Overview', icon: Info },
                     { id: 'roadmap', label: 'Skills Roadmap', icon: Target },
@@ -1627,92 +2256,8 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
           </div>
         )}
 
-        {/* Success Stories Section */}
-        {!selectedPath && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <Badge variant="secondary" className="mb-4 bg-purple-500/10 text-purple-600 border-purple-500/20">
-                <Users className="h-3 w-3 mr-1" />
-                Success Stories
-              </Badge>
-              <h2 className="text-3xl md:text-4xl font-black mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Students Who Made It
-              </h2>
-              <p className="text-slate-600 dark:text-slate-400">
-                Real stories from students who followed these paths
-              </p>
-            </div>
 
-            <div className="grid md:grid-cols-3 gap-6">
-              {successStories.map((story, index) => (
-                <Card key={index} className="border-2 border-slate-200 dark:border-slate-800 hover:border-purple-500 transition-all">
-                  <CardHeader>
-                    <div className="flex items-start gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">
-                        {story.avatar}
-                      </div>
-                      <div className="flex-1">
-                        <CardTitle className="text-lg">{story.name}</CardTitle>
-                        <CardDescription className="text-sm">
-                          {story.role} at {story.company}
-                        </CardDescription>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 mb-3">
-                      <Badge className="bg-green-500 text-white">
-                        <DollarSign className="h-3 w-3 mr-1" />
-                        {story.package}
-                      </Badge>
-                      <Badge variant="secondary">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {story.timeline}
-                      </Badge>
-                    </div>
-
-                    <p className="text-sm text-slate-600 dark:text-slate-400 italic leading-relaxed">
-                      &ldquo;{story.quote}&rdquo;
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-xs text-slate-500 mb-2">Skills mastered:</div>
-                    <div className="flex flex-wrap gap-1">
-                      {story.skills.map(skill => (
-                        <Badge key={skill} variant="secondary" className="text-xs">
-                          {skill}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* CTA Section */}
-        {!selectedPath && (
-          <Card className="border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
-            <CardContent className="py-12 text-center">
-              <h2 className="text-3xl font-black mb-4 text-slate-900 dark:text-white">
-                Ready to Start Your Journey?
-              </h2>
-              <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-2xl mx-auto">
-                Choose a career path above and start building your skills today. Our personalized roadmap will guide you every step of the way.
-              </p>
-              <div className="flex flex-wrap justify-center gap-4">
-                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg">
-                  <Target className="mr-2 h-5 w-5" />
-                  Take Career Assessment
-                </Button>
-                <Button size="lg" variant="outline">
-                  <MessageSquare className="mr-2 h-5 w-5" />
-                  Talk to Mentor
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        
       </div>
     </div>
   );

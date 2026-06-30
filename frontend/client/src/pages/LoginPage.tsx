@@ -46,7 +46,6 @@ export default function LoginPage() {
 
       const { user, message, token } = response.data;
       if (user) {
-        toast.success(message || "Login successful!");
         localStorage.setItem("userRole", user.role);
         if (token) {
           localStorage.setItem("token", token);
@@ -67,6 +66,8 @@ export default function LoginPage() {
         if (user.role === 'STUDENT') {
           await refreshUser();
         }
+
+        toast.success(message || "Login successful!");
 
         // Ensure consistent role mapping between backend roles and frontend redirects
         switch (user.role) {

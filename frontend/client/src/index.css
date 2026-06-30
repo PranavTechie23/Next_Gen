@@ -290,34 +290,12 @@
   }
 
   .custom-scrollbar {
-    scrollbar-gutter: stable;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   .custom-scrollbar::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, rgba(59, 130, 246, 0.25), rgba(99, 102, 241, 0.25));
-    border-radius: 9999px;
-    transition: background 0.2s;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, rgba(59, 130, 246, 0.45), rgba(99, 102, 241, 0.45));
-  }
-
-  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, rgba(59, 130, 246, 0.35), rgba(99, 102, 241, 0.35));
-  }
-
-  .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, rgba(59, 130, 246, 0.55), rgba(99, 102, 241, 0.55));
+    display: none;
   }
 
   /* Subtle scrollbar for sidebars (avoid loud “blue line”) */
@@ -585,12 +563,10 @@
 
   /* TPO admin — premium surfaces */
   .admin-hero {
-    background: linear-gradient(
-      135deg,
-      hsl(var(--admin-hero-from)) 0%,
-      var(--card) 42%,
-      hsl(var(--admin-hero-to)) 100%
-    );
+    background: linear-gradient(135deg,
+        hsl(var(--admin-hero-from)) 0%,
+        var(--card) 42%,
+        hsl(var(--admin-hero-to)) 100%);
     border: 1px solid var(--border);
     box-shadow:
       0 1px 2px rgba(15, 23, 42, 0.04),
@@ -603,20 +579,16 @@
     inset: 0;
     border-radius: inherit;
     pointer-events: none;
-    background: linear-gradient(
-      90deg,
-      hsl(var(--admin-hero-accent) / 0.12) 0%,
-      transparent 28%
-    );
+    background: linear-gradient(90deg,
+        hsl(var(--admin-hero-accent) / 0.12) 0%,
+        transparent 28%);
   }
 
   .dark .admin-hero {
-    background: linear-gradient(
-      135deg,
-      hsl(var(--admin-hero-from)) 0%,
-      hsl(224 44% 14%) 45%,
-      hsl(var(--admin-hero-to)) 100%
-    );
+    background: linear-gradient(135deg,
+        hsl(var(--admin-hero-from)) 0%,
+        hsl(224 44% 14%) 45%,
+        hsl(var(--admin-hero-to)) 100%);
     border: 1px solid rgba(255, 255, 255, 0.06);
     box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
@@ -695,12 +667,10 @@
   }
 
   .dark .admin-section-header {
-    background: linear-gradient(
-      90deg,
-      hsl(217 55% 28%) 0%,
-      hsl(243 45% 26%) 50%,
-      hsl(262 40% 28%) 100%
-    );
+    background: linear-gradient(90deg,
+        hsl(217 55% 28%) 0%,
+        hsl(243 45% 26%) 50%,
+        hsl(262 40% 28%) 100%);
     border: 1px solid rgba(255, 255, 255, 0.06);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
@@ -710,11 +680,9 @@
   }
 
   .admin-panel-header {
-    background: linear-gradient(
-      135deg,
-      hsl(var(--admin-panel-from)) 0%,
-      hsl(var(--admin-panel-to)) 100%
-    );
+    background: linear-gradient(135deg,
+        hsl(var(--admin-panel-from)) 0%,
+        hsl(var(--admin-panel-to)) 100%);
     border: 1px solid var(--border);
     box-shadow: 0 4px 24px -8px rgba(37, 99, 235, 0.1), 0 1px 2px rgba(15, 23, 42, 0.04);
   }
@@ -726,11 +694,9 @@
   }
 
   .admin-feature-header {
-    background: linear-gradient(
-      135deg,
-      hsl(var(--admin-hero-from)) 0%,
-      var(--card) 55%
-    );
+    background: linear-gradient(135deg,
+        hsl(var(--admin-hero-from)) 0%,
+        var(--card) 55%);
     border-bottom: 1px solid var(--border);
   }
 
@@ -749,5 +715,107 @@
     background: linear-gradient(135deg, hsl(222 47% 12%) 0%, hsl(217 33% 16%) 100%);
     border-color: rgba(255, 255, 255, 0.06);
     box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.4);
+  }
+
+  /* ─── Student Dashboard: Stat Ring (SVG progress circle) ─── */
+  .stat-ring {
+    transform: rotate(-90deg);
+    transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ─── Student Dashboard: CTA shimmer sweep ─── */
+  .cta-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.06) 40%,
+      rgba(255, 255, 255, 0.12) 50%,
+      rgba(255, 255, 255, 0.06) 60%,
+      transparent 100%
+    );
+    animation: shimmerSweep 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+  :not(.dark) .cta-shimmer::after {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(59, 130, 246, 0.04) 40%,
+      rgba(59, 130, 246, 0.08) 50%,
+      rgba(59, 130, 246, 0.04) 60%,
+      transparent 100%
+    );
+  }
+
+  @keyframes shimmerSweep {
+    0%, 100% { left: -100%; }
+    50% { left: 100%; }
+  }
+
+  /* ─── Student Dashboard: Confidence badge pulse ring ─── */
+  .confidence-pulse-ring {
+    animation: confidencePulse 3s ease-in-out infinite;
+  }
+  @keyframes confidencePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3); }
+    50% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
+  }
+  .dark .confidence-pulse-ring {
+    animation: confidencePulseDark 3s ease-in-out infinite;
+  }
+  @keyframes confidencePulseDark {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.25); }
+    50% { box-shadow: 0 0 0 6px rgba(96, 165, 250, 0); }
+  }
+
+  /* ─── Student Dashboard: Quick Action accent strip ─── */
+  .quick-action-card {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .quick-action-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--accent-color, #3b82f6);
+    opacity: 0.15;
+    transition: all 0.3s ease;
+  }
+  .quick-action-card:hover::before {
+    opacity: 1;
+    width: 4px;
+  }
+  .quick-action-card:hover {
+    box-shadow: 0 8px 30px -8px color-mix(in srgb, var(--accent-color, #3b82f6) 25%, transparent);
+  }
+  .dark .quick-action-card:hover {
+    box-shadow: 0 8px 30px -8px color-mix(in srgb, var(--accent-color, #3b82f6) 18%, transparent);
+  }
+
+  /* ─── Student Dashboard: CTA animated gradient bg ─── */
+  .cta-gradient-animate {
+    background-size: 200% 200%;
+    animation: gradientShift 6s ease infinite;
+  }
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
   }
 }
