@@ -102,6 +102,11 @@ export default function AdminDashboard() {
   const [viewAnnouncementDialogOpen, setViewAnnouncementDialogOpen] = useState(false);
   const [viewingAnnouncement, setViewingAnnouncement] = useState<any>(null);
 
+  const [editEventDialogOpen, setEditEventDialogOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [viewEventDialogOpen, setViewEventDialogOpen] = useState(false);
+  const [viewingEvent, setViewingEvent] = useState<any>(null);
+
   const handleOpenViewAllEvents = async () => {
     setViewAllEventsOpen(true);
     setLoadingAllData(true);
@@ -148,6 +153,53 @@ export default function AdminDashboard() {
       loadDashboardAnalytics();
     } catch (e) {
       toast.error("Failed to schedule event");
+    }
+  };
+
+  const formatDatetimeLocal = (dateStr: string) => {
+    if (!dateStr) return "";
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return "";
+      const offset = d.getTimezoneOffset() * 60000;
+      return (new Date(d.getTime() - offset)).toISOString().slice(0, 16);
+    } catch (e) {
+      return "";
+    }
+  };
+
+  const handleUpdateEvent = async () => {
+    if (!editingEvent?.title.trim() || !editingEvent?.starts_at) {
+      toast.error("Title and Date are required");
+      return;
+    }
+    try {
+      await adminApi.updateWebinar(editingEvent.id, {
+        title: editingEvent.title,
+        starts_at: editingEvent.starts_at,
+        meeting_link: editingEvent.meeting_link || '',
+        session_mode: editingEvent.meeting_link ? 'VIRTUAL' : 'IN_PERSON',
+        status: editingEvent.status || 'PUBLISHED',
+        summary: editingEvent.summary || `Scheduled ${editingEvent.type || 'Webinar'} event.`,
+        speaker_name: editingEvent.speaker_name || 'TBA'
+      });
+      toast.success("Event updated successfully");
+      setEditEventDialogOpen(false);
+      setEditingEvent(null);
+      await loadDashboardAnalytics();
+    } catch (e) {
+      toast.error("Failed to update event");
+    }
+  };
+
+  const handleDeleteEvent = async (id: string | number) => {
+    if (!confirm("Are you sure you want to delete this event?")) return;
+    try {
+      await adminApi.deleteWebinar(id);
+      toast.success("Event deleted successfully");
+      await loadDashboardAnalytics();
+    } catch (e) {
+      toast.error("Failed to delete event");
     }
   };
 
@@ -610,7 +662,7 @@ export default function AdminDashboard() {
       <main
         ref={mainContentRef}
         data-scroll-container
-        className="container py-4 md:py-8 px-4 sm:px-6 max-w-7xl mx-auto"
+        className="container py-4 md:py-8 px-4 sm:px-6 max-w-[1400px] mx-auto"
       >
         {/* Welcome Section with Actions */}
         <div className="mb-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
@@ -1200,68 +1252,67 @@ export default function AdminDashboard() {
                       <CardTitle className="text-lg font-bold">Upcoming Events</CardTitle>
                       <CardDescription className="text-xs">Next placement drives and workshops</CardDescription>
                     </div>
-                    <Button variant="outline" size="sm" className="h-8 px-3 text-xs" onClick={handleOpenViewAllEvents}>View All</Button>
+                    <Dialog open={eventDialogOpen} onOpenChange={setEventDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 h-8 shadow-sm rounded-lg transition-all hover:scale-105 text-xs whitespace-nowrap">
+                          <Plus className="h-3 w-3" />
+                          Schedule Event
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Schedule New Event</DialogTitle>
+                          <DialogDescription>Create a new placement drive, workshop, or webinar.</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <div className="space-y-2">
+                            <Label>Title</Label>
+                            <Input placeholder="e.g. Resume Building Workshop" value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Date & Time</Label>
+                            <Input type="datetime-local" value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Meeting Link (Optional)</Label>
+                            <Input placeholder="https://zoom.us/j/..." value={newEvent.link} onChange={e => setNewEvent({...newEvent, link: e.target.value})} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Event Type</Label>
+                            <Select value={newEvent.type} onValueChange={(val) => setNewEvent({...newEvent, type: val})}>
+                              <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Webinar">Webinar</SelectItem>
+                                <SelectItem value="Placement">Placement</SelectItem>
+                                <SelectItem value="Workshop">Workshop</SelectItem>
+                                <SelectItem value="PPT">Pre-Placement Talk</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setEventDialogOpen(false)}>Cancel</Button>
+                          <Button onClick={handleScheduleEvent}>Schedule</Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+                <CardContent className="flex-1 flex flex-col">
+                  <div className="space-y-3 flex-1">
                     {upcomingEvents.length === 0 ? (
-                      <div className="flex flex-col sm:flex-row items-center justify-between rounded-xl border border-dashed border-blue-500/20 bg-blue-50/30 dark:bg-blue-900/10 p-4 transition-all hover:bg-blue-50/50 dark:hover:bg-blue-900/20 group gap-4">
-                        <div className="flex items-center gap-3">
+                      <div className="flex-1 flex flex-col sm:flex-row items-center justify-center sm:justify-between rounded-xl border border-dashed border-blue-500/20 bg-blue-50/30 dark:bg-blue-900/10 p-4 transition-all hover:bg-blue-50/50 dark:hover:bg-blue-900/20 group gap-4 text-center sm:text-left h-full min-h-[150px]">
+                        <div className="flex flex-col sm:flex-row items-center gap-3">
                           <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-full flex flex-shrink-0 items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300">
                             <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                           </div>
-                          <div className="text-left">
+                          <div>
                             <h4 className="text-sm font-bold text-slate-900 dark:text-white">No upcoming events</h4>
                             <p className="text-[11px] text-muted-foreground mt-0.5">
                               Schedule your next workshop, drive, or pre-placement talk here.
                             </p>
                           </div>
                         </div>
-                        <Dialog open={eventDialogOpen} onOpenChange={setEventDialogOpen}>
-                          <DialogTrigger asChild>
-                            <Button className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 h-8 shadow-sm rounded-lg transition-all hover:scale-105 text-xs whitespace-nowrap">
-                              <Plus className="h-3 w-3" />
-                              Schedule Event
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Schedule New Event</DialogTitle>
-                              <DialogDescription>Create a new placement drive, workshop, or webinar.</DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                              <div className="space-y-2">
-                                <Label>Title</Label>
-                                <Input placeholder="e.g. Resume Building Workshop" value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Date & Time</Label>
-                                <Input type="datetime-local" value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Meeting Link (Optional)</Label>
-                                <Input placeholder="https://zoom.us/j/..." value={newEvent.link} onChange={e => setNewEvent({...newEvent, link: e.target.value})} />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Event Type</Label>
-                                <Select value={newEvent.type} onValueChange={(val) => setNewEvent({...newEvent, type: val})}>
-                                  <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="Webinar">Webinar</SelectItem>
-                                    <SelectItem value="Placement">Placement</SelectItem>
-                                    <SelectItem value="Workshop">Workshop</SelectItem>
-                                    <SelectItem value="PPT">Pre-Placement Talk</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                            <DialogFooter>
-                              <Button variant="outline" onClick={() => setEventDialogOpen(false)}>Cancel</Button>
-                              <Button onClick={handleScheduleEvent}>Schedule</Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
                       </div>
                     ) : upcomingEvents.slice(0, 3).map((event, idx) => {
                       const eventTypeColors = {
@@ -1293,17 +1344,42 @@ export default function AdminDashboard() {
                               </div>
                             </div>
                             <div className="flex items-center gap-2 ml-3">
-                              <div className="text-right">
+                              <div className="text-right mr-1">
                                 <p className="text-base font-black text-foreground">{event.attendees}</p>
                                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Attendees</p>
                               </div>
-                              <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-100 dark:hover:bg-slate-800" onClick={e => e.stopPropagation()}>
+                                    <MoreVertical className="h-4 w-4 text-slate-400 hover:text-slate-900" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-36" onClick={e => e.stopPropagation()}>
+                                  <DropdownMenuItem onClick={() => { setViewingEvent(event); setViewEventDialogOpen(true); }}>
+                                    <Eye className="mr-2 h-4 w-4" /> View
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => { setEditingEvent(event); setEditEventDialogOpen(true); }}>
+                                    <Edit className="mr-2 h-4 w-4" /> Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => handleDeleteEvent(event.id)}>
+                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </div>
                         </div>
                       );
                     })}
                   </div>
+                  {upcomingEvents.length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-center">
+                      <Button variant="ghost" size="sm" className="w-full text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20" onClick={handleOpenViewAllEvents}>
+                        View All Events
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -2252,11 +2328,32 @@ export default function AdminDashboard() {
                       <h4 className="font-bold">{event.title}</h4>
                       <p className="text-sm text-muted-foreground">{new Date(event.starts_at || event.date).toLocaleString()}</p>
                     </div>
-                    {event.meeting_link && (
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={event.meeting_link} target="_blank" rel="noopener noreferrer">Join</a>
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {event.meeting_link && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={event.meeting_link} target="_blank" rel="noopener noreferrer">Join</a>
+                        </Button>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-100 dark:hover:bg-slate-800">
+                            <MoreVertical className="h-4 w-4 text-slate-400 hover:text-slate-900" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-36">
+                          <DropdownMenuItem onClick={() => { setViewingEvent(event); setViewEventDialogOpen(true); }}>
+                            <Eye className="mr-2 h-4 w-4" /> View
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => { setEditingEvent(event); setEditEventDialogOpen(true); }}>
+                            <Edit className="mr-2 h-4 w-4" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => handleDeleteEvent(event.id)}>
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 ))
               )}
@@ -2310,6 +2407,76 @@ export default function AdminDashboard() {
               <div className="flex justify-end gap-2 mt-4">
                 <Button variant="outline" onClick={() => setEditAnnouncementDialogOpen(false)}>Cancel</Button>
                 <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={handleUpdateAnnouncement}>
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* View Event Dialog */}
+        <Dialog open={viewEventDialogOpen} onOpenChange={setViewEventDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold break-words">{viewingEvent?.title}</DialogTitle>
+              <DialogDescription>
+                Scheduled for {viewingEvent ? new Date(viewingEvent.starts_at || viewingEvent.date).toLocaleString() : ''}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-4">
+              <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 text-sm">
+                <span className="font-semibold text-slate-500">Event Type:</span>
+                <span className="font-bold text-blue-600 dark:text-blue-400">{viewingEvent?.type || 'Webinar'}</span>
+              </div>
+              {viewingEvent?.meeting_link && (
+                <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 text-sm">
+                  <span className="font-semibold text-slate-500">Meeting Link:</span>
+                  <a href={viewingEvent.meeting_link} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline font-bold truncate max-w-[200px]">
+                    Join Session
+                  </a>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setViewEventDialogOpen(false)}>Close</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Event Dialog */}
+        <Dialog open={editEventDialogOpen} onOpenChange={setEditEventDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Event</DialogTitle>
+              <DialogDescription>Update the details of the scheduled event below.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Title</Label>
+                <Input 
+                  value={editingEvent?.title || ''} 
+                  onChange={e => setEditingEvent({...editingEvent, title: e.target.value})} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Date & Time</Label>
+                <Input 
+                  type="datetime-local" 
+                  value={editingEvent ? formatDatetimeLocal(editingEvent.starts_at || editingEvent.date) : ''} 
+                  onChange={e => setEditingEvent({...editingEvent, starts_at: e.target.value, date: e.target.value})} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Meeting Link (Optional)</Label>
+                <Input 
+                  placeholder="https://zoom.us/j/..." 
+                  value={editingEvent?.meeting_link || ''} 
+                  onChange={e => setEditingEvent({...editingEvent, meeting_link: e.target.value})} 
+                />
+              </div>
+              <div className="flex justify-end gap-2 mt-4">
+                <Button variant="outline" onClick={() => setEditEventDialogOpen(false)}>Cancel</Button>
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold" onClick={handleUpdateEvent}>
                   Save Changes
                 </Button>
               </div>

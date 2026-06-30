@@ -138,5 +138,14 @@ export const studentApi = {
     const response = await api.get('announcements');
     return response.data;
   },
+
+  submitPlatformFeedback: async (data: { type: string, subject: string, description: string }) => {
+    const token = localStorage.getItem('token') || localStorage.getItem('accessToken') || localStorage.getItem('authToken');
+    const response = await axios.post(buildApiUrl('/platform-feedback'), data, {
+      headers: { Authorization: `Bearer ${token}` },
+      withCredentials: true,
+    });
+    return response.data;
+  },
 };
 

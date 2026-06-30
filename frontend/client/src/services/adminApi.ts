@@ -118,6 +118,11 @@ export const adminApi = {
     return response.data;
   },
 
+  deleteWebinar: async (id: string | number) => {
+    const response = await api.delete(`webinars/${id}`);
+    return response.data;
+  },
+
   getDrives: async () => {
     const response = await api.get("drives");
     return response.data;
