@@ -36,3 +36,11 @@ exports.apiLimiter = rateLimit({
     max:      isProduction ? 300 : 1000,
     message:  { message: 'Too many requests. Please slow down.' },
 });
+
+/** Feedback form rate limiting. */
+exports.feedbackLimiter = rateLimit({
+    ...base,
+    windowMs: 15 * 60 * 1000,
+    max:      5,
+    message:  { message: 'You have submitted too much feedback recently. Please try again later.' },
+});

@@ -1,4 +1,10 @@
 const db = require('../config/db');
+const {
+    getTenantScope,
+    resolveInstitutionId,
+    webinarInstitutionClause,
+    assertWebinarInScope,
+} = require('../middleware/institutionScope');
 
 const VALID_SCOPE = new Set(['all', 'upcoming', 'past']);
 const VALID_STATUS = new Set(['DRAFT', 'PUBLISHED', 'COMPLETED', 'CANCELLED']);
@@ -119,12 +125,18 @@ const hasColumn = async (tableName, columnName) => {
 
 exports.listWebinarsForManagement = async (req, res) => {
   try {
+    const tenantScope = getTenantScope(req);
+    if (!tenantScope) {
+      return res.status(403).json({ message: 'Institution context is required for this operation.' });
+    }
+
     const scope = normalizeScope(req.query.scope);
     const search = String(req.query.search || '').trim();
     const status = req.query.status && VALID_STATUS.has(req.query.status) ? req.query.status : null;
 
-    const clauses = [getScopeClause(scope)];
-    const params = [];
+    const { clause: institutionClause, params: institutionParams } = webinarInstitutionClause(tenantScope);
+    const clauses = [getScopeClause(scope), institutionClause];
+    const params = [...institutionParams];
 
     if (status) {
       clauses.push('w.status = ?');
@@ -164,19 +176,25 @@ exports.listWebinarsForManagement = async (req, res) => {
 
 exports.createWebinar = async (req, res) => {
   try {
+    const institutionId = resolveInstitutionId(req);
+    if (!institutionId) {
+      return res.status(403).json({ message: 'Institution context is required for this operation.' });
+    }
+
     const { payload, error } = sanitizeWebinarPayload(req.body, { requireCoreFields: true });
     if (error) return res.status(400).json({ message: error });
 
     const [result] = await db.execute(
       `
       INSERT INTO webinars (
-        title, summary, speaker_name, speaker_role, speaker_background, speaker_photo_url,
+        institution_id, title, summary, speaker_name, speaker_role, speaker_background, speaker_photo_url,
         session_mode, venue, meeting_link, recording_url,
         starts_at, ends_at, registration_required, capacity, status,
         mom_text, mom_url, key_takeaways, created_by, updated_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
+        institutionId,
         payload.title,
         payload.summary,
         payload.speaker_name,
@@ -217,8 +235,10 @@ exports.updateWebinar = async (req, res) => {
     const { payload, error } = sanitizeWebinarPayload(req.body);
     if (error) return res.status(400).json({ message: error });
 
-    const [exists] = await db.execute('SELECT id FROM webinars WHERE id = ?', [webinarId]);
-    if (!exists.length) return res.status(404).json({ message: 'Webinar not found.' });
+    const scopeCheck = await assertWebinarInScope(req, webinarId);
+    if (!scopeCheck.ok) {
+      return res.status(scopeCheck.status).json({ message: scopeCheck.message });
+    }
 
     const fieldMap = {
       title: payload.title || null,
@@ -268,8 +288,34 @@ exports.updateWebinar = async (req, res) => {
   }
 };
 
+exports.deleteWebinar = async (req, res) => {
+  try {
+    const webinarId = Number(req.params.id);
+    if (!Number.isInteger(webinarId) || webinarId <= 0) {
+      return res.status(400).json({ message: 'Invalid webinar id.' });
+    }
+
+    const scopeCheck = await assertWebinarInScope(req, webinarId);
+    if (!scopeCheck.ok) {
+      return res.status(scopeCheck.status).json({ message: scopeCheck.message });
+    }
+
+    await db.execute('DELETE FROM webinars WHERE id = ?', [webinarId]);
+
+    return res.status(200).json({ message: 'Webinar deleted successfully.' });
+  } catch (error) {
+    console.error('deleteWebinar error', error);
+    return res.status(500).json({ message: 'Failed to delete webinar.' });
+  }
+};
+
 exports.getStudentWebinars = async (req, res) => {
   try {
+    const institutionId = req.user?.institution_id;
+    if (!institutionId) {
+      return res.status(403).json({ message: 'Institution context is required.' });
+    }
+
     const scope = normalizeScope(req.query.scope || 'all');
     const search = String(req.query.search || '').trim();
     const userId = req.user.id;
@@ -277,12 +323,18 @@ exports.getStudentWebinars = async (req, res) => {
     const hasStartsAt = await hasColumn('webinars', 'starts_at');
     const hasStatus = await hasColumn('webinars', 'status');
 
+    const hasInstitutionId = await hasColumn('webinars', 'institution_id');
+
     // Fallback for legacy webinar schema (date_time/link only).
     if (!hasStartsAt || !hasStatus) {
       const legacyScopeClause =
         scope === 'upcoming' ? 'w.date_time >= NOW()' : scope === 'past' ? 'w.date_time < NOW()' : '1=1';
       const legacyClauses = [legacyScopeClause];
       const legacyParams = [];
+      if (hasInstitutionId) {
+        legacyClauses.push('w.institution_id = ?');
+        legacyParams.push(institutionId);
+      }
 
       if (search) {
         legacyClauses.push('(w.title LIKE ? OR w.speaker_name LIKE ?)');
@@ -333,6 +385,10 @@ exports.getStudentWebinars = async (req, res) => {
 
     const clauses = ['w.status IN (\'PUBLISHED\', \'COMPLETED\')', getScopeClause(scope)];
     const params = [userId];
+    if (hasInstitutionId) {
+      clauses.push('w.institution_id = ?');
+      params.push(institutionId);
+    }
 
     if (search) {
       clauses.push('(w.title LIKE ? OR w.speaker_name LIKE ? OR w.summary LIKE ?)');
@@ -405,13 +461,18 @@ exports.registerForWebinar = async (req, res) => {
       return res.status(400).json({ message: 'Invalid webinar id.' });
     }
 
+    const institutionId = req.user?.institution_id;
+    if (!institutionId) {
+      return res.status(403).json({ message: 'Institution context is required.' });
+    }
+
     const [[webinar]] = await db.execute(
       `
       SELECT id, status, starts_at, registration_required, capacity
       FROM webinars
-      WHERE id = ?
+      WHERE id = ? AND institution_id = ?
       `,
-      [webinarId]
+      [webinarId, institutionId]
     );
 
     if (!webinar) return res.status(404).json({ message: 'Webinar not found.' });

@@ -1,101 +1,152 @@
 const express = require('express');
 const router = express.Router();
+const db = require('../config/db');
+const https = require('https');
 
-router.get('/tech-news', (req, res) => {
+/**
+ * Helper to fetch fallback evergreen news from database
+ */
+async function getFallbackNews() {
     try {
-        const apiKey = process.env.NEWS_API_KEY;
-        if (!apiKey || apiKey === 'your_copied_api_key_here') {
-            console.log("Serving mock tech news because NEWS_API_KEY is not configured.");
-            
-            return res.status(200).json({
-                articles: [
-                    {
-                        title: "The Future of AI: Google DeepMind unveils breakthrough in Agentic Coding",
-                        description: "New AI models are fundamentally changing how software is developed, giving rise to autonomous coding subagents that solve complex problems.",
-                        url: "https://deepmind.google/",
-                        urlToImage: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=800",
-                        publishedAt: new Date().toISOString(),
-                        source: { name: "Tech Daily" }
-                    },
-                    {
-                        title: "Web Development in 2026: Why React and Next.js remain dominant",
-                        description: "Despite emerging frameworks, the React ecosystem continues to lead the industry through massive architectural upgrades and server components.",
-                        url: "https://react.dev/",
-                        urlToImage: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&q=80&w=800",
-                        publishedAt: new Date(Date.now() - 86400000).toISOString(),
-                        source: { name: "Developer Weekly" }
-                    },
-                    {
-                        title: "Global Tech Hiring Shifts Towards Cybersecurity Specializations",
-                        description: "As cyber threats multiply, corporations are allocating 40% more budget toward recruiting top-tier security analysts and full-stack devs.",
-                        url: "https://cybersecurity.com",
-                        urlToImage: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=800",
-                        publishedAt: new Date(Date.now() - 172800000).toISOString(),
-                        source: { name: "Industry Insights" }
-                    },
-                    {
-                        title: "Cloud Computing Architectures Transition to Edge Deployments",
-                        description: "Reducing latency using edge networks is the new standard for web application deployments across major corporate platforms.",
-                        url: "https://cloud.com",
-                        urlToImage: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=800",
-                        publishedAt: new Date(Date.now() - 259200000).toISOString(),
-                        source: { name: "Cloud Native" }
-                    }
-                ]
+        // Fetch all evergreen articles to rotate through them deterministically
+        const [allArticles] = await db.query('SELECT title, description, url, urlToImage, created_at as publishedAt, source_name FROM news_articles WHERE is_evergreen = 1 ORDER BY id ASC');
+        
+        if (allArticles.length === 0) return [];
+
+        const numToShow = 6;
+        const rotationIntervalHours = 6;
+        
+        // Calculate the current "time block" index (changes every 6 hours)
+        const timeBlock = Math.floor(Date.now() / (rotationIntervalHours * 60 * 60 * 1000));
+        
+        // Calculate the starting index for this time block
+        // Moving by numToShow ensures each block has unique articles
+        const startIndex = (timeBlock * numToShow) % allArticles.length;
+
+        // Pick numToShow articles with wrapping logic
+        let rotatedNews = [];
+        for (let i = 0; i < numToShow; i++) {
+            const articleIndex = (startIndex + i) % allArticles.length;
+            const article = allArticles[articleIndex];
+            rotatedNews.push({
+                title: article.title,
+                description: article.description,
+                url: article.url,
+                urlToImage: article.urlToImage,
+                publishedAt: article.publishedAt,
+                source: { name: article.source_name || 'Campus Portal' }
             });
         }
 
-        const url = `https://newsdata.io/api/1/news?apikey=${apiKey}&category=technology&language=en`;
+        return rotatedNews;
+    } catch (err) {
+        console.error("Database fallback news error:", err);
+        // Ultra-fallback if even DB fails
+        return [
+            {
+                title: "Career Preparation Guide",
+                description: "Start preparing for your dream career with our comprehensive resource center.",
+                url: "#",
+                urlToImage: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&q=80&w=800",
+                publishedAt: new Date().toISOString(),
+                source: { name: "System Admin" }
+            }
+        ];
+    }
+}
+
+router.get('/tech-news', async (req, res) => {
+    try {
+        const apiKey = process.env.NEWS_API_KEY;
+
+        // If no API key, serve from database immediately
+        if (!apiKey?.trim()) {
+            console.log("Serving evergreen news because NEWS_API_KEY is not configured.");
+            const articles = await getFallbackNews();
+            return res.status(200).json({ articles });
+        }
+
+        const newsApiBase = (process.env.NEWS_API_BASE_URL || 'https://newsdata.io/api/1/news').replace(/\/+$/, '');
+        const url = `${newsApiBase}?apikey=${encodeURIComponent(apiKey)}&category=technology&language=en`;
         
-        // Using native https module to ensure compatibility with Node.js versions < 18
-        const https = require('https');
-        
-        https.get(url, { headers: { 'User-Agent': 'NextGenPBLNewsApp/1.0' } }, (apiRes) => {
+        // Fetch from external API
+        https.get(url, { headers: { 'User-Agent': 'NextGenAINewsApp/1.0' } }, async (apiRes) => {
             let data = '';
 
             apiRes.on('data', (chunk) => {
                 data += chunk;
             });
 
-            apiRes.on('end', () => {
-                if (apiRes.statusCode !== 200) {
-                    console.error("Newsdata.io returned error status:", apiRes.statusCode);
-                    console.error("Error body:", data);
-                    return res.status(500).json({ error: "Failed to fetch news from external API. Check API key." });
-                }
-
+            apiRes.on('end', async () => {
                 try {
+                    if (apiRes.statusCode !== 200) {
+                        console.warn("External News API failed with status:", apiRes.statusCode, "Serving fallback.");
+                        const articles = await getFallbackNews();
+                        return res.status(200).json({ articles });
+                    }
+
                     const parsedData = JSON.parse(data);
                     
-                    if (!parsedData.results) {
-                        return res.status(500).json({ error: "Invalid response from Newsdata.io" });
+                    if (!parsedData.results || parsedData.results.length === 0) {
+                        const articles = await getFallbackNews();
+                        return res.status(200).json({ articles });
                     }
 
                     // Map Newsdata.io's format to the frontend's expected format
-                    const articles = parsedData.results.map(article => ({
+                    const rawArticles = parsedData.results.map(article => ({
                         title: article.title,
                         description: article.description || "",
                         url: article.link,
                         urlToImage: article.image_url || null,
                         publishedAt: article.pubDate,
-                        source: { name: article.source_id || 'Unknown' }
+                        source: { name: article.source_id || 'Global Tech' }
                     }));
 
-                    res.status(200).json({ articles });
+                    // Deduplicate articles to curb repetition (syndicated news)
+                    const uniqueArticles = [];
+                    const seenTitles = new Set();
+                    const seenImages = new Set();
+
+                    for (const article of rawArticles) {
+                        // Create a normalized version of the title to catch slight variations
+                        // (e.g. "OpenAI limits its latest..." vs "OpenAI limits latest...")
+                        const normalizedTitle = (article.title || "").toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 40);
+                        
+                        // If we have seen a very similar title, or the exact same image (and it's not null)
+                        if (seenTitles.has(normalizedTitle)) {
+                            continue;
+                        }
+                        if (article.urlToImage && seenImages.has(article.urlToImage)) {
+                            continue;
+                        }
+                        
+                        seenTitles.add(normalizedTitle);
+                        if (article.urlToImage) {
+                            seenImages.add(article.urlToImage);
+                        }
+                        
+                        uniqueArticles.push(article);
+                    }
+
+                    res.status(200).json({ articles: uniqueArticles });
                 } catch (e) {
-                    console.error("Error parsing Newsdata.io response:", e);
-                    return res.status(500).json({ error: "Error parsing API response" });
+                    console.error("Error parsing Newsdata.io response, serving fallback:", e);
+                    const articles = await getFallbackNews();
+                    return res.status(200).json({ articles });
                 }
             });
-        }).on('error', (err) => {
-            console.error("Error fetching tech news:", err);
-            res.status(500).json({ error: "Internal Server Error while fetching news" });
+        }).on('error', async (err) => {
+            console.error("News API request error, serving fallback:", err);
+            const articles = await getFallbackNews();
+            res.status(200).json({ articles });
         });
 
     } catch (error) {
-        console.error("Error setting up tech news request:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        console.error("News route critical error:", error);
+        const articles = await getFallbackNews();
+        res.status(200).json({ articles });
     }
 });
 
 module.exports = router;
+

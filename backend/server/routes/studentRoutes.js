@@ -8,7 +8,7 @@ const webinarController = require('../controllers/webinarController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // --------------------------------------------------
-// NEW STUDENT PROFILE MODULE ROUTES
+// STUDENT PROFILE MODULE ROUTES (v2 - includes target-role endpoint)
 // --------------------------------------------------
 
 // GET /api/student/profile - Get logged-in student's profile
@@ -32,6 +32,13 @@ router.post('/profile/resume',
     studentProfileController.resumeUploadMiddleware,
     studentProfileController.uploadResume,
     studentProfileController.uploadErrorHandler
+);
+
+// POST /api/student/profile/target-role - Evaluate resume against a specific target role
+router.post('/profile/target-role',
+    protect,
+    authorize('STUDENT'),
+    studentProfileController.evaluateTargetRole
 );
 
 // PUT /api/student/profile/resume-sections - Manual add/edit/delete of parsed resume sections
@@ -147,6 +154,12 @@ router.get('/dept-events',
     protect,
     authorize('STUDENT'),
     studentController.getDeptEvents
+);
+
+router.get('/announcements',
+    protect,
+    authorize('STUDENT'),
+    studentController.getAnnouncements
 );
 
 module.exports = router;

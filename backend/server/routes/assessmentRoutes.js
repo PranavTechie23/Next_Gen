@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 const assessmentController = require('../controllers/assessmentController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const { attachTenantScope } = require('../middleware/institutionScope');
 
 // Guard: fail fast at startup if controller methods are missing
 const requiredMethods = ['getAllKits', 'getKitById'];
@@ -13,7 +14,7 @@ requiredMethods.forEach((method) => {
   }
 });
 
-const studentOnly = [protect, authorize('STUDENT')];
+const studentOnly = [protect, authorize('STUDENT'), attachTenantScope];
 
 router.get('/kits',     studentOnly, assessmentController.getAllKits);
 router.get('/kits/:id', studentOnly, assessmentController.getKitById);

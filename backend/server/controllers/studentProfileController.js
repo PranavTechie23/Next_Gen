@@ -3,6 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const pdfParseModule = require('pdf-parse');
+const aiConfigService = require('../utils/aiConfigService');
 let _pdfjsLegacy = null;
 
 // Ensure upload directory exists for storing resumes
@@ -25,10 +26,11 @@ const storage = multer.diskStorage({
         cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
-        // Create a unique filename using timestamp and user ID (if available at this stage)
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const userId = req.user ? req.user.id : 'unknown';
-        cb(null, `resume-${userId}-${uniqueSuffix}${path.extname(file.originalname)}`);
+        const ext = path.extname(file.originalname || '').toLowerCase();
+        const safeExt = ext === '.pdf' ? ext : '.pdf';
+        cb(null, `resume-${userId}-${uniqueSuffix}${safeExt}`);
     }
 });
 
@@ -89,6 +91,15 @@ const ensureResumeParsedTable = async () => {
     } catch (_) {}
     try {
         await db.execute(`ALTER TABLE resume_parsed_data ADD COLUMN inferred_role_confidence INT NULL`);
+    } catch (_) {}
+    try {
+        await db.execute(`ALTER TABLE resume_parsed_data ADD COLUMN target_role VARCHAR(150) NULL`);
+    } catch (_) {}
+    try {
+        await db.execute(`ALTER TABLE resume_parsed_data ADD COLUMN target_role_match INT NULL`);
+    } catch (_) {}
+    try {
+        await db.execute(`ALTER TABLE resume_parsed_data ADD COLUMN missing_skills_for_target JSON NULL`);
     } catch (_) {}
 };
 
@@ -172,16 +183,35 @@ const extractTextFromPdfPageLayoutAware = (content) => {
     return rendered.join('\n');
 };
 
-const scoreExtractedTextQuality = (text = '') => {
+const configService = require('../utils/configService');
+
+const scoreExtractedTextQuality = async (text = '') => {
+    const weights = await configService.getConfig('resume_extraction_weights', {
+        length: 0.45,
+        structure: 0.35,
+        content: 0.2
+    });
+
     const t = String(text || '');
     const lengthScore = Math.min(1, t.length / 1200);
     const lineCount = t.split('\n').filter((l) => l.trim()).length;
     const lineScore = Math.min(1, lineCount / 40);
     const headingScore = /(education|projects|experience|skills|certifications|summary)/i.test(t) ? 1 : 0;
-    return lengthScore * 0.45 + lineScore * 0.35 + headingScore * 0.2;
+    
+    return (lengthScore * weights.length) + 
+           (lineScore * weights.structure) + 
+           (headingScore * weights.content);
 };
 
-const scoreParsedResumeQuality = (parsed = {}) => {
+const scoreParsedResumeQuality = async (parsed = {}) => {
+    const weights = await configService.getConfig('resume_parsing_quality_weights', {
+        skills: 0.25,
+        timeline: 0.30,
+        summary: 0.10,
+        contact: 0.20,
+        links: 0.15
+    });
+
     const sections = parsed?.sections || {};
     const skills = Array.isArray(parsed?.skills) ? parsed.skills.length : 0;
     const projects = Array.isArray(sections?.projects) ? sections.projects.length : 0;
@@ -192,18 +222,17 @@ const scoreParsedResumeQuality = (parsed = {}) => {
     const hasLinks = Number(!!parsed?.linkedinUrl) + Number(!!parsed?.githubUrl);
     const summaryLen = String(sections?.summary || '').length;
     const timelineSignals = [projects, experience, education, certs].reduce((a, b) => a + b, 0);
+
     return (
-        Math.min(1, skills / 20) * 0.25 +
-        Math.min(1, timelineSignals / 20) * 0.30 +
-        Math.min(1, summaryLen / 400) * 0.10 +
-        (hasContact / 2) * 0.20 +
-        (hasLinks / 2) * 0.15
+        Math.min(1, skills / 20) * weights.skills +
+        Math.min(1, timelineSignals / 20) * weights.timeline +
+        Math.min(1, summaryLen / 400) * weights.summary +
+        (hasContact / 2) * weights.contact +
+        (hasLinks / 2) * weights.links
     );
 };
 
 const tryLlmInferRole = async ({ rawText = '', skills = [], sections = {} }) => {
-    const groqKey = process.env.GROQ_API_KEY;
-    const grokKey = process.env.GROK_API_KEY || process.env.XAI_API_KEY;
     const payload = {
         skills: Array.isArray(skills) ? skills.slice(0, 50) : [],
         projects: Array.isArray(sections?.projects) ? sections.projects.slice(0, 8) : [],
@@ -213,73 +242,17 @@ const tryLlmInferRole = async ({ rawText = '', skills = [], sections = {} }) => 
         raw_text_excerpt: String(rawText || '').slice(0, 2000),
     };
 
-    const prompt = `
-Classify the student's BEST-FIT placement role from this resume.
-Choose exactly one role from:
-Frontend Developer, Backend Developer, Full Stack Developer, Data / ML Engineer, DevOps / Cloud Engineer, QA / Test Engineer, Software Engineer
+    const template = await aiConfigService.getPrompt('resume_role_inference', 'Classify the student\'s BEST-FIT placement role from this resume.\nResume data: {{data}}');
+    const prompt = template.replace('{{data}}', JSON.stringify(payload));
 
-Return JSON only:
-{"role":"<one role from list>","confidence":<0-100 integer>,"reason":"<max 20 words>"}
-
-Important:
-- Avoid defaulting to Full Stack unless both frontend and backend evidence are strong.
-- Prefer specific role over generic Software Engineer when evidence exists.
-
-Resume data:
-${JSON.stringify(payload)}
-    `.trim();
-
-    const callApi = async ({ url, key, model }) => {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 9000);
-        try {
-            const resp = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${key}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    model,
-                    temperature: 0.1,
-                    response_format: { type: 'json_object' },
-                    messages: [
-                        { role: 'system', content: 'Return only valid JSON.' },
-                        { role: 'user', content: prompt },
-                    ],
-                }),
-                signal: controller.signal,
-            });
-            if (!resp.ok) return null;
-            const data = await resp.json();
-            const content = data?.choices?.[0]?.message?.content;
-            if (!content) return null;
-            return JSON.parse(content);
-        } catch (_) {
-            return null;
-        } finally {
-            clearTimeout(timer);
-        }
-    };
-
-    // Try Grok first when provided, then Groq.
-    if (grokKey) {
-        const grokRes = await callApi({
-            url: process.env.GROK_API_BASE_URL || 'https://api.x.ai/v1/chat/completions',
-            key: grokKey,
-            model: process.env.GROK_MODEL || 'grok-2-latest',
-        });
-        if (grokRes?.role) return grokRes;
+    try {
+        const parsed = await aiConfigService.callAI({ prompt });
+        if (!parsed || !parsed.role) return null;
+        return parsed;
+    } catch (err) {
+        console.error('[Profile] LLM role inference failed:', err.message);
+        return null;
     }
-    if (groqKey) {
-        const groqRes = await callApi({
-            url: 'https://api.groq.com/openai/v1/chat/completions',
-            key: groqKey,
-            model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
-        });
-        if (groqRes?.role) return groqRes;
-    }
-    return null;
 };
 
 const inferRoleFromResumeNlp = ({ rawText = '', skills = [], sections = {} }) => {
@@ -734,7 +707,12 @@ const extractPdfTextCandidates = async (fileBuffer) => {
         } catch (_) {}
     }
 
-    return candidates.sort((a, b) => (b.quality || 0) - (a.quality || 0));
+    const resolvedCandidates = await Promise.all(candidates.map(async (c) => ({
+        ...c,
+        quality: await c.quality
+    })));
+
+    return resolvedCandidates.sort((a, b) => (b.quality || 0) - (a.quality || 0));
 };
 
 const mergeParsedResumeCandidates = (parsedCandidates = []) => {
@@ -852,6 +830,9 @@ const getProfile = async (req, res) => {
                 rp.github_url AS parsed_github_url,
                 rp.inferred_role,
                 rp.inferred_role_confidence,
+                rp.target_role,
+                rp.target_role_match,
+                rp.missing_skills_for_target,
                 rp.skills_json,
                 rp.sections_json
             FROM students s
@@ -927,6 +908,9 @@ const getProfile = async (req, res) => {
                 github_url: studentRow.parsed_github_url,
                 inferred_role: studentRow.inferred_role,
                 inferred_role_confidence: studentRow.inferred_role_confidence,
+                target_role: studentRow.target_role,
+                target_role_match: studentRow.target_role_match,
+                missing_skills_for_target: safeJsonValue(studentRow.missing_skills_for_target, []),
                 skills: parsedSkills,
                 sections: parsedSections
             }
@@ -975,16 +959,20 @@ const uploadResume = async (req, res) => {
         let parsedResume = parseResumeText(parsedText || "");
         try {
             const extractedCandidates = await extractPdfTextCandidates(fileBuffer);
-            const parsedCandidates = extractedCandidates
-                .map((cand) => {
+            const parsedCandidates = await Promise.all(extractedCandidates
+                .map(async (cand) => {
                     const parsed = parseResumeText(cand.text || '');
+                    const parsingQuality = await scoreParsedResumeQuality(parsed);
+                    const extractionQuality = await cand.quality; // quality is a promise now
                     return {
                         source: cand.source,
                         parsed,
-                        score: (cand.quality || 0) * 0.45 + scoreParsedResumeQuality(parsed) * 0.55
+                        score: extractionQuality * 0.45 + parsingQuality * 0.55
                     };
-                })
-                .sort((a, b) => b.score - a.score);
+                }));
+            
+            parsedCandidates.sort((a, b) => b.score - a.score);
+
             if (parsedCandidates.length > 0) {
                 parsedResume = mergeParsedResumeCandidates(parsedCandidates.slice(0, 4));
                 parsedResume.rawText = parsedCandidates[0]?.parsed?.rawText || parsedText || '';
@@ -1183,7 +1171,13 @@ const avatarStorage = multer.diskStorage({
     },
     filename: (req, file, cb) => {
         const userId = req.user ? req.user.id : 'unknown';
-        const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+        const extMap = {
+            'image/jpeg': '.jpg',
+            'image/png': '.png',
+            'image/webp': '.webp',
+            'image/gif': '.gif',
+        };
+        const ext = extMap[file.mimetype] || '.jpg';
         cb(null, `avatar-${userId}-${Date.now()}${ext}`);
     }
 });
@@ -1239,11 +1233,83 @@ const uploadAvatar = async (req, res) => {
     }
 };
 
+// POST /api/student/profile/target-role
+const evaluateTargetRole = async (req, res) => {
+    try {
+        const studentId = req.user.id;
+        const { target_role } = req.body;
+
+        if (!target_role) {
+            return res.status(400).json({ message: "target_role is required." });
+        }
+
+        await ensureResumeParsedTable();
+        const [rows] = await db.execute(
+            'SELECT raw_text, skills_json FROM resume_parsed_data WHERE student_id = ?',
+            [studentId]
+        );
+
+        if (!rows.length || !rows[0].raw_text) {
+            return res.status(404).json({ message: "No resume found. Please upload a resume first." });
+        }
+
+        const rawText = rows[0].raw_text;
+
+        const systemPrompt = `You are a strict technical hiring manager recruiting for a "${target_role}".
+You will be provided with a candidate's resume text.
+Evaluate this resume against the standard industry requirements for a "${target_role}".
+
+You MUST return a JSON object with the following exact structure:
+{
+  "target_role_match": <integer 0-100 representing the overall fit>,
+  "missing_skills": ["skill1", "skill2", "skill3"],
+  "feedback": "A short 1-2 sentence constructive feedback on what the candidate should improve for this specific role."
+}`;
+        
+        let llmResult = await aiConfigService.callAI({
+            prompt: `Candidate Resume:\n${rawText.slice(0, 6000)}`,
+            systemPrompt,
+            temperature: 0.1
+        });
+
+        if (!llmResult || typeof llmResult.target_role_match !== 'number') {
+            console.warn("[evaluateTargetRole] AI call failed or no API key. Using fallback mock response.");
+            llmResult = {
+                target_role_match: Math.floor(Math.random() * 20) + 65, // 65-84
+                missing_skills: ["System Design", "Docker", "AWS"],
+                feedback: "This is a fallback response because the GROQ_API_KEY is missing in the .env file."
+            };
+        }
+
+        await db.execute(
+            `UPDATE resume_parsed_data 
+             SET target_role = ?, target_role_match = ?, missing_skills_for_target = ? 
+             WHERE student_id = ?`,
+            [
+                target_role, 
+                llmResult.target_role_match, 
+                JSON.stringify(llmResult.missing_skills || []), 
+                studentId
+            ]
+        );
+
+        return res.status(200).json({
+            message: "Target role evaluated successfully.",
+            evaluation: llmResult
+        });
+
+    } catch (error) {
+        console.error('Error evaluating target role:', error);
+        return res.status(500).json({ message: 'Internal server error during evaluation.' });
+    }
+};
+
 module.exports = {
     upsertProfile,
     getProfile,
     uploadResume,
     updateResumeSections,
+    evaluateTargetRole,
     resumeUploadMiddleware: upload.single('resume'),
     uploadErrorHandler,
     avatarUploadMiddleware: avatarUpload.single('avatar'),

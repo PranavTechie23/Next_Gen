@@ -46,10 +46,11 @@ exports.protect = async (req, res, next) => {
                 req.user = currentUser[0];
                 req.token = token; // Attach token for logout
                 
-                // Debug Header for troubleshooting 403s on Render
-                res.setHeader('X-Auth-Role', req.user.role || 'NONE');
-                res.setHeader('X-Auth-Id', req.user.id || 'NONE');
-                
+                if (process.env.NODE_ENV !== 'production') {
+                    res.setHeader('X-Auth-Role', req.user.role || 'NONE');
+                    res.setHeader('X-Auth-Id', req.user.id || 'NONE');
+                }
+
                 next();
 
             } finally {
@@ -62,7 +63,11 @@ exports.protect = async (req, res, next) => {
             const message = error.name === 'TokenExpiredError' 
                 ? "Your session has expired. Please log in again." 
                 : "Not authorized, token failed.";
-            return res.status(401).json({ message, error: error.message });
+            const body = { message };
+            if (process.env.NODE_ENV !== 'production') {
+                body.error = error.message;
+            }
+            return res.status(401).json(body);
         }
     } else {
         console.warn("Auth Middleware: No token found in headers or cookies.");
