@@ -74,7 +74,7 @@ exports.attachTenantScope = async (req, res, next) => {
     }
 };
 
-exports.getTenantScope  = (req) => req.tenantScope ?? null;
+exports.getTenantScope = (req) => req.tenantScope ?? null;
 exports.resolveInstitutionId = (req) => req.tenantScope?.institutionId ?? req.user?.institution_id ?? null;
 exports.scopeFromInstitutionId = (institutionId) => institutionId ? { institutionId, departmentId: null } : null;
 
@@ -83,9 +83,9 @@ exports.scopeFromInstitutionId = (institutionId) => institutionId ? { institutio
  * ───────────────────────────────────────────────────────────────────────────── */
 
 exports.dashboardCacheScope = (scope, filters = {}) => {
-    let base = `admin_dashboard:inst:${scope.institutionId}`;
+    let base = `TPO_dashboard:inst:${scope.institutionId}`;
     if (scope.departmentId != null) base += `:dept:${scope.departmentId}`;
-    if (filters.year)              base += `:y:${filters.year}`;
+    if (filters.year) base += `:y:${filters.year}`;
     if (filters.branches?.length) {
         base += `:br:${filters.branches.map((b) => encodeURIComponent(b)).join(',')}`;
     }
@@ -110,7 +110,7 @@ const _requireScope = (scope) => {
  */
 exports.studentInstitutionClause = (scope, aliases = { s: 's', u: 'u' }) => {
     _requireScope(scope);
-    const parts  = [`${aliases.u}.institution_id = ?`];
+    const parts = [`${aliases.u}.institution_id = ?`];
     const params = [scope.institutionId];
     if (scope.departmentId != null) {
         parts.push(`${aliases.s}.department_id = ?`);
@@ -134,7 +134,7 @@ exports.webinarInstitutionClause = (scope, alias = 'w') => ({
  */
 exports.driveTenantClause = (scope, alias = 'd') => {
     _requireScope(scope);
-    const deptSql    = scope.departmentId != null ? ' AND s_d.department_id = ?' : '';
+    const deptSql = scope.departmentId != null ? ' AND s_d.department_id = ?' : '';
     const deptParams = scope.departmentId != null ? [scope.departmentId] : [];
 
     const appExists = `EXISTS (

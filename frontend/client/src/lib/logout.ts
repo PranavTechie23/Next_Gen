@@ -1,13 +1,16 @@
+import { buildApiUrl } from "@/lib/api";
+import { clearAllDashboardCaches } from "@/lib/dashboardCache";
+import { clearClientAuthState, logoutSession } from "@/lib/authSession";
 import { toast } from "sonner";
 
 type NavigateFn = (path: string) => void;
 
 /**
- * Clears client auth and navigates home. Uses the global Sonner toaster (bottom-right, green success style).
+ * Invalidates the server session (httpOnly cookie) and clears client state.
  */
-export function performClientLogout(navigate: NavigateFn, message = "Successfully logged out") {
-  localStorage.removeItem("token");
-  localStorage.removeItem("userRole");
+export async function performClientLogout(navigate: NavigateFn, message = "Successfully logged out") {
+  await logoutSession();
+  clearAllDashboardCaches();
   toast.success(message);
   navigate("/");
 }

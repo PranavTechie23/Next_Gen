@@ -4,12 +4,11 @@ const db = require('../config/db');
 exports.protect = async (req, res, next) => {
     let token;
 
-    // Prefer explicit Authorization header over cookie.
-    // This avoids stale/blacklisted cookies overriding a fresh bearer token.
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-        token = req.headers.authorization.split(' ')[1];
-    } else if (req.cookies && req.cookies.token) {
+    // Prefer httpOnly cookie over Authorization header (mitigates XSS token theft).
+    if (req.cookies && req.cookies.token) {
         token = req.cookies.token;
+    } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        token = req.headers.authorization.split(' ')[1];
     }
 
     if (token) {
@@ -88,9 +87,12 @@ exports.authorize = (...roles) => {
         const requiredRoles = roles.map((r) => String(r || '').trim().toUpperCase());
 
         if (!requiredRoles.includes(userRole)) {
-            return res.status(403).json({ 
-                message: `Access denied. User role '${userRole}' is not authorized. Required: [${requiredRoles.join(', ')}]`,
-                code: 'ROLE_MISMATCH'
+            const isProduction = process.env.NODE_ENV === 'production';
+            return res.status(403).json({
+                message: isProduction
+                    ? 'Access denied.'
+                    : `Access denied. User role '${userRole}' is not authorized. Required: [${requiredRoles.join(', ')}]`,
+                code: 'ROLE_MISMATCH',
             });
         }
         next();

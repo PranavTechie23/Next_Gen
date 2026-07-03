@@ -1,21 +1,6 @@
-import axios from "axios";
-import { buildApiUrl } from "@/lib/api";
+import { createApiClient } from "@/lib/apiClient";
 
-const api = axios.create({
-  baseURL: buildApiUrl("/admin"),
-  withCredentials: true,
-});
-
-api.interceptors.request.use((config) => {
-  const token =
-    localStorage.getItem("token") ||
-    localStorage.getItem("accessToken") ||
-    localStorage.getItem("authToken");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+const api = createApiClient("/TPO");
 
 export type DashboardAnalyticsParams = {
   year?: string | number;
@@ -31,7 +16,7 @@ export type AnalyticsFilterOptions = {
   scopedToDepartment?: boolean;
 };
 
-export const adminApi = {
+export const TPOApi = {
   getDashboardAnalytics: async (params?: DashboardAnalyticsParams) => {
     const response = await api.get("analytics/dashboard", { params });
     return response.data;
@@ -66,19 +51,40 @@ export const adminApi = {
     };
   },
 
-  getStudents: async (params: { 
-    page?: number, 
-    limit?: number, 
-    search?: string, 
-    branch?: string, 
-    status?: string 
+  getStudents: async (params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    branch?: string;
+    status?: string;
   }) => {
     const response = await api.get("students", { params });
     return response.data;
   },
 
-  getApplications: async (params: { page?: number; limit?: number; search?: string; branch?: string; status?: string }) => {
+  getStudentDetail: async (id: string | number) => {
+    const response = await api.get(`students/${id}`);
+    return response.data;
+  },
+
+  getApplications: async (params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    branch?: string;
+    status?: string;
+    company?: string;
+    drive?: string;
+  }) => {
     const response = await api.get("applications", { params });
+    return response.data;
+  },
+
+  updateApplicationStatus: async (
+    id: string | number,
+    payload: { status: string; current_round?: string }
+  ) => {
+    const response = await api.put(`applications/${id}/status`, payload);
     return response.data;
   },
 
@@ -115,6 +121,11 @@ export const adminApi = {
 
   updateWebinar: async (id: string | number, payload: any) => {
     const response = await api.put(`webinars/${id}`, payload);
+    return response.data;
+  },
+
+  deleteDeptEvent: async (id: string | number) => {
+    const response = await api.delete(`dept-events/${id}`);
     return response.data;
   },
 
