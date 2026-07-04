@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt'); // Use the existing bcrypt module
 const crypto = require('crypto');
 const PDFDocument = require('pdfkit');
 const sendEmail = require('../utils/email');
+const { serveCachedDashboard } = require('../utils/dashboardCache');
 
 /** Returns true if the current database has the given column (for schema drift / legacy DBs). */
 const hasColumn = async (tableName, columnName) => {
@@ -132,7 +133,7 @@ const uploadStudents = async (req, res) => {
 
         // 1. Parse Excel file from buffer using xlsx
         const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
-        
+
         // Assume data is in the first sheet
         const sheetName = workbook.SheetNames[0];
         const sheetData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
@@ -141,14 +142,14 @@ const uploadStudents = async (req, res) => {
             console.log("[DEV] Parsed Excel data is empty.");
             return res.status(400).json({ message: "The uploaded Excel file is empty." });
         }
-        
+
         console.log(`[DEV] Parsed ${sheetData.length} rows from Excel file.`);
         // console.log("[DEV] First row sample:", sheetData[0]); // Optional: log the first row to see headers
 
         let createdCount = 0;
         let updatedCount = 0;
         const emailsToSend = [];
-        
+
         // Fetch institution_id from the authenticated user (TPO_HEAD) if applicable, or fallback to null/1
         const institutionId = req.user && req.user.institution_id ? req.user.institution_id : null;
 
@@ -166,7 +167,7 @@ const uploadStudents = async (req, res) => {
 
         // 2. Get DB connection for transactions to ensure atomicity
         const connection = await db.getConnection();
-        
+
         try {
             await connection.beginTransaction();
 
@@ -202,17 +203,17 @@ const uploadStudents = async (req, res) => {
                          SET current_cgpa = ?, active_backlogs = ?, tenth_marks = ?, twelfth_marks = ?
                          WHERE roll_number = ?`,
                         [
-                            current_cgpa !== undefined ? current_cgpa : null, 
-                            active_backlogs !== undefined ? active_backlogs : 0, 
-                            tenth_marks !== undefined ? tenth_marks : null, 
-                            twelfth_marks !== undefined ? twelfth_marks : null, 
+                            current_cgpa !== undefined ? current_cgpa : null,
+                            active_backlogs !== undefined ? active_backlogs : 0,
+                            tenth_marks !== undefined ? tenth_marks : null,
+                            twelfth_marks !== undefined ? twelfth_marks : null,
                             roll_number
                         ]
                     );
                     updatedCount++;
                 } else {
                     console.log(`[DEV] Creating new student: ${roll_number}`);
-                    
+
                     // Create new student
                     // Ensure email is provided for user creation
                     if (!email) {
@@ -237,12 +238,12 @@ const uploadStudents = async (req, res) => {
                         `INSERT INTO students (user_id, roll_number, department_id, current_cgpa, active_backlogs, tenth_marks, twelfth_marks)
                          VALUES (?, ?, ?, ?, ?, ?, ?)`,
                         [
-                            newUserId, 
-                            roll_number, 
-                            department_id || null, 
-                            current_cgpa !== undefined ? current_cgpa : null, 
-                            active_backlogs !== undefined ? active_backlogs : 0, 
-                            tenth_marks !== undefined ? tenth_marks : null, 
+                            newUserId,
+                            roll_number,
+                            department_id || null,
+                            current_cgpa !== undefined ? current_cgpa : null,
+                            active_backlogs !== undefined ? active_backlogs : 0,
+                            tenth_marks !== undefined ? tenth_marks : null,
                             twelfth_marks !== undefined ? twelfth_marks : null
                         ]
                     );
@@ -255,7 +256,7 @@ const uploadStudents = async (req, res) => {
                     );
 
                     emailsToSend.push({ email, roll_number, temporaryPassword });
-                    
+
                     // DEV Logging
                     console.log(`[DEV] Created Account -> Email: ${email}, Password: ${temporaryPassword}`);
 
@@ -267,7 +268,7 @@ const uploadStudents = async (req, res) => {
             await connection.commit();
             // Release immediately after commit so it's immune to network/SMTP errors later.
             connection.release();
-            
+
             // 5. Send emails
             let emailsSentCount = 0;
             for (const studentData of emailsToSend) {
@@ -309,7 +310,7 @@ const uploadStudents = async (req, res) => {
             await connection.rollback();
             // Handle any database transaction errors
             throw error; // Re-throw to be caught by the outer catch block
-        } 
+        }
         // connection is released earlier on success, let's just make sure we don't leak otherwise
 
     } catch (error) {
@@ -417,7 +418,7 @@ const getStudentDetails = async (req, res) => {
 
         // 3. Fetch student skills
         const [skills] = await db.execute(`
-            SELECT sk.name, ss.proficiency_level
+            SELECT sk.name
             FROM student_skills ss
             JOIN skills sk ON ss.skill_id = sk.id
             WHERE ss.student_id = ?
@@ -434,16 +435,64 @@ const getStudentDetails = async (req, res) => {
 
         student.projects = projects;
 
+        const [resumeData] = await db.execute(`
+            SELECT sections_json
+            FROM resume_parsed_data
+            WHERE student_id = ?
+        `, [studentId]);
+
+        let parsed = null;
+        if (resumeData.length > 0 && resumeData[0].sections_json) {
+            parsed = resumeData[0].sections_json;
+        }
+
+        // Fallback to parsed resume projects if manual projects are empty
+        if (student.projects.length === 0 && parsed) {
+            if (parsed.projects && Array.isArray(parsed.projects)) {
+                student.projects = parsed.projects.map((p, index) => {
+                    return {
+                        id: 'parsed-' + index,
+                        title: typeof p === 'string' ? p : p.title || 'Untitled Project',
+                        description: p.bullets ? p.bullets.join(' ') : (p.description || ''),
+                        project_link: p.link || p.project_link || ''
+                    };
+                });
+            }
+        }
+
+        // Fetch experience from resume parsing
+        if (parsed && parsed.experience && Array.isArray(parsed.experience)) {
+            student.experience = parsed.experience.map((e, index) => {
+                return {
+                    id: 'exp-' + index,
+                    title: typeof e === 'string' ? e : e.title || e.role || 'Role',
+                    company: typeof e === 'string' ? '' : e.company || e.organization || '',
+                    description: e.bullets ? e.bullets.join(' ') : (e.description || '')
+                };
+            });
+        } else {
+            student.experience = [];
+        }
+
+        // 5. Fetch student performance metrics (AMCAT scores, coding, mock interview, end-sem %)
+        const [performance] = await db.execute(`
+            SELECT amcat_quant, amcat_verbal, amcat_logical, coding_test_score, mock_interview_score, endsem_percentage
+            FROM student_performance_metrics
+            WHERE student_id = ?
+        `, [studentId]);
+
+        student.performance = performance.length > 0 ? performance[0] : null;
+
         res.status(200).json(student);
 
     } catch (error) {
         console.error("Error fetching student details:", error);
-        res.status(500).json({ message: "Internal server error while fetching student details", error: error.message });
+        res.status(500).json({ message: "Internal server error while fetching student details" });
     }
 };
 
 /**
- * Update student information (academic/admin only)
+ * Update student information (academic/TPO only)
  * PUT /api/dept/students/:id
  */
 const updateStudent = async (req, res) => {
@@ -474,17 +523,17 @@ const updateStudent = async (req, res) => {
         }
 
         // 3. Extract data to update (only non-subjective)
-        const { 
-            current_cgpa, 
-            active_backlogs, 
-            tenth_marks, 
-            twelfth_marks, 
-            is_academic_data_locked, 
-            is_placed, 
-            current_package_value, 
-            is_debarred, 
-            debar_reason, 
-            debar_lift_date 
+        const {
+            current_cgpa,
+            active_backlogs,
+            tenth_marks,
+            twelfth_marks,
+            is_academic_data_locked,
+            is_placed,
+            current_package_value,
+            is_debarred,
+            debar_reason,
+            debar_lift_date
         } = req.body;
 
         const updateFields = [];
@@ -544,7 +593,7 @@ const createStudentsManually = async (req, res) => {
         let updatedCount = 0;
         const emailsToSend = [];
         const errors = [];
-        
+
         // Fetch institution_id from the authenticated user (TPO_HEAD) if applicable, or fallback to null/1
         const institutionId = req.user && req.user.institution_id ? req.user.institution_id : null;
 
@@ -562,19 +611,19 @@ const createStudentsManually = async (req, res) => {
 
         // Get DB connection for transactions to ensure atomicity
         const connection = await db.getConnection();
-        
+
         try {
             await connection.beginTransaction();
 
             for (let i = 0; i < students.length; i++) {
                 const student = students[i];
-                const { 
-                    roll_number, 
-                    email, 
-                    current_cgpa, 
-                    active_backlogs, 
-                    tenth_marks, 
-                    twelfth_marks 
+                const {
+                    roll_number,
+                    email,
+                    current_cgpa,
+                    active_backlogs,
+                    tenth_marks,
+                    twelfth_marks
                 } = student;
 
                 if (!roll_number || !email) {
@@ -598,10 +647,10 @@ const createStudentsManually = async (req, res) => {
                          SET current_cgpa = ?, active_backlogs = ?, tenth_marks = ?, twelfth_marks = ?
                          WHERE roll_number = ?`,
                         [
-                            current_cgpa !== undefined ? current_cgpa : null, 
-                            active_backlogs !== undefined ? active_backlogs : 0, 
-                            tenth_marks !== undefined ? tenth_marks : null, 
-                            twelfth_marks !== undefined ? twelfth_marks : null, 
+                            current_cgpa !== undefined ? current_cgpa : null,
+                            active_backlogs !== undefined ? active_backlogs : 0,
+                            tenth_marks !== undefined ? tenth_marks : null,
+                            twelfth_marks !== undefined ? twelfth_marks : null,
                             roll_number
                         ]
                     );
@@ -619,8 +668,8 @@ const createStudentsManually = async (req, res) => {
                     );
 
                     if (existingEmail.length > 0) {
-                         errors.push({ index: i, email: email, error: "Email is already registered." });
-                         continue;
+                        errors.push({ index: i, email: email, error: "Email is already registered." });
+                        continue;
                     }
 
 
@@ -637,12 +686,12 @@ const createStudentsManually = async (req, res) => {
                         `INSERT INTO students (user_id, roll_number, department_id, current_cgpa, active_backlogs, tenth_marks, twelfth_marks)
                          VALUES (?, ?, ?, ?, ?, ?, ?)`,
                         [
-                            newUserId, 
-                            roll_number, 
-                            department_id, 
-                            current_cgpa !== undefined ? current_cgpa : null, 
-                            active_backlogs !== undefined ? active_backlogs : 0, 
-                            tenth_marks !== undefined ? tenth_marks : null, 
+                            newUserId,
+                            roll_number,
+                            department_id,
+                            current_cgpa !== undefined ? current_cgpa : null,
+                            active_backlogs !== undefined ? active_backlogs : 0,
+                            tenth_marks !== undefined ? tenth_marks : null,
                             twelfth_marks !== undefined ? twelfth_marks : null
                         ]
                     );
@@ -663,7 +712,7 @@ const createStudentsManually = async (req, res) => {
             await connection.commit();
             // Release after successful database commit
             connection.release();
-            
+
             // Send emails
             let emailsSentCount = 0;
             for (const studentData of emailsToSend) {
@@ -827,10 +876,10 @@ const reviewStudentProfile = async (req, res) => {
             }
             // If APPROVE, we essentially leave the requested fields as they are since they are already live in this schema.
             // If the schema evolved to have a `status` column on profiles/skills, we'd update it to VERIFIED here.
-            
+
             await connection.commit();
-            res.status(200).json({ 
-                message: `Student profile updates ${action.toLowerCase()}ed successfully.` 
+            res.status(200).json({
+                message: `Student profile updates ${action.toLowerCase()}ed successfully.`
             });
 
         } catch (dbError) {
@@ -910,6 +959,269 @@ const getReadinessDesk = async (req, res) => {
 };
 
 /**
+ * Build dashboard payload for a department (used by cache layer).
+ */
+async function buildDeptDashboardPayload(deptId) {
+    const [[deptTotals]] = await db.execute(
+        `SELECT COUNT(*) AS total_students
+         FROM students
+         WHERE department_id = ?`,
+        [deptId]
+    );
+    const totalStudents = Number(deptTotals?.total_students || 0);
+
+    const [[deptPlacement]] = await db.execute(
+        `SELECT
+            COUNT(DISTINCT CASE WHEN a.status = 'SELECTED' THEN s.user_id END) AS placed_students,
+            ROUND(AVG(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS avg_package,
+            ROUND(MAX(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS highest_package
+         FROM students s
+         LEFT JOIN applications a ON a.student_id = s.user_id
+         LEFT JOIN job_postings jp ON jp.id = a.job_id
+         WHERE s.department_id = ?`,
+        [deptId]
+    );
+
+    const placedStudents = Number(deptPlacement?.placed_students || 0);
+    const avgPackage = Number(deptPlacement?.avg_package || 0);
+    const highestPackage = Number(deptPlacement?.highest_package || 0);
+
+    const readinessRows = await getDepartmentReadinessRows(deptId);
+
+    const atRiskStudentsList = readinessRows
+        .map((r) => {
+            return {
+                id: r.roll_number || String(r.user_id),
+                name: String(r.email || '').split('@')[0] || r.roll_number || 'Student',
+                readiness: r.readiness,
+                status: r.readiness_band,
+                issues: r.issues,
+                lastActivity: 'Recent',
+                risk_score: 100 - r.readiness,
+            };
+        })
+        .filter((r) => r.risk_score >= 25 && r.issues.length > 0)
+        .sort((a, b) => b.risk_score - a.risk_score);
+
+    // Count students pursuing Higher Studies or Entrepreneurship (verified or pending)
+    const [[altPathRow]] = await db.execute(
+        `SELECT COUNT(DISTINCT ee.student_id) AS alt_path_count
+         FROM external_engagements ee
+         JOIN students s ON s.user_id = ee.student_id
+         WHERE s.department_id = ?
+           AND ee.type IN ('HIGHER_STUDIES', 'ENTREPRENEURSHIP')`,
+        [deptId]
+    );
+    const altPathStudents = Number(altPathRow?.alt_path_count || 0);
+
+    const [monthlyRows] = await db.execute(
+        `SELECT
+            DATE_FORMAT(a.applied_at, '%b') AS month,
+            MONTH(a.applied_at) AS month_num,
+            COUNT(DISTINCT CASE WHEN a.status = 'SELECTED' THEN a.student_id END) AS placements
+         FROM applications a
+         JOIN students s ON s.user_id = a.student_id
+         WHERE s.department_id = ?
+           AND a.applied_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+         GROUP BY DATE_FORMAT(a.applied_at, '%b'), MONTH(a.applied_at)
+         ORDER BY month_num ASC`,
+        [deptId]
+    );
+
+    const yearTrend = (monthlyRows || []).map((r) => ({
+        month: r.month,
+        placements: Number(r.placements || 0),
+    }));
+
+    const [[packageBands]] = await db.execute(
+        `SELECT
+            SUM(CASE WHEN jp.package_value >= 12 THEN 1 ELSE 0 END) AS high,
+            SUM(CASE WHEN jp.package_value >= 7 AND jp.package_value < 12 THEN 1 ELSE 0 END) AS medium,
+            SUM(CASE WHEN jp.package_value > 0 AND jp.package_value < 7 THEN 1 ELSE 0 END) AS entry
+         FROM applications a
+         JOIN students s ON s.user_id = a.student_id
+         JOIN job_postings jp ON jp.id = a.job_id
+         WHERE s.department_id = ?
+           AND a.status = 'SELECTED'`,
+        [deptId]
+    );
+
+    const totalSelectedOffers =
+        Number(packageBands?.high || 0) +
+        Number(packageBands?.medium || 0) +
+        Number(packageBands?.entry || 0);
+    const toPercent = (n) =>
+        totalSelectedOffers > 0 ? Number(((Number(n || 0) / totalSelectedOffers) * 100).toFixed(0)) : 0;
+
+    const placementDistribution = [
+        { name: "12+ LPA", value: toPercent(packageBands?.high), color: "#3B82F6" },
+        { name: "7-12 LPA", value: toPercent(packageBands?.medium), color: "#10B981" },
+        { name: "<7 LPA", value: toPercent(packageBands?.entry), color: "#F59E0B" },
+    ];
+
+    const [[collegeStats]] = await db.execute(
+        `SELECT
+            COUNT(DISTINCT s.user_id) AS total_students,
+            COUNT(DISTINCT CASE WHEN a.status = 'SELECTED' THEN s.user_id END) AS placed_students,
+            ROUND(AVG(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS avg_package,
+            ROUND(MAX(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS highest_package
+         FROM students s
+         LEFT JOIN applications a ON a.student_id = s.user_id
+         LEFT JOIN job_postings jp ON jp.id = a.job_id`
+    );
+
+    const deptPlacementPct = totalStudents > 0 ? Number(((placedStudents / totalStudents) * 100).toFixed(1)) : 0;
+    const collegeTotalStudents = Number(collegeStats?.total_students || 0);
+    const collegePlacedStudents = Number(collegeStats?.placed_students || 0);
+    const collegePlacementPct = collegeTotalStudents > 0 ? Number(((collegePlacedStudents / collegeTotalStudents) * 100).toFixed(1)) : 0;
+
+    const comparisonData = [
+        { metric: "Placement %", dept: deptPlacementPct, collegeAvg: collegePlacementPct },
+        { metric: "Avg Package (LPA)", dept: avgPackage, collegeAvg: Number(collegeStats?.avg_package || 0) },
+        { metric: "Highest Package (LPA)", dept: highestPackage, collegeAvg: Number(collegeStats?.highest_package || 0) },
+    ];
+
+    let skillsRadarData = [];
+    try {
+        const [skillsRows] = await db.execute(
+            `SELECT
+                AVG(spm.coding_test_score) AS coding,
+                AVG(spm.mock_interview_score) AS communication,
+                AVG(spm.amcat_logical) AS aptitude,
+                AVG(spm.amcat_quant) AS quantitative,
+                AVG(spm.amcat_verbal) AS verbal
+             FROM student_performance_metrics spm
+             JOIN students s ON s.user_id = spm.student_id
+             WHERE s.department_id = ?`,
+            [deptId]
+        );
+
+        const [collegeSkillsRows] = await db.execute(
+            `SELECT
+                AVG(coding_test_score) AS coding,
+                AVG(mock_interview_score) AS communication,
+                AVG(amcat_logical) AS aptitude,
+                AVG(amcat_quant) AS quantitative,
+                AVG(amcat_verbal) AS verbal
+             FROM student_performance_metrics`
+        );
+
+        const deptSkill = skillsRows?.[0] || {};
+        const collegeSkill = collegeSkillsRows?.[0] || {};
+        skillsRadarData = [
+            { skill: "Coding", dept: Number(deptSkill.coding || 0), collegeAvg: Number(collegeSkill.coding || 0) },
+            { skill: "Communication", dept: Number(deptSkill.communication || 0), collegeAvg: Number(collegeSkill.communication || 0) },
+            { skill: "Aptitude", dept: Number(deptSkill.aptitude || 0), collegeAvg: Number(collegeSkill.aptitude || 0) },
+            { skill: "Quant", dept: Number(deptSkill.quantitative || 0), collegeAvg: Number(collegeSkill.quantitative || 0) },
+            { skill: "Verbal", dept: Number(deptSkill.verbal || 0), collegeAvg: Number(collegeSkill.verbal || 0) },
+        ];
+    } catch {
+        skillsRadarData = [];
+    }
+
+    const [topRows] = await db.execute(
+        `SELECT
+            s.roll_number,
+            u.email,
+            COUNT(CASE WHEN a.status = 'SELECTED' THEN 1 END) AS offers,
+            ROUND(MAX(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS package
+         FROM students s
+         JOIN users u ON u.id = s.user_id
+         LEFT JOIN applications a ON a.student_id = s.user_id
+         LEFT JOIN job_postings jp ON jp.id = a.job_id
+         WHERE s.department_id = ?
+         GROUP BY s.user_id, s.roll_number, u.email
+         HAVING offers > 0
+         ORDER BY offers DESC, package DESC
+         LIMIT 5`,
+        [deptId]
+    );
+
+    const topPerformers = (topRows || []).map((r, idx) => ({
+        rank: idx + 1,
+        name: String(r.email || '').split('@')[0] || r.roll_number || `Student ${idx + 1}`,
+        score: Math.min(100, Math.round(60 + Number(r.offers || 0) * 8 + Number(r.package || 0))),
+        offers: Number(r.offers || 0),
+        package: Number(r.package || 0),
+    }));
+
+    let upcomingEvents = [];
+    try {
+        const [deptEventRows] = await db.execute(
+            `SELECT id, title, date AS starts_at, type, meeting_link, target_batch, expires_at
+             FROM dept_events
+             WHERE department_id = ?
+               AND date >= NOW()
+               AND (expires_at IS NULL OR expires_at > NOW())
+             ORDER BY date ASC
+             LIMIT 5`,
+            [deptId]
+        );
+
+        const hasStartsAt = await hasColumn('webinars', 'starts_at');
+        const hasStatus = await hasColumn('webinars', 'status');
+        const hasLegacyDate = await hasColumn('webinars', 'date_time');
+
+        let eventRows = [];
+        if (hasStartsAt && hasStatus) {
+            [eventRows] = await db.execute(
+                `SELECT title, starts_at
+                 FROM webinars
+                 WHERE starts_at >= NOW()
+                   AND status IN ('PUBLISHED', 'COMPLETED')
+                 ORDER BY starts_at ASC
+                 LIMIT 5`
+            );
+        } else if (hasLegacyDate) {
+            [eventRows] = await db.execute(
+                `SELECT title, date_time AS starts_at
+                 FROM webinars
+                 WHERE date_time >= NOW()
+                 ORDER BY date_time ASC
+                 LIMIT 5`
+            );
+        }
+
+        upcomingEvents = [...(deptEventRows || []), ...(eventRows || [])]
+            .sort((a, b) => new Date(a.starts_at || 0) - new Date(b.starts_at || 0))
+            .slice(0, 5)
+            .map((e) => ({
+                id: e.id ?? null,
+                source: e.id ? 'dept_event' : 'webinar',
+                startsAt: e.starts_at || null,
+                date: e.starts_at
+                    ? new Date(e.starts_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                    : '',
+                title: e.title || 'Webinar',
+                type: e.type || 'Webinar',
+                meetingLink: e.meeting_link || null,
+                targetBatch: e.target_batch || 'All',
+                expiresAt: e.expires_at || null,
+                attendees: totalStudents,
+            }));
+    } catch (webinarErr) {
+        console.warn('buildDeptDashboardPayload: skipping upcoming webinars', webinarErr.message);
+        upcomingEvents = [];
+    }
+
+    return {
+        stats: {
+            totalStudents,
+            placedStudents,
+            avgPackage: Number(avgPackage.toFixed(2)),
+            altPathStudents,
+        },
+        yearTrend,
+        placementDistribution,
+        comparisonData,
+        atRiskStudents: atRiskStudentsList.slice(0, 5),
+        topPerformers,
+        upcomingEvents,
+        skillsRadarData,
+    };
+}
+
+/**
  * Get dashboard statistics for the TPO_HEAD
  * GET /api/dept/dashboard/stats
  */
@@ -927,248 +1239,12 @@ const getDashboardStats = async (req, res) => {
         }
 
         const deptId = headResult[0].department_id;
+        const cacheScopeKey = `dept_dashboard:dept:${deptId}`;
 
-        const [[deptTotals]] = await db.execute(
-            `SELECT COUNT(*) AS total_students
-             FROM students
-             WHERE department_id = ?`,
-            [deptId]
-        );
-        const totalStudents = Number(deptTotals?.total_students || 0);
-
-        const [[deptPlacement]] = await db.execute(
-            `SELECT
-                COUNT(DISTINCT CASE WHEN a.status = 'SELECTED' THEN s.user_id END) AS placed_students,
-                ROUND(AVG(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS avg_package,
-                ROUND(MAX(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS highest_package
-             FROM students s
-             LEFT JOIN applications a ON a.student_id = s.user_id
-             LEFT JOIN job_postings jp ON jp.id = a.job_id
-             WHERE s.department_id = ?`,
-            [deptId]
-        );
-
-        const placedStudents = Number(deptPlacement?.placed_students || 0);
-        const avgPackage = Number(deptPlacement?.avg_package || 0);
-        const highestPackage = Number(deptPlacement?.highest_package || 0);
-
-        const readinessRows = await getDepartmentReadinessRows(deptId);
-
-        const atRiskStudentsList = readinessRows
-            .map((r) => {
-                return {
-                    id: r.roll_number || String(r.user_id),
-                    name: String(r.email || '').split('@')[0] || r.roll_number || 'Student',
-                    readiness: r.readiness,
-                    status: r.readiness_band,
-                    issues: r.issues,
-                    lastActivity: 'Recent',
-                    risk_score: 100 - r.readiness,
-                };
-            })
-            .filter((r) => r.risk_score >= 25 && r.issues.length > 0)
-            .sort((a, b) => b.risk_score - a.risk_score);
-
-        const [monthlyRows] = await db.execute(
-            `SELECT
-                DATE_FORMAT(a.applied_at, '%b') AS month,
-                MONTH(a.applied_at) AS month_num,
-                COUNT(DISTINCT CASE WHEN a.status = 'SELECTED' THEN a.student_id END) AS placements
-             FROM applications a
-             JOIN students s ON s.user_id = a.student_id
-             WHERE s.department_id = ?
-               AND a.applied_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
-             GROUP BY DATE_FORMAT(a.applied_at, '%b'), MONTH(a.applied_at)
-             ORDER BY month_num ASC`,
-            [deptId]
-        );
-
-        const yearTrend = (monthlyRows || []).map((r) => ({
-            month: r.month,
-            placements: Number(r.placements || 0),
-        }));
-
-        const [[packageBands]] = await db.execute(
-            `SELECT
-                SUM(CASE WHEN jp.package_value >= 12 THEN 1 ELSE 0 END) AS high,
-                SUM(CASE WHEN jp.package_value >= 7 AND jp.package_value < 12 THEN 1 ELSE 0 END) AS medium,
-                SUM(CASE WHEN jp.package_value > 0 AND jp.package_value < 7 THEN 1 ELSE 0 END) AS entry
-             FROM applications a
-             JOIN students s ON s.user_id = a.student_id
-             JOIN job_postings jp ON jp.id = a.job_id
-             WHERE s.department_id = ?
-               AND a.status = 'SELECTED'`,
-            [deptId]
-        );
-
-        const totalSelectedOffers =
-            Number(packageBands?.high || 0) +
-            Number(packageBands?.medium || 0) +
-            Number(packageBands?.entry || 0);
-        const toPercent = (n) =>
-            totalSelectedOffers > 0 ? Number(((Number(n || 0) / totalSelectedOffers) * 100).toFixed(0)) : 0;
-
-        const placementDistribution = [
-            { name: "12+ LPA", value: toPercent(packageBands?.high), color: "#3B82F6" },
-            { name: "7-12 LPA", value: toPercent(packageBands?.medium), color: "#10B981" },
-            { name: "<7 LPA", value: toPercent(packageBands?.entry), color: "#F59E0B" },
-        ];
-
-        const [[collegeStats]] = await db.execute(
-            `SELECT
-                COUNT(DISTINCT s.user_id) AS total_students,
-                COUNT(DISTINCT CASE WHEN a.status = 'SELECTED' THEN s.user_id END) AS placed_students,
-                ROUND(AVG(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS avg_package,
-                ROUND(MAX(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS highest_package
-             FROM students s
-             LEFT JOIN applications a ON a.student_id = s.user_id
-             LEFT JOIN job_postings jp ON jp.id = a.job_id`
-        );
-
-        const deptPlacementPct = totalStudents > 0 ? Number(((placedStudents / totalStudents) * 100).toFixed(1)) : 0;
-        const collegeTotalStudents = Number(collegeStats?.total_students || 0);
-        const collegePlacedStudents = Number(collegeStats?.placed_students || 0);
-        const collegePlacementPct = collegeTotalStudents > 0 ? Number(((collegePlacedStudents / collegeTotalStudents) * 100).toFixed(1)) : 0;
-
-        const comparisonData = [
-            { metric: "Placement %", dept: deptPlacementPct, collegeAvg: collegePlacementPct },
-            { metric: "Avg Package (LPA)", dept: avgPackage, collegeAvg: Number(collegeStats?.avg_package || 0) },
-            { metric: "Highest Package (LPA)", dept: highestPackage, collegeAvg: Number(collegeStats?.highest_package || 0) },
-        ];
-
-        let skillsRadarData = [];
-        try {
-            const [skillsRows] = await db.execute(
-                `SELECT
-                    AVG(spm.coding_test_score) AS coding,
-                    AVG(spm.mock_interview_score) AS communication,
-                    AVG(spm.amcat_logical) AS aptitude,
-                    AVG(spm.amcat_quant) AS quantitative,
-                    AVG(spm.amcat_verbal) AS verbal
-                 FROM student_performance_metrics spm
-                 JOIN students s ON s.user_id = spm.student_id
-                 WHERE s.department_id = ?`,
-                [deptId]
-            );
-
-            const [collegeSkillsRows] = await db.execute(
-                `SELECT
-                    AVG(coding_test_score) AS coding,
-                    AVG(mock_interview_score) AS communication,
-                    AVG(amcat_logical) AS aptitude,
-                    AVG(amcat_quant) AS quantitative,
-                    AVG(amcat_verbal) AS verbal
-                 FROM student_performance_metrics`
-            );
-
-            const deptSkill = skillsRows?.[0] || {};
-            const collegeSkill = collegeSkillsRows?.[0] || {};
-            skillsRadarData = [
-                { skill: "Coding", dept: Number(deptSkill.coding || 0), collegeAvg: Number(collegeSkill.coding || 0) },
-                { skill: "Communication", dept: Number(deptSkill.communication || 0), collegeAvg: Number(collegeSkill.communication || 0) },
-                { skill: "Aptitude", dept: Number(deptSkill.aptitude || 0), collegeAvg: Number(collegeSkill.aptitude || 0) },
-                { skill: "Quant", dept: Number(deptSkill.quantitative || 0), collegeAvg: Number(collegeSkill.quantitative || 0) },
-                { skill: "Verbal", dept: Number(deptSkill.verbal || 0), collegeAvg: Number(collegeSkill.verbal || 0) },
-            ];
-        } catch {
-            skillsRadarData = [];
-        }
-
-        const [topRows] = await db.execute(
-            `SELECT
-                s.roll_number,
-                u.email,
-                COUNT(CASE WHEN a.status = 'SELECTED' THEN 1 END) AS offers,
-                ROUND(MAX(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS package
-             FROM students s
-             JOIN users u ON u.id = s.user_id
-             LEFT JOIN applications a ON a.student_id = s.user_id
-             LEFT JOIN job_postings jp ON jp.id = a.job_id
-             WHERE s.department_id = ?
-             GROUP BY s.user_id, s.roll_number, u.email
-             HAVING offers > 0
-             ORDER BY offers DESC, package DESC
-             LIMIT 5`,
-            [deptId]
-        );
-
-        const topPerformers = (topRows || []).map((r, idx) => ({
-            rank: idx + 1,
-            name: String(r.email || '').split('@')[0] || r.roll_number || `Student ${idx + 1}`,
-            score: Math.min(100, Math.round(60 + Number(r.offers || 0) * 8 + Number(r.package || 0))),
-            offers: Number(r.offers || 0),
-            package: Number(r.package || 0),
-        }));
-
-        // Dept-created events plus webinar schema may be legacy (date_time) or new (starts_at, status).
-        let upcomingEvents = [];
-        try {
-            const [deptEventRows] = await db.execute(
-                `SELECT title, date AS starts_at, type
-                 FROM dept_events
-                 WHERE department_id = ?
-                   AND date >= NOW()
-                 ORDER BY date ASC
-                 LIMIT 5`,
-                [deptId]
-            );
-
-            const hasStartsAt = await hasColumn('webinars', 'starts_at');
-            const hasStatus = await hasColumn('webinars', 'status');
-            const hasLegacyDate = await hasColumn('webinars', 'date_time');
-
-            let eventRows = [];
-            if (hasStartsAt && hasStatus) {
-                [eventRows] = await db.execute(
-                    `SELECT title, starts_at
-                     FROM webinars
-                     WHERE starts_at >= NOW()
-                       AND status IN ('PUBLISHED', 'COMPLETED')
-                     ORDER BY starts_at ASC
-                     LIMIT 5`
-                );
-            } else if (hasLegacyDate) {
-                [eventRows] = await db.execute(
-                    `SELECT title, date_time AS starts_at
-                     FROM webinars
-                     WHERE date_time >= NOW()
-                     ORDER BY date_time ASC
-                     LIMIT 5`
-                );
-            }
-
-            upcomingEvents = [...(deptEventRows || []), ...(eventRows || [])]
-                .sort((a, b) => new Date(a.starts_at || 0) - new Date(b.starts_at || 0))
-                .slice(0, 5)
-                .map((e) => ({
-                date: e.starts_at
-                    ? new Date(e.starts_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                    : '',
-                title: e.title || 'Webinar',
-                type: e.type || 'Webinar',
-                attendees: totalStudents,
-            }));
-        } catch (webinarErr) {
-            console.warn('getDashboardStats: skipping upcoming webinars (schema or query issue)', webinarErr.message);
-            upcomingEvents = [];
-        }
-
-        res.status(200).json({
-            stats: {
-                totalStudents,
-                placedStudents,
-                avgPackage: Number(avgPackage.toFixed(2)),
-                atRiskStudents: atRiskStudentsList.length,
-            },
-            yearTrend,
-            placementDistribution,
-            comparisonData,
-            atRiskStudents: atRiskStudentsList.slice(0, 5),
-            topPerformers,
-            upcomingEvents,
-            skillsRadarData,
+        return serveCachedDashboard(req, res, {
+            cacheScopeKey,
+            buildPayload: () => buildDeptDashboardPayload(deptId),
         });
-
     } catch (error) {
         console.error("Error fetching dashboard stats:", error);
         res.status(500).json({ message: "Internal server error while fetching dashboard stats" });
@@ -1217,21 +1293,19 @@ const exportDeptPlacementReportPdf = async (req, res) => {
             return res.status(403).json({ message: 'Access denied. Not a valid department head.' });
         }
 
-        const [[totals]] = await db.execute(
-            `SELECT
-                COUNT(*) AS total_students,
-                COUNT(DISTINCT CASE WHEN a.status = 'SELECTED' THEN s.user_id END) AS placed_students,
-                ROUND(AVG(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS avg_package,
-                ROUND(MAX(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS highest_package
-             FROM students s
-             LEFT JOIN applications a ON a.student_id = s.user_id
-             LEFT JOIN job_postings jp ON jp.id = a.job_id
-             WHERE s.department_id = ?`,
-            [ctx.deptId]
-        );
+        const minCgpa = numberValue(req.query.minCgpa, 0);
+        const maxBacklogs = numberValue(req.query.maxBacklogs, 99);
+        const minReadiness = numberValue(req.query.minReadiness, 0);
 
-        const [offerRows] = await db.execute(
-            `SELECT s.roll_number, u.email, jp.job_title, jp.package_value, a.applied_at
+        const readinessStudents = (await getDepartmentReadinessRows(ctx.deptId)).filter((r) => {
+            return numberValue(r.current_cgpa) >= minCgpa &&
+                numberValue(r.active_backlogs) <= maxBacklogs &&
+                numberValue(r.readiness) >= minReadiness;
+        });
+        const allowedRolls = new Set(readinessStudents.map(r => r.roll_number));
+
+        const [allOfferRows] = await db.execute(
+            `SELECT s.roll_number, s.user_id, u.email, jp.job_title, jp.package_value, a.applied_at
              FROM students s
              JOIN users u ON u.id = s.user_id
              JOIN applications a ON a.student_id = s.user_id AND a.status = 'SELECTED'
@@ -1240,11 +1314,13 @@ const exportDeptPlacementReportPdf = async (req, res) => {
              ORDER BY s.roll_number ASC, jp.package_value DESC`,
             [ctx.deptId]
         );
+        const offerRows = allOfferRows.filter(r => allowedRolls.has(r.roll_number));
 
-        const totalStudents = Number(totals?.total_students || 0);
-        const placedStudents = Number(totals?.placed_students || 0);
-        const avgPackage = Number(totals?.avg_package || 0);
-        const highestPackage = Number(totals?.highest_package || 0);
+        const totalStudents = readinessStudents.length;
+        const placedStudents = new Set(offerRows.map(r => r.user_id)).size;
+        const packages = offerRows.map(r => Number(r.package_value || 0));
+        const avgPackage = packages.length > 0 ? packages.reduce((a, b) => a + b, 0) / packages.length : 0;
+        const highestPackage = packages.length > 0 ? Math.max(...packages) : 0;
         const placementPct = totalStudents > 0 ? ((placedStudents / totalStudents) * 100).toFixed(1) : '0.0';
 
         const safeSlug = String(ctx.departmentCode || ctx.deptId).replace(/[^\w.-]+/g, '_');
@@ -1337,7 +1413,15 @@ const exportStudentReadinessCsv = async (req, res) => {
             return res.status(403).json({ message: 'Access denied. Not a valid department head.' });
         }
 
-        const rows = await getDepartmentReadinessRows(ctx.deptId);
+        const minCgpa = numberValue(req.query.minCgpa, 0);
+        const maxBacklogs = numberValue(req.query.maxBacklogs, 99);
+        const minReadiness = numberValue(req.query.minReadiness, 0);
+
+        const rows = (await getDepartmentReadinessRows(ctx.deptId)).filter((r) => {
+            return numberValue(r.current_cgpa) >= minCgpa &&
+                numberValue(r.active_backlogs) <= maxBacklogs &&
+                numberValue(r.readiness) >= minReadiness;
+        });
 
         const header = [
             'roll_number',
@@ -1387,7 +1471,17 @@ const exportUnplacedStudentsCsv = async (req, res) => {
         const ctx = await resolveHeadDepartment(req.user.id);
         if (!ctx) return res.status(403).json({ message: 'Access denied. Not a valid department head.' });
 
-        const rows = (await getDepartmentReadinessRows(ctx.deptId)).filter((r) => !r.is_placed);
+        const minCgpa = numberValue(req.query.minCgpa, 0);
+        const maxBacklogs = numberValue(req.query.maxBacklogs, 99);
+        const minReadiness = numberValue(req.query.minReadiness, 0);
+
+        const rows = (await getDepartmentReadinessRows(ctx.deptId)).filter((r) => {
+            return !r.is_placed &&
+                numberValue(r.current_cgpa) >= minCgpa &&
+                numberValue(r.active_backlogs) <= maxBacklogs &&
+                numberValue(r.readiness) >= minReadiness;
+        });
+
         const safeSlug = String(ctx.departmentCode || ctx.deptId).replace(/[^\w.-]+/g, '_');
         sendCsv(
             res,
@@ -1414,8 +1508,16 @@ const exportProfileGapsCsv = async (req, res) => {
         const ctx = await resolveHeadDepartment(req.user.id);
         if (!ctx) return res.status(403).json({ message: 'Access denied. Not a valid department head.' });
 
+        const minCgpa = numberValue(req.query.minCgpa, 0);
+        const maxBacklogs = numberValue(req.query.maxBacklogs, 99);
+        const minReadiness = numberValue(req.query.minReadiness, 0);
+
         const rows = (await getDepartmentReadinessRows(ctx.deptId)).filter(
-            (r) => !r.is_placed && (r.issues.includes('Resume missing') || r.issues.includes('Profile links missing') || r.issues.includes('Skills need update'))
+            (r) => !r.is_placed &&
+                (r.issues.includes('Resume missing') || r.issues.includes('Profile links missing') || r.issues.includes('Skills need update')) &&
+                numberValue(r.current_cgpa) >= minCgpa &&
+                numberValue(r.active_backlogs) <= maxBacklogs &&
+                numberValue(r.readiness) >= minReadiness
         );
         const safeSlug = String(ctx.departmentCode || ctx.deptId).replace(/[^\w.-]+/g, '_');
         sendCsv(
@@ -1444,6 +1546,17 @@ const exportPlacedPackagesCsv = async (req, res) => {
         const ctx = await resolveHeadDepartment(req.user.id);
         if (!ctx) return res.status(403).json({ message: 'Access denied. Not a valid department head.' });
 
+        const minCgpa = numberValue(req.query.minCgpa, 0);
+        const maxBacklogs = numberValue(req.query.maxBacklogs, 99);
+        const minReadiness = numberValue(req.query.minReadiness, 0);
+
+        const readinessStudents = (await getDepartmentReadinessRows(ctx.deptId)).filter((r) => {
+            return numberValue(r.current_cgpa) >= minCgpa &&
+                numberValue(r.active_backlogs) <= maxBacklogs &&
+                numberValue(r.readiness) >= minReadiness;
+        });
+        const allowedRolls = new Set(readinessStudents.map(r => r.roll_number));
+
         const [rows] = await db.execute(
             `SELECT
                 s.roll_number,
@@ -1463,12 +1576,14 @@ const exportPlacedPackagesCsv = async (req, res) => {
              ORDER BY jp.package_value DESC, s.roll_number ASC`,
             [ctx.deptId]
         );
+        const filteredRows = (rows || []).filter(r => allowedRolls.has(r.roll_number));
+
         const safeSlug = String(ctx.departmentCode || ctx.deptId).replace(/[^\w.-]+/g, '_');
         sendCsv(
             res,
             `placed-packages-${safeSlug}-${new Date().toISOString().slice(0, 10)}.csv`,
             ['roll_number', 'email', 'company', 'drive', 'role', 'package_lpa', 'applied_at'],
-            (rows || []).map((r) => [
+            filteredRows.map((r) => [
                 r.roll_number,
                 r.email,
                 r.company_name || '',
@@ -1521,17 +1636,49 @@ const exportEligibilityCsv = async (req, res) => {
     }
 };
 
+const ensureDeptEventsColumns = async () => {
+    try {
+        const hasMode = await hasColumn('dept_events', 'mode');
+        if (!hasMode) {
+            await db.execute("ALTER TABLE dept_events ADD COLUMN mode VARCHAR(50) DEFAULT 'OFFLINE'");
+        }
+        const hasTargetBatch = await hasColumn('dept_events', 'target_batch');
+        if (!hasTargetBatch) {
+            await db.execute("ALTER TABLE dept_events ADD COLUMN target_batch VARCHAR(50) DEFAULT 'All'");
+        }
+        const hasExpiresAt = await hasColumn('dept_events', 'expires_at');
+        if (!hasExpiresAt) {
+            await db.execute("ALTER TABLE dept_events ADD COLUMN expires_at DATETIME DEFAULT NULL");
+        }
+    } catch (err) {
+        console.error("Error ensuring dept_events columns:", err);
+    }
+};
+
 /**
  * Create a department event
  * POST /api/dept/events
  */
 const createDeptEvent = async (req, res) => {
     try {
+        await ensureDeptEventsColumns();
         const userId = req.user.id;
-        const { title, date, type, meetingLink, mode } = req.body;
+        const { title, date, type, meetingLink, mode, targetBatch, expiryHours } = req.body;
 
         if (!title || !date || !type) {
             return res.status(400).json({ message: "Title, date, and type are required." });
+        }
+
+        const formattedDate = date ? String(date).replace('T', ' ').slice(0, 19) : new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+        let expiresAt = null;
+        if (expiryHours && expiryHours !== 'never') {
+            const hours = parseInt(expiryHours, 10);
+            if (!isNaN(hours) && hours > 0) {
+                const now = new Date(formattedDate);
+                now.setHours(now.getHours() + hours);
+                expiresAt = now.toISOString().slice(0, 19).replace('T', ' ');
+            }
         }
 
         const [headResult] = await db.execute(
@@ -1546,15 +1693,111 @@ const createDeptEvent = async (req, res) => {
         const deptId = headResult[0].department_id;
 
         await db.execute(
-            `INSERT INTO dept_events (department_id, title, date, type, meeting_link, mode, created_by) 
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [deptId, title, date, type, meetingLink || null, mode || 'OFFLINE', userId]
+            `INSERT INTO dept_events (department_id, title, date, type, meeting_link, mode, created_by, target_batch, expires_at) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [deptId, title, formattedDate, type, meetingLink || null, mode || 'OFFLINE', userId, targetBatch || 'All', expiresAt]
         );
 
         res.status(201).json({ message: "Event created successfully." });
     } catch (error) {
         console.error("Error in createDeptEvent:", error);
-        res.status(500).json({ message: "Internal server error during event creation" });
+        res.status(500).json({ message: error.message || "Internal server error during event creation" });
+    }
+};
+
+/**
+ * Update a department event
+ * PUT /api/dept/events/:id
+ */
+const updateDeptEvent = async (req, res) => {
+    try {
+        await ensureDeptEventsColumns();
+        const userId = req.user.id;
+        const eventId = req.params.id;
+        const { title, date, type, meetingLink, mode, targetBatch, expiryHours } = req.body;
+
+        if (!title || !date || !type) {
+            return res.status(400).json({ message: "Title, date, and type are required." });
+        }
+
+        const formattedDate = date ? String(date).replace('T', ' ').slice(0, 19) : new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+        const [headResult] = await db.execute(
+            'SELECT department_id FROM tpo_heads WHERE user_id = ?',
+            [userId]
+        );
+
+        if (headResult.length === 0) {
+            return res.status(403).json({ message: "Access denied. Not a valid department head." });
+        }
+
+        const deptId = headResult[0].department_id;
+
+        let expiresAt = null;
+        if (expiryHours && expiryHours !== 'never') {
+            const hours = parseInt(expiryHours, 10);
+            if (!isNaN(hours) && hours > 0) {
+                const expiry = new Date(formattedDate);
+                expiry.setHours(expiry.getHours() + hours);
+                expiresAt = expiry.toISOString().slice(0, 19).replace('T', ' ');
+            }
+        }
+
+        const [result] = await db.execute(
+            `UPDATE dept_events
+             SET title = ?, date = ?, type = ?, meeting_link = ?, mode = ?, target_batch = ?, expires_at = ?
+             WHERE id = ? AND department_id = ?`,
+            [title, formattedDate, type, meetingLink || null, mode || 'OFFLINE', targetBatch || 'All', expiresAt, eventId, deptId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Event not found or access denied." });
+        }
+
+        res.status(200).json({ message: "Event updated successfully." });
+    } catch (error) {
+        console.error("Error in updateDeptEvent:", error);
+        res.status(500).json({ message: error.message || "Internal server error during event update" });
+    }
+};
+
+/**
+ * Delete a department event
+ * DELETE /api/dept/events/:id
+ */
+const deleteDeptEvent = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const eventId = Number.parseInt(String(req.params.id), 10);
+
+        if (!Number.isFinite(eventId) || eventId <= 0) {
+            return res.status(400).json({ message: "Invalid event id." });
+        }
+
+        const [headResult] = await db.execute(
+            'SELECT department_id FROM tpo_heads WHERE user_id = ?',
+            [userId]
+        );
+
+        if (headResult.length === 0) {
+            return res.status(403).json({ message: "Access denied. Not a valid department head." });
+        }
+
+        const deptId = headResult[0].department_id;
+
+        const [result] = await db.execute(
+            'DELETE FROM dept_events WHERE id = ? AND department_id = ?',
+            [eventId, deptId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Event not found or access denied." });
+        }
+
+        res.status(200).json({ message: "Event deleted successfully." });
+    } catch (error) {
+        console.error("Error in deleteDeptEvent:", error);
+        res.status(500).json({ message: error.message || "Internal server error during event deletion" });
     }
 };
 
@@ -1564,6 +1807,7 @@ const createDeptEvent = async (req, res) => {
  */
 const getDeptEvents = async (req, res) => {
     try {
+        await ensureDeptEventsColumns();
         const userId = req.user.id;
 
         const [headResult] = await db.execute(
@@ -1578,9 +1822,10 @@ const getDeptEvents = async (req, res) => {
         const deptId = headResult[0].department_id;
 
         const [events] = await db.execute(
-            `SELECT id, title, date, type, meeting_link 
+            `SELECT id, title, date, type, meeting_link, mode, target_batch, expires_at 
              FROM dept_events 
-             WHERE department_id = ? 
+             WHERE department_id = ?
+               AND (expires_at IS NULL OR expires_at > NOW())
              ORDER BY date ASC`,
             [deptId]
         );
@@ -1589,6 +1834,125 @@ const getDeptEvents = async (req, res) => {
     } catch (error) {
         console.error("Error in getDeptEvents:", error);
         res.status(500).json({ message: "Internal server error while fetching events" });
+    }
+};
+
+const getAmcatStats = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const [headResult] = await db.execute(
+            'SELECT department_id FROM tpo_heads WHERE user_id = ?',
+            [userId]
+        );
+
+        if (headResult.length === 0) {
+            return res.status(403).json({ message: "Access denied. Not a valid department head." });
+        }
+
+        const deptId = headResult[0].department_id;
+
+        // Query department performance rows
+        const [deptPerformanceRows] = await db.execute(
+            `SELECT 
+                spm.amcat_quant,
+                spm.amcat_verbal,
+                spm.amcat_logical,
+                spm.coding_test_score,
+                spm.mock_interview_score,
+                spm.endsem_percentage
+             FROM student_performance_metrics spm
+             JOIN students s ON s.user_id = spm.student_id
+             WHERE s.department_id = ?`,
+            [deptId]
+        );
+
+        // Query college performance rows
+        const [collegePerformanceRows] = await db.execute(
+            `SELECT 
+                amcat_quant,
+                amcat_verbal,
+                amcat_logical,
+                coding_test_score,
+                mock_interview_score,
+                endsem_percentage
+             FROM student_performance_metrics`
+        );
+
+        // Define the 6 sections to aggregate
+        const sectionsConfig = [
+            { key: 'amcat_quant', label: 'AMCAT Quant', dbField: 'amcat_quant' },
+            { key: 'amcat_logical', label: 'AMCAT Logical', dbField: 'amcat_logical' },
+            { key: 'amcat_verbal', label: 'AMCAT Verbal', dbField: 'amcat_verbal' },
+            { key: 'coding_test_score', label: 'Coding Test', dbField: 'coding_test_score' },
+            { key: 'mock_interview_score', label: 'Mock Interview', dbField: 'mock_interview_score' },
+            { key: 'endsem_percentage', label: 'End-sem %', dbField: 'endsem_percentage' }
+        ];
+
+        // Total active department students with at least one performance record
+        const deptActiveStudents = deptPerformanceRows.filter(row => {
+            return Object.values(row).some(val => val !== null && val !== undefined);
+        });
+        const totalActiveStudents = deptActiveStudents.length;
+
+        const sections = [];
+
+        for (const sec of sectionsConfig) {
+            const f = sec.dbField;
+
+            // Department scores for this section (excluding NULLs)
+            const deptVals = deptPerformanceRows
+                .map(r => r[f])
+                .filter(v => v !== null && v !== undefined);
+
+            const deptAvg = deptVals.length > 0
+                ? Number((deptVals.reduce((sum, v) => sum + Number(v), 0) / deptVals.length).toFixed(1))
+                : 0;
+
+            // College scores for this section (excluding NULLs)
+            const collegeVals = collegePerformanceRows
+                .map(r => r[f])
+                .filter(v => v !== null && v !== undefined);
+
+            const collegeAvg = collegeVals.length > 0
+                ? Number((collegeVals.reduce((sum, v) => sum + Number(v), 0) / collegeVals.length).toFixed(1))
+                : 0;
+
+            // Distribution for department
+            let high = 0;   // >= 80
+            let medium = 0; // 60 to <80
+            let low = 0;    // < 60
+
+            deptVals.forEach(v => {
+                const num = Number(v);
+                if (num >= 80) high++;
+                else if (num >= 60) medium++;
+                else low++;
+            });
+
+            sections.push({
+                key: sec.key,
+                label: sec.label,
+                deptAvg,
+                collegeAvg,
+                studentCount: deptVals.length,
+                distribution: {
+                    high,
+                    medium,
+                    low,
+                    total: deptVals.length
+                }
+            });
+        }
+
+        res.status(200).json({
+            totalActiveStudents,
+            sections
+        });
+
+    } catch (error) {
+        console.error("Error fetching AMCAT analytics stats:", error);
+        res.status(500).json({ message: "Internal server error while fetching AMCAT statistics" });
     }
 };
 
@@ -1610,5 +1974,8 @@ module.exports = {
     exportPlacedPackagesCsv,
     exportEligibilityCsv,
     createDeptEvent,
-    getDeptEvents
+    updateDeptEvent,
+    deleteDeptEvent,
+    getDeptEvents,
+    getAmcatStats
 };

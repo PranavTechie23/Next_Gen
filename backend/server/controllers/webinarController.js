@@ -164,9 +164,56 @@ exports.listWebinarsForManagement = async (req, res) => {
       params
     );
 
+    const deptClauses = ['u.institution_id = ?'];
+    const deptParams = [tenantScope.institutionId];
+    if (scope === 'upcoming') deptClauses.push('d.date >= NOW()');
+    if (scope === 'past') deptClauses.push('d.date < NOW()');
+    if (search) {
+        deptClauses.push('(d.title LIKE ? OR d.type LIKE ?)');
+        deptParams.push(`%${search}%`, `%${search}%`);
+    }
+
+    const [deptRows] = await db.execute(`
+        SELECT d.*, u.email as user_email
+        FROM dept_events d
+        JOIN users u ON d.created_by = u.id
+        WHERE ${deptClauses.join(' AND ')}
+        ORDER BY d.date ASC
+    `, deptParams);
+
+    const combined = [
+        ...rows.map(mapWebinar),
+        ...deptRows.map(d => ({
+            id: 'dept_' + d.id,
+            title: d.title,
+            summary: d.type,
+            speaker_name: d.user_email || 'Dept Head',
+            speaker_role: 'Dept Head',
+            speaker_background: null,
+            speaker_photo_url: null,
+            session_mode: d.meeting_link ? 'ONLINE' : 'OFFLINE',
+            venue: null,
+            meeting_link: d.meeting_link,
+            recording_url: null,
+            starts_at: d.date,
+            ends_at: d.expires_at,
+            registration_required: false,
+            capacity: null,
+            status: 'PUBLISHED',
+            mom_text: null,
+            mom_url: null,
+            key_takeaways: null,
+            registration_count: 0,
+            has_mom: false,
+            has_recording: false,
+            created_at: d.created_at,
+            updated_at: d.created_at
+        }))
+    ].sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+
     return res.status(200).json({
-      count: rows.length,
-      webinars: rows.map(mapWebinar),
+      count: combined.length,
+      webinars: combined,
     });
   } catch (error) {
     console.error('listWebinarsForManagement error', error);

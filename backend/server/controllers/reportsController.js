@@ -1,6 +1,16 @@
 const db = require('../config/db');
+const { getTenantScope, studentInstitutionClause, applicationScopeJoins } = require('../middleware/institutionScope');
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
+
+const requireScope = (req, res) => {
+  const scope = getTenantScope(req);
+  if (!scope) {
+    res.status(403).json({ message: 'Institution context is required.' });
+    return null;
+  }
+  return scope;
+};
 
 const toCsv = (rows) => {
   const safeRows = Array.isArray(rows) ? rows : [];
@@ -35,9 +45,13 @@ const sendReport = (req, res, filenameBase, payload) => {
   return res.status(200).json(payload);
 };
 
-// GET /api/admin/reports/placement
+// GET /api/TPO/reports/placement
 exports.getPlacementReport = async (req, res) => {
   try {
+    const scope = requireScope(req, res);
+    if (!scope) return;
+    const { clause, params } = studentInstitutionClause(scope);
+
     const [rows] = await db.query(`
       SELECT
         YEAR(a.applied_at) AS year,
@@ -47,10 +61,12 @@ exports.getPlacementReport = async (req, res) => {
         ROUND(AVG(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS avg_selected_ctc_lpa,
         ROUND(MAX(CASE WHEN a.status = 'SELECTED' THEN jp.package_value END), 2) AS max_selected_ctc_lpa
       FROM applications a
+      ${applicationScopeJoins()}
       JOIN job_postings jp ON a.job_id = jp.id
+      WHERE ${clause}
       GROUP BY YEAR(a.applied_at)
       ORDER BY year DESC
-    `);
+    `, params);
 
     return sendReport(req, res, 'placement_report', { rows });
   } catch (e) {
@@ -59,9 +75,13 @@ exports.getPlacementReport = async (req, res) => {
   }
 };
 
-// GET /api/admin/reports/branch-performance
+// GET /api/TPO/reports/branch-performance
 exports.getBranchPerformanceReport = async (req, res) => {
   try {
+    const scope = requireScope(req, res);
+    if (!scope) return;
+    const { clause, params } = studentInstitutionClause(scope);
+
     const [rows] = await db.query(`
       SELECT
         d.name AS department,
@@ -70,11 +90,13 @@ exports.getBranchPerformanceReport = async (req, res) => {
         ROUND(AVG(s.current_cgpa), 2) AS avg_cgpa,
         SUM(CASE WHEN s.active_backlogs > 0 THEN 1 ELSE 0 END) AS students_with_backlogs
       FROM departments d
-      LEFT JOIN students s ON s.department_id = d.id
+      INNER JOIN students s ON s.department_id = d.id
+      INNER JOIN users u ON s.user_id = u.id
       LEFT JOIN applications a ON a.student_id = s.user_id
+      WHERE ${clause}
       GROUP BY d.id
       ORDER BY total_students DESC
-    `);
+    `, params);
 
     const rowsWithRate = (rows || []).map((r) => {
       const total = Number(r.total_students || 0);
@@ -90,9 +112,13 @@ exports.getBranchPerformanceReport = async (req, res) => {
   }
 };
 
-// GET /api/admin/reports/company-analysis
+// GET /api/TPO/reports/company-analysis
 exports.getCompanyAnalysisReport = async (req, res) => {
   try {
+    const scope = requireScope(req, res);
+    if (!scope) return;
+    const { clause, params } = studentInstitutionClause(scope);
+
     // Prefer company_hiring_stats if present, fallback to applications-based rollup.
     let hasCompanyStatsTable = true;
     try {
@@ -102,18 +128,8 @@ exports.getCompanyAnalysisReport = async (req, res) => {
     }
 
     if (hasCompanyStatsTable) {
-      const [rows] = await db.query(`
-        SELECT
-          company_name AS company,
-          year,
-          COALESCE(role, 'Unknown') AS role,
-          ROUND(AVG(ctc_lpa), 2) AS avg_ctc_lpa,
-          SUM(selected_count) AS selected_count
-        FROM company_hiring_stats
-        GROUP BY company_name, year, COALESCE(role, 'Unknown')
-        ORDER BY year DESC, selected_count DESC
-      `);
-      return sendReport(req, res, 'company_analysis', { rows });
+      // company_hiring_stats is global aggregate data — use applications path for tenant scope
+      hasCompanyStatsTable = false;
     }
 
     const [rows] = await db.query(`
@@ -124,13 +140,14 @@ exports.getCompanyAnalysisReport = async (req, res) => {
         ROUND(AVG(jp.package_value), 2) AS avg_ctc_lpa,
         COUNT(DISTINCT CASE WHEN a.status = 'SELECTED' THEN a.student_id END) AS selected_count
       FROM applications a
+      ${applicationScopeJoins()}
       JOIN job_postings jp ON a.job_id = jp.id
       JOIN recruitment_drives rd ON jp.drive_id = rd.id
       JOIN recruiters r ON rd.recruiter_id = r.id
-      WHERE a.status = 'SELECTED'
+      WHERE a.status = 'SELECTED' AND ${clause}
       GROUP BY r.company_name, YEAR(a.applied_at), jp.job_title
       ORDER BY year DESC, selected_count DESC
-    `);
+    `, params);
 
     return sendReport(req, res, 'company_analysis', { rows });
   } catch (e) {
@@ -139,9 +156,13 @@ exports.getCompanyAnalysisReport = async (req, res) => {
   }
 };
 
-// GET /api/admin/reports/at-risk-students
+// GET /api/TPO/reports/at-risk-students
 exports.getAtRiskStudentsReport = async (req, res) => {
   try {
+    const scope = requireScope(req, res);
+    if (!scope) return;
+    const { clause, params } = studentInstitutionClause(scope);
+
     // At-risk heuristic:
     // - cgpa < 6.0 OR active_backlogs > 0 OR missing resume OR low skills (<5)
     let hasResumeParsed = true;
@@ -164,7 +185,8 @@ exports.getAtRiskStudentsReport = async (req, res) => {
       FROM students s
       JOIN users u ON u.id = s.user_id
       LEFT JOIN departments d ON d.id = s.department_id
-    `);
+      WHERE ${clause}
+    `, params);
 
     const enriched = (rows || [])
       .map((r) => {
@@ -181,9 +203,9 @@ exports.getAtRiskStudentsReport = async (req, res) => {
 
         const riskScore = clamp(
           (cgpa > 0 ? (6.0 - Math.min(cgpa, 6.0)) * 25 : 10) +
-            backlogs * 20 +
-            (!hasResume ? 25 : 0) +
-            (skills < 5 ? (5 - skills) * 6 : 0),
+          backlogs * 20 +
+          (!hasResume ? 25 : 0) +
+          (skills < 5 ? (5 - skills) * 6 : 0),
           0,
           100
         );
@@ -204,9 +226,13 @@ exports.getAtRiskStudentsReport = async (req, res) => {
   }
 };
 
-// GET /api/admin/reports/student-readiness
+// GET /api/TPO/reports/student-readiness
 exports.getStudentReadinessReport = async (req, res) => {
   try {
+    const scope = requireScope(req, res);
+    if (!scope) return;
+    const { clause, params } = studentInstitutionClause(scope);
+
     let hasResumeParsed = true;
     try {
       await db.query(`SELECT 1 FROM resume_parsed_data LIMIT 1`);
@@ -228,26 +254,28 @@ exports.getStudentReadinessReport = async (req, res) => {
       FROM students s
       JOIN users u ON u.id = s.user_id
       LEFT JOIN departments d ON d.id = s.department_id
+      WHERE ${clause}
       ORDER BY s.current_cgpa DESC
-    `);
+    `, params);
 
-    const enriched = (rows || []).map((r) => {
-      const cgpa = Number(r.current_cgpa || 0);
-      const backlogs = Number(r.active_backlogs || 0);
-      const skills = Number(r.manual_skills_count || 0) + Number(r.resume_skills_count || 0);
-      const projects = Number(r.projects_count || 0);
-
-      const academics = clamp((cgpa / 10) * 100 - backlogs * 15);
-      const skillsScore = clamp(100 * (1 - Math.exp(-skills / 12)));
-      const portfolio = clamp(projects * 12);
-      const readiness = clamp(academics * 0.5 + skillsScore * 0.3 + portfolio * 0.2);
+    const ReadinessCalculator = require('../utils/readinessCalculator');
+    const enriched = await Promise.all((rows || []).map(async (r) => {
+      const calculation = await ReadinessCalculator.calculate({
+        cgpa: r.current_cgpa,
+        backlogs: r.active_backlogs,
+        skills_count: Number(r.manual_skills_count || 0) + Number(r.resume_skills_count || 0),
+        projects_count: r.projects_count,
+        has_resume: true, // If they are in this report, they usually have a profile
+        has_profile_link: true
+      });
 
       return {
         ...r,
-        total_skills_count: skills,
-        readiness_score: Number(readiness.toFixed(0)),
+        total_skills_count: Number(r.manual_skills_count || 0) + Number(r.resume_skills_count || 0),
+        readiness_score: calculation.score,
+        readiness_band: calculation.band
       };
-    });
+    }));
 
     return sendReport(req, res, 'student_readiness', { rows: enriched });
   } catch (e) {
@@ -256,7 +284,7 @@ exports.getStudentReadinessReport = async (req, res) => {
   }
 };
 
-// POST /api/admin/reports/custom
+// POST /api/TPO/reports/custom
 exports.getCustomReport = async (req, res) => {
   try {
     const { reportType } = req.body || {};
@@ -281,11 +309,15 @@ exports.getCustomReport = async (req, res) => {
   }
 };
 
-// GET /api/admin/reports/shortlisted
+// GET /api/TPO/reports/shortlisted
 exports.getShortlistedStudentsReport = async (req, res) => {
   try {
+    const scope = requireScope(req, res);
+    if (!scope) return;
+    const { clause, params: scopeParams } = studentInstitutionClause(scope);
+
     const { minCgpa, maxBacklogs, skills } = req.query;
-    
+
     let query = `
       SELECT 
         s.user_id AS student_id,
@@ -301,11 +333,13 @@ exports.getShortlistedStudentsReport = async (req, res) => {
       LEFT JOIN departments d ON d.id = s.department_id
       WHERE s.current_cgpa >= ?
       AND s.active_backlogs <= ?
+      AND ${clause}
     `;
-    
+
     const queryParams = [
       parseFloat(minCgpa || 0),
-      parseInt(maxBacklogs || 99)
+      parseInt(maxBacklogs || 99, 10),
+      ...scopeParams
     ];
 
     if (skills) {

@@ -1,4 +1,6 @@
 const db = require('../config/db');
+const { parsePositiveInt } = require('../utils/validateParams');
+const { driveTenantClause, scopeFromInstitutionId } = require('../middleware/institutionScope');
 
 /**
  * Get the profile of the logged-in student
@@ -8,47 +10,47 @@ const getStudentProfile = async (req, res) => {
     try {
         const userId = req.user.id;
 
-        // Fetch basic student info and profile
-        const [studentInfo] = await db.execute(`
-            SELECT 
-                s.user_id, s.roll_number, s.current_cgpa, s.active_backlogs, 
-                s.tenth_marks, s.twelfth_marks, s.is_academic_data_locked, 
-                s.is_placed, s.current_package_value,
-                s.is_debarred, s.debar_reason, s.debar_lift_date,
-                u.email, u.is_active,
-                d.name AS department_name, d.code AS department_code,
-                sp.resume_url, sp.linkedin_url, sp.github_url, sp.address,
-                sp.full_name, sp.phone, sp.bio
-            FROM students s
-            JOIN users u ON s.user_id = u.id
-            LEFT JOIN departments d ON s.department_id = d.id
-            LEFT JOIN student_profiles sp ON s.user_id = sp.student_id
-            WHERE s.user_id = ?
-        `, [userId]);
+        // Fetch basic info, skills, and projects in parallel for sub-second response
+        const [studentInfoRows, skillsRows, projectsRows] = await Promise.all([
+            db.execute(`
+                SELECT 
+                    s.user_id, s.roll_number, s.current_cgpa, s.active_backlogs, 
+                    s.tenth_marks, s.twelfth_marks, s.is_academic_data_locked, 
+                    s.is_placed, s.current_package_value,
+                    s.is_debarred, s.debar_reason, s.debar_lift_date,
+                    u.email, u.is_active,
+                    d.name AS department_name, d.code AS department_code,
+                    sp.resume_url, sp.linkedin_url, sp.github_url, sp.address,
+                    sp.full_name, sp.phone, sp.bio
+                FROM students s
+                JOIN users u ON s.user_id = u.id
+                LEFT JOIN departments d ON s.department_id = d.id
+                LEFT JOIN student_profiles sp ON s.user_id = sp.student_id
+                WHERE s.user_id = ?
+            `, [userId]),
+            db.execute(`
+                SELECT sk.name
+                FROM student_skills ss
+                JOIN skills sk ON ss.skill_id = sk.id
+                WHERE ss.student_id = ?
+            `, [userId]),
+            db.execute(`
+                SELECT id, title, description, project_link
+                FROM projects
+                WHERE student_id = ?
+            `, [userId])
+        ]);
+
+        const studentInfo = studentInfoRows[0];
+        const skills = skillsRows[0];
+        const projects = projectsRows[0];
 
         if (studentInfo.length === 0) {
             return res.status(404).json({ message: "Student profile not found." });
         }
 
         const student = studentInfo[0];
-
-        // Fetch student skills
-        const [skills] = await db.execute(`
-            SELECT sk.name, ss.proficiency_level
-            FROM student_skills ss
-            JOIN skills sk ON ss.skill_id = sk.id
-            WHERE ss.student_id = ?
-        `, [userId]);
-
         student.skills = skills;
-
-        // Fetch student projects
-        const [projects] = await db.execute(`
-            SELECT id, title, description, project_link
-            FROM projects
-            WHERE student_id = ?
-        `, [userId]);
-
         student.projects = projects;
 
         res.status(200).json(student);
@@ -127,7 +129,7 @@ const updateStudentSubjectiveProfile = async (req, res) => {
             const seenSkills = new Set();
 
             for (const skill of skills) {
-                const { name, proficiency_level } = skill;
+                const { name } = skill;
                 if (!name) continue;
                 const normalizedName = normalizeSkill(name);
                 if (!normalizedName || seenSkills.has(normalizedName)) continue;
@@ -150,10 +152,9 @@ const updateStudentSubjectiveProfile = async (req, res) => {
 
                 // Map student to skill
                 await connection.execute(
-                    `INSERT INTO student_skills (student_id, skill_id, proficiency_level)
-                     VALUES (?, ?, ?)
-                     ON DUPLICATE KEY UPDATE proficiency_level = VALUES(proficiency_level)`,
-                    [userId, skillId, proficiency_level || 'BEGINNER']
+                    `INSERT IGNORE INTO student_skills (student_id, skill_id)
+                     VALUES (?, ?)`,
+                    [userId, skillId]
                 );
             }
         }
@@ -221,6 +222,12 @@ const getEligibleJobs = async (req, res) => {
         const cgpa = student.current_cgpa || 0;
         const backlogs = student.active_backlogs || 0;
 
+        const scope = scopeFromInstitutionId(req.user.institution_id);
+        if (!scope) {
+            return res.status(403).json({ message: 'Institution context is required.' });
+        }
+        const { clause: driveClause, params: driveParams } = driveTenantClause(scope, 'd');
+
         // 2. Query open jobs directly matching the numeric criteria
         const [jobs] = await db.execute(`
             SELECT 
@@ -242,8 +249,9 @@ const getEligibleJobs = async (req, res) => {
               AND j.is_active = TRUE
               AND j.min_cgpa <= ?
               AND j.max_backlogs_allowed >= ?
+              AND ${driveClause}
             ORDER BY d.end_date ASC
-        `, [cgpa, backlogs]);
+        `, [cgpa, backlogs, ...driveParams]);
 
         res.status(200).json({
             count: jobs.length,
@@ -262,7 +270,17 @@ const getEligibleJobs = async (req, res) => {
  */
 const getJobDetails = async (req, res) => {
     try {
-        const jobId = req.params.id;
+        const jobIdParsed = parsePositiveInt(req.params.id, 'job id');
+        if (!jobIdParsed.ok) {
+            return res.status(400).json({ message: jobIdParsed.message });
+        }
+        const jobId = jobIdParsed.value;
+
+        const scope = scopeFromInstitutionId(req.user.institution_id);
+        if (!scope) {
+            return res.status(403).json({ message: 'Institution context is required.' });
+        }
+        const { clause: driveClause, params: driveParams } = driveTenantClause(scope, 'd');
 
         const [jobs] = await db.execute(`
             SELECT 
@@ -288,7 +306,8 @@ const getJobDetails = async (req, res) => {
             WHERE j.id = ? 
               AND d.status = 'OPEN' 
               AND j.is_active = TRUE
-        `, [jobId]);
+              AND ${driveClause}
+        `, [jobId, ...driveParams]);
 
         if (jobs.length === 0) {
             return res.status(404).json({ message: "Job not found or is no longer active." });
@@ -310,7 +329,11 @@ const getJobDetails = async (req, res) => {
 const applyForJob = async (req, res) => {
     try {
         const userId = req.user.id;
-        const jobId = req.params.id;
+        const jobIdParsed = parsePositiveInt(req.params.id, 'job id');
+        if (!jobIdParsed.ok) {
+            return res.status(400).json({ message: jobIdParsed.message });
+        }
+        const jobId = jobIdParsed.value;
 
         // 1. Fetch Student Profile & Status
         const [students] = await db.execute(`
@@ -460,7 +483,11 @@ const getApplications = async (req, res) => {
 const withdrawApplication = async (req, res) => {
     try {
         const userId = req.user.id;
-        const applicationId = req.params.id;
+        const appIdParsed = parsePositiveInt(req.params.id, 'application id');
+        if (!appIdParsed.ok) {
+            return res.status(400).json({ message: appIdParsed.message });
+        }
+        const applicationId = appIdParsed.value;
 
         // Ensure the application belongs to the logged-in student
         const [application] = await db.execute(
@@ -502,9 +529,11 @@ const getDeptEvents = async (req, res) => {
         const deptId = studentResult[0].department_id;
 
         const [events] = await db.execute(
-            `SELECT id, title, date, type, meeting_link, mode 
+            `SELECT id, title, date, type, meeting_link, mode, target_batch 
              FROM dept_events 
-             WHERE department_id = ? AND date >= NOW()
+             WHERE department_id = ? 
+               AND date >= NOW()
+               AND (expires_at IS NULL OR expires_at >= NOW())
              ORDER BY date ASC`,
             [deptId]
         );
@@ -516,6 +545,35 @@ const getDeptEvents = async (req, res) => {
     }
 };
 
+const getAnnouncements = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        // Find institution_id for this student
+        const [userResult] = await db.query('SELECT institution_id FROM users WHERE id = ?', [userId]);
+        if (userResult.length === 0 || !userResult[0].institution_id) {
+            return res.status(403).json({ message: "Institution context missing" });
+        }
+        
+        const institutionId = userResult[0].institution_id;
+        
+        const [announcements] = await db.query(
+            `SELECT id, title, message, is_important, created_at, expires_at 
+             FROM announcements 
+             WHERE institution_id = ? 
+               AND (expires_at IS NULL OR expires_at >= NOW())
+             ORDER BY is_important DESC, created_at DESC 
+             LIMIT 10`,
+            [institutionId]
+        );
+        
+        res.status(200).json(announcements);
+    } catch (error) {
+        console.error("Error fetching announcements:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
 module.exports = {
     getStudentProfile,
     updateStudentSubjectiveProfile,
@@ -524,6 +582,7 @@ module.exports = {
     applyForJob,
     getApplications,
     withdrawApplication,
-    getDeptEvents
+    getDeptEvents,
+    getAnnouncements
 };
 

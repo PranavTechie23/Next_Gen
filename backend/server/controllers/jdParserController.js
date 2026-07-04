@@ -55,7 +55,7 @@ const jdUploadErrorHandler = (err, _req, res, next) => {
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 
 const normalizeFilters = (raw) => {
-    const minCgpa     = Number(raw?.minCgpa    ?? raw?.cgpa     ?? 7);
+    const minCgpa = Number(raw?.minCgpa ?? raw?.cgpa ?? 7);
     const maxBacklogs = Number(raw?.maxBacklogs ?? raw?.backlogs ?? 0);
     const skills = Array.isArray(raw?.skills)
         ? raw.skills.map((s) => String(s).trim()).filter(Boolean).slice(0, 20)
@@ -65,14 +65,14 @@ const normalizeFilters = (raw) => {
         : [];
 
     return {
-        cgpa:     clamp(Number.isFinite(minCgpa)     ? minCgpa     : 7, 5, 10),
+        cgpa: clamp(Number.isFinite(minCgpa) ? minCgpa : 7, 5, 10),
         backlogs: clamp(Number.isFinite(maxBacklogs) ? maxBacklogs : 0, 0, 10),
         skills,
         branches,
     };
 };
 
-/* TODO: load from platform_config so admins can extend without a deploy */
+/* TODO: load from platform_config so TPOs can extend without a deploy */
 const extractFiltersHeuristic = (text) => {
     const t = String(text || '');
 
@@ -125,7 +125,7 @@ const isAiConfigured = async () => {
  * ───────────────────────────────────────────────────────────────────────────── */
 
 /**
- * GET /api/admin/jd/stats
+ * GET /api/TPO/jd/stats
  */
 const getJdParseStats = async (req, res) => {
     try {
@@ -144,7 +144,7 @@ const getJdParseStats = async (req, res) => {
         );
 
         return res.status(200).json({
-            parseCount:   Number(rows[0]?.count || 0),
+            parseCount: Number(rows[0]?.count || 0),
             aiConfigured: await isAiConfigured(),
         });
     } catch (error) {
@@ -154,7 +154,7 @@ const getJdParseStats = async (req, res) => {
 };
 
 /**
- * POST /api/admin/jd/parse — multipart field: jd (PDF)
+ * POST /api/TPO/jd/parse — multipart field: jd (PDF)
  *
  * Response `source` values:
  *   'ai'          — AI configured and returned a usable result

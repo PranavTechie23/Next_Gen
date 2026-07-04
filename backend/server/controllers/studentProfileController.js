@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const pdfParseModule = require('pdf-parse');
 const aiConfigService = require('../utils/aiConfigService');
+const { toProtectedUploadUrl, normalizeUploadUrl } = require('../utils/uploadUrls');
 let _pdfjsLegacy = null;
 
 // Ensure upload directory exists for storing resumes
@@ -817,6 +818,7 @@ const getProfile = async (req, res) => {
                 d.id AS department_id,
                 d.name AS department_name,
                 sp.resume_url,
+                sp.avatar_url,
                 sp.linkedin_url,
                 sp.github_url,
                 sp.address,
@@ -851,7 +853,7 @@ const getProfile = async (req, res) => {
         }
 
         const [skillsRows] = await db.execute(`
-            SELECT sk.name, ss.proficiency_level
+            SELECT sk.name
             FROM student_skills ss
             JOIN skills sk ON ss.skill_id = sk.id
             WHERE ss.student_id = ?
@@ -889,14 +891,14 @@ const getProfile = async (req, res) => {
                 name: studentRow.department_name
             },
             profile: {
-                resume_url: studentRow.resume_url,
+                resume_url: normalizeUploadUrl(studentRow.resume_url),
                 linkedin_url: studentRow.linkedin_url || studentRow.parsed_linkedin_url,
                 github_url: studentRow.github_url || studentRow.parsed_github_url,
                 address: studentRow.address,
                 full_name: studentRow.profile_full_name || studentRow.full_name,
                 phone: studentRow.profile_phone || studentRow.parsed_phone,
                 bio: studentRow.profile_bio || null,
-                avatar_url: ""
+                avatar_url: normalizeUploadUrl(studentRow.avatar_url) || "",
             },
             skills: skillsRows,
             projects: projectRows,
@@ -935,7 +937,7 @@ const uploadResume = async (req, res) => {
         const studentId = req.user.id;
         
         // Generate a public-facing URL path for the database
-        const resumeUrl = `/uploads/resumes/${req.file.filename}`;
+        const resumeUrl = toProtectedUploadUrl(req.file.filename, 'resumes');
 
         // Upsert logic just for the resume_url to handle cases where profile doesn't exist yet!
         const query = `
@@ -1048,8 +1050,8 @@ const uploadResume = async (req, res) => {
                 }
 
                 await db.execute(`
-                    INSERT IGNORE INTO student_skills (student_id, skill_id, proficiency_level)
-                    VALUES (?, ?, 'BEGINNER')
+                    INSERT IGNORE INTO student_skills (student_id, skill_id)
+                    VALUES (?, ?)
                 `, [studentId, skillId]);
             }
         }
@@ -1204,7 +1206,7 @@ const uploadAvatar = async (req, res) => {
         }
 
         const studentId = req.user.id;
-        const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+        const avatarUrl = toProtectedUploadUrl(req.file.filename, 'avatars');
 
         // Remove old avatar file if it exists
         const [existing] = await db.execute(
@@ -1212,7 +1214,8 @@ const uploadAvatar = async (req, res) => {
             [studentId]
         );
         if (existing.length && existing[0].avatar_url) {
-            const oldPath = path.join(__dirname, '..', existing[0].avatar_url);
+            const oldFilename = path.basename(String(existing[0].avatar_url));
+            const oldPath = path.join(avatarUploadDir, oldFilename);
             if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
         }
 

@@ -3,6 +3,64 @@ const path = require('path');
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const logger = require('../utils/logger');
+const { validatePassword } = require('../utils/passwordPolicy');
+
+const OTP_MAX_ATTEMPTS = 5;
+const OTP_LOCK_MINUTES = 15;
+
+async function verifyOtpForEmail(connection, email, otp) {
+    const [records] = await connection.execute(
+        'SELECT * FROM password_resets WHERE email = ? ORDER BY created_at DESC LIMIT 1',
+        [email]
+    );
+
+    if (!records.length) {
+        return { ok: false, status: 400, message: 'Invalid OTP.' };
+    }
+
+    const record = records[0];
+
+    if (record.otp_locked_until && new Date(record.otp_locked_until) > new Date()) {
+        const minutes = Math.max(1, Math.ceil((new Date(record.otp_locked_until).getTime() - Date.now()) / 60000));
+        return {
+            ok: false,
+            status: 429,
+            message: `Too many failed OTP attempts. Try again in ${minutes} minute(s).`,
+        };
+    }
+
+    if (new Date() > new Date(record.expires_at)) {
+        await connection.execute('DELETE FROM password_resets WHERE email = ?', [email]);
+        return { ok: false, status: 400, message: 'OTP has expired. Please request a new one.' };
+    }
+
+    if (String(record.otp) !== String(otp)) {
+        const attempts = Number(record.otp_failed_attempts || 0) + 1;
+        if (attempts >= OTP_MAX_ATTEMPTS) {
+            await connection.execute(
+                'UPDATE password_resets SET otp_failed_attempts = ?, otp_locked_until = DATE_ADD(NOW(), INTERVAL ? MINUTE) WHERE email = ?',
+                [attempts, OTP_LOCK_MINUTES, email]
+            );
+            return {
+                ok: false,
+                status: 429,
+                message: `Too many failed OTP attempts. Try again in ${OTP_LOCK_MINUTES} minutes.`,
+            };
+        }
+        await connection.execute(
+            'UPDATE password_resets SET otp_failed_attempts = ? WHERE email = ?',
+            [attempts, email]
+        );
+        return { ok: false, status: 400, message: 'Invalid OTP.' };
+    }
+
+    await connection.execute(
+        'UPDATE password_resets SET otp_failed_attempts = 0, otp_locked_until = NULL WHERE email = ?',
+        [email]
+    );
+    return { ok: true, record };
+}
 
 function getCookieConfig() {
     const envSameSite = process.env.COOKIE_SAMESITE?.toLowerCase();
@@ -18,20 +76,59 @@ function getCookieConfig() {
     };
 }
 
-// --- Register TPO Admin ---
-exports.registerAdmin = async (req, res) => {
-    const { 
-        name, email, password, phone, employee_code, 
-        institution_name, institution_code, institution_address, 
-        adminKey 
+function jwtExpiryToMs(expiry) {
+    if (!expiry || typeof expiry !== 'string') {
+        return 24 * 60 * 60 * 1000;
+    }
+
+    const match = expiry.trim().match(/^(\d+)\s*([smhdw])?$/i);
+    if (!match) {
+        return 24 * 60 * 60 * 1000;
+    }
+
+    const amount = Number(match[1]);
+    const unit = (match[2] || 's').toLowerCase();
+    const unitMs = {
+        s: 1000,
+        m: 60 * 1000,
+        h: 60 * 60 * 1000,
+        d: 24 * 60 * 60 * 1000,
+        w: 7 * 24 * 60 * 60 * 1000
+    };
+
+    return amount * (unitMs[unit] || 1000);
+}
+
+function getJwtExpiryOptions(rememberMe) {
+    const defaultTokenExpiry = process.env.JWT_EXPIRE || '1d';
+    const rememberTokenExpiry = process.env.JWT_REMEMBER_EXPIRE || '30d';
+    const expiresIn = rememberMe ? rememberTokenExpiry : defaultTokenExpiry;
+    return { expiresIn, maxAge: jwtExpiryToMs(expiresIn) };
+}
+
+// --- Register TPO ---
+exports.registerTPO = async (req, res) => {
+    const {
+        name, email, password, phone, employee_code,
+        institution_name, institution_code, institution_address,
+        TPOKey
     } = req.body;
 
 
 
 
-    // 1. Verify Secret Key
-    if (adminKey !== process.env.ADMIN_REGISTRATION_SECRET) {
-        return res.status(403).json({ message: "Forbidden: Invalid Admin Registration Key" });
+    // 1. Verify Secret Key — reject if server secret is not configured
+    const registrationSecret = process.env.TPO_REGISTRATION_SECRET?.trim();
+    if (!registrationSecret) {
+        return res.status(503).json({ message: 'TPO registration is not configured on this server.' });
+    }
+    if (TPOKey !== registrationSecret) {
+        return res.status(403).json({ message: "Forbidden: Invalid TPO Registration Key" });
+    }
+
+    const passwordCheck = validatePassword(password);
+    if (!passwordCheck.ok) {
+        return res.status(400).json({ message: passwordCheck.message });
     }
 
     // 2. Validate Input
@@ -74,31 +171,31 @@ exports.registerAdmin = async (req, res) => {
         if (existingInst.length > 0) {
             // Option A: Link to existing institution
             // institution_id = existingInst[0].id;
-             
-            // Option B: Error out (Since we want 1 TPO Admin per institute, and usually 1 Registration creates the institute)
-            // But what if TPO Admin implementation allows adding more admins later?
+
+            // Option B: Error out (Since we want 1 TPO per institute, and usually 1 Registration creates the institute)
+            // But what if TPO implementation allows adding more TPOs later?
             // For now, let's assume we use the existing one if code matches, OR we can error.
-            // Given "only one tpo admin registration allowed for one institute", if the institution exists, 
-            // it likely already has an admin (or was created manually).
-            
-            // Let's check if it has an admin
+            // Given "only one TPO registration allowed for one institute", if the institution exists, 
+            // it likely already has an TPO (or was created manually).
+
+            // Let's check if it has an TPO
             institution_id = existingInst[0].id;
-            
-            const [existingAdmin] = await connection.execute(
+
+            const [existingTPO] = await connection.execute(
                 'SELECT * FROM users WHERE institution_id = ? AND role = "TPO_ADMIN"',
                 [institution_id]
             );
 
-            if (existingAdmin.length > 0) {
-                 await connection.rollback();
-                 return res.status(400).json({ message: "Institution already has a TPO Admin registered." });
+            if (existingTPO.length > 0) {
+                await connection.rollback();
+                return res.status(400).json({ message: "Institution already has a TPO registered." });
             }
-            
+
         } else {
             // Create New Institution
             const [instResult] = await connection.execute(
                 'INSERT INTO institutions (name, code, address, contact_email) VALUES (?, ?, ?, ?)',
-                [institution_name, institution_code, institution_address, email] // Using admin email as contact for now
+                [institution_name, institution_code, institution_address, email] // Using TPO email as contact for now
             );
             institution_id = instResult.insertId;
         }
@@ -115,7 +212,7 @@ exports.registerAdmin = async (req, res) => {
 
         const userId = userResult.insertId;
 
-        // 7. Insert into TPO Admins Table
+        // 7. Insert into TPOs Table
         await connection.execute(
             'INSERT INTO tpo_admins (user_id, name, employee_code, phone) VALUES (?, ?, ?, ?)',
             [userId, name, employee_code || null, phone || null]
@@ -123,20 +220,24 @@ exports.registerAdmin = async (req, res) => {
 
         await connection.commit();
 
-        res.status(201).json({ message: "Institution and TPO Admin registered successfully." });
+        res.status(201).json({ message: "Institution and TPO registered successfully." });
 
     } catch (error) {
         await connection.rollback();
-        console.error("Error in registerAdmin:", error);
+        console.error("Error in registerTPO:", error);
         res.status(500).json({ message: "Server Error during registration." });
     } finally {
         connection.release();
     }
 };
 
-// --- Generic Login (Admin, Head, Student) ---
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+
+// --- Generic Login (TPO, Head, Student) ---
 exports.login = async (req, res) => {
     const { email, password, rememberMe } = req.body;
+    logger.auth('Login attempt', { email });
 
     // 1. Validate Input
     if (!email || !password) {
@@ -154,20 +255,24 @@ exports.login = async (req, res) => {
         );
 
         if (users.length === 0) {
+            logger.auth('User not found', { email });
             return res.status(401).json({ message: "Invalid credentials." });
         }
 
         const user = users[0];
+        logger.auth('User found', { userId: user.id, role: user.role });
 
         // 3. Verify Password
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) {
+            logger.auth('Password mismatch', { email });
             return res.status(401).json({ message: "Invalid credentials." });
         }
 
         // 4. Check if Account is Active
         if (!user.is_active) {
-            return res.status(403).json({ message: "Account is inactive. Contact Admin." });
+            logger.auth('Account inactive', { email });
+            return res.status(403).json({ message: "Account is inactive. Contact TPO." });
         }
 
         // 5. Generate JWT Token
@@ -177,12 +282,11 @@ exports.login = async (req, res) => {
             institution_id: user.institution_id
         };
 
-        const defaultTokenExpiry = process.env.JWT_EXPIRE || '1d';
-        const rememberTokenExpiry = process.env.JWT_REMEMBER_EXPIRE || '30d';
-        const tokenExpiry = rememberMe ? rememberTokenExpiry : defaultTokenExpiry;
+        const { expiresIn: tokenExpiry, maxAge: cookieMaxAge } = getJwtExpiryOptions(rememberMe);
+
         const token = jwt.sign({
             ...payload,
-            session_nonce: require('crypto').randomBytes(8).toString('hex')
+            session_nonce: crypto.randomBytes(8).toString('hex')
         }, process.env.JWT_SECRET, {
             expiresIn: tokenExpiry
         });
@@ -196,25 +300,25 @@ exports.login = async (req, res) => {
         // 7. Fetch Role-Specific Details (Optional but useful)
         let profile = {};
         if (user.role === 'TPO_ADMIN') {
-            const [adminProfile] = await connection.execute('SELECT name FROM tpo_admins WHERE user_id = ?', [user.id]);
-            if (adminProfile.length > 0) profile = adminProfile[0];
+            const [TPOProfile] = await connection.execute('SELECT name FROM tpo_admins WHERE user_id = ?', [user.id]);
+            if (TPOProfile.length > 0) profile = TPOProfile[0];
         } else if (user.role === 'TPO_HEAD') {
-             const [headProfile] = await connection.execute('SELECT name, department_id FROM tpo_heads WHERE user_id = ?', [user.id]);
-             if (headProfile.length > 0) profile = headProfile[0];
+            const [headProfile] = await connection.execute('SELECT name, department_id FROM tpo_heads WHERE user_id = ?', [user.id]);
+            if (headProfile.length > 0) profile = headProfile[0];
         } else if (user.role === 'STUDENT') {
-             const [studentProfile] = await connection.execute('SELECT roll_number, department_id, is_placed FROM students WHERE user_id = ?', [user.id]);
-             if (studentProfile.length > 0) profile = studentProfile[0];
+            const [studentProfile] = await connection.execute('SELECT roll_number, department_id, is_placed FROM students WHERE user_id = ?', [user.id]);
+            if (studentProfile.length > 0) profile = studentProfile[0];
         }
 
         // 8. Set Cookie
         res.cookie('token', token, {
             ...getCookieConfig(),
-            maxAge: rememberMe ? (30 * 24 * 60 * 60 * 1000) : (24 * 60 * 60 * 1000)
+            maxAge: cookieMaxAge
         });
 
+        logger.auth('Login successful', { userId: user.id, role: user.role });
         res.json({
             message: "Login successful.",
-            token,
             user: {
                 id: user.id,
                 email: user.email,
@@ -238,7 +342,10 @@ exports.login = async (req, res) => {
                 message: "Database connection failed. Please check backend DB environment variables."
             });
         }
-        res.status(500).json({ message: "Server Error during login." });
+        res.status(500).json({
+            message: "Server Error during login.",
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     } finally {
         if (connection) connection.release();
     }
@@ -246,7 +353,7 @@ exports.login = async (req, res) => {
 
 // --- Logout (Blacklist Token + Clear Cookie) ---
 exports.logout = async (req, res) => {
-    const token = req.token || req.cookies?.token; 
+    const token = req.token || req.cookies?.token;
 
     if (!token) {
         return res.status(400).json({ message: "No token provided." });
@@ -257,11 +364,11 @@ exports.logout = async (req, res) => {
     try {
         const decoded = jwt.decode(token);
         if (decoded) {
-            const expiry = new Date(decoded.exp * 1000); 
+            const expiry = new Date(decoded.exp * 1000);
 
             await connection.execute(
                 'INSERT INTO token_blacklist (user_id, token, expiry) VALUES (?, ?, ?)',
-                [req.user ? req.user.id : decoded.id, token, expiry] 
+                [req.user ? req.user.id : decoded.id, token, expiry]
             );
         }
 
@@ -275,10 +382,6 @@ exports.logout = async (req, res) => {
         connection.release();
     }
 };
-
-// --- Request Password Reset ---
-const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 
 exports.requestPasswordReset = async (req, res) => {
     const { email } = req.body;
@@ -301,7 +404,28 @@ exports.requestPasswordReset = async (req, res) => {
             return res.status(200).json({ message: "If your email is registered, you will receive an OTP." });
         }
 
-        // 2. Generate Tokens
+        // 2. Rate-limit: only allow a new OTP after 60 seconds
+        const RESEND_COOLDOWN_SECONDS = 60;
+        const [existingResets] = await connection.execute(
+            'SELECT created_at FROM password_resets WHERE email = ? ORDER BY created_at DESC LIMIT 1',
+            [email]
+        );
+
+        if (existingResets.length > 0) {
+            const lastSentAt = new Date(existingResets[0].created_at);
+            const secondsElapsed = Math.floor((Date.now() - lastSentAt.getTime()) / 1000);
+            const secondsRemaining = RESEND_COOLDOWN_SECONDS - secondsElapsed;
+
+            if (secondsRemaining > 0) {
+                connection.release();
+                return res.status(429).json({
+                    message: `Please wait ${secondsRemaining} second${secondsRemaining !== 1 ? 's' : ''} before requesting a new OTP.`,
+                    retryAfter: secondsRemaining
+                });
+            }
+        }
+
+        // 3. Generate Tokens
         const resetToken = crypto.randomBytes(32).toString('hex');
         const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
         const tokenHash = await bcrypt.hash(resetToken, 10);
@@ -309,45 +433,46 @@ exports.requestPasswordReset = async (req, res) => {
 
         await connection.beginTransaction();
 
-        // 3. Store in DB
+        // 4. Store in DB (replace any old record)
         await connection.execute('DELETE FROM password_resets WHERE email = ?', [email]);
 
-        await connection.execute(
-            'INSERT INTO password_resets (email, token, otp, expires_at) VALUES (?, ?, ?, ?)',
-            [email, tokenHash, otp, expiresAt]
-        );
+        try {
+            await connection.execute(
+                'INSERT INTO password_resets (email, token, otp, expires_at, otp_failed_attempts, otp_locked_until) VALUES (?, ?, ?, ?, 0, NULL)',
+                [email, tokenHash, otp, expiresAt]
+            );
+        } catch (insertErr) {
+            if (insertErr.code === 'ER_BAD_FIELD_ERROR') {
+                await connection.execute(
+                    'INSERT INTO password_resets (email, token, otp, expires_at) VALUES (?, ?, ?, ?)',
+                    [email, tokenHash, otp, expiresAt]
+                );
+            } else {
+                throw insertErr;
+            }
+        }
 
         await connection.commit();
 
-        // 4. Send Email via nodemailer
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.SMTP_EMAIL,
-                pass: process.env.SMTP_PASSWORD
-            }
+        // 4. Send Email
+        const { sendEmail } = require('../utils/emailSender');
+        const EmailTemplateService = require('../services/EmailTemplateService');
+
+        const template = await EmailTemplateService.getTemplate('password_reset_otp');
+        const { subject, html, text } = EmailTemplateService.render(template, { otp });
+
+        const result = await sendEmail({
+            to: email,
+            subject: subject || 'Password Reset OTP Request',
+            html: html || `<p>Your OTP is: ${otp}</p>`,
+            text: text || `Your OTP is: ${otp}`,
+            fallbackOtp: otp
         });
 
-        const mailOptions = {
-            from: process.env.SMTP_EMAIL,
-            to: email,
-            subject: 'Password Reset OTP Request',
-            text: `Your OTP for password reset is: ${otp}\nIt is valid for 15 minutes.`,
-            html: `<p>Your OTP for password reset is: <strong style="font-size: 1.2em;">${otp}</strong></p><p>It is valid for 15 minutes.</p>`
-        };
-
-        try {
-             await transporter.sendMail(mailOptions);
-             res.json({ message: "Password reset OTP sent to your email." });
-        } catch (emailError) {
-             console.error("Email sending failed:", emailError.message);
-             // Provide a fallback in the server logs so development isn't blocked by bad SMTP config
-             console.log(`\n=================================================`);
-             console.log(`[FALLBACK] SMTP failed. OTP for ${email} is: ${otp}`);
-             console.log(`=================================================\n`);
-             
-             // Return 200 instead of 500 so the UI advances to Step 2, allowing developer to enter the OTP from the terminal!
-             res.status(200).json({ message: "Email failed, but OTP was printed in the backend terminal." });
+        if (result.success) {
+            res.json({ message: "Password reset OTP sent to your email." });
+        } else {
+            res.status(200).json({ message: result.message });
         }
 
     } catch (error) {
@@ -369,20 +494,9 @@ exports.verifyOtpOnly = async (req, res) => {
     const connection = await db.getConnection();
 
     try {
-        const [resets] = await connection.execute(
-            'SELECT * FROM password_resets WHERE email = ? AND otp = ?',
-            [email, otp]
-        );
-
-        if (resets.length === 0) {
-            return res.status(400).json({ message: "Invalid OTP." });
-        }
-
-        const resetRecord = resets[0];
-
-        if (new Date() > new Date(resetRecord.expires_at)) {
-            await connection.execute('DELETE FROM password_resets WHERE email = ?', [email]);
-            return res.status(400).json({ message: "OTP has expired. Please request a new one." });
+        const otpResult = await verifyOtpForEmail(connection, email, otp);
+        if (!otpResult.ok) {
+            return res.status(otpResult.status).json({ message: otpResult.message });
         }
 
         res.json({ message: "OTP verified successfully." });
@@ -402,31 +516,20 @@ exports.verifyAndResetPassword = async (req, res) => {
         return res.status(400).json({ message: "Please provide email, otp, and newPassword." });
     }
 
+    const passwordCheck = validatePassword(newPassword);
+    if (!passwordCheck.ok) {
+        return res.status(400).json({ message: passwordCheck.message });
+    }
+
     const connection = await db.getConnection();
 
     try {
-        // 1. Check if the reset request exists and is valid
-        const [resets] = await connection.execute(
-            'SELECT * FROM password_resets WHERE email = ? AND otp = ?',
-            [email, otp]
-        );
-
-        if (resets.length === 0) {
-            return res.status(400).json({ message: "Invalid OTP or Email." });
-        }
-
-        const resetRecord = resets[0];
-
-        // 2. Check Expiry
-        if (new Date() > new Date(resetRecord.expires_at)) {
-            // Cleanup expired token
-            await connection.execute('DELETE FROM password_resets WHERE email = ?', [email]);
-            return res.status(400).json({ message: "OTP has expired. Please request a new one." });
+        const otpResult = await verifyOtpForEmail(connection, email, otp);
+        if (!otpResult.ok) {
+            return res.status(otpResult.status).json({ message: otpResult.message });
         }
 
         await connection.beginTransaction();
-
-        // 3. Hash the new password
         const salt = await bcrypt.genSalt(10);
         const newPasswordHash = await bcrypt.hash(newPassword, salt);
 
@@ -463,6 +566,11 @@ exports.changePassword = async (req, res) => {
 
     if (!currentPassword || !newPassword) {
         return res.status(400).json({ message: "Please provide current and new password." });
+    }
+
+    const passwordCheck = validatePassword(newPassword);
+    if (!passwordCheck.ok) {
+        return res.status(400).json({ message: passwordCheck.message });
     }
 
     const connection = await db.getConnection();

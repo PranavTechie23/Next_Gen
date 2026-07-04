@@ -3,7 +3,7 @@ const { parsePositiveInt } = require('../utils/validateParams');
 const { getTenantScope } = require('../middleware/institutionScope');
 
 const KIT_FIELDS    = 'k.id, k.name, k.description, k.created_at';
-const PROBLEM_FIELDS = 'p.id, p.title, p.difficulty, p.topic, p.platform_link';
+const PROBLEM_FIELDS = 'p.id, p.title, p.difficulty, p.topic, p.url';
 
 const getAllKits = async (req, res) => {
     try {
@@ -15,9 +15,7 @@ const getAllKits = async (req, res) => {
         const [kits] = await db.query(
             `SELECT ${KIT_FIELDS}
              FROM company_assessment_kits k
-             WHERE k.institution_id = ?
-             ORDER BY k.name ASC`,
-            [scope.institutionId]
+             ORDER BY k.name ASC`
         );
 
         if (kits.length === 0) {
@@ -65,8 +63,8 @@ const getKitById = async (req, res) => {
         const [kits] = await db.query(
             `SELECT ${KIT_FIELDS}
              FROM company_assessment_kits k
-             WHERE k.id = ? AND k.institution_id = ?`,
-            [id, scope.institutionId]
+             WHERE k.id = ?`,
+            [id]
         );
 
         if (kits.length === 0) {
