@@ -3,6 +3,7 @@ const xlsx = require('xlsx');
 const bcrypt = require('bcrypt'); // Use the existing bcrypt module
 const crypto = require('crypto');
 const PDFDocument = require('pdfkit');
+const { normalizeEducationEntries } = require('../utils/educationUtils');
 const sendEmail = require('../utils/email');
 const { serveCachedDashboard } = require('../utils/dashboardCache');
 
@@ -349,7 +350,7 @@ const getDepartmentStudents = async (req, res) => {
                 s.current_cgpa, 
                 s.active_backlogs, 
                 s.tenth_marks, 
-                s.twelfth_marks, 
+                s.twelfth_marks, s.diploma_marks,
                 s.is_academic_data_locked,
                 s.is_placed,
                 sp.resume_url,
@@ -397,7 +398,7 @@ const getStudentDetails = async (req, res) => {
         const [studentInfo] = await db.execute(`
             SELECT 
                 s.user_id, s.roll_number, s.current_cgpa, s.active_backlogs, 
-                s.tenth_marks, s.twelfth_marks, s.is_academic_data_locked, 
+                s.tenth_marks, s.twelfth_marks, s.diploma_marks, s.is_academic_data_locked, 
                 s.is_placed, s.current_package_value,
                 s.is_debarred, s.debar_reason, s.debar_lift_date,
                 u.email, u.is_active,
@@ -443,7 +444,18 @@ const getStudentDetails = async (req, res) => {
 
         let parsed = null;
         if (resumeData.length > 0 && resumeData[0].sections_json) {
-            parsed = resumeData[0].sections_json;
+            parsed = typeof resumeData[0].sections_json === 'string'
+                ? JSON.parse(resumeData[0].sections_json)
+                : resumeData[0].sections_json;
+        }
+
+        if (parsed) {
+            const eduBundle = normalizeEducationEntries(parsed.education_entries, parsed.education);
+            student.education_entries = eduBundle.education_entries;
+            student.education = eduBundle.education;
+        } else {
+            student.education_entries = [];
+            student.education = [];
         }
 
         // Fallback to parsed resume projects if manual projects are empty

@@ -2,7 +2,7 @@ const db = require('../config/db');
 const { parsePositiveInt } = require('../utils/validateParams');
 const { getTenantScope } = require('../middleware/institutionScope');
 
-const KIT_FIELDS    = 'k.id, k.name, k.description, k.created_at';
+const KIT_FIELDS    = 'k.id, k.name, k.description, k.tier, k.gradient, k.avg_package AS avgPackage, k.logo_url AS logo, k.interview_rounds AS interviewRounds, k.interview_tips AS interviewTips, k.resources, k.created_at';
 const PROBLEM_FIELDS = 'p.id, p.title, p.difficulty, p.topic, p.url';
 
 const getAllKits = async (req, res) => {

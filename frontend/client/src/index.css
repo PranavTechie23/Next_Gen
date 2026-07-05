@@ -117,6 +117,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --removed-body-scroll-bar-size: 0px !important;
   --background: #fafbfc;
   --foreground: #0f172a;
   --card: #ffffff;
@@ -153,12 +154,12 @@
   --chart-4: #ea580c;
   --chart-5: #16a34a;
 
-  /* TPO admin — light surfaces */
-  --admin-hero-from: 214 100% 97%;
-  --admin-hero-to: 220 60% 98%;
-  --admin-hero-accent: 217 91% 60%;
-  --admin-panel-from: 0 0% 100%;
-  --admin-panel-to: 214 32% 98%;
+  /* TPO — light surfaces */
+  --TPO-hero-from: 214 100% 97%;
+  --TPO-hero-to: 220 60% 98%;
+  --TPO-hero-accent: 217 91% 60%;
+  --TPO-panel-from: 0 0% 100%;
+  --TPO-panel-to: 214 32% 98%;
 }
 
 .dark {
@@ -198,10 +199,10 @@
   --chart-4: hsl(224 76% 48%);
   --chart-5: hsl(226 71% 40%);
 
-  /* Admin accent surfaces */
-  --admin-hero-from: 222 47% 12%;
-  --admin-hero-to: 224 44% 16%;
-  --admin-hero-accent: 217 91% 60%;
+  /* TPO accent surfaces */
+  --TPO-hero-from: 222 47% 12%;
+  --TPO-hero-to: 224 44% 16%;
+  --TPO-hero-accent: 217 91% 60%;
 }
 
 @layer base {
@@ -230,6 +231,18 @@
     transition-duration: 300ms;
     overflow-x: hidden;
     min-height: 100dvh;
+    padding-right: 0px !important;
+  }
+
+  /* Prevent layout shift/vibration when Radix locks body scrolling for dropdowns, selects and sheets */
+  html body, 
+  html body[data-scroll-locked],
+  html body[style*="overflow: hidden"],
+  [data-radix-scroll-lock],
+  [data-radix-scroll-area-viewport] {
+    overflow-y: scroll !important;
+    padding-right: 0px !important;
+    margin-right: 0px !important;
   }
 
   h1,
@@ -272,6 +285,25 @@
     text-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
   }
 
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.25) transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.25);
+    border-radius: 9999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.45);
+  }
+
   .grainy-bg {
     position: relative;
   }
@@ -289,15 +321,29 @@
     transition: none !important;
   }
 
-  .custom-scrollbar {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+  /* Global scrollbar styling for a sleek dark theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
   }
-
-  .custom-scrollbar::-webkit-scrollbar {
-    display: none;
+  ::-webkit-scrollbar-track {
+    background: transparent;
   }
-
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.25);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.45);
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.2);
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.4);
+  }
   /* Subtle scrollbar for sidebars (avoid loud “blue line”) */
   .sidebar-scrollbar {
     scrollbar-gutter: stable;
@@ -561,101 +607,101 @@
     }
   }
 
-  /* TPO admin — premium surfaces */
-  .admin-hero {
+  /* TPO — premium surfaces */
+  .TPO-hero {
     background: linear-gradient(135deg,
-        hsl(var(--admin-hero-from)) 0%,
+        hsl(var(--TPO-hero-from)) 0%,
         var(--card) 42%,
-        hsl(var(--admin-hero-to)) 100%);
+        hsl(var(--TPO-hero-to)) 100%);
     border: 1px solid var(--border);
     box-shadow:
       0 1px 2px rgba(15, 23, 42, 0.04),
       0 12px 40px -16px rgba(37, 99, 235, 0.12);
   }
 
-  .admin-hero::before {
+  .TPO-hero::before {
     content: "";
     position: absolute;
     inset: 0;
     border-radius: inherit;
     pointer-events: none;
     background: linear-gradient(90deg,
-        hsl(var(--admin-hero-accent) / 0.12) 0%,
+        hsl(var(--TPO-hero-accent) / 0.12) 0%,
         transparent 28%);
   }
 
-  .dark .admin-hero {
+  .dark .TPO-hero {
     background: linear-gradient(135deg,
-        hsl(var(--admin-hero-from)) 0%,
+        hsl(var(--TPO-hero-from)) 0%,
         hsl(224 44% 14%) 45%,
-        hsl(var(--admin-hero-to)) 100%);
+        hsl(var(--TPO-hero-to)) 100%);
     border: 1px solid rgba(255, 255, 255, 0.06);
     box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
-  .dark .admin-hero::before {
+  .dark .TPO-hero::before {
     display: none;
   }
 
-  .admin-stat-card {
+  .TPO-stat-card {
     background:
-      radial-gradient(circle at 12% 0%, hsl(var(--admin-hero-accent) / 0.08), transparent 34%),
+      radial-gradient(circle at 12% 0%, hsl(var(--TPO-hero-accent) / 0.08), transparent 34%),
       linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--card)) 100%);
     border: 1px solid hsl(var(--border) / 0.9);
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   }
 
-  .admin-stat-card--accent {
-    border-top: 1px solid hsl(var(--admin-hero-accent) / 0.35);
+  .TPO-stat-card--accent {
+    border-top: 1px solid hsl(var(--TPO-hero-accent) / 0.35);
   }
 
-  .dark .admin-stat-card {
+  .dark .TPO-stat-card {
     border-color: rgba(255, 255, 255, 0.06);
     background:
-      radial-gradient(circle at 18% 0%, hsl(var(--admin-hero-accent) / 0.16), transparent 38%),
+      radial-gradient(circle at 18% 0%, hsl(var(--TPO-hero-accent) / 0.16), transparent 38%),
       linear-gradient(180deg, rgba(20, 27, 44, 0.96) 0%, rgba(17, 24, 39, 0.98) 100%);
     box-shadow: 0 18px 44px -22px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
-  .dark .admin-stat-card--accent {
-    border-top-color: hsl(var(--admin-hero-accent) / 0.35);
+  .dark .TPO-stat-card--accent {
+    border-top-color: hsl(var(--TPO-hero-accent) / 0.35);
   }
 
-  .admin-stat-card:hover {
-    border-color: hsl(var(--admin-hero-accent) / 0.28);
+  .TPO-stat-card:hover {
+    border-color: hsl(var(--TPO-hero-accent) / 0.28);
     box-shadow: 0 18px 40px -18px rgba(37, 99, 235, 0.24);
   }
 
-  .admin-stat-icon {
-    background: hsl(var(--admin-hero-accent) / 0.1);
-    color: hsl(var(--admin-hero-accent));
+  .TPO-stat-icon {
+    background: hsl(var(--TPO-hero-accent) / 0.1);
+    color: hsl(var(--TPO-hero-accent));
   }
 
-  .dark .admin-stat-icon {
-    background: hsl(var(--admin-hero-accent) / 0.15);
-    color: hsl(var(--admin-hero-accent));
+  .dark .TPO-stat-icon {
+    background: hsl(var(--TPO-hero-accent) / 0.15);
+    color: hsl(var(--TPO-hero-accent));
   }
 
-  .admin-section-card {
+  .TPO-section-card {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 1rem;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
   }
 
-  .dark .admin-section-card {
+  .dark .TPO-section-card {
     border-color: rgba(255, 255, 255, 0.06);
     box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.35);
   }
 
-  .admin-section-header {
+  .TPO-section-header {
     background: var(--card);
     border: 1px solid var(--border);
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
   }
 
-  .admin-section-header::before {
+  .TPO-section-header::before {
     content: "";
     position: absolute;
     left: 0;
@@ -663,10 +709,10 @@
     bottom: 0;
     width: 4px;
     border-radius: 1rem 0 0 1rem;
-    background: hsl(var(--admin-hero-accent));
+    background: hsl(var(--TPO-hero-accent));
   }
 
-  .dark .admin-section-header {
+  .dark .TPO-section-header {
     background: linear-gradient(90deg,
         hsl(217 55% 28%) 0%,
         hsl(243 45% 26%) 50%,
@@ -675,43 +721,43 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
-  .dark .admin-section-header::before {
+  .dark .TPO-section-header::before {
     display: none;
   }
 
-  .admin-panel-header {
+  .TPO-panel-header {
     background: linear-gradient(135deg,
-        hsl(var(--admin-panel-from)) 0%,
-        hsl(var(--admin-panel-to)) 100%);
+        hsl(var(--TPO-panel-from)) 0%,
+        hsl(var(--TPO-panel-to)) 100%);
     border: 1px solid var(--border);
     box-shadow: 0 4px 24px -8px rgba(37, 99, 235, 0.1), 0 1px 2px rgba(15, 23, 42, 0.04);
   }
 
-  .dark .admin-panel-header {
+  .dark .TPO-panel-header {
     background: linear-gradient(90deg, hsl(222 47% 14%) 0%, hsl(217 33% 16%) 100%);
     border: 1px solid rgba(255, 255, 255, 0.06);
     box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.4);
   }
 
-  .admin-feature-header {
+  .TPO-feature-header {
     background: linear-gradient(135deg,
-        hsl(var(--admin-hero-from)) 0%,
+        hsl(var(--TPO-hero-from)) 0%,
         var(--card) 55%);
     border-bottom: 1px solid var(--border);
   }
 
-  .dark .admin-feature-header {
+  .dark .TPO-feature-header {
     background: linear-gradient(135deg, hsl(222 47% 12%) 0%, hsl(217 33% 14%) 100%);
     border-bottom-color: rgba(255, 255, 255, 0.06);
   }
 
-  .admin-cta-card {
+  .TPO-cta-card {
     background: var(--card);
     border: 1px solid var(--border);
     box-shadow: 0 4px 20px -8px rgba(37, 99, 235, 0.12);
   }
 
-  .dark .admin-cta-card {
+  .dark .TPO-cta-card {
     background: linear-gradient(135deg, hsl(222 47% 12%) 0%, hsl(217 33% 16%) 100%);
     border-color: rgba(255, 255, 255, 0.06);
     box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.4);

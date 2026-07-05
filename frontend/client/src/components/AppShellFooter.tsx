@@ -4,7 +4,7 @@ interface AppShellFooterProps {
   className?: string;
 }
 
-/** Minimal footer for authenticated app shells (admin, student, department). */
+/** Minimal footer for authenticated app shells (TPO, student, department). */
 export default function AppShellFooter({ className = "" }: AppShellFooterProps) {
   const { config } = useBranding();
   const year = new Date().getFullYear();

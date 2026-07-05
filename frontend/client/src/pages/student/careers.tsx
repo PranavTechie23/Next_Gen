@@ -111,7 +111,6 @@ interface CareerPath {
   icon: any;
   color: string;
   description: string;
-  matchScore: number;
   avgSalary: {
     fresher: string;
     junior: string;
@@ -170,7 +169,6 @@ const careerPaths: CareerPath[] = [
     icon: Code,
     color: 'from-blue-500 to-cyan-500',
     description: 'Build beautiful, responsive user interfaces and create amazing web experiences',
-    matchScore: 92,
     avgSalary: {
       fresher: '₹3-6 LPA',
       junior: '₹6-12 LPA',
@@ -258,7 +256,7 @@ const careerPaths: CareerPath[] = [
         skillsUsed: ['Next.js', 'TypeScript', 'Tailwind CSS', 'RESTful APIs'],
         estimatedHours: 40,
         status: 'not-started',
-        description: 'Create a complete admin dashboard for managing products'
+        description: 'Create a complete TPO dashboard for managing products'
       }
     ],
     learningResources: [
@@ -268,7 +266,7 @@ const careerPaths: CareerPath[] = [
         type: 'course',
         platform: 'Udemy',
         isFree: false,
-        url: '#',
+        url: 'https://www.udemy.com/course/the-complete-web-development-bootcamp/',
         duration: '65 hours',
         rating: 4.7
       },
@@ -278,7 +276,7 @@ const careerPaths: CareerPath[] = [
         type: 'documentation',
         platform: 'Mozilla',
         isFree: true,
-        url: '#',
+        url: 'https://developer.mozilla.org/',
         duration: 'Self-paced',
         rating: 4.9
       },
@@ -288,7 +286,7 @@ const careerPaths: CareerPath[] = [
         type: 'practice',
         platform: 'freeCodeCamp',
         isFree: true,
-        url: '#',
+        url: 'https://www.freecodecamp.org/learn/front-end-development-libraries/',
         duration: '300 hours',
         rating: 4.8
       }
@@ -302,7 +300,6 @@ const careerPaths: CareerPath[] = [
     icon: Database,
     color: 'from-green-500 to-emerald-500',
     description: 'Build robust server-side applications and APIs that power modern applications',
-    matchScore: 78,
     avgSalary: {
       fresher: '₹4-7 LPA',
       junior: '₹7-14 LPA',
@@ -400,7 +397,7 @@ const careerPaths: CareerPath[] = [
         type: 'course',
         platform: 'Udemy',
         isFree: false,
-        url: '#',
+        url: 'https://nodejs.org/en/docs/guides',
         duration: '32 hours',
         rating: 4.7
       },
@@ -410,7 +407,7 @@ const careerPaths: CareerPath[] = [
         type: 'documentation',
         platform: 'PostgreSQL Docs',
         isFree: true,
-        url: '#',
+        url: 'https://www.postgresql.org/docs/',
         duration: 'Self-paced',
         rating: 4.8
       },
@@ -420,7 +417,7 @@ const careerPaths: CareerPath[] = [
         type: 'practice',
         platform: 'freeCodeCamp',
         isFree: true,
-        url: '#',
+        url: 'https://www.freecodecamp.org/learn/back-end-development-and-apis/',
         duration: '120 hours',
         rating: 4.6
       }
@@ -434,7 +431,6 @@ const careerPaths: CareerPath[] = [
     icon: Rocket,
     color: 'from-purple-500 to-pink-500',
     description: 'Master both frontend and backend to build complete web applications end-to-end',
-    matchScore: 85,
     avgSalary: {
       fresher: '₹5-8 LPA',
       junior: '₹8-16 LPA',
@@ -520,7 +516,7 @@ const careerPaths: CareerPath[] = [
         type: 'course',
         platform: 'The Odin Project',
         isFree: true,
-        url: '#',
+        url: 'https://www.theodinproject.com/paths/full-stack-javascript',
         duration: 'Self-paced',
         rating: 4.9
       },
@@ -530,7 +526,7 @@ const careerPaths: CareerPath[] = [
         type: 'course',
         platform: 'University of Helsinki',
         isFree: true,
-        url: '#',
+        url: 'https://fullstackopen.com/en/',
         duration: '250 hours',
         rating: 4.8
       },
@@ -540,7 +536,7 @@ const careerPaths: CareerPath[] = [
         type: 'article',
         platform: 'Community Notes',
         isFree: true,
-        url: '#',
+        url: 'https://github.com/ept/ddia-references',
         duration: '20 hours',
         rating: 4.7
       }
@@ -554,7 +550,6 @@ const careerPaths: CareerPath[] = [
     icon: Brain,
     color: 'from-orange-500 to-red-500',
     description: 'Analyze data, build ML models, and derive insights to drive business decisions',
-    matchScore: 65,
     avgSalary: {
       fresher: '₹6-10 LPA',
       junior: '₹10-18 LPA',
@@ -640,7 +635,7 @@ const careerPaths: CareerPath[] = [
         type: 'course',
         platform: 'Coursera',
         isFree: false,
-        url: '#',
+        url: 'https://www.coursera.org/learn/python-for-applied-data-science-ai',
         duration: '45 hours',
         rating: 4.7
       },
@@ -650,7 +645,7 @@ const careerPaths: CareerPath[] = [
         type: 'article',
         platform: 'Community Notes',
         isFree: true,
-        url: '#',
+        url: 'https://scikit-learn.org/stable/tutorial/index.html',
         duration: '18 hours',
         rating: 4.8
       },
@@ -660,7 +655,7 @@ const careerPaths: CareerPath[] = [
         type: 'practice',
         platform: 'Kaggle',
         isFree: true,
-        url: '#',
+        url: 'https://www.kaggle.com/learn',
         duration: '60 hours',
         rating: 4.9
       }
@@ -674,7 +669,6 @@ const careerPaths: CareerPath[] = [
     icon: Smartphone,
     color: 'from-cyan-500 to-blue-500',
     description: 'Create native and cross-platform mobile apps for iOS and Android',
-    matchScore: 70,
     avgSalary: {
       fresher: '₹4-7 LPA',
       junior: '₹7-14 LPA',
@@ -760,7 +754,7 @@ const careerPaths: CareerPath[] = [
         type: 'course',
         platform: 'Udemy',
         isFree: false,
-        url: '#',
+        url: 'https://reactnative.dev/docs/getting-started',
         duration: '35 hours',
         rating: 4.7
       },
@@ -770,7 +764,7 @@ const careerPaths: CareerPath[] = [
         type: 'documentation',
         platform: 'Flutter',
         isFree: true,
-        url: '#',
+        url: 'https://docs.flutter.dev/get-started/codelab',
         duration: 'Self-paced',
         rating: 4.8
       },
@@ -780,7 +774,7 @@ const careerPaths: CareerPath[] = [
         type: 'practice',
         platform: 'Frontend Mentor',
         isFree: true,
-        url: '#',
+        url: 'https://www.frontendmentor.io/challenges',
         duration: '50 hours',
         rating: 4.6
       }
@@ -794,7 +788,6 @@ const careerPaths: CareerPath[] = [
     icon: Settings,
     color: 'from-indigo-500 to-purple-500',
     description: 'Build and maintain infrastructure, automate deployments, and ensure reliability',
-    matchScore: 58,
     avgSalary: {
       fresher: '₹5-8 LPA',
       junior: '₹8-16 LPA',
@@ -880,7 +873,7 @@ const careerPaths: CareerPath[] = [
         type: 'course',
         platform: 'KodeKloud',
         isFree: false,
-        url: '#',
+        url: 'https://kodekloud.com/',
         duration: '55 hours',
         rating: 4.8
       },
@@ -890,7 +883,7 @@ const careerPaths: CareerPath[] = [
         type: 'documentation',
         platform: 'Docker',
         isFree: true,
-        url: '#',
+        url: 'https://docs.docker.com/get-started/',
         duration: 'Self-paced',
         rating: 4.8
       },
@@ -900,7 +893,7 @@ const careerPaths: CareerPath[] = [
         type: 'practice',
         platform: 'Play with Kubernetes',
         isFree: true,
-        url: '#',
+        url: 'https://kubernetes.io/docs/tutorials/',
         duration: '40 hours',
         rating: 4.7
       }
@@ -914,7 +907,6 @@ const careerPaths: CareerPath[] = [
     icon: Palette,
     color: 'from-pink-500 to-rose-500',
     description: 'Design beautiful, intuitive interfaces and create delightful user experiences',
-    matchScore: 72,
     avgSalary: {
       fresher: '₹3-6 LPA',
       junior: '₹6-12 LPA',
@@ -1000,7 +992,7 @@ const careerPaths: CareerPath[] = [
         type: 'course',
         platform: 'Coursera',
         isFree: false,
-        url: '#',
+        url: 'https://www.coursera.org/professional-certificates/google-ux-design',
         duration: '120 hours',
         rating: 4.7
       },
@@ -1010,7 +1002,7 @@ const careerPaths: CareerPath[] = [
         type: 'article',
         platform: 'Laws of UX',
         isFree: true,
-        url: '#',
+        url: 'https://lawsofux.com/',
         duration: '8 hours',
         rating: 4.8
       },
@@ -1020,7 +1012,7 @@ const careerPaths: CareerPath[] = [
         type: 'practice',
         platform: 'Figma',
         isFree: true,
-        url: '#',
+        url: 'https://www.figma.com/community',
         duration: '45 hours',
         rating: 4.8
       }
@@ -1034,7 +1026,6 @@ const careerPaths: CareerPath[] = [
     icon: Shield,
     color: 'from-red-500 to-orange-500',
     description: 'Protect systems, networks, and data from cyber threats and vulnerabilities',
-    matchScore: 55,
     avgSalary: {
       fresher: '₹4-7 LPA',
       junior: '₹7-15 LPA',
@@ -1120,7 +1111,7 @@ const careerPaths: CareerPath[] = [
         type: 'course',
         platform: 'Coursera',
         isFree: false,
-        url: '#',
+        url: 'https://www.coursera.org/professional-certificates/google-cybersecurity',
         duration: '90 hours',
         rating: 4.7
       },
@@ -1130,7 +1121,7 @@ const careerPaths: CareerPath[] = [
         type: 'documentation',
         platform: 'OWASP',
         isFree: true,
-        url: '#',
+        url: 'https://owasp.org/www-project-web-security-testing-guide/',
         duration: 'Self-paced',
         rating: 4.9
       },
@@ -1140,7 +1131,7 @@ const careerPaths: CareerPath[] = [
         type: 'practice',
         platform: 'TryHackMe',
         isFree: false,
-        url: '#',
+        url: 'https://tryhackme.com/',
         duration: '100 hours',
         rating: 4.8
       }
@@ -1233,7 +1224,7 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
 
   // Computed values
   const selectedPathData = careerPaths.find(p => p.id === selectedPath);
-  const sortedPaths = [...careerPaths].sort((a, b) => b.matchScore - a.matchScore);
+  const sortedPaths = [...careerPaths];
 
   // Filter paths
   const filteredPaths = sortedPaths.filter(path => {
@@ -1306,161 +1297,161 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
       <div className={isDashboard ? "w-full space-y-6" : "mx-auto max-w-7xl space-y-6"}>
 
         {!isDashboard && (
-        <div className="text-center space-y-4">
-          <h1 className="text-3xl font-black sm:text-4xl md:text-5xl">
-            <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Find Your Perfect
-            </span>
-            <br />
-            <span className="text-slate-900 dark:text-white">Career Path</span>
-          </h1>
+          <div className="text-center space-y-4">
+            <h1 className="text-3xl font-black sm:text-4xl md:text-5xl">
+              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                Find Your Perfect
+              </span>
+              <br />
+              <span className="text-slate-900 dark:text-white">Career Path</span>
+            </h1>
 
-          <p className="text-base sm:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
-            Personalized roadmaps, skill tracking, and resources to help you land your dream job
-          </p>
+            <p className="text-base sm:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
+              Personalized roadmaps, skill tracking, and resources to help you land your dream job
+            </p>
 
-          {/* User Stats */}
+            {/* User Stats */}
 
-        </div>
+          </div>
         )}
 
         {/* Search and Filters */}
         {!selectedPath && (
-        <Card className="w-full gap-0 rounded-3xl border border-slate-200/80 bg-white/95 py-0 shadow-[0_10px_30px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-950/85">
-          <CardContent className="px-5 py-4 sm:px-6 sm:py-4">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              {/* Search */}
-              <div className="relative w-full md:max-w-[45%]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search career paths..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-[15px] outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
+          <Card className="w-full gap-0 rounded-3xl border border-slate-200/80 bg-white/95 py-0 shadow-[0_10px_30px_rgba(15,23,42,0.06)] dark:border-slate-800/80 dark:bg-slate-950/85">
+            <CardContent className="px-5 py-4 sm:px-6 sm:py-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                {/* Search */}
+                <div className="relative w-full md:max-w-[45%]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search career paths..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-[15px] outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2"
+                    >
+                      <X className="h-4 w-4 text-slate-400 hover:text-slate-600" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Filter Toggle */}
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="h-10 rounded-xl border-slate-200 px-4 dark:border-slate-700"
                   >
-                    <X className="h-4 w-4 text-slate-400 hover:text-slate-600" />
-                  </button>
-                )}
+                    <Filter className="mr-2 h-4 w-4" />
+                    Filters
+                    {(filterDifficulty !== 'all' || filterTrend !== 'all') && (
+                      <Badge variant="secondary" className="ml-2 bg-blue-500 text-white h-5 w-5 p-0 flex items-center justify-center rounded-full">
+                        {[filterDifficulty !== 'all', filterTrend !== 'all'].filter(Boolean).length}
+                      </Badge>
+                    )}
+                    <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                  </Button>
+
+                  {/* View Toggle */}
+                  <div className="flex items-center gap-1.5 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+                    <Button
+                      variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('grid')}
+                      className="h-8 rounded-lg"
+                      aria-label="Grid view"
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={viewMode === 'list' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('list')}
+                      className="h-8 rounded-lg"
+                      aria-label="List view"
+                    >
+                      <LayoutList className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Comparison Toggle */}
+                  <Button
+                    variant={showComparison ? 'default' : 'outline'}
+                    onClick={() => setShowComparison(!showComparison)}
+                    className="h-10 rounded-xl border-slate-200 px-4 dark:border-slate-700"
+                  >
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    Compare
+                    {comparisonPaths.length > 0 && (
+                      <Badge variant="secondary" className="ml-2">
+                        {comparisonPaths.length}
+                      </Badge>
+                    )}
+                  </Button>
+                </div>
               </div>
 
-              {/* Filter Toggle */}
-              <div className="flex flex-wrap items-center gap-2.5">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="h-10 rounded-xl border-slate-200 px-4 dark:border-slate-700"
-                >
-                  <Filter className="mr-2 h-4 w-4" />
-                  Filters
+              {/* Filter Options */}
+              {showFilters && (
+                <div className="mt-5 pt-5 border-t border-slate-200 dark:border-slate-700 space-y-4">
+                  <div>
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 block">
+                      Difficulty Level
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {['all', 'Easy', 'Medium', 'Hard'].map(diff => (
+                        <Button
+                          key={diff}
+                          variant={filterDifficulty === diff ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setFilterDifficulty(diff)}
+                        >
+                          {diff === 'all' ? 'All Levels' : diff}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 block">
+                      Demand Trend
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {['all', 'up', 'stable', 'down'].map(trend => (
+                        <Button
+                          key={trend}
+                          variant={filterTrend === trend ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setFilterTrend(trend)}
+                        >
+                          {trend === 'all' ? 'All Trends' : trend === 'up' ? '📈 Rising' : trend === 'stable' ? '➡️ Stable' : '📉 Declining'}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
                   {(filterDifficulty !== 'all' || filterTrend !== 'all') && (
-                    <Badge variant="secondary" className="ml-2 bg-blue-500 text-white h-5 w-5 p-0 flex items-center justify-center rounded-full">
-                      {[filterDifficulty !== 'all', filterTrend !== 'all'].filter(Boolean).length}
-                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setFilterDifficulty('all');
+                        setFilterTrend('all');
+                      }}
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      Clear Filters
+                    </Button>
                   )}
-                  <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-                </Button>
-
-                {/* View Toggle */}
-                <div className="flex items-center gap-1.5 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
-                  <Button
-                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('grid')}
-                    className="h-8 rounded-lg"
-                    aria-label="Grid view"
-                  >
-                    <LayoutGrid className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('list')}
-                    className="h-8 rounded-lg"
-                    aria-label="List view"
-                  >
-                    <LayoutList className="h-4 w-4" />
-                  </Button>
                 </div>
-
-                {/* Comparison Toggle */}
-                <Button
-                  variant={showComparison ? 'default' : 'outline'}
-                  onClick={() => setShowComparison(!showComparison)}
-                  className="h-10 rounded-xl border-slate-200 px-4 dark:border-slate-700"
-                >
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  Compare
-                  {comparisonPaths.length > 0 && (
-                    <Badge variant="secondary" className="ml-2">
-                      {comparisonPaths.length}
-                    </Badge>
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            {/* Filter Options */}
-            {showFilters && (
-              <div className="mt-5 pt-5 border-t border-slate-200 dark:border-slate-700 space-y-4">
-                <div>
-                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 block">
-                    Difficulty Level
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {['all', 'Easy', 'Medium', 'Hard'].map(diff => (
-                      <Button
-                        key={diff}
-                        variant={filterDifficulty === diff ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setFilterDifficulty(diff)}
-                      >
-                        {diff === 'all' ? 'All Levels' : diff}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 block">
-                    Demand Trend
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {['all', 'up', 'stable', 'down'].map(trend => (
-                      <Button
-                        key={trend}
-                        variant={filterTrend === trend ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setFilterTrend(trend)}
-                      >
-                        {trend === 'all' ? 'All Trends' : trend === 'up' ? '📈 Rising' : trend === 'stable' ? '➡️ Stable' : '📉 Declining'}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {(filterDifficulty !== 'all' || filterTrend !== 'all') && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setFilterDifficulty('all');
-                      setFilterTrend('all');
-                    }}
-                  >
-                    <X className="mr-2 h-4 w-4" />
-                    Clear Filters
-                  </Button>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* Comparison View */}
@@ -1504,9 +1495,6 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
                         const path = careerPaths.find(p => p.id === pathId);
                         return path ? (
                           <td key={pathId} className="py-3 px-4">
-                            <Badge variant="secondary" className="bg-blue-500 text-white">
-                              {path.matchScore}%
-                            </Badge>
                           </td>
                         ) : null;
                       })}
@@ -1600,7 +1588,7 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
                             {path.name}
                           </CardTitle>
                           {/* Clamped description directly under title */}
-                          <p className="text-[11px] leading-normal line-clamp-1 text-slate-500 dark:text-slate-400 mt-0.5">
+                          <p className="text-[11px] leading-relaxed line-clamp-2 min-h-[32px] text-slate-500 dark:text-slate-400 mt-0.5">
                             {path.description}
                           </p>
                         </div>
@@ -1613,9 +1601,6 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
                             BEST
                           </Badge>
                         )}
-                        <Badge variant="secondary" className="bg-blue-500/10 text-blue-500 dark:bg-blue-500/20 text-[9px] font-extrabold px-1.5 py-0.5 shrink-0">
-                          {path.matchScore}%
-                        </Badge>
                         {showComparison && (
                           <Button
                             variant={comparisonPaths.includes(path.id) ? 'default' : 'outline'}
@@ -1651,11 +1636,10 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
                     {/* Bottom Row: Badges on left, Explore link on right */}
                     <div className="flex items-center justify-between gap-2 pt-0.5">
                       <div className="flex flex-wrap gap-1">
-                        <Badge variant="secondary" className={`text-[9px] font-extrabold py-0.5 px-1.5 ${
-                          path.difficulty === 'Easy' ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' :
+                        <Badge variant="secondary" className={`text-[9px] font-extrabold py-0.5 px-1.5 ${path.difficulty === 'Easy' ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' :
                             path.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400' :
                               'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
-                        }`}>
+                          }`}>
                           {path.difficulty}
                         </Badge>
                         <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 text-[9px] font-extrabold py-0.5 px-1.5">
@@ -1674,101 +1658,43 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
           </div>
         ) : (
           /* Detailed Path View */
-          <div className="w-full space-y-6">
-            {/* Back Button & Header */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <Button
-                variant="outline"
-                onClick={() => setSelectedPath(null)}
-                className="w-fit border-2"
-              >
-                <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
-                Back to All Paths
-              </Button>
-
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm">
-                  <Bookmark className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Share2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
+          <div className="w-full space-y-2">
             {selectedPathData && (
               <>
-                {/* Path Header Card */}
-                <Card className="border-2 border-slate-200 dark:border-slate-800 overflow-hidden shadow-md">
-                  <div className={`h-1.5 bg-gradient-to-r ${selectedPathData.color}`} />
-                  <CardHeader className="p-4 sm:p-5">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${selectedPathData.color} flex flex-shrink-0 items-center justify-center shadow-lg`}>
-                        <selectedPathData.icon className="h-7 w-7 text-white" />
-                      </div>
+                {/* Back Button - Moved up to left corner */}
+                <div className="flex -mt-4 -ml-1">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setSelectedPath(null)}
+                    className="group w-fit text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-lg px-2 py-1 transition-all duration-200 active:scale-95"
+                  >
+                    <ArrowRight className="mr-1.5 h-4 w-4 rotate-180 transition-transform duration-200 group-hover:-translate-x-1 text-slate-400 group-hover:text-blue-500" />
+                    <span className="font-semibold text-xs sm:text-sm">Back to All Paths</span>
+                  </Button>
+                </div>
 
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
-                          <div>
-                            <CardTitle className="mb-1 text-2xl font-black">{selectedPathData.name}</CardTitle>
-                            <CardDescription className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                              {selectedPathData.description}
-                            </CardDescription>
-                          </div>
+                {/* Inline Path Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                  <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${selectedPathData.color}`} />
 
-                          <Badge className="shrink-0 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-black px-3 py-1.5 rounded-lg shadow-md mt-1 lg:mt-0">
-                            <Trophy className="h-3.5 w-3.5 mr-1.5" />
-                            {selectedPathData.matchScore}% Match
-                          </Badge>
-                        </div>
+                  <div className={`hidden sm:flex w-10 h-10 rounded-xl bg-gradient-to-br ${selectedPathData.color} shrink-0 items-center justify-center shadow-lg`}>
+                    <selectedPathData.icon className="h-5 w-5 text-white" />
+                  </div>
 
-                        {/* Quick Stats (Inline Row) */}
-                        <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-bold">
-                          <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
-                            <Clock className="h-4 w-4" />
-                            <span className="text-slate-500 dark:text-slate-400 font-medium">Timeline:</span>
-                            <span className="text-slate-800 dark:text-slate-200">{selectedPathData.timeToJobReady}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-                            <DollarSign className="h-4 w-4" />
-                            <span className="text-slate-500 dark:text-slate-400 font-medium">Fresher Salary:</span>
-                            <span className="text-green-600">{selectedPathData.avgSalary.fresher}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400">
-                            <Briefcase className="h-4 w-4" />
-                            <span className="text-slate-500 dark:text-slate-400 font-medium">Openings:</span>
-                            <span className="text-slate-800 dark:text-slate-200">{selectedPathData.jobOpenings.toLocaleString()}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-orange-600 dark:text-orange-400">
-                            <TrendingUp className="h-4 w-4" />
-                            <span className="text-slate-500 dark:text-slate-400 font-medium">Demand:</span>
-                            <div className="flex items-center gap-1">
-                              {getTrendIcon(selectedPathData.demandTrend)}
-                              <span className="text-slate-800 dark:text-slate-200">{getTrendLabel(selectedPathData.demandTrend)}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Overall Progress */}
-                        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-4">
-                          <span className="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0">
-                            Your Progress
-                          </span>
-                          <Progress value={calculateProgress(selectedPathData)} className="h-2 flex-1" />
-                          <span className="text-xs font-black text-blue-600 shrink-0">
-                            {calculateProgress(selectedPathData)}%
-                          </span>
-                        </div>
-                      </div>
+                  <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h2 className="text-xl font-black truncate">{selectedPathData.name}</h2>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                        {selectedPathData.description}
+                      </p>
                     </div>
-                  </CardHeader>
-                </Card>
+                  </div>
+                </div>
 
                 {/* Tabs */}
                 <div className="flex items-center justify-center gap-2 overflow-x-auto pb-2">
                   {[
                     { id: 'overview', label: 'Overview', icon: Info },
-                    { id: 'roadmap', label: 'Skills Roadmap', icon: Target },
                     { id: 'projects', label: 'Projects', icon: Code },
                     { id: 'resources', label: 'Resources', icon: BookOpen },
                     { id: 'salary', label: 'Salary Insights', icon: DollarSign }
@@ -1789,7 +1715,7 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
                 {activeTab === 'overview' && (
                   <div className="grid md:grid-cols-2 gap-6">
                     {/* Top Companies */}
-                    <Card>
+                    <Card className="h-fit">
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                           <Building className="h-5 w-5 text-blue-600" />
@@ -1888,137 +1814,7 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
                   </div>
                 )}
 
-                {activeTab === 'roadmap' && (
-                  <div className="space-y-6">
-                    {/* Roadmap Timeline */}
-                    <Card>
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="flex items-center gap-2">
-                            <Target className="h-5 w-5 text-blue-600" />
-                            Learning Roadmap
-                          </CardTitle>
-                          <Badge variant="secondary">
-                            {selectedPathData.levels.length} Levels
-                          </Badge>
-                        </div>
-                        <CardDescription>
-                          Follow this structured path to become job-ready
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {selectedPathData.levels.map((level, levelIndex) => {
-                          const isExpanded = expandedLevel === levelIndex;
-                          const completedSkills = level.skills.filter(s => s.status === 'completed').length;
-                          const totalSkills = level.skills.length;
-                          const levelProgress = Math.round((completedSkills / totalSkills) * 100);
 
-                          return (
-                            <div key={level.level} className="relative">
-                              {/* Vertical Line */}
-                              {levelIndex < selectedPathData.levels.length - 1 && (
-                                <div className="absolute left-8 top-20 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700" />
-                              )}
-
-                              <Card className={`border-2 transition-all ${isExpanded ? 'border-blue-500 shadow-lg' : 'border-slate-200 dark:border-slate-800'
-                                }`}>
-                                <CardHeader
-                                  className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                                  onClick={() => setExpandedLevel(isExpanded ? null : levelIndex)}
-                                >
-                                  <div className="flex items-center gap-4">
-                                    {/* Level Number */}
-                                    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${selectedPathData.color} flex items-center justify-center shadow-lg flex-shrink-0 relative z-10`}>
-                                      <span className="text-2xl font-black text-white">{level.level}</span>
-                                    </div>
-
-                                    {/* Level Info */}
-                                    <div className="flex-1">
-                                      <div className="flex items-center justify-between mb-2">
-                                        <CardTitle className="text-xl">{level.title}</CardTitle>
-                                        <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                                      </div>
-
-                                      <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
-                                        <div className="flex items-center gap-1">
-                                          <Clock className="h-4 w-4" />
-                                          {level.duration}
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                          <CheckCircle className="h-4 w-4" />
-                                          {completedSkills}/{totalSkills} skills
-                                        </div>
-                                      </div>
-
-                                      {/* Progress Bar */}
-                                      <div className="mt-3">
-                                        <div className="flex items-center justify-between mb-1">
-                                          <span className="text-xs text-slate-500">Progress</span>
-                                          <span className="text-xs font-bold text-blue-600">{levelProgress}%</span>
-                                        </div>
-                                        <Progress value={levelProgress} className="h-2" />
-                                      </div>
-                                    </div>
-                                  </div>
-                                </CardHeader>
-
-                                {/* Expanded Skills */}
-                                {isExpanded && (
-                                  <CardContent className="pt-0">
-                                    <div className="space-y-3 mt-4">
-                                      {level.skills.map(skill => (
-                                        <div
-                                          key={skill.id}
-                                          className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${skill.status === 'completed'
-                                            ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800'
-                                            : skill.status === 'in-progress'
-                                              ? 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800'
-                                              : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
-                                            }`}
-                                        >
-                                          <div className="flex items-center gap-3 flex-1">
-                                            {getSkillStatusIcon(skill.status)}
-                                            <div className="flex-1">
-                                              <div className="font-semibold text-slate-900 dark:text-white">
-                                                {skill.name}
-                                              </div>
-                                              <div className="text-xs text-slate-500 mt-1">
-                                                {skill.estimatedWeeks} {skill.estimatedWeeks === 1 ? 'week' : 'weeks'} · {skill.category}
-                                              </div>
-                                              {skill.status === 'in-progress' && skill.progress && (
-                                                <div className="mt-2">
-                                                  <Progress value={skill.progress} className="h-1.5" />
-                                                </div>
-                                              )}
-                                            </div>
-                                          </div>
-
-                                          {skill.status === 'completed' ? (
-                                            <Badge className="bg-green-500 text-white">
-                                              Completed
-                                            </Badge>
-                                          ) : skill.status === 'in-progress' ? (
-                                            <Badge className="bg-yellow-500 text-white">
-                                              {skill.progress}%
-                                            </Badge>
-                                          ) : (
-                                            <Button size="sm" variant="outline">
-                                              Start Learning
-                                            </Button>
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </CardContent>
-                                )}
-                              </Card>
-                            </div>
-                          );
-                        })}
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
 
                 {activeTab === 'projects' && (
                   <div className="grid md:grid-cols-2 gap-6">
@@ -2106,7 +1902,7 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
                     {selectedPathData.learningResources.length > 0 ? (
                       <div className="grid md:grid-cols-2 gap-4">
                         {selectedPathData.learningResources.map(resource => (
-                          <Card key={resource.id} className="border-2 border-slate-200 dark:border-slate-800 hover:border-blue-500 transition-all">
+                          <Card key={resource.id} className="group border-2 border-slate-200 dark:border-slate-800 hover:border-blue-500/80 dark:hover:border-blue-500/80 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
                             <CardHeader>
                               <div className="flex items-start justify-between">
                                 <div className="flex items-start gap-3">
@@ -2122,7 +1918,7 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
                                     <BookOpen className="h-5 w-5 text-orange-600" />
                                   )}
                                   <div>
-                                    <CardTitle className="text-base mb-1">{resource.title}</CardTitle>
+                                    <CardTitle className="text-base mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{resource.title}</CardTitle>
                                     <CardDescription className="text-sm">{resource.platform}</CardDescription>
                                   </div>
                                 </div>
@@ -2144,10 +1940,14 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
                                   <span className="font-semibold">{resource.rating}</span>
                                 </div>
                               </div>
-                              <Button variant="outline" className="w-full" asChild>
-                                <a href={resource.url} target="_blank" rel="noopener noreferrer">
+                              <Button
+                                variant="outline"
+                                className="w-full group/btn border-slate-200 dark:border-slate-800 hover:border-blue-600 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white font-bold transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
+                                asChild
+                              >
+                                <a href={resource.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
                                   View Resource
-                                  <ExternalLink className="ml-2 h-4 w-4" />
+                                  <ExternalLink className="ml-2 h-4 w-4 transition-transform duration-200 group-hover/btn:translate-x-1 group-hover/btn:-translate-y-0.5" />
                                 </a>
                               </Button>
                             </CardContent>
@@ -2257,7 +2057,7 @@ export default function Careers({ isDashboard = false }: { isDashboard?: boolean
         )}
 
 
-        
+
       </div>
     </div>
   );

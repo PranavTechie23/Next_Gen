@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
@@ -10,22 +11,16 @@ import Footer from "./pages/Footer";
 
 import StudentDashboard from "./pages/student/StudentDashboard";
 import StudentSetting from "./pages/student/Setting";
-import Careers from "./pages/student/careers";
 import AboutUs from "./pages/AboutUs";
 import CorporateNews from "./pages/student/CorporateNews";
-
-
-
-import Webinar from "./pages/student/webinars";
-
 
 import StudentFeedback from "./pages/student/feedbackForm";
 import StudentInfo from "./pages/student/student_info";
 
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminSetting from "./pages/admin/Setting";
-import AdminFeedback from "./pages/admin/feedbackForm";
-import AdminInfo from "./pages/admin/college_info";
+import TPODashboard from "./pages/tpo/TPODashboard";
+import TPOSetting from "./pages/tpo/Setting";
+import TPOFeedback from "./pages/tpo/feedbackForm";
+import TPOInfo from "./pages/tpo/college_info";
 
 import DepartmentDashboard from "./pages/department/DepartmentDashboard";
 
@@ -52,7 +47,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/login" component={LoginPage} />
       <Route path="/careers">
-        <Careers />
+        <DashboardTabRedirect dashboardPath="/student/dashboard" tab="careers" />
       </Route>
       <Route path="/about" component={AboutUs} />
       <Route path="/Footer" component={() => <Footer role="public" />} />
@@ -66,25 +61,67 @@ function Router() {
 
 
       <Route path="/webinars">
-        <Webinar />
+        <DashboardTabRedirect dashboardPath="/student/dashboard" tab="webinars" />
       </Route>
 
       <Route path="/privacy" component={PrivacyPage} />
 
-      {/* Admin Routes (TPO Admin) */}
-      <Route path="/admin/dashboard" component={AdminDashboard} />
-      <Route path="/admin/setting" component={AdminSetting} />
-      <Route path="/admin/feedbackForm" component={AdminFeedback} />
-      <Route path="/admin/college_info" component={AdminInfo} />
+      {/* TPO Routes (TPO) */}
+      <Route path="/TPO/dashboard">
+        <ProtectedRoute allowedRoles={["TPO_ADMIN"]}>
+          <TPOLayout>
+            <TPODashboard />
+          </TPOLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/TPO/setting">
+        <ProtectedRoute allowedRoles={["TPO_ADMIN"]}>
+          <TPOSetting />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/TPO/feedbackForm">
+        <ProtectedRoute allowedRoles={["TPO_ADMIN"]}>
+          <TPOFeedback />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/TPO/college_info">
+        <ProtectedRoute allowedRoles={["TPO_ADMIN"]}>
+          <TPOInfo />
+        </ProtectedRoute>
+      </Route>
 
       {/* Student Routes */}
-      <Route path="/student/dashboard" component={StudentDashboard} />
-      <Route path="/student/setting" component={StudentSetting} />
-      <Route path="/student/feedbackForm" component={StudentFeedback} />
-      <Route path="/student/student_info" component={StudentInfo} />
+      <Route path="/student/dashboard">
+        <ProtectedRoute allowedRoles={["STUDENT"]}>
+          <StudentLayout>
+            <StudentDashboard />
+          </StudentLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/student/setting">
+        <ProtectedRoute allowedRoles={["STUDENT"]}>
+          <StudentSetting />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/student/feedbackForm">
+        <ProtectedRoute allowedRoles={["STUDENT"]}>
+          <StudentFeedback />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/student/student_info">
+        <ProtectedRoute allowedRoles={["STUDENT"]}>
+          <StudentInfo />
+        </ProtectedRoute>
+      </Route>
 
       {/* Department Routes (TPO Head) */}
-      <Route path="/department/dashboard" component={DepartmentDashboard} />
+      <Route path="/department/dashboard">
+        <ProtectedRoute allowedRoles={["TPO_HEAD"]}>
+          <DeptLayout>
+            <DepartmentDashboard />
+          </DeptLayout>
+        </ProtectedRoute>
+      </Route>
 
       {/* Additional Pages & Aliases */}
       <Route path="/security" component={Security} />
@@ -114,22 +151,30 @@ function Router() {
 }
 import { BrandingProvider } from "./contexts/BrandingContext";
 import { UserProvider } from "./contexts/UserContext";
+import { QueryProvider } from "./providers/QueryProvider";
+import { DashboardTabRedirect } from "./components/routing/DashboardTabRedirect";
+import { TPOLayout, StudentLayout, DeptLayout } from "./components/layouts";
+import { installGlobalAxiosRateLimitHandler } from "./lib/httpRateLimit";
+
+installGlobalAxiosRateLimitHandler();
 
 function App() {
   return (
     <ErrorBoundary>
       <BrandingProvider>
-        <UserProvider>
-          <ThemeProvider defaultTheme="light" switchable={true}>
-            <TooltipProvider>
-              <ScrollToTop />
-              <Toaster />
-              <div className="min-h-dvh w-full min-w-0 overflow-x-hidden">
-                <Router />
-              </div>
-            </TooltipProvider>
-          </ThemeProvider>
-        </UserProvider>
+        <QueryProvider>
+          <UserProvider>
+            <ThemeProvider defaultTheme="light" switchable={true}>
+              <TooltipProvider>
+                <ScrollToTop />
+                <Toaster />
+                <div className="min-h-dvh w-full min-w-0 overflow-x-hidden">
+                  <Router />
+                </div>
+              </TooltipProvider>
+            </ThemeProvider>
+          </UserProvider>
+        </QueryProvider>
       </BrandingProvider>
     </ErrorBoundary>
   );

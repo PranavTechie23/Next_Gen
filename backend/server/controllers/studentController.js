@@ -2,6 +2,45 @@ const db = require('../config/db');
 const { parsePositiveInt } = require('../utils/validateParams');
 const { driveTenantClause, scopeFromInstitutionId } = require('../middleware/institutionScope');
 
+function parseJsonArray(value) {
+    if (Array.isArray(value)) return value;
+    if (value == null || value === '') return [];
+    if (typeof value === 'string') {
+        try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    }
+    return [];
+}
+
+function formatJobRow(row) {
+    return {
+        ...row,
+        required_skills: parseJsonArray(row.required_skills),
+        dos: parseJsonArray(row.dos),
+        donts: parseJsonArray(row.donts),
+        eligible_branches: parseJsonArray(row.eligible_branches),
+    };
+}
+
+function parseDeadlineDate(deadline) {
+    if (!deadline || typeof deadline !== 'string') return null;
+    const trimmed = deadline.trim();
+    const direct = Date.parse(trimmed);
+    if (!Number.isNaN(direct)) {
+        return new Date(direct).toISOString().slice(0, 10);
+    }
+    const cleaned = trimmed.replace(/^apply\s+by:\s*/i, '');
+    const attempt = Date.parse(cleaned);
+    if (!Number.isNaN(attempt)) {
+        return new Date(attempt).toISOString().slice(0, 10);
+    }
+    return null;
+}
+
 /**
  * Get the profile of the logged-in student
  * GET /api/student/profile
@@ -15,7 +54,7 @@ const getStudentProfile = async (req, res) => {
             db.execute(`
                 SELECT 
                     s.user_id, s.roll_number, s.current_cgpa, s.active_backlogs, 
-                    s.tenth_marks, s.twelfth_marks, s.is_academic_data_locked, 
+                    s.tenth_marks, s.twelfth_marks, s.diploma_marks, s.is_academic_data_locked, 
                     s.is_placed, s.current_package_value,
                     s.is_debarred, s.debar_reason, s.debar_lift_date,
                     u.email, u.is_active,
@@ -233,13 +272,20 @@ const getEligibleJobs = async (req, res) => {
             SELECT 
                 j.id AS job_id, 
                 j.job_title, 
+                j.job_description,
                 j.package_value, 
                 j.location, 
                 j.min_cgpa, 
                 j.max_backlogs_allowed,
                 j.eligible_branches,
+                j.application_link,
+                j.deadline_note,
+                j.required_skills,
+                j.dos,
+                j.donts,
                 d.id AS drive_id, 
                 d.drive_name, 
+                d.description AS drive_description,
                 d.end_date,
                 r.company_name
             FROM job_postings j
@@ -255,7 +301,7 @@ const getEligibleJobs = async (req, res) => {
 
         res.status(200).json({
             count: jobs.length,
-            jobs: jobs
+            jobs: jobs.map(formatJobRow)
         });
 
     } catch (error) {
@@ -292,6 +338,11 @@ const getJobDetails = async (req, res) => {
                 j.min_cgpa, 
                 j.max_backlogs_allowed,
                 j.eligible_branches,
+                j.application_link,
+                j.deadline_note,
+                j.required_skills,
+                j.dos,
+                j.donts,
                 d.id AS drive_id, 
                 d.drive_name, 
                 d.description AS drive_description,
@@ -313,7 +364,7 @@ const getJobDetails = async (req, res) => {
             return res.status(404).json({ message: "Job not found or is no longer active." });
         }
 
-        res.status(200).json(jobs[0]);
+        res.status(200).json(formatJobRow(jobs[0]));
 
     } catch (error) {
         console.error("Error fetching job details:", error);
@@ -340,6 +391,9 @@ const applyForJob = async (req, res) => {
             SELECT 
                 current_cgpa, 
                 active_backlogs, 
+                tenth_marks,
+                twelfth_marks,
+                diploma_marks,
                 is_debarred, 
                 debar_reason, 
                 is_placed, 
@@ -353,6 +407,11 @@ const applyForJob = async (req, res) => {
         }
 
         const student = students[0];
+
+        // Policy Check 0: Profile Completeness
+        if (student.tenth_marks === null || (student.twelfth_marks === null && student.diploma_marks === null)) {
+            return res.status(400).json({ message: "Incomplete academic profile. Please add your 10th and 12th/Diploma marks in your Profile before applying." });
+        }
 
         // Policy Check 1: Is Debarred?
         if (student.is_debarred) {

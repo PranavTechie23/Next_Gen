@@ -24,7 +24,7 @@ export default function SignupPage() {
     institutionName: "",
     institutionCode: "",
     institutionAddress: "",
-    adminKey: "",
+    TPOKey: "",
     password: "",
     confirmPassword: "",
     agreeToTerms: false
@@ -64,7 +64,7 @@ export default function SignupPage() {
   const handleSignup = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.post(buildApiUrl("/auth/register-admin"), {
+      const response = await axios.post(buildApiUrl("/auth/register-TPO"), {
         name: formData.fullName,
         email: formData.email,
         phone: formData.phone,
@@ -73,10 +73,10 @@ export default function SignupPage() {
         institution_name: formData.institutionName,
         institution_code: formData.institutionCode,
         institution_address: formData.institutionAddress,
-        adminKey: formData.adminKey,
+        TPOKey: formData.TPOKey,
       });
 
-      toast.success(response.data.message || "Admin registered successfully!");
+      toast.success(response.data.message || "TPO registered successfully!");
       setTimeout(() => {
         window.location.href = "/login";
       }, 1500);
@@ -156,21 +156,21 @@ export default function SignupPage() {
       <div className="w-full max-w-5xl grid md:grid-cols-2 gap-6 items-center relative z-10 my-auto">
         {/* Left side - Branding */}
         <div className="hidden md:block space-y-8 slide-in">
-            <div className="flex items-center gap-0 mb-4 group cursor-pointer transition-all duration-300" onClick={() => window.location.href = "/"}>
-              <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-16 w-16 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
-              <div className="flex flex-col justify-center leading-tight">
-                <h1 className="text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
-                  NextGen
-                </h1>
-                <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest mt-0.5 opacity-80">
-                  Data-Driven
-                </p>
-              </div>
+          <div className="flex items-center gap-0 mb-4 group cursor-pointer transition-all duration-300" onClick={() => window.location.href = "/"}>
+            <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-16 w-16 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
+            <div className="flex flex-col justify-center leading-tight">
+              <h1 className="text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
+                NextGen
+              </h1>
+              <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest mt-0.5 opacity-80">
+                Data-Driven
+              </p>
             </div>
+          </div>
 
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-foreground leading-tight">
-              TPO Admin Portal 🚀
+              TPO Portal 🚀
             </h2>
             <p className="text-base text-muted-foreground leading-relaxed">
               Register your institution and gain access to powerful placement management tools.
@@ -225,7 +225,7 @@ export default function SignupPage() {
             </div>
 
             <div className="mb-4">
-              <h2 className="text-lg font-bold text-foreground mb-0.5">Admin Account</h2>
+              <h2 className="text-lg font-bold text-foreground mb-0.5">TPO Account</h2>
               <p className="text-xs text-muted-foreground">Register your institution details</p>
             </div>
 
@@ -238,7 +238,7 @@ export default function SignupPage() {
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <input
                       type="text"
-                      placeholder="Admin Name"
+                      placeholder="TPO Name"
                       value={formData.fullName}
                       onChange={(e) => handleInputChange("fullName", e.target.value)}
                       className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
@@ -253,7 +253,7 @@ export default function SignupPage() {
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <input
                       type="email"
-                      placeholder="admin@college.edu"
+                      placeholder="TPO@college.edu"
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
@@ -290,7 +290,7 @@ export default function SignupPage() {
               </div>
             ) : (
               <div className="space-y-3 max-h-[55vh] overflow-y-auto px-1 -mx-1 pb-2">
-                 {/* Institution Name */}
+                {/* Institution Name */}
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-foreground/80">Institution Name</label>
                   <div className="relative group">
@@ -320,10 +320,10 @@ export default function SignupPage() {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-foreground/80">Admin Registration Key</label>
+                  <label className="text-xs font-semibold text-foreground/80">TPO Registration Key</label>
                   <div className="relative group">
                     <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                    <input type="text" placeholder="Provided by platform" value={formData.adminKey} onChange={(e) => handleInputChange("adminKey", e.target.value)} className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm" />
+                    <input type="text" placeholder="Provided by platform" value={formData.TPOKey} onChange={(e) => handleInputChange("TPOKey", e.target.value)} className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm" />
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -363,15 +363,15 @@ export default function SignupPage() {
                 </label>
                 <div className="flex gap-2 pt-1">
                   <Button onClick={handlePrevStep} variant="outline" className="flex-1 border border-gray-300 hover:border-gray-400 py-2.5 rounded-lg font-semibold transition-all text-sm">Back</Button>
-                  <Button onClick={handleSignup} disabled={isLoading || !formData.institutionName || !formData.institutionCode || !formData.adminKey || !formData.password || formData.password !== formData.confirmPassword || !formData.agreeToTerms} className="flex-[2] bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white py-2.5 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm">
-                    {isLoading ? <span className="flex items-center justify-center gap-2"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Registering...</span> : "Register Admin"}
+                  <Button onClick={handleSignup} disabled={isLoading || !formData.institutionName || !formData.institutionCode || !formData.TPOKey || !formData.password || formData.password !== formData.confirmPassword || !formData.agreeToTerms} className="flex-[2] bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white py-2.5 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm">
+                    {isLoading ? <span className="flex items-center justify-center gap-2"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Registering...</span> : "Register TPO"}
                   </Button>
                 </div>
               </div>
             )}
 
             <p className="text-center text-xs text-muted-foreground mt-4 font-medium">
-              Already have an admin account?{" "}
+              Already have an TPO account?{" "}
               <a href="/login" className="font-bold text-primary hover:text-primary/80 transition-colors">
                 Sign In
               </a>

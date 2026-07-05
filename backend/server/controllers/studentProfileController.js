@@ -5,6 +5,11 @@ const fs = require('fs');
 const pdfParseModule = require('pdf-parse');
 const aiConfigService = require('../utils/aiConfigService');
 const { toProtectedUploadUrl, normalizeUploadUrl } = require('../utils/uploadUrls');
+const {
+    normalizeEducationEntries,
+    educationEntryToLines,
+    parseMarksPercent,
+} = require('../utils/educationUtils');
 let _pdfjsLegacy = null;
 
 // Ensure upload directory exists for storing resumes
@@ -102,6 +107,43 @@ const ensureResumeParsedTable = async () => {
     try {
         await db.execute(`ALTER TABLE resume_parsed_data ADD COLUMN missing_skills_for_target JSON NULL`);
     } catch (_) {}
+    try {
+        await db.execute(`ALTER TABLE resume_parsed_data ADD COLUMN last_llm_eval_at DATETIME NULL`);
+    } catch (_) {}
+    try {
+        await db.execute(`ALTER TABLE resume_parsed_data ADD COLUMN parse_quality INT NULL`);
+    } catch (_) {}
+};
+
+const isSameCalendarDay = (a, b) => {
+    const d1 = a instanceof Date ? a : new Date(a);
+    const d2 = b instanceof Date ? b : new Date(b);
+    if (Number.isNaN(d1.getTime()) || Number.isNaN(d2.getTime())) return false;
+    return d1.getFullYear() === d2.getFullYear()
+        && d1.getMonth() === d2.getMonth()
+        && d1.getDate() === d2.getDate();
+};
+
+const hadLlmEvalToday = (lastLlmEvalAt) => {
+    if (!lastLlmEvalAt) return false;
+    return isSameCalendarDay(lastLlmEvalAt, new Date());
+};
+
+const sanitizeTargetRole = (role = '') => String(role || '')
+    .replace(/[\r\n{}<>]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120);
+
+/** Skills must appear in resume text — blocks keyword-stuffed skill lists. */
+const verifySkillsAgainstResumeText = (skills = [], rawText = '', max = 20) => {
+    const textLower = String(rawText || '').toLowerCase();
+    if (!textLower) return [];
+    return (Array.isArray(skills) ? skills : [])
+        .map((s) => String(s || '').trim())
+        .filter(Boolean)
+        .filter((skill) => textLower.includes(skill.toLowerCase()))
+        .slice(0, max);
 };
 
 const uniq = (arr = []) => Array.from(new Set(arr.filter(Boolean)));
@@ -129,6 +171,119 @@ const normalizeResumeText = (raw = '') => {
     t = t.replace(/\n{3,}/g, '\n\n');
     t = t.replace(/[ \t]{2,}/g, ' ');
     return t.trim();
+};
+
+// PDF/resume templates often render hyperlinks as visible glyphs instead of URLs:
+// - LaTeX hyperref / Google Docs: "§ 2" next to GitHub links
+// - Canva/Notion exports: "↗" before credential or project links
+const PDF_LINK_ARTIFACT_RE = /(?:\s*\u00A7\s*\d+\s*|\s*§\s*\d+\s*|\s*[\u2197\u2198\u2192\u21D2\u27A1\u2794\u27A4\uFFEB]\s*|\s*\(\s*(?:link|url|source|demo|live|github|portfolio)\s*\)\s*)/gi;
+const URL_IN_TEXT_RE = /https?:\/\/[^\s)>\]"'|,]+/gi;
+const DATE_RANGE_IN_TITLE_RE = /\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{4}\s*[-–—]\s*(?:present|ongoing|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{4})\b/gi;
+const YEAR_RANGE_IN_TITLE_RE = /\b\d{4}\s*[-–—]\s*(?:present|ongoing|\d{4})\b/gi;
+const PROJECT_PLATFORM_RE = /\((github|gitlab|bitbucket|vercel|netlify|render|portfolio|live|demo|source)\)/gi;
+
+const stripPdfLinkArtifacts = (raw = '') =>
+    String(raw || '')
+        .replace(PDF_LINK_ARTIFACT_RE, ' ')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+
+const extractUrlsFromText = (raw = '') => {
+    const matches = String(raw || '').match(URL_IN_TEXT_RE) || [];
+    return uniq(matches.map((u) => u.replace(/[.,;]+$/, '')));
+};
+
+const hadPdfLinkArtifact = (raw = '') =>
+    /(?:\u00A7|§\s*\d|[\u2197\u2198\u2192\u21D2\u27A1\u2794\u27A4\uFFEB])/i.test(String(raw || ''));
+
+const cleanResumeLine = (raw = '') => {
+    const original = String(raw || '').trim();
+    const urls = extractUrlsFromText(original);
+    let text = stripPdfLinkArtifacts(original.replace(URL_IN_TEXT_RE, ' '));
+    text = text
+        .replace(/^[•\-\u2022]\s*/, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+    return { text, urls, hadLinkArtifact: hadPdfLinkArtifact(original) };
+};
+
+const pickBestUrl = (urls = []) => {
+    const list = uniq(urls.filter(Boolean));
+    if (!list.length) return null;
+    return (
+        list.find((u) => /github|gitlab|bitbucket|vercel|netlify|render|portfolio|demo|live/i.test(u)) ||
+        list.find((u) => /coursera|udemy|linkedin|credly|hackerrank|leetcode/i.test(u)) ||
+        list[0]
+    );
+};
+
+const sanitizeProjectTitle = (rawTitle = '', extraUrls = [], linkPool = null) => {
+    const { text, urls, hadLinkArtifact } = cleanResumeLine(rawTitle);
+    let title = text
+        .replace(PROJECT_PLATFORM_RE, '')
+        .replace(DATE_RANGE_IN_TITLE_RE, '')
+        .replace(YEAR_RANGE_IN_TITLE_RE, '')
+        .replace(/\s{2,}/g, ' ')
+        .replace(/\s+[-–—]\s*$/, '')
+        .trim();
+
+    const candidateUrls = uniq([...urls, ...extraUrls]);
+    let url = pickBestUrl(candidateUrls);
+    if (!url && hadLinkArtifact && linkPool) {
+        url = linkPool.take();
+    }
+    return { title: title || 'Project', url: url || null };
+};
+
+const sanitizeCertificationEntry = (rawLine = '', linkPool = null) => {
+    const { text, urls, hadLinkArtifact } = cleanResumeLine(rawLine);
+    let label = text.replace(/\s{2,}/g, ' ').trim();
+    let url = pickBestUrl(urls);
+    if (!url && hadLinkArtifact && linkPool) {
+        url = linkPool.take();
+    }
+    if (!url) return label;
+    return { label, url };
+};
+
+const createPdfLinkPool = (hyperlinks = [], consumedFromText = []) => {
+    const consumed = new Set(consumedFromText.filter(Boolean));
+    const queue = hyperlinks
+        .map((h) => (typeof h === 'string' ? h : h?.url))
+        .filter((u) => u && /^https?:\/\//i.test(u) && !consumed.has(u));
+    return {
+        take: () => {
+            const next = queue.shift() || null;
+            if (next) consumed.add(next);
+            return next;
+        },
+        remaining: () => queue.slice(),
+    };
+};
+
+const extractPdfHyperlinks = async (fileBuffer) => {
+    const links = [];
+    try {
+        if (!_pdfjsLegacy) {
+            _pdfjsLegacy = await import('pdfjs-dist/legacy/build/pdf.mjs');
+        }
+        const loadingTask = _pdfjsLegacy.getDocument({ data: fileBuffer, verbosity: 0 });
+        const pdf = await loadingTask.promise;
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const annotations = await page.getAnnotations({ intent: 'display' });
+            for (const ann of annotations) {
+                if (String(ann?.subtype || '').toLowerCase() !== 'link') continue;
+                let url = ann.url || ann.unsafeUrl || null;
+                if (!url && typeof ann.uri === 'string') url = ann.uri;
+                if (!url || !/^https?:\/\//i.test(String(url))) continue;
+                links.push({ url: String(url).trim(), page: pageNum, rect: ann.rect || [] });
+            }
+        }
+    } catch (_) {
+        // Non-fatal: text-only parsing still works.
+    }
+    return links;
 };
 
 const extractTextFromPdfPageLayoutAware = (content) => {
@@ -184,54 +339,11 @@ const extractTextFromPdfPageLayoutAware = (content) => {
     return rendered.join('\n');
 };
 
-const configService = require('../utils/configService');
-
-const scoreExtractedTextQuality = async (text = '') => {
-    const weights = await configService.getConfig('resume_extraction_weights', {
-        length: 0.45,
-        structure: 0.35,
-        content: 0.2
-    });
-
-    const t = String(text || '');
-    const lengthScore = Math.min(1, t.length / 1200);
-    const lineCount = t.split('\n').filter((l) => l.trim()).length;
-    const lineScore = Math.min(1, lineCount / 40);
-    const headingScore = /(education|projects|experience|skills|certifications|summary)/i.test(t) ? 1 : 0;
-    
-    return (lengthScore * weights.length) + 
-           (lineScore * weights.structure) + 
-           (headingScore * weights.content);
-};
-
-const scoreParsedResumeQuality = async (parsed = {}) => {
-    const weights = await configService.getConfig('resume_parsing_quality_weights', {
-        skills: 0.25,
-        timeline: 0.30,
-        summary: 0.10,
-        contact: 0.20,
-        links: 0.15
-    });
-
-    const sections = parsed?.sections || {};
-    const skills = Array.isArray(parsed?.skills) ? parsed.skills.length : 0;
-    const projects = Array.isArray(sections?.projects) ? sections.projects.length : 0;
-    const experience = Array.isArray(sections?.experience) ? sections.experience.length : 0;
-    const education = Array.isArray(sections?.education) ? sections.education.length : 0;
-    const certs = Array.isArray(sections?.certifications) ? sections.certifications.length : 0;
-    const hasContact = Number(!!parsed?.email) + Number(!!parsed?.phone);
-    const hasLinks = Number(!!parsed?.linkedinUrl) + Number(!!parsed?.githubUrl);
-    const summaryLen = String(sections?.summary || '').length;
-    const timelineSignals = [projects, experience, education, certs].reduce((a, b) => a + b, 0);
-
-    return (
-        Math.min(1, skills / 20) * weights.skills +
-        Math.min(1, timelineSignals / 20) * weights.timeline +
-        Math.min(1, summaryLen / 400) * weights.summary +
-        (hasContact / 2) * weights.contact +
-        (hasLinks / 2) * weights.links
-    );
-};
+const {
+    scoreExtractedTextQuality,
+    scoreParsedResumeQuality,
+} = require('../utils/resumeQuality');
+const dashboardMetricsService = require('../utils/dashboardMetricsService');
 
 const tryLlmInferRole = async ({ rawText = '', skills = [], sections = {} }) => {
     const payload = {
@@ -301,15 +413,13 @@ const inferRoleFromResumeNlp = ({ rawText = '', skills = [], sections = {} }) =>
     };
 };
 
-const parseResumeText = (rawText = '') => {
+const parseResumeText = (rawText = '', context = {}) => {
     const text = normalizeResumeText(rawText);
+    const hyperlinks = Array.isArray(context?.hyperlinks) ? context.hyperlinks : [];
+    const linkPool = createPdfLinkPool(hyperlinks, extractUrlsFromText(text));
     const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
     const firstLine = lines[0] || '';
-    const cleanListLine = (line = '') =>
-        String(line || '')
-            .replace(/^[•\-\u2022]\s*/, '')
-            .replace(/\s{2,}/g, ' ')
-            .trim();
+    const cleanListLine = (line = '') => cleanResumeLine(line).text;
     const isNoiseLine = (line = '') => {
         const l = String(line || '').trim();
         if (!l) return true;
@@ -494,16 +604,18 @@ const parseResumeText = (rawText = '') => {
     const summaryText = extractBullets(sections.summary).join(' ');
 
     const parseProjectBlocks = () => {
-        const projectLines = extractBullets(sections.projects);
+        const projectLines = sections.projects
+            .map((l) => String(l || '').trim())
+            .filter((l) => l && !isNoiseLine(l));
         const projects = [];
         let currentProject = null;
         const startsWithActionVerb = (line = '') =>
             /^(built|developed|implemented|designed|created|integrated|engineered|deployed|optimized|managed|handled)\b/i.test(String(line).trim());
 
         const isLikelyTitleLine = (l) => {
-            const line = String(l || '').trim();
+            const line = cleanResumeLine(l).text;
             if (!line || line.length < 6 || line.length > 180) return false;
-            if (/^[•\-\u2022]/.test(line)) return false;
+            if (/^[•\-\u2022]/.test(String(l || '').trim())) return false;
             if (/\.$/.test(line)) return false;
             if (startsWithActionVerb(line)) return false;
 
@@ -517,14 +629,16 @@ const parseResumeText = (rawText = '') => {
             return words.length >= 2 && words.length <= 12 && titleCaseWords >= Math.ceil(words.length * 0.5);
         };
 
-        for (const l of projectLines) {
-            if (isLikelyTitleLine(l) && !l.startsWith('•')) {
+        for (const rawLine of projectLines) {
+            if (isLikelyTitleLine(rawLine) && !String(rawLine || '').trim().startsWith('•')) {
                 if (currentProject) projects.push(currentProject);
-                currentProject = { title: l, bullets: [] };
+                const { title, url } = sanitizeProjectTitle(rawLine, [], linkPool);
+                currentProject = { title, bullets: [], url };
             } else if (currentProject) {
-                currentProject.bullets.push(l);
-            } else {
-                // if no title yet, keep as loose bullet
+                const bulletMeta = cleanResumeLine(rawLine);
+                currentProject.bullets.push(bulletMeta.text);
+                const bulletUrl = pickBestUrl(bulletMeta.urls);
+                if (!currentProject.url && bulletUrl) currentProject.url = bulletUrl;
             }
         }
         if (currentProject) projects.push(currentProject);
@@ -532,14 +646,31 @@ const parseResumeText = (rawText = '') => {
         // If no title lines were detected but project section has content,
         // keep one inferred project so projects are not silently lost.
         if (projects.length === 0 && projectLines.length > 0) {
-            const [first, ...rest] = projectLines;
+            const [firstRaw, ...restRaw] = projectLines;
+            const firstProject = sanitizeProjectTitle(firstRaw, [], linkPool);
             projects.push({
-                title: first || 'Project',
-                bullets: rest.slice(0, 8),
+                title: firstProject.title || 'Project',
+                url: firstProject.url,
+                bullets: restRaw.map((l) => cleanResumeLine(l).text).slice(0, 8),
             });
         }
-        return projects.slice(0, 10);
+        return projects.slice(0, 10).map((p) => ({
+            title: p.title,
+            bullets: (Array.isArray(p.bullets) ? p.bullets : []).filter(Boolean).slice(0, 10),
+            ...(p.url ? { url: p.url } : {}),
+        }));
     };
+
+    const parseCertificationList = (arr, max = 25) =>
+        arr
+            .map((l) => String(l || '').trim())
+            .filter((l) => l && !isNoiseLine(l))
+            .map((rawLine) => sanitizeCertificationEntry(rawLine, linkPool))
+            .filter((entry) => {
+                const label = typeof entry === 'string' ? entry : entry?.label;
+                return String(label || '').length >= 3;
+            })
+            .slice(0, max);
 
     const parseSimpleList = (arr, max = 20) => extractBullets(arr).slice(0, max);
     const parseAchievementList = (arr, max = 25) =>
@@ -597,7 +728,12 @@ const parseResumeText = (rawText = '') => {
                     j += 1;
                 }
                 if (bullets.length > 0 || looksProjectish(next)) {
-                    recovered.push({ title: line, bullets: bullets.slice(0, 8) });
+                    const sanitized = sanitizeProjectTitle(line, [], linkPool);
+                    recovered.push({
+                        title: sanitized.title,
+                        bullets: bullets.map((b) => cleanResumeLine(b).text).slice(0, 8),
+                        ...(sanitized.url ? { url: sanitized.url } : {}),
+                    });
                     i = j;
                     continue;
                 }
@@ -617,6 +753,7 @@ const parseResumeText = (rawText = '') => {
     };
 
     const rebalanced = rebalanceProjectsFromExperience(parsedProjects, parsedExperience);
+    const educationBundle = normalizeEducationEntries([], parseSimpleList(sections.education, 20));
 
     return {
         fullName,
@@ -627,10 +764,11 @@ const parseResumeText = (rawText = '') => {
         skills: allSkills,
         sections: {
             summary: summaryText || null,
-            education: parseSimpleList(sections.education, 20),
+            education: educationBundle.education,
+            education_entries: educationBundle.education_entries,
             projects: rebalanced.projects,
             experience: rebalanced.experience,
-            certifications: parseSimpleList(sections.certifications, 25),
+            certifications: parseCertificationList(sections.certifications, 25),
             achievements: parseAchievementList(sections.achievements, 25),
             extracurricular: parseSimpleList(sections.extracurricular, 25),
             languages: parseSimpleList(sections.languages, 10),
@@ -720,7 +858,11 @@ const mergeParsedResumeCandidates = (parsedCandidates = []) => {
     if (!parsedCandidates.length) return parseResumeText('');
     const ordered = [...parsedCandidates].sort((a, b) => (b.score || 0) - (a.score || 0));
     const base = JSON.parse(JSON.stringify(ordered[0].parsed));
-    const listSections = ['education', 'projects', 'experience', 'certifications', 'achievements', 'extracurricular', 'languages', 'interests'];
+    const listSections = ['education', 'experience', 'achievements', 'extracurricular', 'languages', 'interests'];
+
+    const projectKey = (p) => String(p?.title || p?.name || '').toLowerCase().trim();
+    const certKey = (c) => (typeof c === 'string' ? c : String(c?.label || '')).toLowerCase().trim();
+
     for (let i = 1; i < ordered.length; i++) {
         const p = ordered[i].parsed || {};
         base.skills = uniq([...(base.skills || []), ...(p.skills || [])]).slice(0, 80);
@@ -734,6 +876,74 @@ const mergeParsedResumeCandidates = (parsedCandidates = []) => {
         if (candidateSummary.length > baseSummary.length) {
             base.sections.summary = candidateSummary;
         }
+
+        const baseProjects = Array.isArray(base?.sections?.projects) ? base.sections.projects : [];
+        const extraProjects = Array.isArray(p?.sections?.projects) ? p.sections.projects : [];
+        const projectMap = new Map();
+        for (const proj of [...baseProjects, ...extraProjects]) {
+            const key = projectKey(proj);
+            if (!key) continue;
+            const existing = projectMap.get(key);
+            if (!existing) {
+                projectMap.set(key, proj);
+                continue;
+            }
+            projectMap.set(key, {
+                ...existing,
+                ...proj,
+                title: existing.title || proj.title,
+                url: existing.url || proj.url || null,
+                bullets: uniq([...(existing.bullets || []), ...(proj.bullets || [])]).slice(0, 10),
+            });
+        }
+        base.sections.projects = Array.from(projectMap.values()).slice(0, 40);
+
+        const baseCerts = Array.isArray(base?.sections?.certifications) ? base.sections.certifications : [];
+        const extraCerts = Array.isArray(p?.sections?.certifications) ? p.sections.certifications : [];
+        const certMap = new Map();
+        for (const cert of [...baseCerts, ...extraCerts]) {
+            const key = certKey(cert);
+            if (!key) continue;
+            const existing = certMap.get(key);
+            if (!existing) {
+                certMap.set(key, cert);
+                continue;
+            }
+            if (typeof existing === 'string' && typeof cert === 'object' && cert?.url) {
+                certMap.set(key, cert);
+            } else if (typeof existing === 'object' && !existing.url && typeof cert === 'object' && cert?.url) {
+                certMap.set(key, { ...existing, url: cert.url });
+            }
+        }
+        base.sections.certifications = Array.from(certMap.values()).slice(0, 40);
+
+        const baseEdu = Array.isArray(base?.sections?.education_entries) ? base.sections.education_entries : [];
+        const extraEdu = Array.isArray(p?.sections?.education_entries) ? p.sections.education_entries : [];
+        const eduMap = new Map();
+        for (const entry of [...baseEdu, ...extraEdu]) {
+            const key = `${entry?.level || 'other'}::${String(entry?.institute || '').toLowerCase()}::${String(entry?.degreeOrBoard || '').toLowerCase()}`;
+            if (!key.replace(/::/g, '')) continue;
+            if (!eduMap.has(key)) {
+                eduMap.set(key, entry);
+                continue;
+            }
+            const existing = eduMap.get(key);
+            eduMap.set(key, {
+                ...existing,
+                ...entry,
+                marks: existing?.marks || entry?.marks || undefined,
+                years: existing?.years || entry?.years || undefined,
+                details: uniq([...(existing?.details || []), ...(entry?.details || [])]).slice(0, 10),
+            });
+        }
+        const mergedEduEntries = Array.from(eduMap.values()).slice(0, 12);
+        base.sections.education_entries = mergedEduEntries;
+        base.sections.education = uniq([
+            ...(Array.isArray(base?.sections?.education) ? base.sections.education : []),
+            ...(Array.isArray(p?.sections?.education) ? p.sections.education : []),
+            ...mergedEduEntries.flatMap(educationEntryToLines),
+        ]).slice(0, 40);
+
         for (const sectionKey of listSections) {
             const a = Array.isArray(base?.sections?.[sectionKey]) ? base.sections[sectionKey] : [];
             const b = Array.isArray(p?.sections?.[sectionKey]) ? p.sections[sectionKey] : [];
@@ -835,6 +1045,7 @@ const getProfile = async (req, res) => {
                 rp.target_role,
                 rp.target_role_match,
                 rp.missing_skills_for_target,
+                rp.last_llm_eval_at,
                 rp.skills_json,
                 rp.sections_json
             FROM students s
@@ -873,6 +1084,8 @@ const getProfile = async (req, res) => {
             [studentId]
         );
         const manualAchievements = achievementRows.map((r) => r.achievement_text);
+
+        const dashboardMetrics = await dashboardMetricsService.calculateForStudent(studentId);
 
         res.status(200).json({
             message: "Profile retrieved successfully",
@@ -913,13 +1126,29 @@ const getProfile = async (req, res) => {
                 target_role: studentRow.target_role,
                 target_role_match: studentRow.target_role_match,
                 missing_skills_for_target: safeJsonValue(studentRow.missing_skills_for_target, []),
+                last_llm_eval_at: studentRow.last_llm_eval_at,
+                llm_eval_available_today: !hadLlmEvalToday(studentRow.last_llm_eval_at),
                 skills: parsedSkills,
                 sections: parsedSections
-            }
+            },
+            dashboardMetrics,
         });
     } catch (error) {
         console.error("Error fetching profile:", error);
         res.status(500).json({ message: "Internal server error while fetching profile." });
+    }
+};
+
+const getDashboardMetrics = async (req, res) => {
+    try {
+        const metrics = await dashboardMetricsService.calculateForStudent(req.user.id);
+        if (!metrics) {
+            return res.status(404).json({ message: "Student profile not found." });
+        }
+        return res.status(200).json({ dashboardMetrics: metrics });
+    } catch (error) {
+        console.error("Error fetching dashboard metrics:", error);
+        return res.status(500).json({ message: "Internal server error while fetching metrics." });
     }
 };
 
@@ -950,20 +1179,31 @@ const uploadResume = async (req, res) => {
 
         // Parse PDF text and extract useful fields for dashboard auto-fill.
         await ensureResumeParsedTable();
+
+        const [existingRows] = await db.execute(
+            'SELECT last_llm_eval_at, target_role, target_role_match, missing_skills_for_target FROM resume_parsed_data WHERE student_id = ? LIMIT 1',
+            [studentId]
+        );
+        const existingParsed = existingRows[0] || {};
+        const skipLlmEval = hadLlmEvalToday(existingParsed.last_llm_eval_at);
+        const resetTargetRoleEval = !skipLlmEval;
+
         const fileBuffer = fs.readFileSync(req.file.path);
         let parsedText = '';
+        let pdfHyperlinks = [];
         try {
+            pdfHyperlinks = await extractPdfHyperlinks(fileBuffer);
             parsedText = await extractPdfText(fileBuffer);
         } catch (parseError) {
             console.warn('Resume parsing failed, saving file without parsed data:', parseError?.message || parseError);
         }
 
-        let parsedResume = parseResumeText(parsedText || "");
+        let parsedResume = parseResumeText(parsedText || '', { hyperlinks: pdfHyperlinks });
         try {
             const extractedCandidates = await extractPdfTextCandidates(fileBuffer);
             const parsedCandidates = await Promise.all(extractedCandidates
                 .map(async (cand) => {
-                    const parsed = parseResumeText(cand.text || '');
+                    const parsed = parseResumeText(cand.text || '', { hyperlinks: pdfHyperlinks });
                     const parsingQuality = await scoreParsedResumeQuality(parsed);
                     const extractionQuality = await cand.quality; // quality is a promise now
                     return {
@@ -983,27 +1223,36 @@ const uploadResume = async (req, res) => {
             console.warn('Multi-scan resume merge failed, using primary parse:', multiScanError?.message || multiScanError);
         }
 
+        const resumeRawText = parsedResume.rawText || parsedText || '';
+        const parseQuality = await scoreParsedResumeQuality(parsedResume);
+
         const fallbackRole = inferRoleFromResumeNlp({
-            rawText: parsedResume.rawText || parsedText || '',
+            rawText: resumeRawText,
             skills: parsedResume.skills || [],
             sections: parsedResume.sections || {},
         });
-        const llmRole = await tryLlmInferRole({
-            rawText: parsedResume.rawText || parsedText || '',
-            skills: parsedResume.skills || [],
-            sections: parsedResume.sections || {},
-        });
-        const inferredRole = llmRole?.role
-            ? {
-                role: String(llmRole.role),
-                confidence: Math.round(clamp(Number(llmRole.confidence ?? fallbackRole.confidence), 35, 99)),
-            }
-            : fallbackRole;
+        // Inferred role uses NLP only; the single daily LLM call is reserved for target-role evaluation.
+        const inferredRole = fallbackRole;
+
+        const verifiedSkills = verifySkillsAgainstResumeText(
+            parsedResume.skills || [],
+            resumeRawText,
+            20
+        );
+        parsedResume.skills = verifiedSkills;
+
+        const targetRoleParams = resetTargetRoleEval
+            ? [null, null, null]
+            : [
+                existingParsed.target_role ?? null,
+                existingParsed.target_role_match ?? null,
+                existingParsed.missing_skills_for_target ?? null,
+            ];
 
         await db.execute(`
             INSERT INTO resume_parsed_data
-                (student_id, full_name, email, phone, linkedin_url, github_url, inferred_role, inferred_role_confidence, skills_json, sections_json, raw_text)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (student_id, full_name, email, phone, linkedin_url, github_url, inferred_role, inferred_role_confidence, target_role, target_role_match, missing_skills_for_target, skills_json, sections_json, raw_text, parse_quality)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 full_name = VALUES(full_name),
                 email = VALUES(email),
@@ -1012,9 +1261,13 @@ const uploadResume = async (req, res) => {
                 github_url = VALUES(github_url),
                 inferred_role = VALUES(inferred_role),
                 inferred_role_confidence = VALUES(inferred_role_confidence),
+                target_role = VALUES(target_role),
+                target_role_match = VALUES(target_role_match),
+                missing_skills_for_target = VALUES(missing_skills_for_target),
                 skills_json = VALUES(skills_json),
                 sections_json = VALUES(sections_json),
-                raw_text = VALUES(raw_text)
+                raw_text = VALUES(raw_text),
+                parse_quality = VALUES(parse_quality)
         `, [
             studentId,
             parsedResume.fullName,
@@ -1024,10 +1277,17 @@ const uploadResume = async (req, res) => {
             parsedResume.githubUrl,
             inferredRole.role,
             inferredRole.confidence,
-            JSON.stringify(parsedResume.skills || []),
+            ...targetRoleParams,
+            JSON.stringify(verifiedSkills),
             JSON.stringify(parsedResume.sections || {}),
-            parsedResume.rawText
+            resumeRawText,
+            Math.round(parseQuality * 100),
         ]);
+
+        await syncSchoolMarksFromEducation(
+            studentId,
+            parsedResume?.sections?.education_entries || []
+        );
 
         // Auto-update profile links when they are missing.
         await db.execute(`
@@ -1038,8 +1298,8 @@ const uploadResume = async (req, res) => {
             WHERE student_id = ?
         `, [parsedResume.linkedinUrl, parsedResume.githubUrl, studentId]);
 
-        if (parsedResume.skills && parsedResume.skills.length > 0) {
-            for (const skillName of parsedResume.skills) {
+        if (parseQuality >= 0.25 && verifiedSkills.length > 0) {
+            for (const skillName of verifiedSkills) {
                 const [existingSkill] = await db.execute('SELECT id FROM skills WHERE LOWER(name) = LOWER(?) LIMIT 1', [skillName]);
                 let skillId;
                 if (existingSkill.length > 0) {
@@ -1057,8 +1317,12 @@ const uploadResume = async (req, res) => {
         }
 
         res.status(200).json({ 
-            message: "Resume uploaded successfully.",
+            message: skipLlmEval
+                ? "Resume parsed successfully. AI role evaluation is limited to once per day — your earlier score is still active."
+                : "Resume uploaded successfully.",
             resume_url: resumeUrl,
+            llm_eval_available: !skipLlmEval,
+            parse_quality: Math.round(parseQuality * 100),
             resume_parsed: {
                 full_name: parsedResume.fullName,
                 email: parsedResume.email,
@@ -1067,7 +1331,7 @@ const uploadResume = async (req, res) => {
                 github_url: parsedResume.githubUrl,
                 inferred_role: inferredRole.role,
                 inferred_role_confidence: inferredRole.confidence,
-                skills: parsedResume.skills,
+                skills: verifiedSkills,
                 sections: parsedResume.sections
             }
         });
@@ -1100,13 +1364,35 @@ const normalizeProjectsArray = (arr, maxProjects = 20) => {
     if (!Array.isArray(arr)) return [];
     return arr
         .map((p) => {
-            const title = String(p?.title || '').replace(/\s+/g, ' ').trim();
+            const title = stripPdfLinkArtifacts(String(p?.title || '').replace(/\s+/g, ' ').trim());
             const bullets = normalizeLineArray(p?.bullets, 10);
+            const url = String(p?.url || '').trim();
             if (!title && bullets.length === 0) return null;
-            return { title: title || 'Project', bullets };
+            return {
+                title: title || 'Project',
+                bullets,
+                ...(url && /^https?:\/\//i.test(url) ? { url } : {}),
+            };
         })
         .filter(Boolean)
         .slice(0, maxProjects);
+};
+
+const normalizeCertificationsArray = (arr, max = 40) => {
+    if (!Array.isArray(arr)) return [];
+    return arr
+        .map((entry) => {
+            if (typeof entry === 'string') {
+                const label = stripPdfLinkArtifacts(entry.replace(/\s+/g, ' ').trim());
+                return label || null;
+            }
+            const label = stripPdfLinkArtifacts(String(entry?.label || entry?.name || '').replace(/\s+/g, ' ').trim());
+            const url = String(entry?.url || '').trim();
+            if (!label) return null;
+            return url && /^https?:\/\//i.test(url) ? { label, url } : label;
+        })
+        .filter(Boolean)
+        .slice(0, max);
 };
 
 const normalizeCustomSections = (arr, maxSections = 10) => {
@@ -1122,6 +1408,38 @@ const normalizeCustomSections = (arr, maxSections = 10) => {
         .slice(0, maxSections);
 };
 
+const syncSchoolMarksFromEducation = async (studentId, educationEntries = []) => {
+    const ssc = educationEntries.find((e) => e.level === 'ssc');
+    const hsc = educationEntries.find((e) => e.level === 'hsc');
+    const diploma = educationEntries.find((e) => e.level === 'diploma');
+    
+    const tenth = ssc?.marks ? parseMarksPercent(ssc.marks) : null;
+    const twelfth = hsc?.marks ? parseMarksPercent(hsc.marks) : null;
+    const diplomaMarks = diploma?.marks ? parseMarksPercent(diploma.marks) : null;
+    
+    if (tenth === null && twelfth === null && diplomaMarks === null) return;
+
+    const updates = [];
+    const values = [];
+    if (tenth !== null) {
+        updates.push('tenth_marks = ?');
+        values.push(tenth);
+    }
+    if (twelfth !== null) {
+        updates.push('twelfth_marks = ?');
+        values.push(twelfth);
+    }
+    if (diplomaMarks !== null) {
+        updates.push('diploma_marks = ?');
+        values.push(diplomaMarks);
+    }
+    
+    if (!updates.length) return;
+
+    values.push(studentId);
+    await db.execute(`UPDATE students SET ${updates.join(', ')} WHERE user_id = ?`, values);
+};
+
 // PUT /api/student/profile/resume-sections
 const updateResumeSections = async (req, res) => {
     try {
@@ -1135,13 +1453,19 @@ const updateResumeSections = async (req, res) => {
         );
         const existingSections = safeJsonValue(rows?.[0]?.sections_json, {});
 
+        const educationBundle = normalizeEducationEntries(
+            incoming.education_entries,
+            incoming.education
+        );
+
         const mergedSections = {
             ...(existingSections || {}),
             projects: normalizeProjectsArray(incoming.projects),
             experience: normalizeLineArray(incoming.experience, 50),
             extracurricular: normalizeLineArray(incoming.extracurricular, 50),
-            education: normalizeLineArray(incoming.education, 40),
-            certifications: normalizeLineArray(incoming.certifications, 40),
+            education: educationBundle.education,
+            education_entries: educationBundle.education_entries,
+            certifications: normalizeCertificationsArray(incoming.certifications, 40),
             custom_sections: normalizeCustomSections(incoming.custom_sections, 12),
         };
 
@@ -1153,6 +1477,8 @@ const updateResumeSections = async (req, res) => {
             `,
             [studentId, JSON.stringify(mergedSections)]
         );
+
+        await syncSchoolMarksFromEducation(studentId, educationBundle.education_entries);
 
         return res.status(200).json({
             message: 'Resume sections updated successfully.',
@@ -1240,15 +1566,16 @@ const uploadAvatar = async (req, res) => {
 const evaluateTargetRole = async (req, res) => {
     try {
         const studentId = req.user.id;
-        const { target_role } = req.body;
+        const sanitizedRole = sanitizeTargetRole(req.body?.target_role);
 
-        if (!target_role) {
+        if (!sanitizedRole) {
             return res.status(400).json({ message: "target_role is required." });
         }
 
         await ensureResumeParsedTable();
         const [rows] = await db.execute(
-            'SELECT raw_text, skills_json FROM resume_parsed_data WHERE student_id = ?',
+            `SELECT raw_text, skills_json, target_role, target_role_match, missing_skills_for_target, last_llm_eval_at
+             FROM resume_parsed_data WHERE student_id = ?`,
             [studentId]
         );
 
@@ -1256,11 +1583,38 @@ const evaluateTargetRole = async (req, res) => {
             return res.status(404).json({ message: "No resume found. Please upload a resume first." });
         }
 
-        const rawText = rows[0].raw_text;
+        const row = rows[0];
+        const rawText = row.raw_text;
 
-        const systemPrompt = `You are a strict technical hiring manager recruiting for a "${target_role}".
+        if (hadLlmEvalToday(row.last_llm_eval_at)) {
+            const cachedMatch = row.target_role_match;
+            const cachedRole = row.target_role || sanitizedRole;
+            let missingSkills = [];
+            try {
+                missingSkills = typeof row.missing_skills_for_target === 'string'
+                    ? JSON.parse(row.missing_skills_for_target)
+                    : (row.missing_skills_for_target || []);
+            } catch (_) {
+                missingSkills = [];
+            }
+
+            return res.status(200).json({
+                message: "AI role evaluation is limited to once per day. Showing your most recent evaluation.",
+                cached: true,
+                llm_eval_available: false,
+                evaluation: {
+                    target_role_match: cachedMatch,
+                    missing_skills: Array.isArray(missingSkills) ? missingSkills : [],
+                    feedback: cachedMatch != null
+                        ? `Your ${cachedRole} alignment score (${cachedMatch}%) from today's evaluation is still active.`
+                        : "You already used today's AI evaluation. Upload again tomorrow for a fresh score.",
+                },
+            });
+        }
+
+        const systemPrompt = `You are a strict technical hiring manager recruiting for a "${sanitizedRole}".
 You will be provided with a candidate's resume text.
-Evaluate this resume against the standard industry requirements for a "${target_role}".
+Evaluate this resume against the standard industry requirements for a "${sanitizedRole}".
 
 You MUST return a JSON object with the following exact structure:
 {
@@ -1275,30 +1629,57 @@ You MUST return a JSON object with the following exact structure:
             temperature: 0.1
         });
 
+        let evaluationSource = 'llm';
         if (!llmResult || typeof llmResult.target_role_match !== 'number') {
-            console.warn("[evaluateTargetRole] AI call failed or no API key. Using fallback mock response.");
+            console.warn("[evaluateTargetRole] AI call failed or no API key. Using heuristic fallback.");
+            evaluationSource = 'heuristic';
+            const skills = (() => {
+                try { return JSON.parse(row.skills_json || '[]'); } catch (_) { return []; }
+            })();
+            const skillCount = Array.isArray(skills) ? skills.length : 0;
             llmResult = {
-                target_role_match: Math.floor(Math.random() * 20) + 65, // 65-84
+                target_role_match: clamp(Math.round(40 + Math.min(skillCount, 15) * 2.5), 35, 75),
                 missing_skills: ["System Design", "Docker", "AWS"],
-                feedback: "This is a fallback response because the GROQ_API_KEY is missing in the .env file."
+                feedback: "Automated heuristic score — configure GROQ_API_KEY for full LLM evaluation.",
             };
         }
 
-        await db.execute(
-            `UPDATE resume_parsed_data 
-             SET target_role = ?, target_role_match = ?, missing_skills_for_target = ? 
-             WHERE student_id = ?`,
-            [
-                target_role, 
-                llmResult.target_role_match, 
-                JSON.stringify(llmResult.missing_skills || []), 
-                studentId
-            ]
-        );
+        const targetRoleMatch = Math.round(clamp(Number(llmResult.target_role_match), 0, 100));
+
+        if (evaluationSource === 'llm') {
+            await db.execute(
+                `UPDATE resume_parsed_data 
+                 SET target_role = ?, target_role_match = ?, missing_skills_for_target = ?, last_llm_eval_at = NOW()
+                 WHERE student_id = ?`,
+                [
+                    sanitizedRole,
+                    targetRoleMatch,
+                    JSON.stringify(llmResult.missing_skills || []),
+                    studentId,
+                ]
+            );
+        } else {
+            await db.execute(
+                `UPDATE resume_parsed_data 
+                 SET target_role = ?, target_role_match = ?, missing_skills_for_target = ?
+                 WHERE student_id = ?`,
+                [
+                    sanitizedRole,
+                    targetRoleMatch,
+                    JSON.stringify(llmResult.missing_skills || []),
+                    studentId,
+                ]
+            );
+        }
 
         return res.status(200).json({
-            message: "Target role evaluated successfully.",
-            evaluation: llmResult
+            message: evaluationSource === 'llm'
+                ? "Target role evaluated successfully."
+                : "Heuristic score applied — LLM evaluation unavailable.",
+            cached: false,
+            llm_eval_available: evaluationSource !== 'llm',
+            evaluation_source: evaluationSource,
+            evaluation: { ...llmResult, target_role_match: targetRoleMatch },
         });
 
     } catch (error) {
@@ -1310,6 +1691,7 @@ You MUST return a JSON object with the following exact structure:
 module.exports = {
     upsertProfile,
     getProfile,
+    getDashboardMetrics,
     uploadResume,
     updateResumeSections,
     evaluateTargetRole,

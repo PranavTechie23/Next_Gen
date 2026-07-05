@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const { normalizeEducationEntries } = require('../utils/educationUtils');
 // Legacy email import removed in favor of utils/emailSender
 const { createNotification } = require('./notificationController');
 const {
@@ -790,7 +791,7 @@ const getStudentDetail = async (req, res) => {
                 s.current_cgpa,
                 s.active_backlogs,
                 s.tenth_marks,
-                s.twelfth_marks,
+                s.twelfth_marks, s.diploma_marks,
                 s.is_placed,
                 s.current_package_value,
                 s.is_debarred,
@@ -849,11 +850,31 @@ const getStudentDetail = async (req, res) => {
             WHERE student_id = ?
         `, [studentId]);
 
+        const [resumeRows] = await db.query(`
+            SELECT sections_json
+            FROM resume_parsed_data
+            WHERE student_id = ?
+            LIMIT 1
+        `, [studentId]);
+
+        let education_entries = [];
+        let education = [];
+        if (resumeRows.length > 0 && resumeRows[0].sections_json) {
+            const parsed = typeof resumeRows[0].sections_json === 'string'
+                ? JSON.parse(resumeRows[0].sections_json)
+                : resumeRows[0].sections_json;
+            const eduBundle = normalizeEducationEntries(parsed?.education_entries, parsed?.education);
+            education_entries = eduBundle.education_entries;
+            education = eduBundle.education;
+        }
+
         res.status(200).json({
             ...student,
             skills,
             applications,
             performance: performance.length > 0 ? performance[0] : null,
+            education_entries,
+            education,
         });
     } catch (error) {
         console.error('Error fetching student detail:', error);
@@ -900,7 +921,11 @@ const quickCreateDrive = async (req, res) => {
             minCgpa,
             maxBacklogs,
             applicationLink,
-            deadline
+            deadline,
+            dos,
+            donts,
+            location,
+            packageValue,
         } = req.body;
 
         if (!companyName || !role) {
@@ -912,6 +937,11 @@ const quickCreateDrive = async (req, res) => {
             return res.status(403).json({ message: 'Institution context is required.' });
         }
 
+        const skillsList = Array.isArray(requirements) ? requirements.filter(Boolean) : [];
+        const dosList = Array.isArray(dos) ? dos.filter(Boolean) : [];
+        const dontsList = Array.isArray(donts) ? donts.filter(Boolean) : [];
+        const endDate = parseDeadlineDate(deadline);
+
         // 1. Find or Create Recruiter (scoped to institution when column exists)
         let recruiterId = await findRecruiterIdByNameForScope(connection, scope, companyName);
         if (!recruiterId) {
@@ -920,25 +950,38 @@ const quickCreateDrive = async (req, res) => {
 
         // 2. Create Drive
         const [driveResult] = await connection.query(
-            'INSERT INTO recruitment_drives (recruiter_id, drive_name, status) VALUES (?, ?, "OPEN")',
-            [recruiterId, `${companyName} - ${role}`]
+            `INSERT INTO recruitment_drives (recruiter_id, drive_name, description, end_date, status)
+             VALUES (?, ?, ?, ?, "OPEN")`,
+            [
+                recruiterId,
+                `${companyName} - ${role}`,
+                description || null,
+                endDate,
+            ]
         );
         const driveId = driveResult.insertId;
 
-        // 3. Create Job Posting
-        // Default package_value to 0 if not provided
+        // 3. Create Job Posting with TPO-listed details
+        const pkg = packageValue != null && packageValue !== '' ? Number(packageValue) : 0;
         const [jobResult] = await connection.query(
             `INSERT INTO job_postings 
-            (drive_id, job_title, job_description, package_value, min_cgpa, max_backlogs_allowed, eligible_branches) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            (drive_id, job_title, job_description, location, package_value, min_cgpa, max_backlogs_allowed,
+             eligible_branches, application_link, deadline_note, required_skills, dos, donts) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 driveId,
                 role,
                 description || null,
-                0, // package_value
+                location || null,
+                Number.isFinite(pkg) ? pkg : 0,
                 minCgpa || 0,
                 maxBacklogs || 0,
-                JSON.stringify([]) // branches
+                JSON.stringify([]),
+                applicationLink || null,
+                deadline || null,
+                JSON.stringify(skillsList),
+                JSON.stringify(dosList),
+                JSON.stringify(dontsList),
             ]
         );
 
@@ -964,6 +1007,21 @@ const quickCreateDrive = async (req, res) => {
         connection.release();
     }
 };
+
+function parseDeadlineDate(deadline) {
+    if (!deadline || typeof deadline !== 'string') return null;
+    const trimmed = deadline.trim();
+    const direct = Date.parse(trimmed);
+    if (!Number.isNaN(direct)) {
+        return new Date(direct).toISOString().slice(0, 10);
+    }
+    const cleaned = trimmed.replace(/^apply\s+by:\s*/i, '');
+    const attempt = Date.parse(cleaned);
+    if (!Number.isNaN(attempt)) {
+        return new Date(attempt).toISOString().slice(0, 10);
+    }
+    return null;
+}
 
 /**
  * Update a Recruitment Drive

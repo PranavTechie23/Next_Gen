@@ -149,7 +149,7 @@ function FeaturedCard({
         ...glass,
         position: "relative",
         overflow: "hidden",
-        padding: "32px",
+        padding: "20px 24px",
         transition: "border 0.3s, transform 0.3s, box-shadow 0.3s",
         transform: hovered ? "translateY(-3px)" : "translateY(0)",
         border: hovered
@@ -158,8 +158,6 @@ function FeaturedCard({
         boxShadow: hovered
           ? "var(--w-card-shadow-hover)"
           : "var(--w-card-shadow)",
-        gridColumn: "span 2",
-        minHeight: 280,
       }}
     >
       {/* Decorative glow blob */}
@@ -272,7 +270,7 @@ function CompactCard({
       onMouseLeave={() => setHovered(false)}
       style={{
         ...glass,
-        padding: "24px",
+        padding: "20px 22px",
         transition: "border 0.3s, transform 0.3s, box-shadow 0.3s",
         transform: hovered ? "translateY(-2px)" : "translateY(0)",
         border: hovered ? "1px solid var(--w-card-border-hover)" : "1px solid var(--w-card-border)",
@@ -691,15 +689,15 @@ export default function StudentWebinar(props: { isDashboard?: boolean }) {
           onSubmit={handleSearch}
           style={{
             ...glass,
-            padding: "20px 24px",
-            marginBottom: 36,
+            padding: "10px 18px",
+            marginBottom: 24,
             display: "flex",
-            gap: 12,
+            gap: 10,
             alignItems: "center",
             animation: "fadeUp 0.5s 0.05s ease both",
           }}
         >
-          <Search style={{ width: 18, height: 18, color: "var(--w-text-subtle)", flexShrink: 0 }} />
+          <Search style={{ width: 16, height: 16, color: "var(--w-text-subtle)", flexShrink: 0 }} />
           <input
             ref={inputRef}
             value={query}
@@ -707,17 +705,17 @@ export default function StudentWebinar(props: { isDashboard?: boolean }) {
             placeholder="Search by title, speaker, or topic…"
             style={{
               flex: 1, background: "transparent", border: "none", outline: "none",
-              fontSize: 16, color: "var(--w-text-main)",
+              fontSize: 14, color: "var(--w-text-main)",
               fontFamily: "'DM Sans', sans-serif",
             }}
           />
           <button
             type="submit"
             style={{
-              padding: "10px 24px", borderRadius: 12, fontSize: 14, fontWeight: 700,
+              padding: "7px 18px", borderRadius: 10, fontSize: 13, fontWeight: 700,
               background: "linear-gradient(135deg, #4c1d95, #7c3aed)", border: "1px solid rgba(139,92,246,0.6)",
               color: "#fff", cursor: "pointer", transition: "transform 0.2s, box-shadow 0.2s",
-              boxShadow: "0 4px 14px rgba(124, 58, 237, 0.3)",
+              boxShadow: "0 3px 10px rgba(124, 58, 237, 0.25)",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = "translateY(-1px)";
@@ -738,7 +736,7 @@ export default function StudentWebinar(props: { isDashboard?: boolean }) {
             label="Upcoming"
             count={upcoming.length}
             accent
-            sublabel="Register early — seats fill fast."
+            
           />
 
           {loading ? (
@@ -753,8 +751,9 @@ export default function StudentWebinar(props: { isDashboard?: boolean }) {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(3,1fr)",
+                gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
                 gap: 16,
+                alignItems: "start",
               }}
             >
               {upcoming.map((w, i) =>
@@ -775,7 +774,7 @@ export default function StudentWebinar(props: { isDashboard?: boolean }) {
           {loading ? null : past.length === 0 ? (
             <EmptyState message="No past sessions recorded yet." />
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16, alignItems: "start" }}>
               {past.map((w) => (
                 <PastCard key={w.id} w={w} />
               ))}

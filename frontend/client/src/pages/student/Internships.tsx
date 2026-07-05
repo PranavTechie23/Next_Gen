@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Code, GraduationCap, Pencil, Plus, Save, Trash2, X, ChevronDown } from "lucide-react";
+import { Briefcase, Code, GraduationCap, ExternalLink, Pencil, Plus, Save, Trash2, X, ChevronDown } from "lucide-react";
 import { studentApi } from "@/services/studentApi";
 import { toast } from "sonner";
 
 type ResumeProject = {
   title?: string;
   bullets?: string[];
+  url?: string;
 };
+
+type CertificationEntry = string | { label?: string; url?: string };
 
 type CustomSection = {
   id?: string;
@@ -16,16 +19,64 @@ type CustomSection = {
   lines?: string[];
 };
 
+type EducationLevel = "graduation" | "hsc" | "ssc" | "other";
+
+type StructuredEducationEntry = {
+  id: string;
+  level: EducationLevel;
+  institute: string;
+  degreeOrBoard?: string;
+  years?: string;
+  marks?: string;
+  details?: string[];
+};
+
 type ResumeSections = {
   projects?: ResumeProject[];
   experience?: string[];
   extracurricular?: string[];
   education?: string[];
-  certifications?: string[];
+  education_entries?: StructuredEducationEntry[];
+  certifications?: CertificationEntry[];
   custom_sections?: CustomSection[];
 };
 
-type EducationEntry = {
+const EDUCATION_LEVEL_LABELS: Record<EducationLevel, string> = {
+  graduation: "Graduation / Degree",
+  hsc: "HSC / 12th",
+  ssc: "SSC / 10th",
+  other: "Other",
+};
+
+const inferEducationLevel = (text: string): EducationLevel => {
+  const t = text.toLowerCase();
+  if (/\b(ssc|10th|matric|matriculation|secondary school|class x|std\.?\s*x)\b/.test(t)) return "ssc";
+  if (/\b(hsc|12th|higher secondary|intermediate|junior college|class xii|std\.?\s*xii)\b/.test(t)) return "hsc";
+  if (/(institute|university|college|b\.?\s*tech|b\.?\s*e|engineering|degree|polytechnic)/i.test(t)) return "graduation";
+  return "other";
+};
+
+const extractMarksFromText = (text: string): string | undefined => {
+  const pct = String(text || "").match(/(\d{1,2}(?:\.\d{1,2})?)\s*%/);
+  if (pct) return pct[1];
+  const marks = String(text || "").match(/marks?\s*[:\-]?\s*(\d{1,2}(?:\.\d{1,2})?)/i);
+  if (marks) return marks[1];
+  return undefined;
+};
+
+const stripPdfLinkArtifacts = (raw: string) =>
+  String(raw || "")
+    .replace(/(?:\s*§\s*\d+\s*|\s*[\u2197\u2198\u2192\u21D2\u27A1\u2794\u27A4\uFFEB]\s*|\s*\(\s*(?:link|url|source|demo|live|github|portfolio)\s*\)\s*)/gi, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+const certificationLabel = (entry: CertificationEntry) =>
+  typeof entry === "string" ? entry : String(entry?.label || "").trim();
+
+const certificationUrl = (entry: CertificationEntry) =>
+  typeof entry === "string" ? undefined : String(entry?.url || "").trim() || undefined;
+
+type LegacyEducationEntry = {
   id: string;
   institute: string;
   headline?: string;
@@ -33,7 +84,7 @@ type EducationEntry = {
   detailLines: string[];
 };
 
-const parseEducationEntries = (lines: string[]): EducationEntry[] => {
+const parseEducationEntries = (lines: string[]): LegacyEducationEntry[] => {
   const raw = Array.isArray(lines) ? lines.map((l) => String(l || "").trim()).filter(Boolean) : [];
   if (!raw.length) return [];
 
@@ -48,8 +99,8 @@ const parseEducationEntries = (lines: string[]): EducationEntry[] => {
     return m ? m[0].replace(/\s+/g, " ").trim() : undefined;
   };
 
-  const entries: EducationEntry[] = [];
-  let current: EducationEntry | null = null;
+  const entries: LegacyEducationEntry[] = [];
+  let current: LegacyEducationEntry | null = null;
   let seq = 0;
 
   const pushCurrent = () => {
@@ -94,11 +145,59 @@ const parseEducationEntries = (lines: string[]): EducationEntry[] => {
   return entries;
 };
 
+const structuredFromLegacyEntry = (entry: LegacyEducationEntry): StructuredEducationEntry => {
+  const combined = [entry.institute, entry.headline, ...(entry.detailLines || [])].join(" ");
+  return {
+    id: entry.id,
+    level: inferEducationLevel(combined),
+    institute: entry.institute,
+    degreeOrBoard: entry.headline,
+    years: entry.years,
+    marks: extractMarksFromText(combined),
+    details: entry.detailLines || [],
+  };
+};
+
+const resolveEducationDraft = (sections?: ResumeSections): StructuredEducationEntry[] => {
+  const raw = sections?.education_entries;
+  if (Array.isArray(raw) && raw.length > 0) {
+    return raw
+      .map((e, i) => ({
+        id: String(e?.id || `edu-${i}`),
+        level: (["graduation", "hsc", "ssc", "other"].includes(String(e?.level))
+          ? e.level
+          : inferEducationLevel(`${e?.institute || ""} ${e?.degreeOrBoard || ""}`)) as EducationLevel,
+        institute: String(e?.institute || "").trim(),
+        degreeOrBoard: String(e?.degreeOrBoard || "").trim() || undefined,
+        years: String(e?.years || "").trim() || undefined,
+        marks: String(e?.marks || "").trim() || undefined,
+        details: Array.isArray(e?.details) ? e.details.map(String).filter(Boolean) : [],
+      }))
+      .filter((e) => e.institute || e.degreeOrBoard);
+  }
+  return parseEducationEntries(Array.isArray(sections?.education) ? sections.education : []).map(structuredFromLegacyEntry);
+};
+
+const structuredToFlatLines = (entries: StructuredEducationEntry[]): string[] => {
+  const lines: string[] = [];
+  for (const e of entries) {
+    if (e.institute) lines.push(e.institute);
+    if (e.degreeOrBoard) lines.push(e.degreeOrBoard);
+    if (e.years) lines.push(e.years);
+    if (e.marks) lines.push(e.marks.includes("%") ? e.marks : `${e.marks}%`);
+    for (const d of e.details || []) {
+      const line = String(d || "").trim();
+      if (line) lines.push(line);
+    }
+  }
+  return lines.filter(Boolean);
+};
+
 const normalizeProjectEntries = (inputProjects?: ResumeProject[]): ResumeProject[] => {
   const source = Array.isArray(inputProjects) ? inputProjects : [];
   const merged: ResumeProject[] = [];
   const cleanProjectTitle = (rawTitle: string) => {
-    let title = String(rawTitle || "").trim();
+    let title = stripPdfLinkArtifacts(String(rawTitle || "").trim());
     // Remove source/platform noise often extracted from resume headings.
     title = title
       .replace(/\((github|gitlab|bitbucket|vercel|netlify|render|portfolio|live|demo|source)\)/gi, "")
@@ -133,7 +232,11 @@ const normalizeProjectEntries = (inputProjects?: ResumeProject[]): ResumeProject
     }
 
     if (!title && bullets.length === 0) continue;
-    merged.push({ title, bullets });
+    merged.push({
+      title,
+      bullets,
+      ...(raw?.url ? { url: String(raw.url).trim() } : {}),
+    });
   }
 
   return merged;
@@ -142,11 +245,15 @@ const normalizeProjectEntries = (inputProjects?: ResumeProject[]): ResumeProject
 export default function Internships(props: {
   isDark: boolean;
   resumeSections: ResumeSections;
+  isEditing?: boolean;
+  setIsEditing?: (val: boolean) => void;
   onAfterSectionsSave?: () => void | Promise<void>;
 }) {
   const { isDark, resumeSections, onAfterSectionsSave } = props;
 
-  const [isEditing, setIsEditing] = useState(false);
+  const [internalIsEditing, setInternalIsEditing] = useState(false);
+  const isEditing = props.isEditing !== undefined ? props.isEditing : internalIsEditing;
+  const setIsEditing = props.setIsEditing || setInternalIsEditing;
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<ResumeSections>({});
   const [expandedEdu, setExpandedEdu] = useState<Record<string, boolean>>({});
@@ -164,11 +271,21 @@ export default function Internships(props: {
       projects: normalizedProjects.map((p) => ({
         title: p?.title || "",
         bullets: Array.isArray(p?.bullets) ? [...p.bullets] : [],
+        ...(p?.url ? { url: p.url } : {}),
       })),
       experience: Array.isArray(resumeSections?.experience) ? [...resumeSections.experience] : [],
       extracurricular: Array.isArray(resumeSections?.extracurricular) ? [...resumeSections.extracurricular] : [],
-      education: Array.isArray(resumeSections?.education) ? [...resumeSections.education] : [],
-      certifications: Array.isArray(resumeSections?.certifications) ? [...resumeSections.certifications] : [],
+      education_entries: resolveEducationDraft(resumeSections),
+      certifications: Array.isArray(resumeSections?.certifications)
+        ? resumeSections.certifications.map((c) =>
+            typeof c === "string"
+              ? stripPdfLinkArtifacts(c)
+              : {
+                  label: stripPdfLinkArtifacts(certificationLabel(c)),
+                  ...(certificationUrl(c) ? { url: certificationUrl(c) } : {}),
+                }
+          )
+        : [],
       custom_sections: Array.isArray(resumeSections?.custom_sections)
         ? resumeSections.custom_sections.map((s) => ({
             id: String((s as any)?.id || ""),
@@ -182,12 +299,11 @@ export default function Internships(props: {
   const projects = Array.isArray(draft?.projects) ? draft.projects : [];
   const experience = Array.isArray(draft?.experience) ? draft.experience : [];
   const extracurricular = Array.isArray(draft?.extracurricular) ? draft.extracurricular : [];
-  const education = Array.isArray(draft?.education) ? draft.education : [];
+  const educationEntries = Array.isArray(draft?.education_entries) ? draft.education_entries : [];
   const certifications = Array.isArray(draft?.certifications) ? draft.certifications : [];
   const customSections = Array.isArray(draft?.custom_sections) ? draft.custom_sections : [];
-  const educationEntries = parseEducationEntries(education);
 
-  const updateList = (key: "experience" | "extracurricular" | "education" | "certifications", index: number, value: string) => {
+  const updateList = (key: "experience" | "extracurricular" | "certifications", index: number, value: string) => {
     setDraft((prev) => {
       const arr = Array.isArray(prev?.[key]) ? [...(prev[key] as string[])] : [];
       arr[index] = value;
@@ -195,7 +311,7 @@ export default function Internships(props: {
     });
   };
 
-  const addListItem = (key: "experience" | "extracurricular" | "education" | "certifications") => {
+  const addListItem = (key: "experience" | "extracurricular" | "certifications") => {
     setDraft((prev) => {
       const arr = Array.isArray(prev?.[key]) ? [...(prev[key] as string[])] : [];
       arr.push("");
@@ -203,11 +319,45 @@ export default function Internships(props: {
     });
   };
 
-  const deleteListItem = (key: "experience" | "extracurricular" | "education" | "certifications", index: number) => {
+  const deleteListItem = (key: "experience" | "extracurricular" | "certifications", index: number) => {
     setDraft((prev) => {
       const arr = Array.isArray(prev?.[key]) ? [...(prev[key] as string[])] : [];
       arr.splice(index, 1);
       return { ...(prev || {}), [key]: arr };
+    });
+  };
+
+  const addEducationEntry = (level: EducationLevel = "graduation") => {
+    setDraft((prev) => ({
+      ...(prev || {}),
+      education_entries: [
+        ...(Array.isArray(prev?.education_entries) ? prev.education_entries : []),
+        {
+          id: `edu-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          level,
+          institute: "",
+          degreeOrBoard: "",
+          years: "",
+          marks: "",
+          details: [],
+        },
+      ],
+    }));
+  };
+
+  const updateEducationEntry = (index: number, patch: Partial<StructuredEducationEntry>) => {
+    setDraft((prev) => {
+      const arr = Array.isArray(prev?.education_entries) ? [...prev.education_entries] : [];
+      arr[index] = { ...(arr[index] || {}), ...patch } as StructuredEducationEntry;
+      return { ...(prev || {}), education_entries: arr };
+    });
+  };
+
+  const deleteEducationEntry = (index: number) => {
+    setDraft((prev) => {
+      const arr = Array.isArray(prev?.education_entries) ? [...prev.education_entries] : [];
+      arr.splice(index, 1);
+      return { ...(prev || {}), education_entries: arr };
     });
   };
 
@@ -294,11 +444,21 @@ export default function Internships(props: {
       projects: normalizedProjects.map((p) => ({
         title: p?.title || "",
         bullets: Array.isArray(p?.bullets) ? [...p.bullets] : [],
+        ...(p?.url ? { url: p.url } : {}),
       })),
       experience: Array.isArray(resumeSections?.experience) ? [...resumeSections.experience] : [],
       extracurricular: Array.isArray(resumeSections?.extracurricular) ? [...resumeSections.extracurricular] : [],
-      education: Array.isArray(resumeSections?.education) ? [...resumeSections.education] : [],
-      certifications: Array.isArray(resumeSections?.certifications) ? [...resumeSections.certifications] : [],
+      education_entries: resolveEducationDraft(resumeSections),
+      certifications: Array.isArray(resumeSections?.certifications)
+        ? resumeSections.certifications.map((c) =>
+            typeof c === "string"
+              ? stripPdfLinkArtifacts(c)
+              : {
+                  label: stripPdfLinkArtifacts(certificationLabel(c)),
+                  ...(certificationUrl(c) ? { url: certificationUrl(c) } : {}),
+                }
+          )
+        : [],
       custom_sections: Array.isArray(resumeSections?.custom_sections)
         ? resumeSections.custom_sections.map((s) => ({
             id: String((s as any)?.id || ""),
@@ -319,12 +479,31 @@ export default function Internships(props: {
             bullets: (Array.isArray(p?.bullets) ? p.bullets : [])
               .map((b) => String(b || "").trim())
               .filter(Boolean),
+            ...(p?.url ? { url: String(p.url).trim() } : {}),
           }))
           .filter((p) => p.title || p.bullets.length > 0),
         experience: (experience || []).map((x) => String(x || "").trim()).filter(Boolean),
         extracurricular: (extracurricular || []).map((x) => String(x || "").trim()).filter(Boolean),
-        education: (education || []).map((x) => String(x || "").trim()).filter(Boolean),
-        certifications: (certifications || []).map((x) => String(x || "").trim()).filter(Boolean),
+        education_entries: (educationEntries || [])
+          .map((e) => ({
+            id: String(e?.id || ""),
+            level: e?.level || "other",
+            institute: String(e?.institute || "").trim(),
+            degreeOrBoard: String(e?.degreeOrBoard || "").trim() || undefined,
+            years: String(e?.years || "").trim() || undefined,
+            marks: String(e?.marks || "").trim() || undefined,
+            details: (Array.isArray(e?.details) ? e.details : []).map((d) => String(d || "").trim()).filter(Boolean),
+          }))
+          .filter((e) => e.institute || e.degreeOrBoard),
+        education: structuredToFlatLines(educationEntries || []),
+        certifications: (certifications || [])
+          .map((x) => {
+            const label = stripPdfLinkArtifacts(certificationLabel(x as CertificationEntry));
+            const url = certificationUrl(x as CertificationEntry);
+            if (!label) return null;
+            return url ? { label, url } : label;
+          })
+          .filter(Boolean) as CertificationEntry[],
         custom_sections: (customSections || [])
           .map((s) => ({
             title: String(s?.title || "").trim(),
@@ -345,45 +524,35 @@ export default function Internships(props: {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end mb-2">
-        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto shrink-0">
-          {!isEditing ? (
-            <Button onClick={() => setIsEditing(true)} className="h-12 rounded-2xl font-black" variant="secondary">
-              <Pencil className="w-4 h-4 mr-2" />
-              Edit Details
+      {isEditing && (
+        <div className="flex justify-end mb-2">
+          <div className="flex items-center gap-2">
+            <Button onClick={addCustomSection} disabled={saving} size="sm" className="h-8 px-3 rounded-lg font-bold text-xs" variant="outline">
+              <Plus className="w-3.5 h-3.5 mr-1" /> Add Section
             </Button>
-          ) : (
-            <>
-              <Button onClick={addCustomSection} disabled={saving} className="h-12 rounded-2xl font-black" variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Section
-              </Button>
-              <Button onClick={saveChanges} disabled={saving} className="h-12 rounded-2xl font-black">
-                <Save className="w-4 h-4 mr-2" />
-                {saving ? "Saving..." : "Save Changes"}
-              </Button>
-              <Button onClick={cancelEdit} disabled={saving} className="h-12 rounded-2xl font-black" variant="secondary">
-                <X className="w-4 h-4 mr-2" />
-                Cancel
-              </Button>
-            </>
-          )}
+            <Button onClick={saveChanges} disabled={saving} size="sm" className="h-8 px-3 rounded-lg font-bold text-xs bg-blue-600 text-white hover:bg-blue-700">
+              <Save className="w-3.5 h-3.5 mr-1" /> {saving ? "Saving..." : "Save"}
+            </Button>
+            <Button onClick={cancelEdit} disabled={saving} size="icon" className="h-8 w-8 rounded-lg" variant="secondary" title="Cancel">
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
         <div className="space-y-5">
-          <div className={`self-start h-fit rounded-2xl p-5 ${glassCard}`}>
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-blue-500/10" : "bg-blue-50"}`}>
-                  <Code className="w-5 h-5 text-blue-500" />
+          <div className={`self-start h-fit rounded-2xl p-4.5 ${glassCard}`}>
+            <div className="flex items-center justify-between gap-3 w-full">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isDark ? "bg-blue-500/10" : "bg-blue-50"}`}>
+                  <Code className="w-4.5 h-4.5 text-blue-500" />
                 </div>
-                <h3 className={`text-base sm:text-lg font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight`}>
+                <h3 className={`text-base font-black truncate ${isDark ? "text-white" : "text-slate-900"} tracking-tight`}>
                   Projects
                 </h3>
               </div>
-              <div className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider ${
+              <div className={`px-2.5 py-1 rounded-xl text-[11px] font-black uppercase tracking-wider shrink-0 ${
                 isDark ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" : "bg-blue-50 text-blue-600 border border-blue-100"
               }`}>
                 {projects.length} detected
@@ -439,9 +608,23 @@ export default function Internships(props: {
                             onClick={() => setExpandedProjects((prev) => ({ ...prev, [idx]: !prev[idx] }))}
                             className="w-full text-left flex items-start justify-between gap-3 group rounded-lg hover:bg-slate-500/5 p-2 -mx-2 transition-colors"
                           >
-                            <p className={`font-bold text-sm ${isDark ? "text-white" : "text-slate-800"} transition-colors group-hover:text-blue-500`}>
-                              {p?.title || "Project"}
-                            </p>
+                            <div className="min-w-0 flex items-start gap-2">
+                              <p className={`font-bold text-sm ${isDark ? "text-white" : "text-slate-800"} transition-colors group-hover:text-blue-500`}>
+                                {p?.title || "Project"}
+                              </p>
+                              {p?.url && (
+                                <a
+                                  href={p.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className={`mt-0.5 inline-flex shrink-0 ${isDark ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-700"}`}
+                                  title="Open project link"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                              )}
+                            </div>
                             <ChevronDown
                               className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isDark ? "text-slate-400" : "text-slate-500"} transition-transform ${
                                 expandedProjects[idx] ? "rotate-180" : ""
@@ -499,6 +682,11 @@ export default function Internships(props: {
                     {educationEntries.length > 0 ? (
                       educationEntries.slice(0, 6).map((entry) => {
                         const isOpen = Boolean(expandedEdu[entry.id]);
+                        const marksLabel = entry.marks
+                          ? entry.marks.includes("%")
+                            ? entry.marks
+                            : `${entry.marks}%`
+                          : undefined;
                         return (
                           <div
                             key={entry.id}
@@ -511,13 +699,29 @@ export default function Internships(props: {
                                 className="w-full text-left flex items-start justify-between gap-3 rounded-lg hover:bg-slate-500/5 p-2 -mx-2 transition-colors group"
                               >
                                 <div className="min-w-0">
-                                  <p className={`${isDark ? "text-slate-100" : "text-slate-800"} font-bold text-sm leading-snug truncate group-hover:text-blue-500 transition-colors`}>
-                                    {entry.institute}
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                                      entry.level === "ssc"
+                                        ? isDark ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" : "bg-cyan-50 text-cyan-700 border border-cyan-100"
+                                        : entry.level === "hsc"
+                                          ? isDark ? "bg-violet-500/10 text-violet-400 border border-violet-500/20" : "bg-violet-50 text-violet-700 border border-violet-100"
+                                          : isDark ? "bg-purple-500/10 text-purple-400 border border-purple-500/20" : "bg-purple-50 text-purple-700 border border-purple-100"
+                                    }`}>
+                                      {EDUCATION_LEVEL_LABELS[entry.level] || "Education"}
+                                    </span>
+                                    {marksLabel && (
+                                      <span className={`text-xs font-bold ${isDark ? "text-emerald-400" : "text-emerald-600"}`}>
+                                        {marksLabel}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className={`mt-1.5 ${isDark ? "text-slate-100" : "text-slate-800"} font-bold text-sm leading-snug group-hover:text-blue-500 transition-colors`}>
+                                    {entry.institute || "Institute not specified"}
                                   </p>
                                   <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-                                    {entry.headline && (
+                                    {entry.degreeOrBoard && (
                                       <span className={`${isDark ? "text-slate-300" : "text-slate-600"} text-xs font-medium`}>
-                                        {entry.headline}
+                                        {entry.degreeOrBoard}
                                       </span>
                                     )}
                                     {entry.years && (
@@ -536,12 +740,12 @@ export default function Internships(props: {
 
                               {isOpen && (
                                 <div className="mt-2 mb-2 px-2 space-y-1">
-                                  {(entry.detailLines || []).slice(0, 10).map((line, i) => (
+                                  {(entry.details || []).slice(0, 10).map((line, i) => (
                                     <div key={i} className={`text-xs leading-relaxed ${isDark ? "text-slate-300" : "text-slate-600"}`}>
                                       {line}
                                     </div>
                                   ))}
-                                  {(entry.detailLines || []).length === 0 && (
+                                  {(entry.details || []).length === 0 && (
                                     <div className={`${isDark ? "text-slate-400" : "text-slate-500"} text-xs`}>No extra details.</div>
                                   )}
                                 </div>
@@ -556,24 +760,88 @@ export default function Internships(props: {
                   </div>
                 )}
                 {isEditing && (
-                  <div className="space-y-2">
-                    <Button variant="outline" className={`h-8 rounded-lg text-xs ${isDark ? "border-white/20 text-white hover:bg-white/10" : ""}`} onClick={() => addListItem("education")}>
-                      <Plus className="w-3 h-3 mr-1" /> Add Education Line
-                    </Button>
-                    {education.map((line, idx) => (
-                      <div key={`edu-${idx}`} className="flex items-center gap-2">
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" className={`h-8 rounded-lg text-xs ${isDark ? "border-white/20 text-white hover:bg-white/10" : ""}`} onClick={() => addEducationEntry("graduation")}>
+                        <Plus className="w-3 h-3 mr-1" /> Add Degree
+                      </Button>
+                      <Button variant="outline" className={`h-8 rounded-lg text-xs ${isDark ? "border-white/20 text-white hover:bg-white/10" : ""}`} onClick={() => addEducationEntry("hsc")}>
+                        <Plus className="w-3 h-3 mr-1" /> Add HSC
+                      </Button>
+                      <Button variant="outline" className={`h-8 rounded-lg text-xs ${isDark ? "border-white/20 text-white hover:bg-white/10" : ""}`} onClick={() => addEducationEntry("ssc")}>
+                        <Plus className="w-3 h-3 mr-1" /> Add SSC
+                      </Button>
+                    </div>
+                    {educationEntries.map((entry, idx) => (
+                      <div key={entry.id} className={`rounded-xl border p-3 space-y-2 ${isDark ? "bg-black/20 border-white/10" : "bg-slate-50 border-slate-200"}`}>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={entry.level}
+                            onChange={(e) => updateEducationEntry(idx, { level: e.target.value as EducationLevel })}
+                            className={`flex-1 h-9 px-2 rounded-lg text-xs border outline-none ${
+                              isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
+                            }`}
+                          >
+                            {(Object.keys(EDUCATION_LEVEL_LABELS) as EducationLevel[]).map((level) => (
+                              <option key={level} value={level}>{EDUCATION_LEVEL_LABELS[level]}</option>
+                            ))}
+                          </select>
+                          <Button variant="ghost" size="icon" onClick={() => deleteEducationEntry(idx)} className="h-8 w-8 shrink-0">
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </div>
                         <input
-                          value={line}
-                          onChange={(e) => updateList("education", idx, e.target.value)}
-                          className={`w-full h-10 px-3 rounded-xl text-sm border outline-none ${
+                          value={entry.institute || ""}
+                          onChange={(e) => updateEducationEntry(idx, { institute: e.target.value })}
+                          placeholder="School / College name"
+                          className={`w-full h-9 px-3 rounded-lg text-sm border outline-none ${
                             isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
                           }`}
                         />
-                        <Button variant="ghost" size="icon" onClick={() => deleteListItem("education", idx)} className="h-8 w-8">
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
+                        <input
+                          value={entry.degreeOrBoard || ""}
+                          onChange={(e) => updateEducationEntry(idx, { degreeOrBoard: e.target.value })}
+                          placeholder="Board / Degree (e.g. Maharashtra State Board, B.E. CSE)"
+                          className={`w-full h-9 px-3 rounded-lg text-sm border outline-none ${
+                            isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
+                          }`}
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            value={entry.years || ""}
+                            onChange={(e) => updateEducationEntry(idx, { years: e.target.value })}
+                            placeholder="Years (e.g. 2020 - 2024)"
+                            className={`w-full h-9 px-3 rounded-lg text-sm border outline-none ${
+                              isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
+                            }`}
+                          />
+                          <input
+                            value={entry.marks || ""}
+                            onChange={(e) => updateEducationEntry(idx, { marks: e.target.value })}
+                            placeholder="Marks % (SSC/HSC)"
+                            className={`w-full h-9 px-3 rounded-lg text-sm border outline-none ${
+                              isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
+                            }`}
+                          />
+                        </div>
+                        <textarea
+                          value={(entry.details || []).join("\n")}
+                          onChange={(e) =>
+                            updateEducationEntry(idx, {
+                              details: e.target.value.split("\n").map((x) => x.trim()).filter(Boolean),
+                            })
+                          }
+                          placeholder="Extra details (one per line)"
+                          rows={2}
+                          className={`w-full px-3 py-2 rounded-lg text-sm border outline-none ${
+                            isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
+                          }`}
+                        />
                       </div>
                     ))}
+                    {educationEntries.length === 0 && (
+                      <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>Add SSC, HSC, and degree entries using the buttons above.</p>
+                    )}
                   </div>
                 )}
               </div>
@@ -581,17 +849,17 @@ export default function Internships(props: {
             </div>
 
             <div className="space-y-5">
-              <div className={`self-start h-fit rounded-2xl p-5 ${glassCard}`}>
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-emerald-500/10" : "bg-emerald-50"}`}>
-                      <Briefcase className="w-5 h-5 text-emerald-500" />
+              <div className={`self-start h-fit rounded-2xl p-4.5 ${glassCard}`}>
+                <div className="flex items-center justify-between gap-3 w-full">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isDark ? "bg-emerald-500/10" : "bg-emerald-50"}`}>
+                      <Briefcase className="w-4.5 h-4.5 text-emerald-500" />
                     </div>
-                    <h3 className={`text-base sm:text-lg font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight`}>
-                      Internships / Experience
+                    <h3 className={`text-sm sm:text-base font-black truncate ${isDark ? "text-white" : "text-slate-900"} tracking-tight`}>
+                      Internships & Experience
                     </h3>
                   </div>
-                  <div className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider ${
+                  <div className={`px-2.5 py-1 rounded-xl text-[11px] font-black uppercase tracking-wider shrink-0 ${
                     isDark ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-emerald-50 text-emerald-600 border border-emerald-100"
                   }`}>
                     {((experience || []).length + (extracurricular || []).length) || 0} detected
@@ -672,26 +940,43 @@ export default function Internships(props: {
                 )}
               </div>
             </div>
-            <div className={`self-start h-fit rounded-2xl p-5 ${glassCard}`}>
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-amber-500/10" : "bg-amber-50"}`}>
-                    <Briefcase className="w-5 h-5 text-amber-500" />
+            <div className={`self-start h-fit rounded-2xl p-4.5 ${glassCard}`}>
+              <div className="flex items-center justify-between gap-3 w-full">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isDark ? "bg-amber-500/10" : "bg-amber-50"}`}>
+                    <Briefcase className="w-4.5 h-4.5 text-amber-500" />
                   </div>
-                  <h3 className={`text-base sm:text-lg font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight`}>
+                  <h3 className={`text-base font-black truncate ${isDark ? "text-white" : "text-slate-900"} tracking-tight`}>
                     Certifications
                   </h3>
                 </div>
-                <div className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider ${
+                <div className={`px-2.5 py-1 rounded-xl text-[11px] font-black uppercase tracking-wider shrink-0 ${
                   isDark ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" : "bg-amber-50 text-amber-600 border border-amber-100"
                 }`}>
                   {(certifications || []).length} lines
                 </div>
               </div>
               <div className="mt-4 space-y-2">
-                {!isEditing && certifications.slice(0, 12).map((c, idx) => (
-                  <div key={idx} className={`text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>{c}</div>
-                ))}
+                {!isEditing && certifications.slice(0, 12).map((c, idx) => {
+                  const label = certificationLabel(c as CertificationEntry);
+                  const url = certificationUrl(c as CertificationEntry);
+                  return (
+                    <div key={idx} className={`flex items-start gap-2 text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>
+                      <span className="flex-1">{label}</span>
+                      {url && (
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`inline-flex shrink-0 ${isDark ? "text-amber-400 hover:text-amber-300" : "text-amber-600 hover:text-amber-700"}`}
+                          title="Open credential link"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
                 {isEditing && (
                   <div className="space-y-2">
                     <Button variant="outline" className={`h-8 rounded-lg text-xs ${isDark ? "border-white/20 text-white hover:bg-white/10" : ""}`} onClick={() => addListItem("certifications")}>
@@ -700,7 +985,7 @@ export default function Internships(props: {
                     {certifications.map((line, idx) => (
                       <div key={`cert-${idx}`} className="flex items-center gap-2">
                         <input
-                          value={line}
+                          value={certificationLabel(line as CertificationEntry)}
                           onChange={(e) => updateList("certifications", idx, e.target.value)}
                           className={`w-full h-10 px-3 rounded-xl text-sm border outline-none ${
                             isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"

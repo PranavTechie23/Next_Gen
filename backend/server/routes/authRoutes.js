@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const { authLimiter, authSensitiveLimiter } = require('../middleware/rateLimiter');
+const { protect } = require('../middleware/authMiddleware');
 
-// POST /api/auth/register-admin
-router.post('/register-admin', authLimiter, authController.registerAdmin);
+// POST /api/auth/register-TPO
+router.post('/register-TPO', authLimiter, authController.registerTPO);
 
 // POST /api/auth/login
 router.post('/login', authLimiter, authController.login);
@@ -19,8 +20,7 @@ router.post('/verify-otp', authSensitiveLimiter, authController.verifyOtpOnly);
 router.post('/verify-reset', authSensitiveLimiter, authController.verifyAndResetPassword);
 
 // POST /api/auth/change-password
-const { protect } = require('../middleware/authMiddleware');
-router.post('/change-password', protect, authController.changePassword);
+router.post('/change-password', protect, authSensitiveLimiter, authController.changePassword);
 
 // POST /api/auth/logout
 router.post('/logout', protect, authController.logout);

@@ -44,18 +44,19 @@ export default function LoginPage() {
         rememberMe,
       }, { withCredentials: true });
 
-      const { user, message, token } = response.data;
+      const { user, message } = response.data;
       if (user) {
-        localStorage.setItem("userRole", user.role);
-        if (token) {
-          localStorage.setItem("token", token);
-        }
+        sessionStorage.setItem("userRole", user.role);
+        localStorage.removeItem("token");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("userRole");
         if (rememberMe) {
           localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
         } else {
           localStorage.removeItem(REMEMBERED_EMAIL_KEY);
         }
-        
+
         // INTERCEPT: If they must change password (first login), navigate them immediately
         if (user.must_change_password) {
           toast("Please change your default password to continue", { icon: "🔒" });
@@ -75,7 +76,7 @@ export default function LoginPage() {
             navigate("/student/dashboard?tab=overview");
             break;
           case 'TPO_ADMIN':
-            navigate("/admin/dashboard?tab=overview");
+            navigate("/TPO/dashboard?tab=overview");
             break;
           case 'TPO_HEAD':
             navigate("/department/dashboard?tab=overview");
@@ -99,12 +100,12 @@ export default function LoginPage() {
       <div className="absolute top-4 right-4 z-20">
         <ThemeToggle />
       </div>
-      
+
       {/* Back Button */}
       <div className="absolute left-2 top-3 z-20 max-w-[calc(100%-5rem)] sm:left-4 sm:top-4">
-        <Button 
-          variant="ghost" 
-          onClick={() => window.location.href = "/"} 
+        <Button
+          variant="ghost"
+          onClick={() => window.location.href = "/"}
           className="h-10 max-w-full truncate bg-background/50 px-2 text-muted-foreground backdrop-blur-sm hover:text-foreground sm:h-11 sm:px-4"
         >
           <ArrowLeft className="mr-1 h-4 w-4 shrink-0 sm:mr-2 sm:h-5 sm:w-5" />
@@ -140,23 +141,23 @@ export default function LoginPage() {
         {/* Left side - Branding and Features */}
         <div className="hidden md:block space-y-5 slide-in">
           <div className="flex items-center gap-0 mb-4 group cursor-pointer transition-all duration-300" onClick={() => window.location.href = "/"}>
-              <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-16 w-16 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
-              <div className="flex flex-col justify-center leading-tight">
-                <h1 className="text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
-                  NextGen
-                </h1>
-                <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest mt-0.5 opacity-80">
-                  AI-Driven
-                </p>
-              </div>
+            <img src="/NG/NextGen_light.png" alt="NextGen Logo" className="h-16 w-16 object-contain flex-shrink-0 transition-transform duration-500 group-hover:scale-110" />
+            <div className="flex flex-col justify-center leading-tight">
+              <h1 className="text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
+                NextGen
+              </h1>
+              <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest mt-0.5 opacity-80">
+                AI-Driven
+              </p>
             </div>
+          </div>
 
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-foreground leading-tight">
               Welcome to the NextGen Portal 👋
             </h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Sign in to your account. Whether you are a student, department head, or TPO admin{" — "}everything you need is right here.
+              Sign in to your account. Whether you are a student, department head, or TPO{" — "}everything you need is right here.
             </p>
 
             <div className="space-y-2 pt-2">
@@ -276,7 +277,7 @@ export default function LoginPage() {
             <p className="text-center text-xs text-muted-foreground mt-5 font-medium">
               Is your institution not registered yet?{" "}
               <a href="/signup" className="font-bold text-primary hover:text-primary/80 transition-colors">
-                Register as TPO Admin
+                Register as TPO
               </a>
             </p>
 

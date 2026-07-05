@@ -318,7 +318,7 @@ export default function Security() {
                       <div className="border-l-4 border-blue-500 pl-4">
                         <h4 className="font-bold mb-2">Role-Based Access Control (RBAC)</h4>
                         <p className="text-gray-700 dark:text-slate-300">
-                          Permissions are assigned based on user roles (student, faculty, staff, admin). Access is automatically provisioned and de-provisioned based on enrollment or employment status.
+                          Permissions are assigned based on user roles (student, faculty, staff, TPO). Access is automatically provisioned and de-provisioned based on enrollment or employment status.
                         </p>
                       </div>
 
@@ -345,7 +345,7 @@ export default function Security() {
                       </div>
                       <div className="bg-blue-50 dark:bg-blue-950/20 dark:bg-blue-900/20 p-4 rounded-lg">
                         <h4 className="font-bold mb-2">Network Segmentation</h4>
-                        <p className="text-sm text-gray-700 dark:text-slate-300">Separate networks for academic, administrative, guest, and IoT devices</p>
+                        <p className="text-sm text-gray-700 dark:text-slate-300">Separate networks for academic, TPOistrative, guest, and IoT devices</p>
                       </div>
                       <div className="bg-blue-50 dark:bg-blue-950/20 dark:bg-blue-900/20 p-4 rounded-lg">
                         <h4 className="font-bold mb-2">DDoS Protection</h4>
@@ -423,7 +423,7 @@ export default function Security() {
                       1.1 Personal Information
                     </h4>
                     <p className="text-xl font-medium text-slate-600 dark:text-slate-400 mb-10 leading-relaxed">
-                      We collect the following personal information necessary for academic administration and student services:
+                      We collect the following personal information necessary for academic TPOistration and student services:
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
@@ -495,12 +495,12 @@ export default function Security() {
                     </p>
                     <div className="space-y-4 mb-6">
                       <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-lg">
-                        <h4 className="font-bold mb-2">Academic Administration</h4>
+                        <h4 className="font-bold mb-2">Academic TPOistration</h4>
                         <p className="text-sm text-gray-700 dark:text-slate-300">Enrollment management, grade recording, degree verification, transcript generation, course scheduling</p>
                       </div>
                       <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-lg">
                         <h4 className="font-bold mb-2">Communication</h4>
-                        <p className="text-sm text-gray-700 dark:text-slate-300">Academic announcements, emergency notifications, administrative updates, event invitations</p>
+                        <p className="text-sm text-gray-700 dark:text-slate-300">Academic announcements, emergency notifications, TPOistrative updates, event invitations</p>
                       </div>
                       <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-lg">
                         <h4 className="font-bold mb-2">Support Services</h4>
@@ -646,7 +646,7 @@ export default function Security() {
                         </p>
                         <p className="flex items-center gap-2">
                           <MapPin className="w-4 h-4 text-blue-600" />
-                          <span>Privacy Office, Administration Building, Room 301</span>
+                          <span>Privacy Office, TPOistration Building, Room 301</span>
                         </p>
                       </div>
                     </div>
@@ -675,7 +675,7 @@ export default function Security() {
                         </li>
                         <li className="flex items-start gap-2">
                           <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                          <span>Official college business and administrative tasks</span>
+                          <span>Official college business and TPOistrative tasks</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -1535,7 +1535,7 @@ export default function Security() {
                         </p>
                         <p className="flex items-center gap-2">
                           <MapPin className="w-4 h-4 text-blue-600" />
-                          <span>Compliance Office, Administration Building, Room 405</span>
+                          <span>Compliance Office, TPOistration Building, Room 405</span>
                         </p>
                       </div>
                     </div>
