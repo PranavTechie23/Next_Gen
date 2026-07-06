@@ -53,7 +53,7 @@ import {
   Youtube,
 } from "lucide-react";
 
-export type UserRole = "public" | "student" | "college" | "admin";
+export type UserRole = "public" | "student" | "college" | "TPO";
 
 interface FooterProps {
   role?: UserRole;
@@ -131,17 +131,17 @@ const footerConfig = {
         { label: "Settings", href: "/college/setting" },
       ],
     },
-    admin: {
+    TPO: {
       quickLinks: [
-        { label: "Admin Dashboard", href: "/admin/dashboard" },
-        { label: "User Management", href: "/admin/dashboard" },
-        { label: "System Settings", href: "/admin/setting" },
-        { label: "Analytics", href: "/admin/dashboard" },
+        { label: "TPO Dashboard", href: "/TPO/dashboard" },
+        { label: "User Management", href: "/TPO/dashboard" },
+        { label: "System Settings", href: "/TPO/setting" },
+        { label: "Analytics", href: "/TPO/dashboard" },
       ],
       resources: [
-        { label: "Feedback", href: "/admin/feedback" },
+        { label: "Feedback", href: "/TPO/feedback" },
         { label: "Help Center", href: "/help" },
-        { label: "API Reference", href: "/admin/dashboard" },
+        { label: "API Reference", href: "/TPO/dashboard" },
       ],
     },
   },
@@ -164,7 +164,7 @@ export default function Footer({ role = "public", className = "" }: FooterProps)
     <footer className={`${footerBg} py-10 w-full ${className}`}>
       <div className="container mx-auto px-4 lg:px-8 max-w-[90rem]">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-center gap-8 w-full">
-          
+
           {/* Left: Logo */}
           <div className="flex items-center gap-3 cursor-pointer justify-center lg:justify-start" onClick={() => window.location.href = "/"}>
             <img
@@ -189,11 +189,11 @@ export default function Footer({ role = "public", className = "" }: FooterProps)
               <Link href="/terms"><span className={`${textHover} transition-colors cursor-pointer`}>Terms and Conditions</span></Link>
               <span className={textDivider}>|</span>
             </div>
-            
+
             <div className="mb-4">
               <Link href="/refund"><span className={`${textHover} transition-colors cursor-pointer ${textMuted}`}>Cancellation and Refund Policy</span></Link>
             </div>
-            
+
             <div className={`${textMuted} italic text-[13px]`}>
               Copyright &copy; {new Date().getFullYear()} {branding.APP_NAME?.replace(/\s*AI\s*$/i, '')} Private Limited | All rights reserved
             </div>
@@ -202,24 +202,24 @@ export default function Footer({ role = "public", className = "" }: FooterProps)
           {/* Right: Social Icons */}
           <div className="flex items-center gap-3 justify-center lg:justify-end">
             {/* Instagram */}
-            <a href={footerConfig.social.instagram} target="_blank" rel="noopener noreferrer" 
-               className="w-7 h-7 rounded bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 flex items-center justify-center text-white hover:opacity-90 transition-opacity">
+            <a href={footerConfig.social.instagram} target="_blank" rel="noopener noreferrer"
+              className="w-7 h-7 rounded bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 flex items-center justify-center text-white hover:opacity-90 transition-opacity">
               <Instagram className="w-4 h-4" />
             </a>
             {/* X (Twitter) */}
-            <a href={footerConfig.social.twitter} target="_blank" rel="noopener noreferrer" 
-               className="w-7 h-7 rounded bg-black flex items-center justify-center text-white hover:bg-slate-800 transition-colors">
+            <a href={footerConfig.social.twitter} target="_blank" rel="noopener noreferrer"
+              className="w-7 h-7 rounded bg-black flex items-center justify-center text-white hover:bg-slate-800 transition-colors">
               <svg viewBox="0 0 24 24" aria-hidden="true" className="w-3 h-3 fill-current"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 22.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.008 5.96H5.078z"></path></svg>
             </a>
             {/* LinkedIn */}
-            <a href={footerConfig.social.linkedin} target="_blank" rel="noopener noreferrer" 
-               className="w-7 h-7 rounded bg-[#0077b5] flex items-center justify-center text-white hover:bg-[#005e93] transition-colors">
-               <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+            <a href={footerConfig.social.linkedin} target="_blank" rel="noopener noreferrer"
+              className="w-7 h-7 rounded bg-[#0077b5] flex items-center justify-center text-white hover:bg-[#005e93] transition-colors">
+              <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
             </a>
             {/* YouTube */}
-            <a href="#" target="_blank" rel="noopener noreferrer" 
-               className="w-7 h-7 rounded bg-[#ff0000] flex items-center justify-center text-white hover:bg-[#cc0000] transition-colors">
-              <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current pl-[2px]"><path d="M8 5v14l11-7z"/></svg>
+            <a href="#" target="_blank" rel="noopener noreferrer"
+              className="w-7 h-7 rounded bg-[#ff0000] flex items-center justify-center text-white hover:bg-[#cc0000] transition-colors">
+              <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current pl-[2px]"><path d="M8 5v14l11-7z" /></svg>
             </a>
           </div>
 
