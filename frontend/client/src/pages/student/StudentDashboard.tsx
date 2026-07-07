@@ -1,4 +1,4 @@
-import { useState, Fragment, useRef, useEffect } from "react";
+import { useState, Fragment, useRef, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { performClientLogout } from "@/lib/logout";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,12 @@ import AssessmentHub from "@/pages/student/Resources";
 import CompanyWiseKit from "@/pages/student/CompanyWiseKit";
 import Internships from "@/pages/student/Internships";
 import { studentApi } from "@/services/studentApi";
-import { getPlacementDrives, computeDriveMatch } from "@/data/placementDrives";
+import { notificationApi } from "@/services/notificationApi";
+import {
+  STUDENT_SIDEBAR_LINKS,
+  type MarqueeItem,
+} from "@/pages/student/dashboard/sidebarConfig";
+import { computeDriveMatch } from "@/lib/driveMatch";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -50,10 +55,22 @@ import {
   TrendingDown, Edit, Upload as UploadIcon, Download as DownloadIcon, LayoutDashboard,
   Users as UsersIcon, Briefcase as BriefcaseIcon, Palette as PaletteIcon,
   Newspaper, DollarSign, CreditCard, FileCheck, Sparkles, HelpCircle, Menu, PanelLeft, Loader2, Banknote,
-  Megaphone, Check
+  Megaphone, Check, Pencil
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@/contexts/UserContext";
+import { resolveUploadUrl } from "@/lib/authSession";
+import {
+  DASHBOARD_CACHE_KEYS,
+  readDashboardCache,
+  writeDashboardCache,
+} from "@/lib/dashboardCache";
+import { useManualRefresh } from "@/hooks/useManualRefresh";
+import { DashboardSyncBar } from "@/components/layouts";
+import {
+  PlacementDriveDetailDialog,
+  type StudentPlacementDrive,
+} from "@/features/student/placements/PlacementDriveDetailDialog";
 
 export default function StudentDashboard() {
   const [, navigate] = useLocation();
@@ -65,6 +82,8 @@ export default function StudentDashboard() {
     if (urlTab) return urlTab;
     return "overview";
   });
+
+  const [isEditingInternships, setIsEditingInternships] = useState(false);
 
   // Keep URL in sync with the active tab (bookmarkable / shareable)
   useEffect(() => {
@@ -78,6 +97,22 @@ export default function StudentDashboard() {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const profileDropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleProfileMouseEnter = () => {
+    if (profileDropdownTimeoutRef.current) {
+      clearTimeout(profileDropdownTimeoutRef.current);
+    }
+    setIsProfileDropdownOpen(true);
+  };
+
+  const handleProfileMouseLeave = () => {
+    profileDropdownTimeoutRef.current = setTimeout(() => {
+      setIsProfileDropdownOpen(false);
+    }, 300);
+  };
+
   const [selectedSkill, setSelectedSkill] = useState(null);
   const [viewMode, setViewMode] = useState("radar");
   const [showProfileChecklist, setShowProfileChecklist] = useState(true);
@@ -93,8 +128,12 @@ export default function StudentDashboard() {
 
   const { user: backendProfile, loading: loadingProfile, refreshUser } = useUser();
   const [uploadingResume, setUploadingResume] = useState(false);
-  const [roadmapData, setRoadmapData] = useState<any>(null);
-  const [loadingRoadmap, setLoadingRoadmap] = useState(false);
+  const [roadmapData, setRoadmapData] = useState<any>(() =>
+    readDashboardCache(DASHBOARD_CACHE_KEYS.studentRoadmap)
+  );
+  const [loadingRoadmap, setLoadingRoadmap] = useState(
+    () => !readDashboardCache(DASHBOARD_CACHE_KEYS.studentRoadmap)
+  );
   const [savingPerformance, setSavingPerformance] = useState(false);
   const [uploadingAmcat, setUploadingAmcat] = useState(false);
   const [resumeUploadState, setResumeUploadState] = useState<"idle" | "uploading" | "success" | "error">("idle");
@@ -112,24 +151,51 @@ export default function StudentDashboard() {
       return [];
     }
   });
-  const [performanceDraft, setPerformanceDraft] = useState<any>({
-    amcat_quant: "",
-    amcat_verbal: "",
-    amcat_logical: "",
-    endsem_percentage: "",
-    mock_interview_score: "",
-    coding_test_score: "",
+  const [performanceDraft, setPerformanceDraft] = useState<any>(() => {
+    const perf = readDashboardCache<any>(DASHBOARD_CACHE_KEYS.studentRoadmap)?.performance || {};
+    return {
+      amcat_quant: perf?.amcat_quant ?? "",
+      amcat_verbal: perf?.amcat_verbal ?? "",
+      amcat_logical: perf?.amcat_logical ?? "",
+      endsem_percentage: perf?.endsem_percentage ?? "",
+      mock_interview_score: perf?.mock_interview_score ?? "",
+      coding_test_score: perf?.coding_test_score ?? "",
+    };
   });
 
 
-  const [marqueeItems, setMarqueeItems] = useState<{ id: string; text: string; type: string; isImportant?: boolean }[]>([]);
+  const initialFeedCache = readDashboardCache<{
+    marqueeItems: MarqueeItem[];
+    systemNotificationItems: MarqueeItem[];
+  }>(DASHBOARD_CACHE_KEYS.studentFeed);
+
+  const [marqueeItems, setMarqueeItems] = useState<MarqueeItem[]>(
+    () => initialFeedCache?.marqueeItems ?? []
+  );
+  const [systemNotificationItems, setSystemNotificationItems] = useState<MarqueeItem[]>(
+    () => initialFeedCache?.systemNotificationItems ?? []
+  );
   const [clearedNotifIds, setClearedNotifIds] = useState<Set<string>>(() => {
     try { const s = localStorage.getItem('cleared-notif-ids'); return s ? new Set(JSON.parse(s)) : new Set(); } catch { return new Set(); }
   });
   const [noticeSearch, setNoticeSearch] = useState("");
   const [noticeFilter, setNoticeFilter] = useState<"all" | "announcements" | "events" | "important">("all");
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
 
-  const toggleNotificationRead = (id: string) => {
+  const toggleNotificationRead = async (id: string) => {
+    if (id.startsWith("api-")) {
+      const numId = Number(id.replace("api-", ""));
+      if (!Number.isFinite(numId)) return;
+      try {
+        await notificationApi.markAsRead(numId);
+        setSystemNotificationItems((prev) => prev.filter((item) => item.id !== id));
+        toast.success("Notification marked as read");
+      } catch {
+        toast.error("Could not update notification");
+      }
+      return;
+    }
+
     setClearedNotifIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -139,11 +205,11 @@ export default function StudentDashboard() {
         next.add(id);
         toast.success("Notification marked as read");
       }
-      localStorage.setItem('cleared-notif-ids', JSON.stringify(Array.from(next)));
+      localStorage.setItem("cleared-notif-ids", JSON.stringify(Array.from(next)));
       return next;
     });
   };
-  const [loadingMarquee, setLoadingMarquee] = useState(true);
+  const [loadingMarquee, setLoadingMarquee] = useState(() => !initialFeedCache);
   const [announcementsExpanded, setAnnouncementsExpanded] = useState(false);
   const [expandedRoadmapSections, setExpandedRoadmapSections] = useState<Record<string, boolean>>({});
 
@@ -172,37 +238,6 @@ export default function StudentDashboard() {
     );
   };
 
-  useEffect(() => {
-    async function fetchMarqueeData() {
-      try {
-        const [announcements, events] = await Promise.all([
-          studentApi.getAnnouncements(),
-          studentApi.getWebinars() // We will use getWebinars since events are created as webinars in AdminDashboard
-        ]);
-        const items: any[] = [];
-        if (Array.isArray(announcements)) {
-          announcements.forEach((a: any) => items.push({ id: `ann-${a.id}`, text: `📢 ${a.title}: ${a.message}`, type: 'announcement', isImportant: !!(a.is_important) }));
-        }
-        // Since AdminDashboard uses `adminApi.createWebinar` for scheduling events, they are returned by `getWebinars`
-        if (events && Array.isArray(events.data)) {
-          events.data.forEach((e: any) => {
-            // Only show upcoming events
-            if (new Date(e.starts_at) >= new Date()) {
-              items.push({ id: `evt-${e.id}`, text: `📅 Upcoming Event: ${e.title} on ${new Date(e.starts_at).toLocaleDateString()}`, type: 'event', isImportant: false });
-            }
-          });
-        }
-        setMarqueeItems(items);
-      } catch (err) {
-        console.error("Failed to fetch marquee data", err);
-      } finally {
-        setLoadingMarquee(false);
-      }
-    }
-    if (backendProfile) {
-      fetchMarqueeData();
-    }
-  }, [backendProfile]);
 
   // Profile fetching is now handled by UserContext
 
@@ -216,11 +251,15 @@ export default function StudentDashboard() {
     }
   }, [careerInterests]);
 
-  const fetchRoadmap = async () => {
+  const fetchRoadmap = async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
     try {
-      setLoadingRoadmap(true);
+      if (!silent && !readDashboardCache(DASHBOARD_CACHE_KEYS.studentRoadmap)) {
+        setLoadingRoadmap(true);
+      }
       const data = await studentApi.getRoadmap();
       setRoadmapData(data);
+      writeDashboardCache(DASHBOARD_CACHE_KEYS.studentRoadmap, data);
       const perf = data?.performance || {};
       setPerformanceDraft({
         amcat_quant: perf?.amcat_quant ?? "",
@@ -289,17 +328,17 @@ export default function StudentDashboard() {
   // Load roadmap once profile is available so overview recommendations can be dynamic too.
   useEffect(() => {
     if (!loadingProfile && backendProfile && !roadmapData && !loadingRoadmap) {
-      fetchRoadmap();
+      const cached = readDashboardCache(DASHBOARD_CACHE_KEYS.studentRoadmap);
+      fetchRoadmap({ silent: !!cached });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingProfile, backendProfile]);
 
-
-
   // Load roadmap on first visit to Mentorship tab (and after resume upload/profile updates)
   useEffect(() => {
     if (activeTab === "learning" && !loadingProfile && backendProfile && !roadmapData && !loadingRoadmap) {
-      fetchRoadmap();
+      const cached = readDashboardCache(DASHBOARD_CACHE_KEYS.studentRoadmap);
+      fetchRoadmap({ silent: !!cached });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, loadingProfile, backendProfile]);
@@ -414,6 +453,75 @@ export default function StudentDashboard() {
   })();
 
   const resolvedSem = resumeSemSignals.maxSem ?? maxSemMentioned ?? joinYearFallback.sem;
+  
+  const fetchMarqueeData = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
+    if (!silent && !readDashboardCache(DASHBOARD_CACHE_KEYS.studentFeed)) {
+      setLoadingMarquee(true);
+    }
+    try {
+      const [announcements, events, deptEvents] = await Promise.all([
+        studentApi.getAnnouncements().catch(() => []),
+        studentApi.getWebinars().catch(() => ({ data: [] })),
+        studentApi.getDeptEvents().catch(() => [])
+      ]);
+      const items: MarqueeItem[] = [];
+
+      if (Array.isArray(announcements)) {
+        announcements.forEach((a: any) => items.push({ id: `ann-${a.id}`, text: `📢 ${a.title}: ${a.message}`, type: "announcement", isImportant: !!(a.is_important) }));
+      }
+
+      if (events && Array.isArray(events.data)) {
+        events.data.forEach((e: any) => {
+          if (new Date(e.starts_at) >= new Date()) {
+            items.push({ id: `evt-${e.id}`, text: `📅 Upcoming Event: ${e.title} on ${new Date(e.starts_at).toLocaleDateString()}`, type: "event", isImportant: false });
+          }
+        });
+      }
+
+      if (Array.isArray(deptEvents)) {
+        let targetBatchCode = "All";
+        if (resolvedSem === 1 || resolvedSem === 2) targetBatchCode = "FE";
+        else if (resolvedSem === 3 || resolvedSem === 4) targetBatchCode = "SE";
+        else if (resolvedSem === 5 || resolvedSem === 6) targetBatchCode = "TE";
+        else if (resolvedSem === 7 || resolvedSem === 8) targetBatchCode = "BE";
+
+        deptEvents.forEach((e: any) => {
+          if (new Date(e.date) >= new Date() && (!e.target_batch || e.target_batch === "All" || e.target_batch === targetBatchCode)) {
+            items.push({ id: `dept-evt-${e.id}`, text: `📅 Dept Event: ${e.title} on ${new Date(e.date).toLocaleDateString()}`, type: "event", isImportant: true });
+          }
+        });
+      }
+
+      const notifData = await notificationApi
+        .getNotifications({ status: "unread", limit: 15 })
+        .catch(() => ({ notifications: [] as { id: number; title: string; message: string }[] }));
+      const systemItems: MarqueeItem[] = (notifData.notifications || []).map((n) => ({
+        id: `api-${n.id}`,
+        text: `${n.title}: ${n.message}`,
+        type: "system" as const,
+        isImportant: false,
+      }));
+
+      setMarqueeItems(items);
+      setSystemNotificationItems(systemItems);
+      writeDashboardCache(DASHBOARD_CACHE_KEYS.studentFeed, {
+        marqueeItems: items,
+        systemNotificationItems: systemItems,
+      });
+    } catch (err) {
+      console.error("Failed to fetch marquee data", err);
+    } finally {
+      setLoadingMarquee(false);
+    }
+  }, [resolvedSem]);
+
+  useEffect(() => {
+    if (!backendProfile) return;
+    const cached = readDashboardCache(DASHBOARD_CACHE_KEYS.studentFeed);
+    fetchMarqueeData({ silent: !!cached });
+  }, [backendProfile, resolvedSem, fetchMarqueeData]);
+
   const resolvedYearLabel =
     resolvedSem !== null
       ? `Sem ${resolvedSem} • ${ordinalYear(Math.ceil(resolvedSem / 2))} year`
@@ -471,7 +579,7 @@ export default function StudentDashboard() {
     year: resolvedYearLabel,
     // Prefer previous semester GPA when available (Sem 4 shows Sem 3 GPA).
     cgpa: prevSemGpa ?? latestKnownGpa ?? 0,
-    avatar: backendProfile?.profile?.avatar_url || ""
+    avatar: resolveUploadUrl(backendProfile?.profile?.avatar_url) || ""
   };
 
   const resumeInputRef = useRef<HTMLInputElement>(null);
@@ -490,9 +598,21 @@ export default function StudentDashboard() {
         setUploadingResume(true);
         setResumeUploadState("uploading");
         setResumeUploadStatusText("Uploading and parsing resume...");
-        await studentApi.uploadResume(file);
+        const uploadResult = await studentApi.uploadResume(file);
         setUploadingResume(false);
         setResumeUploadState("success");
+
+        if (uploadResult?.llm_eval_available === false) {
+          setResumeUploadStatusText("Resume updated. Parsed fields refreshed.");
+          toast.info(uploadResult?.message || "Resume parsed. AI evaluation is once per day.");
+          await refreshUser();
+          setTimeout(() => {
+            setResumeUploadState("idle");
+            setResumeUploadStatusText("");
+          }, 3500);
+          return;
+        }
+
         setResumeUploadStatusText("Resume uploaded. Please select target role.");
         setShowTargetRoleModal(true);
       } catch (error) {
@@ -514,7 +634,11 @@ export default function StudentDashboard() {
     try {
       setEvaluatingRole(true);
       toast.info("AI is evaluating your resume for this role...");
-      await studentApi.evaluateTargetRole(targetRoleInput);
+      const evalResult = await studentApi.evaluateTargetRole(targetRoleInput);
+
+      if (evalResult?.cached) {
+        toast.info(evalResult?.message || "Using today's existing AI evaluation.");
+      }
 
       // Force full recomputation refresh after target role evaluation.
       const [profileResult, roadmapResult] = await Promise.allSettled([
@@ -753,7 +877,7 @@ export default function StudentDashboard() {
         return acc;
       }, []);
 
-      const skillsPayload = uniqueSkillNames.map((name) => ({ name, proficiency_level: "BEGINNER" }));
+      const skillsPayload = uniqueSkillNames.map((name) => ({ name }));
       await studentApi.updateSubjectiveProfile({
         skills: skillsPayload,
         achievements: allAchievements,
@@ -846,79 +970,39 @@ export default function StudentDashboard() {
 
   const clamp = (n: number, min = 0, max = 100) => Math.max(min, Math.min(max, n));
   const pct = (n: number) => `${Math.round(clamp(n))}%`;
-  const sigmoid = (x: number) => 1 / (1 + Math.exp(-x));
 
-  const computeDynamicMetrics = () => {
+  /** Local fallback when backend metrics are not yet loaded. */
+  const computeLocalMetricsFallback = () => {
     const cgpa = Number(backendProfile?.student?.current_cgpa ?? 0);
     const backlogs = Number(backendProfile?.student?.active_backlogs ?? 0);
-
-    const projectsFromResume = Array.isArray(resumeSections?.projects) ? resumeSections.projects.length : 0;
-    const experienceFromResume = Array.isArray(resumeSections?.experience) ? resumeSections.experience.length : 0;
-    const extracurricularFromResume = Array.isArray(resumeSections?.extracurricular) ? resumeSections.extracurricular.length : 0;
-    const certificationsFromResume = Array.isArray(resumeSections?.certifications) ? resumeSections.certifications.length : 0;
-    const summaryPresent = !!resumeSections?.summary;
     const skillsCount = currentSkills.length + previousSkills.length;
-
-    // Skills mastery: saturating curve based on skill count
     const skillsMastered = skillsCount > 0 ? clamp(100 * (1 - Math.exp(-skillsCount / 12))) : 0;
-
-    // Portfolio strength (projects + experience + certifications), capped
-    const portfolioRaw =
-      projectsFromResume * 10 +
-      experienceFromResume * 6 +
-      extracurricularFromResume * 2 +
-      certificationsFromResume * 6 +
-      (summaryPresent ? 8 : 0);
-    const portfolioScore = clamp(portfolioRaw, 0, 100);
-
-    // Academics score (CGPA scale 0-10; penalize backlogs)
     const academicsScore = cgpa > 0 ? clamp((cgpa / 10) * 100 - backlogs * 15) : 0;
-
-    // Overall readiness (weighted)
-    const overallReadiness = clamp(
-      academicsScore * 0.45 +
-      skillsMastered * 0.30 +
-      portfolioScore * 0.25
-    );
-
-    // Placement probability (logistic mapping from readiness + academics)
-    const logit =
-      -2.2 +
-      (overallReadiness / 100) * 3.2 +
-      (academicsScore / 100) * 1.4 -
-      backlogs * 0.35;
-    const placementProbability = (overallReadiness > 0 || academicsScore > 0)
-      ? clamp(sigmoid(logit) * 100)
-      : 0;
-
-    // AI confidence = confidence in our computed score (data completeness)
-    const hasPhone = !!resumeParsed?.phone || !!backendProfile?.profile?.phone;
-    const hasLinks = !!(
-      backendProfile?.profile?.github_url ||
-      backendProfile?.profile?.linkedin_url ||
-      resumeParsed?.github_url ||
-      resumeParsed?.linkedin_url
-    );
-    const completenessSignals = [
-      cgpa > 0,
-      skillsCount >= 5,
-      projectsFromResume > 0,
-      summaryPresent,
-      hasPhone,
-      hasLinks,
-    ];
-    const completeness = completenessSignals.filter(Boolean).length / completenessSignals.length;
-    const aiConfidence = completeness > 0 ? clamp(45 + completeness * 55) : 0;
-
+    const overallReadiness = clamp(academicsScore * 0.45 + skillsMastered * 0.30 + 25);
     return {
       overallReadiness,
       skillsMastered,
-      placementProbability,
-      aiConfidence,
+      placementProbability: overallReadiness,
+      aiConfidence: overallReadiness,
     };
   };
 
-  const dynamic = computeDynamicMetrics();
+  const serverMetrics = (backendProfile as { dashboardMetrics?: Record<string, any> })?.dashboardMetrics;
+  const fallback = computeLocalMetricsFallback();
+  const dynamic = {
+    overallReadiness: serverMetrics?.overallReadiness ?? fallback.overallReadiness,
+    skillsMastered: serverMetrics?.coreCompetencies?.score ?? fallback.skillsMastered,
+    placementProbability: serverMetrics?.placementFitIndex?.score ?? fallback.placementProbability,
+    aiConfidence: serverMetrics?.profileCompleteness?.score ?? fallback.aiConfidence,
+  };
+  const readinessStatusLabel = serverMetrics?.readinessStatusLabel
+    ?? (dynamic.overallReadiness >= 75 ? "EXCELLENT"
+      : dynamic.overallReadiness >= 55 ? "GOOD"
+      : dynamic.overallReadiness >= 35 ? "BUILDING" : "GETTING STARTED");
+  const readinessEncouragement = serverMetrics?.readinessEncouragement
+    ?? (dynamic.overallReadiness >= 55
+      ? "Solid progress — add projects and assessment scores to strengthen your fit."
+      : "Keep building your profile to unlock stronger placement signals.");
   const roleNoiseWords = new Set([
     "pune", "mumbai", "india", "college", "university", "institute", "school", "present",
     "jun", "june", "jul", "july", "aug", "sep", "oct", "nov", "dec", "jan", "feb", "mar", "apr", "may",
@@ -968,7 +1052,9 @@ export default function StudentDashboard() {
       ...currentSkills, ...previousSkills,
       ...(Array.isArray(resumeSections?.experience) ? resumeSections.experience : []),
       ...(Array.isArray(resumeSections?.education) ? resumeSections.education : []),
-      ...(Array.isArray(resumeSections?.certifications) ? resumeSections.certifications : []),
+      ...(Array.isArray(resumeSections?.certifications)
+        ? resumeSections.certifications.map((c: any) => (typeof c === "string" ? c : String(c?.label || "")))
+        : []),
       ...(Array.isArray(resumeSections?.projects) ? resumeSections.projects.map((p: any) => p?.title || "") : []),
       ...(careerInterests || []),
     ]
@@ -1015,7 +1101,9 @@ export default function StudentDashboard() {
     const evidenceBlob = [
       ...(Array.isArray(resumeSections?.projects) ? resumeSections.projects.map((p: any) => p?.title || "") : []),
       ...(Array.isArray(resumeSections?.experience) ? resumeSections.experience : []),
-      ...(Array.isArray(resumeSections?.certifications) ? resumeSections.certifications : []),
+      ...(Array.isArray(resumeSections?.certifications)
+        ? resumeSections.certifications.map((c: any) => (typeof c === "string" ? c : String(c?.label || "")))
+        : []),
       ...(topJourneyKeywords || []),
       ...(careerInterests || []),
       ...currentSkills, ...previousSkills,
@@ -1128,7 +1216,10 @@ export default function StudentDashboard() {
 
     edu.forEach((line: any) => inferredEvents.push({ source: "education", title: String(line || ""), date: parseMonthYearFromText(line) }));
     exp.forEach((line: any) => inferredEvents.push({ source: "experience", title: String(line || ""), date: parseMonthYearFromText(line) }));
-    certs.forEach((line: any) => inferredEvents.push({ source: "certification", title: String(line || ""), date: parseMonthYearFromText(line) }));
+    certs.forEach((line: any) => {
+      const title = typeof line === "string" ? line : String(line?.label || "");
+      inferredEvents.push({ source: "certification", title, date: parseMonthYearFromText(title) });
+    });
     ach.forEach((line: any) => inferredEvents.push({ source: "achievement", title: String(line || ""), date: parseMonthYearFromText(line) }));
     projectBlocks.forEach((p: any) => inferredEvents.push({ source: "project", title: String(p?.title || ""), date: parseMonthYearFromText(p?.title || "") }));
 
@@ -1170,44 +1261,44 @@ export default function StudentDashboard() {
     });
   })();
 
-  // Enhanced Quick Stats (Dynamic)
+  // Dashboard quick stats — sourced from unified backend metrics when available
   const quickStats = [
     {
-      label: resumeParsed?.target_role ? `Match: ${resumeParsed.target_role}` : "Overall Readiness",
-      value: pct(resumeParsed?.target_role_match || dynamic.overallReadiness),
-      change: resumeParsed?.target_role ? "LLM Evaluated" : "Dynamic",
-      trend: (resumeParsed?.target_role_match || dynamic.overallReadiness) >= 60 ? "up" : "down",
+      label: serverMetrics?.targetRoleAlignment?.label ?? (resumeParsed?.target_role ? `Match: ${resumeParsed.target_role}` : "Overall Readiness"),
+      value: pct(serverMetrics?.targetRoleAlignment?.score ?? resumeParsed?.target_role_match ?? dynamic.overallReadiness),
+      change: serverMetrics?.targetRoleAlignment?.badge ?? (resumeParsed?.target_role ? "LLM Evaluated" : "Readiness Score"),
+      trend: (serverMetrics?.targetRoleAlignment?.score ?? resumeParsed?.target_role_match ?? dynamic.overallReadiness) >= 60 ? "up" : "down",
       icon: Target,
       color: "bg-gradient-to-br from-blue-500 to-blue-600",
-      description: resumeParsed?.target_role ? "Target Role Alignment" : "Placement Preparedness"
+      description: serverMetrics?.targetRoleAlignment?.description ?? (resumeParsed?.target_role ? "Target Role Alignment" : "Placement Preparedness"),
     },
     {
-      label: "Skills Mastered",
+      label: serverMetrics?.coreCompetencies?.label ?? "Skills Mastered",
       value: pct(dynamic.skillsMastered),
-      change: "Dynamic",
+      change: serverMetrics?.coreCompetencies?.badge ?? "Computed",
       trend: dynamic.skillsMastered >= 60 ? "up" : "down",
       icon: Award,
       color: "bg-gradient-to-br from-green-500 to-emerald-600",
-      description: "Core Competencies"
+      description: serverMetrics?.coreCompetencies?.description ?? "Core Competencies",
     },
     {
-      label: "Placement Probability",
+      label: serverMetrics?.placementFitIndex?.label ?? "Placement Fit Index",
       value: pct(dynamic.placementProbability),
-      change: "Dynamic",
+      change: serverMetrics?.placementFitIndex?.badge ?? "Computed",
       trend: dynamic.placementProbability >= 60 ? "up" : "down",
       icon: TrendingUp,
       color: "bg-gradient-to-br from-purple-500 to-violet-600",
-      description: "Overall Fit"
+      description: serverMetrics?.placementFitIndex?.description ?? "Overall Fit",
     },
     {
-      label: resumeParsed?.target_role ? "ATS Health Score" : "AI Confidence",
+      label: serverMetrics?.profileCompleteness?.label ?? "Profile Completeness",
       value: pct(dynamic.aiConfidence),
-      change: "Dynamic",
+      change: serverMetrics?.profileCompleteness?.badge ?? "Resume Analysis",
       trend: dynamic.aiConfidence >= 70 ? "up" : "down",
       icon: Brain,
       color: "bg-gradient-to-br from-orange-500 to-red-600",
-      description: resumeParsed?.target_role ? "Resume Completeness" : "Score Confidence"
-    }
+      description: serverMetrics?.profileCompleteness?.description ?? "Resume & Profile Coverage",
+    },
   ];
 
   // Dynamic Skill Data (resume/profile-driven)
@@ -1489,36 +1580,86 @@ export default function StudentDashboard() {
   })();
 
   // Placement drives from TPO (ticket creation) — shown as "Drives" with match %
-  const [placementDrives, setPlacementDrives] = useState<any[]>([]);
-  const [loadingDrives, setLoadingDrives] = useState(false);
+  const initialJobsCache = readDashboardCache<{ jobs: any[] }>(DASHBOARD_CACHE_KEYS.studentJobs);
+  const [placementDrives, setPlacementDrives] = useState<any[]>(() => initialJobsCache?.jobs ?? []);
+  const [loadingDrives, setLoadingDrives] = useState(() => !initialJobsCache);
+  const [appliedJobMap, setAppliedJobMap] = useState<Record<number, string>>({});
+  const [selectedDrive, setSelectedDrive] = useState<StudentPlacementDrive | null>(null);
+  const [driveDialogOpen, setDriveDialogOpen] = useState(false);
+
+  const fetchApplications = useCallback(async () => {
+    try {
+      const data = await studentApi.getApplications();
+      const map: Record<number, string> = {};
+      for (const app of data.applications || []) {
+        if (app.job_id) map[app.job_id] = app.application_status || "APPLIED";
+      }
+      setAppliedJobMap(map);
+    } catch (e) {
+      console.error("fetchApplications failed", e);
+    }
+  }, []);
+
+  const fetchDrives = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
+    if (!silent && !readDashboardCache(DASHBOARD_CACHE_KEYS.studentJobs)) {
+      setLoadingDrives(true);
+    }
+    try {
+      const data = await studentApi.getJobs();
+      const jobs = data.jobs || [];
+      setPlacementDrives(jobs);
+      writeDashboardCache(DASHBOARD_CACHE_KEYS.studentJobs, { jobs });
+    } catch (e) {
+      console.error("fetchDrives failed", e);
+    } finally {
+      setLoadingDrives(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchDrives = async () => {
-      try {
-        setLoadingDrives(true);
-        const data = await studentApi.getJobs();
-        setPlacementDrives(data.jobs || []);
-      } catch (e) {
-        console.error("fetchDrives failed", e);
-      } finally {
-        setLoadingDrives(false);
-      }
-    };
-    if (backendProfile) {
-      fetchDrives();
+    if (!backendProfile) return;
+    const cached = readDashboardCache(DASHBOARD_CACHE_KEYS.studentJobs);
+    fetchDrives({ silent: !!cached });
+    fetchApplications();
+  }, [backendProfile, fetchDrives, fetchApplications]);
+
+  const manualRefresh = useManualRefresh(async () => {
+    if (!backendProfile) return;
+    await Promise.all([
+      fetchMarqueeData({ silent: true }),
+      fetchDrives({ silent: true }),
+      fetchApplications(),
+      fetchRoadmap({ silent: true }),
+      refreshUser(),
+    ]);
+    setLastSyncedAt(Date.now());
+    toast.success("Dashboard data refreshed.");
+  });
+
+  useEffect(() => {
+    if (backendProfile && !loadingMarquee && !loadingDrives && !loadingRoadmap) {
+      setLastSyncedAt((prev) => prev ?? Date.now());
     }
-  }, [backendProfile]);
+  }, [backendProfile, loadingMarquee, loadingDrives, loadingRoadmap]);
 
   const studentSkillsSet = [...currentSkills, ...previousSkills];
   const studentBacklogs = backendProfile?.student?.active_backlogs || 0;
   const drivesWithMatch = placementDrives.map((d, idx) => {
-    // Simple adapter to match PlacementDrive interface for computeDriveMatch
+    const requiredSkills = Array.isArray(d.required_skills)
+      ? d.required_skills
+      : Array.isArray(d.requirements)
+        ? d.requirements
+        : [];
     const adaptedDrive = {
       minCgpa: d.min_cgpa || 0,
       maxBacklogs: d.max_backlogs_allowed || 0,
-      requirements: Array.isArray(d.requirements) ? d.requirements : [],
+      requirements: requiredSkills,
       ...d,
     };
+
+    const deadlineLabel = d.deadline_note
+      || (d.end_date ? new Date(d.end_date).toLocaleDateString() : "TBD");
 
     return {
       ...d,
@@ -1526,8 +1667,16 @@ export default function StudentDashboard() {
       companyName: d.company_name,
       role: d.job_title,
       description: d.job_description,
-      requirements: Array.isArray(d.requirements) ? d.requirements : [],
-      deadline: d.end_date ? new Date(d.end_date).toLocaleDateString() : "TBD",
+      job_description: d.job_description,
+      drive_description: d.drive_description,
+      requirements: requiredSkills,
+      required_skills: requiredSkills,
+      application_link: d.application_link,
+      dos: d.dos,
+      donts: d.donts,
+      deadline: deadlineLabel,
+      deadline_note: d.deadline_note,
+      application_status: appliedJobMap[d.job_id] ?? null,
       match: computeDriveMatch(
         adaptedDrive as any,
         studentProfile.cgpa,
@@ -1543,6 +1692,11 @@ export default function StudentDashboard() {
       ][idx % 5],
     };
   });
+
+  const openDriveDialog = (drive: StudentPlacementDrive) => {
+    setSelectedDrive(drive);
+    setDriveDialogOpen(true);
+  };
 
   // Achievements
   const achievements = [
@@ -1624,46 +1778,6 @@ export default function StudentDashboard() {
     }
   ];
 
-  // Recent Activity Feed
-  const recentActivity = [
-    {
-      id: 1,
-      type: "achievement",
-      title: "Completed Full Stack Project",
-      description: "E-commerce platform with React & Node.js",
-      time: "2 hours ago",
-      icon: CheckCircle,
-      color: "text-green-500"
-    },
-    {
-      id: 2,
-      type: "skill",
-      title: "DSA Skill Improved",
-      description: "Your DSA proficiency increased by 5%",
-      time: "5 hours ago",
-      icon: TrendingUp,
-      color: "text-blue-500"
-    },
-    {
-      id: 3,
-      type: "notification",
-      title: "New Job Opportunity",
-      description: "Google SDE role matches your profile (78%)",
-      time: "1 day ago",
-      icon: Bell,
-      color: "text-purple-500"
-    },
-    {
-      id: 4,
-      type: "milestone",
-      title: "100 Problems Solved!",
-      description: "Congratulations on reaching this milestone",
-      time: "2 days ago",
-      icon: Trophy,
-      color: "text-amber-500"
-    }
-  ];
-
   // Quick Actions
   const quickActions = [
     {
@@ -1708,35 +1822,8 @@ export default function StudentDashboard() {
     }
   ];
 
-  // Notifications
-  const notifications = [
-    {
-      id: 1,
-      title: "Deadline Reminder",
-      message: "System Design assignment due in 2 days",
-      type: "warning",
-      time: "Just now",
-      unread: true
-    },
-    {
-      id: 2,
-      title: "New Recommendation",
-      message: "AI suggests focusing on Database Design",
-      type: "info",
-      time: "1 hour ago",
-      unread: true
-    },
-    {
-      id: 3,
-      title: "Achievement Unlocked",
-      message: "You've completed 10 courses this month!",
-      type: "success",
-      time: "3 hours ago",
-      unread: false
-    }
-  ];
-
-
+  const unclearedMarqueeItems = marqueeItems.filter((i) => !clearedNotifIds.has(i.id));
+  const bellItems = [...systemNotificationItems, ...unclearedMarqueeItems];
 
   // Upcoming Tasks (roadmap-driven)
   const upcomingTasks = (() => {
@@ -1785,25 +1872,8 @@ export default function StudentDashboard() {
     { task: "Practice 3 Mock Interviews", completed: 1, total: 3, priority: "medium" },
   ];
 
-  // Sidebar Links - All Student Features (All as tabs, no navigation)
-  const sidebarLinks = [
-    { id: "overview", label: "Dashboard", subtitle: "Your career command center", icon: LayoutDashboard },
-    { id: "announcements", label: "Announcements", subtitle: "Latest notices & updates", icon: Megaphone },
-    { id: "skills", label: "Skills", subtitle: "Manage your competencies & achievements", icon: PaletteIcon },
-    { id: "internships", label: "Internships", subtitle: "Discover real-world opportunities", icon: BriefcaseIcon },
-    { id: "resume", label: "Resume", subtitle: "Build & optimize your resume", icon: FileText },
-    { id: "opportunities", label: "Placement Drives", subtitle: "Openings from your TPO", icon: BriefcaseIcon },
-    { id: "learning", label: "AI Mentorship", subtitle: "Personalized study roadmap", icon: UsersIcon },
-
-    { id: "webinars", label: "Webinars", subtitle: "Live sessions & workshops", icon: Play },
-
-    { id: "careers", label: "Career Explorer", subtitle: "Explore roles & industries", icon: Briefcase },
-    { id: "corporateNews", label: "Corporate News", subtitle: "Latest industry updates", icon: Newspaper },
-
-    { id: "feedback", label: "Feedback", subtitle: "Share your thoughts", icon: MessageSquare },
-    { id: "assessment-hub", label: "Resources", subtitle: "Practice tests & study material", icon: Zap },
-    { id: "company-kit", label: "Company Wise Kit", subtitle: "Targeted company prep", icon: Building2 },
-  ];
+  // Sidebar sections group STUDENT_SIDEBAR_LINKS (see dashboard/sidebarConfig.ts)
+  const sidebarLinks = STUDENT_SIDEBAR_LINKS;
 
   const sidebarSections: Array<{ title: string; ids: Array<(typeof sidebarLinks)[number]["id"]> }> = [
     { title: "PROFILE TRACKER", ids: ["overview", "announcements", "skills", "internships"] },
@@ -1907,7 +1977,7 @@ export default function StudentDashboard() {
             <div className={`p-4 border-t ${isDark ? "border-white/10" : "border-slate-200"} flex items-center justify-between`}>
               <ThemeToggle />
               <button
-                onClick={() => performClientLogout(navigate)}
+                onClick={() => void performClientLogout(navigate)}
                 className={`p-3 rounded-xl transition-colors ${isDark ? "text-red-300 hover:bg-red-500/10" : "text-red-600 hover:bg-red-50"}`}
                 title="Log out"
                 aria-label="Log out"
@@ -1991,9 +2061,9 @@ export default function StudentDashboard() {
                           transition={{ duration: 0.45, ease: "easeInOut" }}
                           className="flex-shrink-0"
                         >
-                          <Icon className={`transition-colors ${isSidebarOpen ? "w-5 h-5" : "w-6 h-6"} ${isActive ? (isDark ? "text-blue-300" : "text-blue-700") : (isDark ? "text-slate-400" : "text-slate-500")}`} />
+                        <Icon className={`transition-colors ${isSidebarOpen ? "w-5 h-5" : "w-6 h-6"} ${isActive ? (isDark ? "text-blue-300" : "text-blue-700") : (isDark ? "text-slate-400" : "text-slate-500")}`} />
                         </motion.span>
-                        {isSidebarOpen && <span className="font-semibold text-sm truncate min-w-0">{link.label}</span>}
+                        {isSidebarOpen && <span className="font-semibold text-sm whitespace-nowrap">{link.label}</span>}
                         {marqueeItems.filter(i => !clearedNotifIds.has(i.id)).length > 0 && (
                           <span className={`absolute ${!isSidebarOpen ? "top-1.5 right-1.5" : "right-3"} flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-[10px] font-black bg-red-500 text-white shadow-md ${link.id === "announcements" ? "animate-pulse" : "hidden"}`}>
                             {marqueeItems.filter(i => !clearedNotifIds.has(i.id)).length}
@@ -2022,9 +2092,9 @@ export default function StudentDashboard() {
         <button
           type="button"
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className={`absolute top-6 -right-12 z-[60] h-12 w-12 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center ${isDark
-            ? "bg-[#0c0c14] border-white/20 text-slate-300 hover:text-white"
-            : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+          className={`absolute top-6 -right-12 z-[60] h-10 w-10 rounded-xl transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center ${isDark
+            ? "text-slate-400 hover:text-white hover:bg-white/10"
+            : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
             }`}
           aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
           title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
@@ -2042,8 +2112,8 @@ export default function StudentDashboard() {
 
           {/* Important Announcements Marquee — always visible when there are important items */}
           {!loadingMarquee && marqueeItems.filter(i => i.isImportant && !clearedNotifIds.has(i.id)).length > 0 && (
-            <div className={`rounded-2xl overflow-hidden border ${isDark ? "border-red-500/30 bg-red-500/5" : "border-red-200 bg-red-50"} flex items-center gap-3 pr-3`}>
-              <div className="flex-shrink-0 flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-red-600 to-orange-500 text-white">
+            <div className={`rounded-2xl overflow-hidden border ${isDark ? "border-red-500/30 bg-red-500/5" : "border-red-200 bg-red-50"} flex items-center gap-3 pr-3 relative`}>
+              <div className="flex-shrink-0 flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-red-600 to-orange-500 text-white relative z-10">
                 <motion.span
                   animate={{ rotate: [0, -15, 15, -10, 10, 0] }}
                   transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 3 }}
@@ -2058,26 +2128,45 @@ export default function StudentDashboard() {
                   {[...marqueeItems.filter(i => i.isImportant && !clearedNotifIds.has(i.id)), ...marqueeItems.filter(i => i.isImportant && !clearedNotifIds.has(i.id))].map((item, idx) => (
                     <span key={`${item.id}-${idx}`} className={`inline-flex items-center gap-2 mr-16 text-sm font-semibold ${isDark ? "text-red-200" : "text-red-800"}`}>
                       <span className="text-base">📢</span>
-                      {item.text.replace(/^[📢📅]\s*/, '')}
+                      {item.text.replace(/^(?:📢|📅)\s*/, '')}
                     </span>
                   ))}
                 </div>
+              </div>
+              <div className="flex items-center gap-1 sm:gap-2 shrink-0 relative z-10 bg-inherit pl-2">
+
+                <Button
+                  onClick={() => {
+                    const importantItems = marqueeItems.filter(i => i.isImportant && !clearedNotifIds.has(i.id));
+                    setClearedNotifIds(prev => {
+                      const next = new Set(prev);
+                      importantItems.forEach(item => next.add(item.id));
+                      localStorage.setItem("cleared-notif-ids", JSON.stringify(Array.from(next)));
+                      return next;
+                    });
+                    toast.success("Important alerts cleared");
+                  }}
+                  variant="ghost"
+                  className={`h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider ${isDark ? "hover:bg-red-500/20 text-red-400" : "hover:bg-red-200 text-red-700"}`}
+                >
+                  Clear
+                </Button>
               </div>
             </div>
           )}
 
           {/* Slim Smart Announcement Banner (overview tab) */}
-          {activeTab === "overview" && !loadingMarquee && marqueeItems.filter(i => !clearedNotifIds.has(i.id)).length > 0 && (
+          {activeTab === "overview" && !loadingMarquee && marqueeItems.filter(i => !i.isImportant && !clearedNotifIds.has(i.id)).length > 0 && (
             <div className={`rounded-2xl border transition-all duration-300 ${isDark ? "border-blue-500/20 bg-blue-500/5" : "border-blue-100 bg-blue-50/50"} p-4 flex items-center justify-between gap-4 mb-4 shadow-sm relative overflow-hidden`}>
               <div className="flex items-center gap-3 min-w-0">
                 <span className="flex-shrink-0 text-base">📢</span>
                 <div className="min-w-0">
                   <p className={`text-sm font-bold truncate ${isDark ? "text-slate-200" : "text-slate-800"}`}>
-                    {marqueeItems.filter(i => !clearedNotifIds.has(i.id))[0]?.text.replace(/^[📢📅]\s*/, '')}
+                    {marqueeItems.filter(i => !i.isImportant && !clearedNotifIds.has(i.id))[0]?.text.replace(/^(?:📢|📅)\s*/, '')}
                   </p>
-                  {marqueeItems.filter(i => !clearedNotifIds.has(i.id)).length > 1 && (
+                  {marqueeItems.filter(i => !i.isImportant && !clearedNotifIds.has(i.id)).length > 1 && (
                     <p className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"} font-medium`}>
-                      and {marqueeItems.filter(i => !clearedNotifIds.has(i.id)).length - 1} other update(s) on the Notice Board
+                      and {marqueeItems.filter(i => !i.isImportant && !clearedNotifIds.has(i.id)).length - 1} other update(s) on the Notice Board
                     </p>
                   )}
                 </div>
@@ -2094,7 +2183,7 @@ export default function StudentDashboard() {
                   View All
                 </Button>
                 <button
-                  onClick={() => toggleNotificationRead(marqueeItems.filter(i => !clearedNotifIds.has(i.id))[0]?.id)}
+                  onClick={() => toggleNotificationRead(marqueeItems.filter(i => !i.isImportant && !clearedNotifIds.has(i.id))[0]?.id)}
                   className={`p-2 rounded-xl transition-colors ${isDark ? "hover:bg-white/10 text-slate-400 hover:text-slate-200" : "hover:bg-slate-200 text-slate-500 hover:text-slate-800"}`}
                   title="Dismiss"
                 >
@@ -2156,6 +2245,14 @@ export default function StudentDashboard() {
 
                   {/* Premium Header Controls - Relocated for better accessibility */}
                   <div className="flex items-center gap-3 sm:gap-4">
+                    <DashboardSyncBar
+                      lastSyncedAt={lastSyncedAt}
+                      isSyncing={manualRefresh.isRefreshing}
+                      canRefresh={manualRefresh.canRefresh}
+                      refreshLabel={manualRefresh.label}
+                      onRefresh={() => void manualRefresh.refresh()}
+                    />
+                    
                     {/* Quick access button to open Company Wise Kit tab from anywhere */}
                     {activeTab !== "company-kit" && (
                       <Button
@@ -2167,11 +2264,29 @@ export default function StudentDashboard() {
                           const newUrl = `${window.location.pathname}?${params.toString()}`;
                           window.history.replaceState({ ...window.history.state }, "", newUrl);
                         }}
-                        className={`hidden md:flex h-11 px-6 rounded-2xl font-bold text-xs uppercase tracking-widest gap-2 transform transition-all hover:scale-105 active:scale-95 ${isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}
+                        className={`hidden sm:flex h-11 px-4 lg:px-6 rounded-2xl font-bold text-xs uppercase tracking-wider gap-2 transform transition-all hover:scale-105 active:scale-95 shrink-0 ${isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}
                       >
                         <span>Company Wise Kit</span>
                         <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                       </Button>
+                    )}
+
+                    {/* Edit Pencil icon button in top navbar for internships tab */}
+                    {activeTab === "internships" && (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingInternships(!isEditingInternships)}
+                        title={isEditingInternships ? "Done Editing" : "Edit Details"}
+                        className={`h-11 w-11 flex items-center justify-center rounded-2xl border transition-all transform hover:scale-105 active:scale-95 shrink-0 ${
+                          isEditingInternships
+                            ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/30"
+                            : isDark
+                            ? "bg-white/5 border-white/10 text-blue-400 hover:bg-white/10"
+                            : "bg-white border-slate-200 text-blue-600 shadow-sm"
+                        }`}
+                      >
+                        <Pencil className="w-5 h-5" />
+                      </button>
                     )}
 
                     <div className={`h-11 w-11 flex items-center justify-center rounded-2xl border transition-all ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}>
@@ -2187,12 +2302,12 @@ export default function StudentDashboard() {
                           className={`h-11 w-11 flex items-center justify-center rounded-2xl border transition-all relative group ${isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-white border-slate-200 text-slate-900 shadow-sm hover:bg-slate-50"}`}
                         >
                           <motion.div
-                            animate={marqueeItems.length > 0 ? { rotate: [0, -15, 15, -10, 10, 0] } : {}}
+                            animate={bellItems.length > 0 ? { rotate: [0, -15, 15, -10, 10, 0] } : {}}
                             transition={{ duration: 0.6, delay: 0.4, repeat: Infinity, repeatDelay: 5 }}
                           >
                             <Bell className="w-5 h-5" />
                           </motion.div>
-                          {marqueeItems.length > 0 && (
+                          {bellItems.length > 0 && (
                             <motion.div
                               initial={{ scale: 0 }}
                               animate={{ scale: 1 }}
@@ -2209,7 +2324,7 @@ export default function StudentDashboard() {
                           <div>
                             <h3 className={`text-lg font-black ${isDark ? "text-white" : "text-slate-900"} tracking-tight`}>Notifications</h3>
                             <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-                              {marqueeItems.length > 0 ? `${marqueeItems.length} new update${marqueeItems.length > 1 ? "s" : ""}` : "All caught up!"}
+                              {bellItems.length > 0 ? `${bellItems.length} new update${bellItems.length > 1 ? "s" : ""}` : "All caught up!"}
                             </p>
                           </div>
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-blue-500/10 border border-blue-500/20" : "bg-blue-50 border border-blue-100"}`}>
@@ -2219,45 +2334,49 @@ export default function StudentDashboard() {
 
                         {/* Notification items */}
                         <div className="p-3 space-y-2 max-h-[360px] overflow-y-auto">
-                          {marqueeItems.length === 0 ? (
+                          {bellItems.length === 0 ? (
                             <div className={`text-center py-10 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
                               <Bell className="w-10 h-10 mx-auto mb-3 opacity-20" />
                               <p className="text-sm font-semibold">No new notifications</p>
                               <p className="text-xs mt-1 opacity-60">You're all caught up!</p>
                             </div>
                           ) : (
-                            marqueeItems.map((item, idx) => (
+                            bellItems.map((item, idx) => (
                               <motion.div
                                 key={item.id}
                                 initial={{ opacity: 0, y: 8 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: idx * 0.06 }}
-                                className={`flex items-start gap-3 p-3.5 rounded-2xl border transition-all cursor-default ${
-                                  item.type === "event"
+                                onClick={() => item.type === "system" ? void toggleNotificationRead(item.id) : undefined}
+                                className={`flex items-start gap-3 p-3.5 rounded-2xl border transition-all ${item.type === "system" ? "cursor-pointer" : "cursor-default"} ${item.type === "event"
                                     ? isDark ? "bg-purple-500/5 border-purple-500/15" : "bg-purple-50 border-purple-100"
+                                    : item.type === "system"
+                                      ? isDark ? "bg-emerald-500/5 border-emerald-500/15" : "bg-emerald-50 border-emerald-100"
                                     : isDark ? "bg-blue-500/5 border-blue-500/15" : "bg-blue-50 border-blue-100"
-                                }`}
+                                  }`}
                               >
-                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-base ${
-                                  item.type === "event"
+                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-base ${item.type === "event"
                                     ? isDark ? "bg-purple-500/20" : "bg-purple-100"
+                                    : item.type === "system"
+                                      ? isDark ? "bg-emerald-500/20" : "bg-emerald-100"
                                     : isDark ? "bg-blue-500/20" : "bg-blue-100"
-                                }`}>
-                                  {item.type === "event" ? "📅" : "📢"}
+                                  }`}>
+                                  {item.type === "event" ? "📅" : item.type === "system" ? "🔔" : "📢"}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <p className={`text-xs font-black uppercase tracking-wider mb-0.5 ${
-                                    item.type === "event"
+                                  <p className={`text-xs font-black uppercase tracking-wider mb-0.5 ${item.type === "event"
                                       ? isDark ? "text-purple-400" : "text-purple-600"
+                                      : item.type === "system"
+                                        ? isDark ? "text-emerald-400" : "text-emerald-600"
                                       : isDark ? "text-blue-400" : "text-blue-600"
-                                  }`}>
-                                    {item.type === "event" ? "Upcoming Event" : "Announcement"}
+                                    }`}>
+                                    {item.type === "event" ? "Upcoming Event" : item.type === "system" ? "Placement Update" : "Announcement"}
                                   </p>
                                   <p className={`text-sm font-semibold leading-snug ${isDark ? "text-slate-100" : "text-slate-800"}`}>
                                     {item.text.replace(/^(📅 Upcoming Event: |📢 )/, "")}
                                   </p>
                                 </div>
-                                <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${item.type === "event" ? "bg-purple-500" : "bg-blue-500"} animate-pulse`} />
+                                <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${item.type === "event" ? "bg-purple-500" : item.type === "system" ? "bg-emerald-500" : "bg-blue-500"} animate-pulse`} />
                               </motion.div>
                             ))
                           )}
@@ -2275,55 +2394,64 @@ export default function StudentDashboard() {
                             View Notice Board →
                           </button>
                           <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-slate-600" : "text-slate-400"}`}>
-                            {marqueeItems.length} total
+                            {bellItems.length} total
                           </span>
                         </div>
                       </PopoverContent>
                     </Popover>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="flex items-center gap-3 focus:outline-none group">
-                          <div className="relative">
-                            <Avatar className={`w-11 h-11 rounded-2xl border-2 transition-all group-hover:border-blue-500/50 ${isDark ? "border-white/10" : "border-white shadow-md shadow-slate-200/50"}`}>
-                              <AvatarImage src={studentProfile.avatar} />
-                              <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-sm">{studentProfile.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 ${isDark ? "border-[#0c0c14]" : "border-white"} bg-green-500 shadow-sm`} />
-                          </div>
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" sideOffset={12} className={`w-72 p-3 rounded-3xl animate-in fade-in zoom-in-95 duration-200 border ${isDark ? "bg-[#0c0c14]/90 backdrop-blur-2xl border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] text-white" : "bg-white/90 backdrop-blur-2xl border-slate-200/60 shadow-[0_20px_60px_rgba(0,0,0,0.1)] text-slate-900"}`}>
-                        <DropdownMenuLabel className="p-0 mb-2">
-                          <div className={`flex items-center gap-4 p-3 rounded-2xl transition-colors ${isDark ? "bg-white/5 hover:bg-white/10" : "bg-slate-50 hover:bg-slate-100"}`}>
-                            <Avatar className="w-12 h-12 rounded-xl shadow-inner border border-white/10">
-                              <AvatarImage src={studentProfile.avatar} />
-                              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-black text-lg shadow-inner">{studentProfile.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex flex-col min-w-0 text-left justify-center">
-                              <span className={`font-extrabold text-sm tracking-tight truncate ${isDark ? "text-white" : "text-slate-900"}`}>{studentProfile.name}</span>
-                              <span className={`text-xs truncate font-medium mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{studentProfile.email}</span>
+                    <div onMouseEnter={handleProfileMouseEnter} onMouseLeave={handleProfileMouseLeave}>
+                      <DropdownMenu open={isProfileDropdownOpen} onOpenChange={setIsProfileDropdownOpen} modal={false}>
+                        <DropdownMenuTrigger asChild>
+                          <button className="flex items-center gap-2.5 focus:outline-none group">
+                            <div className="relative">
+                              <Avatar className={`w-10 h-10 rounded-2xl border-2 transition-all group-hover:border-blue-500/50 ${isDark ? "border-white/10" : "border-white shadow-md shadow-slate-200/50"}`}>
+                                <AvatarImage src={studentProfile.avatar} />
+                                <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-xs">{studentProfile.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 ${isDark ? "border-[#0c0c14]" : "border-white"} bg-green-500 shadow-sm`} />
                             </div>
-                          </div>
-                        </DropdownMenuLabel>
-                        <DropdownMenuSeparator className={`${isDark ? "bg-white/10" : "bg-slate-100"} -mx-3 my-2`} />
-                        <DropdownMenuGroup className="space-y-1">
-                          <DropdownMenuItem onClick={() => navigate("/student/setting")} className={`rounded-2xl flex items-center gap-3 p-3 transition-all cursor-pointer ${isDark ? "hover:bg-white/10 focus:bg-white/10" : "hover:bg-slate-100 focus:bg-slate-100"}`}>
-                            <div className={`w-9 h-9 rounded-xl ${isDark ? "bg-blue-500/10 text-blue-400" : "bg-blue-50 text-blue-600"} flex items-center justify-center shadow-inner`}>
-                              <Settings className="w-4.5 h-4.5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent 
+                          side="left"
+                          align="start" 
+                          sideOffset={16} 
+                          onMouseEnter={handleProfileMouseEnter} 
+                          onMouseLeave={handleProfileMouseLeave}
+                          className={`w-56 p-1.5 rounded-2xl animate-in fade-in zoom-in-95 duration-200 border ${isDark ? "bg-[#0c0c14]/90 backdrop-blur-2xl border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] text-white" : "bg-white/90 backdrop-blur-2xl border-slate-200/60 shadow-[0_20px_60px_rgba(0,0,0,0.1)] text-slate-900"}`}
+                        >
+                          <DropdownMenuLabel className="p-0 mb-1.5">
+                            <div className={`flex items-center gap-3 p-2.5 rounded-xl transition-colors ${isDark ? "bg-white/5 hover:bg-white/10" : "bg-slate-50 hover:bg-slate-100"}`}>
+                              <Avatar className="w-9 h-9 rounded-lg shadow-inner border border-white/10">
+                                <AvatarImage src={studentProfile.avatar} />
+                                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-black text-sm shadow-inner">{studentProfile.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex flex-col min-w-0 text-left justify-center">
+                                <span className={`font-bold text-[13px] tracking-tight truncate ${isDark ? "text-white" : "text-slate-900"}`}>{studentProfile.name}</span>
+                                <span className={`text-[11px] truncate font-medium mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{studentProfile.email}</span>
+                              </div>
                             </div>
-                            <span className={`font-semibold text-sm ${isDark ? "text-white" : "text-slate-900"}`}>Account Settings</span>
+                          </DropdownMenuLabel>
+                          <DropdownMenuSeparator className={`${isDark ? "bg-white/10" : "bg-slate-100"} -mx-1.5 my-1.5`} />
+                          <DropdownMenuGroup className="space-y-0.5">
+                            <DropdownMenuItem onClick={() => navigate("/student/setting")} className={`rounded-xl flex items-center gap-2.5 p-2 transition-all cursor-pointer ${isDark ? "hover:bg-white/10 focus:bg-white/10" : "hover:bg-slate-100 focus:bg-slate-100"}`}>
+                              <div className={`w-7 h-7 rounded-lg ${isDark ? "bg-blue-500/10 text-blue-400" : "bg-blue-50 text-blue-600"} flex items-center justify-center shadow-inner`}>
+                                <Settings className="w-3.5 h-3.5" />
+                              </div>
+                              <span className={`font-semibold text-[13px] ${isDark ? "text-white" : "text-slate-900"}`}>Account Settings</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuGroup>
+                          <DropdownMenuSeparator className={`${isDark ? "bg-white/10" : "bg-slate-100"} -mx-1.5 my-1.5`} />
+                          <DropdownMenuItem onClick={() => void performClientLogout(navigate)} className={`rounded-xl flex items-center gap-2.5 p-2 transition-all cursor-pointer group/signout ${isDark ? "hover:bg-red-500/10 focus:bg-red-500/10 text-red-400" : "hover:bg-red-50 focus:bg-red-50 text-red-600"}`}>
+                            <div className={`w-7 h-7 rounded-lg ${isDark ? "bg-red-500/10 text-red-400" : "bg-red-100 text-red-600"} flex items-center justify-center transition-colors group-hover/signout:bg-red-500/20 group-hover/signout:text-red-500 shadow-inner`}>
+                              <LogOut className="w-3.5 h-3.5" />
+                            </div>
+                            <span className={`font-bold text-[13px] ${isDark ? "text-red-400" : "text-red-600"}`}>Sign Out</span>
                           </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                        <DropdownMenuSeparator className={`${isDark ? "bg-white/10" : "bg-slate-100"} -mx-3 my-2`} />
-                        <DropdownMenuItem onClick={() => performClientLogout(navigate)} className={`rounded-2xl flex items-center gap-3 p-3 transition-all cursor-pointer group/signout ${isDark ? "hover:bg-red-500/10 focus:bg-red-500/10 text-red-400" : "hover:bg-red-50 focus:bg-red-50 text-red-600"}`}>
-                          <div className={`w-9 h-9 rounded-xl ${isDark ? "bg-red-500/10 text-red-400" : "bg-red-100 text-red-600"} flex items-center justify-center transition-colors group-hover/signout:bg-red-500/20 group-hover/signout:text-red-500 shadow-inner`}>
-                            <LogOut className="w-4.5 h-4.5" />
-                          </div>
-                          <span className={`font-bold text-sm ${isDark ? "text-red-400" : "text-red-600"}`}>Sign Out</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 </header>
               )}
@@ -2339,63 +2467,61 @@ export default function StudentDashboard() {
                 >
                   {activeTab === "overview" && (
                     <div className="space-y-6">
-                  {/* Hero Welcome Card — staggered entrance */}
-                  <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)] relative group`}>
-                    <div className={`absolute top-0 right-0 w-[600px] h-[600px] ${isDark ? "bg-blue-500/5" : "bg-blue-500/5"} rounded-full -mr-80 -mt-80 blur-[150px] pointer-events-none`}></div>
-                    <div className={`absolute bottom-0 left-0 w-[400px] h-[400px] ${isDark ? "bg-purple-500/5" : "bg-purple-500/5"} rounded-full -ml-60 -mb-60 blur-[100px] pointer-events-none`}></div>
+                      {/* Hero Welcome Card — staggered entrance */}
+                      <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)] relative group`}>
+                        <div className={`absolute top-0 right-0 w-[600px] h-[600px] ${isDark ? "bg-blue-500/5" : "bg-blue-500/5"} rounded-full -mr-80 -mt-80 blur-[150px] pointer-events-none`}></div>
+                        <div className={`absolute bottom-0 left-0 w-[400px] h-[400px] ${isDark ? "bg-purple-500/5" : "bg-purple-500/5"} rounded-full -ml-60 -mb-60 blur-[100px] pointer-events-none`}></div>
 
-                    <CardContent className="p-5 sm:p-6">
-                      <div className="flex flex-col lg:flex-row items-start justify-between gap-4 sm:gap-6 relative z-10">
-                        <div className="flex-1">
-                          <h2 className={`text-xl sm:text-2xl lg:text-3xl font-extrabold ${isDark ? "text-white" : "text-slate-900"} mb-2 sm:mb-3 tracking-tight leading-tight`}>
-                            Welcome back,<br />
-                            <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                              {studentProfile.name.split(' ')[0]}! 👋
-                            </span>
-                          </h2>
-                          <p className={`${isDark ? "text-blue-100/80" : "text-slate-600"} text-base sm:text-lg font-medium mb-4 sm:mb-5 max-w-2xl leading-relaxed`}>
-                            Your current readiness status is{" "}
-                            <span className={`font-extrabold px-3 py-1 rounded-lg transition-all ${dynamic.overallReadiness >= 75
-                                ? isDark ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-green-50 text-green-700 border border-green-200"
-                                : dynamic.overallReadiness >= 55
-                                  ? isDark ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" : "bg-blue-50 text-blue-700 border border-blue-200"
-                                  : dynamic.overallReadiness >= 35
-                                    ? isDark ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" : "bg-amber-50 text-amber-700 border border-amber-200"
-                                    : isDark ? "bg-orange-500/10 text-orange-400 border border-orange-500/20" : "bg-orange-50 text-orange-700 border border-orange-200"
-                              }`}>
-                              {dynamic.overallReadiness >= 75 ? "EXCELLENT" : dynamic.overallReadiness >= 55 ? "GOOD" : dynamic.overallReadiness >= 35 ? "BUILDING" : "GETTING STARTED"}
-                            </span>.
-                            {dynamic.overallReadiness >= 60
-                              ? ` You're among the top ${Math.max(5, Math.round(100 - dynamic.overallReadiness))}% of students in your branch!`
-                              : " Keep building your profile to unlock stronger placement signals!"}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-3">
-                            <div className={`flex items-center gap-2 ${isDark ? "bg-white/10" : "bg-gray-100"} backdrop-blur-md px-4 py-1.5 rounded-xl ${isDark ? "border-white/10" : "border-gray-200"}`}>
-                              <GraduationCap className={`w-5 h-5 ${isDark ? "text-blue-300" : "text-blue-600"}`} />
-                              <span className={`text-sm font-black ${isDark ? "text-white" : "text-gray-900"}`}>{studentProfile.branch}</span>
+                        <CardContent className="p-5 sm:p-6">
+                          <div className="flex flex-col lg:flex-row items-start justify-between gap-4 sm:gap-6 relative z-10">
+                            <div className="flex-1">
+                              <h2 className={`text-xl sm:text-2xl lg:text-3xl font-extrabold ${isDark ? "text-white" : "text-slate-900"} mb-2 sm:mb-3 tracking-tight leading-tight`}>
+                                Welcome back,<br />
+                                <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                                  {studentProfile.name.split(' ')[0]}! 👋
+                                </span>
+                              </h2>
+                              <p className={`${isDark ? "text-blue-100/80" : "text-slate-600"} text-base sm:text-lg font-medium mb-4 sm:mb-5 max-w-2xl leading-relaxed`}>
+                                Your current readiness status is{" "}
+                                <span className={`font-extrabold px-3 py-1 rounded-lg transition-all ${dynamic.overallReadiness >= 75
+                                  ? isDark ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-green-50 text-green-700 border border-green-200"
+                                  : dynamic.overallReadiness >= 55
+                                    ? isDark ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" : "bg-blue-50 text-blue-700 border border-blue-200"
+                                    : dynamic.overallReadiness >= 35
+                                      ? isDark ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" : "bg-amber-50 text-amber-700 border border-amber-200"
+                                      : isDark ? "bg-orange-500/10 text-orange-400 border border-orange-500/20" : "bg-orange-50 text-orange-700 border border-orange-200"
+                                  }`}>
+                                  {readinessStatusLabel}
+                                </span>.
+                                {" "}{readinessEncouragement}
+                              </p>
+                              <div className="flex flex-wrap items-center gap-3">
+                                <div className={`flex items-center gap-2 ${isDark ? "bg-white/10" : "bg-gray-100"} backdrop-blur-md px-4 py-1.5 rounded-xl ${isDark ? "border-white/10" : "border-gray-200"}`}>
+                                  <GraduationCap className={`w-5 h-5 ${isDark ? "text-blue-300" : "text-blue-600"}`} />
+                                  <span className={`text-sm font-black ${isDark ? "text-white" : "text-gray-900"}`}>{studentProfile.branch}</span>
+                                </div>
+                                <div className={`flex items-center gap-2 ${isDark ? "bg-white/10" : "bg-gray-100"} backdrop-blur-md px-4 py-1.5 rounded-xl ${isDark ? "border-white/10" : "border-gray-200"}`}>
+                                  <Award className={`w-5 h-5 ${isDark ? "text-yellow-300" : "text-yellow-600"}`} />
+                                  <span className={`text-sm font-black ${isDark ? "text-white" : "text-gray-900"}`}>GPA: {studentProfile.cgpa}</span>
+                                </div>
+                                <div className={`flex items-center gap-2 ${isDark ? "bg-white/10" : "bg-gray-100"} backdrop-blur-md px-4 py-1.5 rounded-xl ${isDark ? "border-white/10" : "border-gray-200"}`}>
+                                  <Target className={`w-5 h-5 ${isDark ? "text-green-300" : "text-green-600"}`} />
+                                  <span className={`text-sm font-black ${isDark ? "text-white" : "text-gray-900"}`}>{studentProfile.year}</span>
+                                </div>
+                              </div>
                             </div>
-                            <div className={`flex items-center gap-2 ${isDark ? "bg-white/10" : "bg-gray-100"} backdrop-blur-md px-4 py-1.5 rounded-xl ${isDark ? "border-white/10" : "border-gray-200"}`}>
-                              <Award className={`w-5 h-5 ${isDark ? "text-yellow-300" : "text-yellow-600"}`} />
-                              <span className={`text-sm font-black ${isDark ? "text-white" : "text-gray-900"}`}>GPA: {studentProfile.cgpa}</span>
-                            </div>
-                            <div className={`flex items-center gap-2 ${isDark ? "bg-white/10" : "bg-gray-100"} backdrop-blur-md px-4 py-1.5 rounded-xl ${isDark ? "border-white/10" : "border-gray-200"}`}>
-                              <Target className={`w-5 h-5 ${isDark ? "text-green-300" : "text-green-600"}`} />
-                              <span className={`text-sm font-black ${isDark ? "text-white" : "text-gray-900"}`}>{studentProfile.year}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-col sm:flex-row lg:flex-col gap-3 sm:gap-4 w-full lg:w-fit">
-                          <Button
-                            onClick={() => setActiveTab("assessment-hub")}
-                            className="h-10 px-5 bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:opacity-90 font-black text-sm rounded-xl flex-1 shadow-md shadow-blue-500/30 gap-2 ring-2 ring-blue-500/20"
-                          >
-                            <Rocket className="w-5 h-5" />
-                            Assessment Hub
-                          </Button>
-                          <Button
-                            onClick={handleResumeClick}
-                            disabled={uploadingResume}
-                            className="
+                            <div className="flex flex-col sm:flex-row lg:flex-col gap-3 sm:gap-4 w-full lg:w-fit">
+                              <Button
+                                onClick={() => setActiveTab("assessment-hub")}
+                                className="h-10 px-5 bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:opacity-90 font-black text-sm rounded-xl flex-1 shadow-md shadow-blue-500/30 gap-2 ring-2 ring-blue-500/20"
+                              >
+                                <Rocket className="w-5 h-5" />
+                                Assessment Hub
+                              </Button>
+                              <Button
+                                onClick={handleResumeClick}
+                                disabled={uploadingResume}
+                                className="
     h-10 px-5 flex-1 rounded-xl gap-2
     bg-indigo-600 text-white
     font-semibold text-sm
@@ -2404,257 +2530,193 @@ export default function StudentDashboard() {
     hover:shadow-indigo-600/40
     active:scale-[0.97]
   "
-                          >
-                            {uploadingResume ? (
-                              <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : resumeUploadState === "success" ? (
-                              <CheckCircle2 className="w-5 h-5 text-green-300" />
-                            ) : (
-                              <UploadIcon className="w-5 h-5" />
-                            )}
-                            {uploadingResume
-                              ? "Uploading..."
-                              : resumeUploadState === "success"
-                                ? "Uploaded"
-                                : "Resume (PDF)"}
-                          </Button>
-                          <input
-                            type="file"
-                            ref={resumeInputRef}
-                            onChange={onResumeFileChange}
-                            accept=".pdf"
-                            className="hidden"
-                          />
-                          {resumeUploadStatusText && (
-                            <div
-                              className={`mt-2 text-xs font-bold ${resumeUploadState === "success"
-                                ? "text-green-400"
-                                : resumeUploadState === "error"
-                                  ? "text-red-400"
-                                  : "text-blue-300"
-                                }`}
-                            >
-                              {resumeUploadStatusText}
-                            </div>
-                          )}
-
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-
-
-                  {/* Quick Stats Grid — staggered entrance */}
-                  <motion.div
-                    className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6"
-                    initial="hidden"
-                    animate="visible"
-                    variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
-                  >
-                    {quickStats.map((stat, idx) => {
-                      const Icon = stat.icon;
-                      const pctNum = parseInt(stat.value) || 0;
-                      const radius = 22;
-                      const circumference = 2 * Math.PI * radius;
-                      const strokeOffset = circumference - (pctNum / 100) * circumference;
-                      return (
-                        <motion.div
-                          key={idx}
-                          variants={{ hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] } } }}
-                        >
-                          <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-2xl overflow-hidden group hover:scale-[1.02] transition-all duration-300`}>
-                            <CardContent className="p-4 sm:p-5 lg:p-6">
-                              <div className="flex items-center justify-between mb-3 sm:mb-4">
-                                <div className="relative w-12 h-12 sm:w-14 sm:h-14">
-                                  <svg className="stat-ring w-full h-full" viewBox="0 0 52 52">
-                                    <circle cx="26" cy="26" r={radius} fill="none" stroke={isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"} strokeWidth="3" />
-                                    <circle cx="26" cy="26" r={radius} fill="none" stroke="url(#statGrad)" strokeWidth="3" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeOffset} />
-                                    <defs><linearGradient id="statGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#3b82f6" /><stop offset="100%" stopColor="#8b5cf6" /></linearGradient></defs>
-                                  </svg>
-                                  <div className={`absolute inset-0 flex items-center justify-center`}>
-                                    <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${stat.color} flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform duration-500`}>
-                                      <Icon className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className={`flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold ${stat.trend === "up" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
-                                  }`}>
-                                  {stat.trend === "up" ? <ArrowUpRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <ArrowDownRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
-                                  {stat.change}
-                                </div>
-                              </div>
-                              <div className="space-y-0.5">
-                                <p className={`text-[10px] sm:text-xs font-semibold ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-wider leading-none opacity-80`}>{stat.label}</p>
-                                <p className={`text-xl sm:text-2xl lg:text-3xl font-extrabold ${isDark ? "text-white" : "text-gray-900"} tracking-tight py-1 tabular-nums`}>{stat.value}</p>
-                                <p className={`text-[10px] sm:text-xs font-medium ${isDark ? "text-gray-400/60" : "text-gray-600/80"} tracking-wide`}>{stat.description}</p>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      );
-                    })}
-                  </motion.div>
-
-                  {/* Career Goal Panel + Quick Actions — staggered entrance */}
-                  <motion.div
-                    className="grid lg:grid-cols-3 gap-6"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.35, ease: [0.4, 0, 0.2, 1] }}
-                  >
-                    {/* Career Goal Panel */}
-                    <div className="lg:col-span-2">
-                      <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] overflow-hidden shadow-2xl`}>
-                        <CardContent className="p-8 sm:p-9 space-y-6">
-                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="space-y-1.5">
-                              <p className={`text-xs font-black ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-[0.24em] opacity-70`}>Current Direction Signal</p>
-                              <p className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent leading-tight">
-                                {roleRecommendation.title}
-                              </p>
-                              <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"} font-semibold max-w-xl`}>
-                                Guidance hint from resume and skills.
-                              </p>
-                            </div>
-                            <div className={`${isDark ? "bg-blue-500/10" : "bg-blue-50"} rounded-xl px-3 py-2.5 ${isDark ? "border-blue-500/20" : "border-blue-200"} flex items-center gap-3`}>
-                              <div className={`w-11 h-11 ${isDark ? "bg-white/5" : "bg-white"} rounded-lg flex items-center justify-center shadow-lg confidence-pulse-ring`}>
-                                <span className="text-sm font-black text-blue-500">{roleRecommendation.confidence}%</span>
-                              </div>
-                              <div>
-                                <p className={`text-[11px] font-bold ${isDark ? "text-gray-400" : "text-gray-600"}`}>Confidence</p>
-                                <p className={`text-[11px] font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}>Use with your goals</p>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className={`text-[11px] font-black uppercase tracking-wider ${isDark ? "text-gray-400" : "text-gray-600"} mr-1`}>Interests</p>
-                              {careerInterests.slice(0, 4).map((interest) => (
-                                <button
-                                  key={interest}
-                                  type="button"
-                                  onClick={() => toggleInterest(interest)}
-                                  className="text-xs px-3 py-1.5 rounded-full border font-semibold transition bg-blue-500 text-white border-blue-500"
-                                  title="Click to remove"
-                                >
-                                  {interest}
-                                </button>
-                              ))}
-                              {careerInterests.length > 4 && (
-                                <span className={`text-xs px-2.5 py-1 rounded-full border font-semibold ${isDark ? "bg-white/5 border-white/10 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
-                                  +{careerInterests.length - 4} more
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex flex-col sm:flex-row gap-2">
-                              <input
-                                value={interestInput}
-                                onChange={(e) => setInterestInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    addInterestFromInput();
-                                  }
-                                }}
-                                placeholder="Type your interest (e.g. distributed systems)"
-                                className={`h-10 rounded-xl px-3 text-sm border flex-1 ${isDark ? "bg-white/5 border-white/10 text-white placeholder:text-slate-500" : "bg-white border-slate-200 text-slate-900"
-                                  }`}
-                              />
-                              <Button type="button" onClick={addInterestFromInput} className="h-10 rounded-xl">
-                                Add Interest
+                              >
+                                {uploadingResume ? (
+                                  <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : resumeUploadState === "success" ? (
+                                  <CheckCircle2 className="w-5 h-5 text-green-300" />
+                                ) : (
+                                  <UploadIcon className="w-5 h-5" />
+                                )}
+                                {uploadingResume
+                                  ? "Uploading..."
+                                  : resumeUploadState === "success"
+                                    ? "Uploaded"
+                                    : "Resume (PDF)"}
                               </Button>
-                            </div>
-                            {suggestedInterests.length > 0 && (
-                              <>
-                                <div className={`h-px ${isDark ? "bg-white/5" : "bg-slate-100"} my-1`} />
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <p className={`text-[11px] font-black uppercase tracking-wider ${isDark ? "text-gray-500" : "text-gray-500"} mr-1 flex items-center gap-1.5`}>
-                                    <Sparkles className="w-3 h-3" />
-                                    Suggested from resume
-                                  </p>
-                                  {suggestedInterests
-                                    .slice(0, 4)
-                                    .map((k) => (
-                                      <button
-                                        key={k}
-                                        type="button"
-                                        onClick={() => toggleInterest(k)}
-                                        className={`text-xs px-3 py-1.5 rounded-full border font-semibold transition ${isDark
-                                          ? "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10"
-                                          : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                                          }`}
-                                      >
-                                        {k}
-                                      </button>
-                                    ))}
+                              <input
+                                type="file"
+                                ref={resumeInputRef}
+                                onChange={onResumeFileChange}
+                                accept=".pdf"
+                                className="hidden"
+                              />
+                              {resumeUploadStatusText && (
+                                <div
+                                  className={`mt-2 text-xs font-bold ${resumeUploadState === "success"
+                                    ? "text-green-400"
+                                    : resumeUploadState === "error"
+                                      ? "text-red-400"
+                                      : "text-blue-300"
+                                    }`}
+                                >
+                                  {resumeUploadStatusText}
                                 </div>
-                              </>
-                            )}
-                          </div>
+                              )}
 
-                          <div className={`h-2 ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-full overflow-hidden shadow-inner`}>
-                            <div className="h-full bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 rounded-full" style={{ width: `${roleRecommendation.confidence}%` }}></div>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            {roleSkillCards.map((item, i) => (
-                              <div key={i} className={`p-3 rounded-xl ${item.bg} ${isDark ? "border-white/5" : "border-gray-200"} border flex flex-col gap-0.5 transition-all duration-300 hover:scale-[1.03] hover:shadow-md cursor-default`}>
-                                <span className={`text-[11px] font-black ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-wider`}>{item.label}</span>
-                                <span className={`${item.color} text-lg font-black`}>
-                                  {item.score >= 75 ? "High" : item.score >= 55 ? "Medium" : "Building"}
-                                </span>
-                              </div>
-                            ))}
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
-                    </div>
 
 
-                    {/* Quick Actions & Activity Feed */}
-                    <div className="space-y-8">
-                      {/* Quick Actions */}
-                      <div>
-                        <h3 className={`text-xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tighter mb-4 px-2`}>Quick Actions</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          {quickActions.map((action, idx) => {
-                            const Icon = action.icon;
-                            const accentColors: Record<string, string> = {
-                              "from-blue-500 to-blue-600": "#3b82f6",
-                              "from-purple-500 to-purple-600": "#8b5cf6",
-                              "from-green-500 to-green-600": "#22c55e",
-                              "from-orange-500 to-orange-600": "#f97316",
-                            };
-                            return (
-                              <button
-                                key={idx}
-                                onClick={action.action}
-                                className={`quick-action-card p-5 ${isDark ? "bg-[#0c0c14]/40 border-white/[0.06] hover:bg-white/[0.06]" : "bg-white/90 border-slate-200 hover:border-blue-200"} backdrop-blur-3xl rounded-2xl group hover:scale-[1.04] cursor-pointer text-left shadow-sm hover:shadow-xl hover:-translate-y-0.5`}
-                                style={{ "--accent-color": accentColors[action.color] || "#3b82f6" } as React.CSSProperties}
-                              >
-                                <div className={`w-11 h-11 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center shadow-lg mb-3 group-hover:rotate-6 group-hover:scale-110 transition-all duration-300`}>
-                                  <Icon className="w-5 h-5 text-white" />
+
+                      {/* Quick Stats Grid — staggered entrance */}
+                      <motion.div
+                        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6"
+                        initial="hidden"
+                        animate="visible"
+                        variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+                      >
+                        {quickStats.map((stat, idx) => {
+                          const Icon = stat.icon;
+                          const pctNum = parseInt(stat.value) || 0;
+                          const radius = 22;
+                          const circumference = 2 * Math.PI * radius;
+                          const strokeOffset = circumference - (pctNum / 100) * circumference;
+                          return (
+                            <motion.div
+                              key={idx}
+                              variants={{ hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] } } }}
+                            >
+                              <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-2xl overflow-hidden group hover:scale-[1.02] transition-all duration-300`}>
+                                <CardContent className="p-4 sm:p-5 lg:p-6">
+                                  <div className="flex items-center justify-between mb-3 sm:mb-4">
+                                    <div className="relative w-12 h-12 sm:w-14 sm:h-14">
+                                      <svg className="stat-ring w-full h-full" viewBox="0 0 52 52">
+                                        <circle cx="26" cy="26" r={radius} fill="none" stroke={isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"} strokeWidth="3" />
+                                        <circle cx="26" cy="26" r={radius} fill="none" stroke="url(#statGrad)" strokeWidth="3" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeOffset} />
+                                        <defs><linearGradient id="statGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#3b82f6" /><stop offset="100%" stopColor="#8b5cf6" /></linearGradient></defs>
+                                      </svg>
+                                      <div className={`absolute inset-0 flex items-center justify-center`}>
+                                        <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${stat.color} flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform duration-500`}>
+                                          <Icon className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className={`flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold ${stat.trend === "up" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+                                      }`}>
+                                      {stat.trend === "up" ? <ArrowUpRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <ArrowDownRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
+                                      {stat.change}
+                                    </div>
+                                  </div>
+                                  <div className="space-y-0.5">
+                                    <p className={`text-[10px] sm:text-xs font-semibold ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-wider leading-none opacity-80`}>{stat.label}</p>
+                                    <p className={`text-xl sm:text-2xl lg:text-3xl font-extrabold ${isDark ? "text-white" : "text-gray-900"} tracking-tight py-1 tabular-nums`}>{stat.value}</p>
+                                    <p className={`text-[10px] sm:text-xs font-medium ${isDark ? "text-gray-400/60" : "text-gray-600/80"} tracking-wide`}>{stat.description}</p>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </motion.div>
+                          );
+                        })}
+                      </motion.div>
+
+                      {/* Career Goal Panel + Quick Actions — staggered entrance */}
+                      <motion.div
+                        className="grid lg:grid-cols-3 gap-6"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                      >
+                        {/* Career Goal Panel */}
+                        <div className="lg:col-span-2">
+                          <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[3rem] overflow-hidden shadow-2xl`}>
+                            <CardContent className="p-8 sm:p-9 space-y-6">
+                              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div className="space-y-1.5">
+                                  <p className={`text-xs font-black ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-[0.24em] opacity-70`}>Current Direction Signal</p>
+                                  <p className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent leading-tight">
+                                    {roleRecommendation.title}
+                                  </p>
+                                  <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"} font-semibold max-w-xl`}>
+                                    Guidance hint from resume and skills.
+                                  </p>
                                 </div>
-                                <h4 className={`text-sm font-black ${isDark ? "text-white group-hover:text-blue-300" : "text-gray-900 group-hover:text-blue-700"} mb-0.5 transition-colors duration-200`}>{action.title}</h4>
-                                <p className={`text-[11px] ${isDark ? "text-gray-500" : "text-gray-500"} font-medium flex items-center gap-1`}>
-                                  {action.description}
-                                  <ChevronRight className="w-3 h-3 opacity-0 -translate-x-1 group-hover:opacity-60 group-hover:translate-x-0 transition-all duration-200" />
-                                </p>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                </div>
-              )}
+                                <div className={`${isDark ? "bg-blue-500/10" : "bg-blue-50"} rounded-xl px-3 py-2.5 ${isDark ? "border-blue-500/20" : "border-blue-200"} flex items-center gap-3`}>
+                                  <div className={`w-11 h-11 ${isDark ? "bg-white/5" : "bg-white"} rounded-lg flex items-center justify-center shadow-lg confidence-pulse-ring`}>
+                                    <span className="text-sm font-black text-blue-500">{roleRecommendation.confidence}%</span>
+                                  </div>
+                                  <div>
+                                    <p className={`text-[11px] font-bold ${isDark ? "text-gray-400" : "text-gray-600"}`}>Confidence</p>
+                                    <p className={`text-[11px] font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}>Use with your goals</p>
+                                  </div>
+                                </div>
+                              </div>
 
-              {/* Skills Tab */}
-              {activeTab === "skills" && (
-                <div className="space-y-10">
+
+
+                              <div className={`h-2 ${isDark ? "bg-white/5" : "bg-gray-200"} rounded-full overflow-hidden shadow-inner`}>
+                                <div className="h-full bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 rounded-full" style={{ width: `${roleRecommendation.confidence}%` }}></div>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                {roleSkillCards.map((item, i) => (
+                                  <div key={i} className={`p-3 rounded-xl ${item.bg} ${isDark ? "border-white/5" : "border-gray-200"} border flex flex-col gap-0.5 transition-all duration-300 hover:scale-[1.03] hover:shadow-md cursor-default`}>
+                                    <span className={`text-[11px] font-black ${isDark ? "text-gray-400" : "text-gray-600"} uppercase tracking-wider`}>{item.label}</span>
+                                    <span className={`${item.color} text-lg font-black`}>
+                                      {item.score >= 75 ? "High" : item.score >= 55 ? "Medium" : "Building"}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+
+
+                        {/* Quick Actions & Activity Feed */}
+                        <div className="space-y-8">
+                          {/* Quick Actions */}
+                          <div>
+                            <h3 className={`text-xl font-black ${isDark ? "text-white" : "text-gray-900"} tracking-tighter mb-4 px-2`}>Quick Actions</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                              {quickActions.map((action, idx) => {
+                                const Icon = action.icon;
+                                const accentColors: Record<string, string> = {
+                                  "from-blue-500 to-blue-600": "#3b82f6",
+                                  "from-purple-500 to-purple-600": "#8b5cf6",
+                                  "from-green-500 to-green-600": "#22c55e",
+                                  "from-orange-500 to-orange-600": "#f97316",
+                                };
+                                return (
+                                  <button
+                                    key={idx}
+                                    onClick={action.action}
+                                    className={`quick-action-card p-5 ${isDark ? "bg-[#0c0c14]/40 border-white/[0.06] hover:bg-white/[0.06]" : "bg-white/90 border-slate-200 hover:border-blue-200"} backdrop-blur-3xl rounded-2xl group hover:scale-[1.04] cursor-pointer text-left shadow-sm hover:shadow-xl hover:-translate-y-0.5`}
+                                    style={{ "--accent-color": accentColors[action.color] || "#3b82f6" } as React.CSSProperties}
+                                  >
+                                    <div className={`w-11 h-11 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center shadow-lg mb-3 group-hover:rotate-6 group-hover:scale-110 transition-all duration-300`}>
+                                      <Icon className="w-5 h-5 text-white" />
+                                    </div>
+                                    <h4 className={`text-sm font-black ${isDark ? "text-white group-hover:text-blue-300" : "text-gray-900 group-hover:text-blue-700"} mb-0.5 transition-colors duration-200`}>{action.title}</h4>
+                                    <p className={`text-[11px] ${isDark ? "text-gray-500" : "text-gray-500"} font-medium flex items-center gap-1`}>
+                                      {action.description}
+                                      <ChevronRight className="w-3 h-3 opacity-0 -translate-x-1 group-hover:opacity-60 group-hover:translate-x-0 transition-all duration-200" />
+                                    </p>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </div>
+                  )}
+
+                  {/* Skills Tab */}
+                  {activeTab === "skills" && (
+                    <div className="space-y-10">
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                         {/* Summary Stats Row */}
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1">
@@ -2999,424 +3061,453 @@ export default function StudentDashboard() {
 
 
 
-                </div>
-              )}
-
-              {/* Announcements notice board tab */}
-              {activeTab === "announcements" && (
-                <div className="space-y-6">
-                  {/* Notice Board Page Header */}
-                  
-                  {/* Filter Toolbar */}
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        { id: "all", label: "All Updates" },
-                        { id: "important", label: "🔥 Important" },
-                        { id: "announcements", label: "📢 Announcements" },
-                        { id: "events", label: "📅 Events" }
-                      ].map((tab) => (
-                        <button
-                          key={tab.id}
-                          onClick={() => setNoticeFilter(tab.id as any)}
-                          className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border ${
-                            noticeFilter === tab.id
-                              ? isDark
-                                ? "bg-blue-500/20 border-blue-400/40 text-blue-200 shadow-sm"
-                                : "bg-blue-100 border-blue-200 text-blue-800 shadow-sm"
-                              : isDark
-                                ? "bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
-                                : "bg-slate-50 border-slate-100 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                          }`}
-                        >
-                          {tab.label}
-                        </button>
-                      ))}
                     </div>
+                  )}
 
-                    <div className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border w-full md:w-80 transition-all ${
-                      isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
-                    }`}>
-                      <Search className="w-4 h-4 text-slate-500" />
-                      <input
-                        value={noticeSearch}
-                        onChange={(e) => setNoticeSearch(e.target.value)}
-                        placeholder="Search announcements..."
-                        className="bg-transparent border-0 outline-none w-full text-sm font-semibold placeholder:text-slate-500 placeholder:font-medium"
-                      />
-                    </div>
-                  </div>
+                  {/* Announcements notice board tab */}
+                  {activeTab === "announcements" && (
+                    <div className="space-y-6">
+                      {/* Notice Board Page Header */}
 
-                  {/* Notices List */}
-                  {(() => {
-                    const filteredItems = marqueeItems
-                      .filter((item) => {
-                        if (noticeFilter === "important") return item.isImportant;
-                        if (noticeFilter === "announcements") return item.type === "announcement";
-                        if (noticeFilter === "events") return item.type === "event";
-                        return true;
-                      })
-                      .filter((item) =>
-                        item.text.toLowerCase().includes(noticeSearch.toLowerCase())
-                      );
-
-                    return (
-                      <div className="grid grid-cols-1 gap-4">
-                        <AnimatePresence mode="popLayout">
-                          {filteredItems.map((item) => {
-                            const isEvent = item.type === "event";
-                            const isImportant = item.isImportant;
-                            const isRead = clearedNotifIds.has(item.id);
-                            
-                            // Visual theme for the card based on type/importance/read status
-                            let cardTheme = "";
-                            let iconContainerTheme = "";
-                            let badgeTheme = "";
-                            let badgeLabel = "";
-
-                            if (isRead) {
-                              cardTheme = isDark
-                                ? "bg-[#131320]/25 border-white/5 text-slate-500 opacity-60 hover:border-white/10"
-                                : "bg-slate-50/40 border-slate-100 text-slate-400 opacity-60 hover:border-slate-200";
-                              iconContainerTheme = isDark
-                                ? "bg-white/5 text-slate-500"
-                                : "bg-slate-100 text-slate-400";
-                              badgeTheme = isDark
-                                ? "bg-white/5 text-slate-500 border border-white/5"
-                                : "bg-slate-100 text-slate-400 border border-slate-200/50";
-                              badgeLabel = isImportant
-                                ? "Important Notice (Read)"
-                                : isEvent
-                                ? "Placement Event (Read)"
-                                : "General Notice (Read)";
-                            } else {
-                              cardTheme = isDark
-                                ? "bg-[#131320]/60 border-white/5 text-slate-100 hover:border-slate-800"
-                                : "bg-white border-slate-100 text-slate-800 hover:border-slate-300";
-                              iconContainerTheme = isDark
-                                ? "bg-slate-800/40 text-slate-300"
-                                : "bg-slate-100 text-slate-600";
-                              badgeTheme = isDark
-                                ? "bg-slate-500/10 text-slate-400 border border-slate-500/20"
-                                : "bg-slate-100 text-slate-600 border border-slate-200";
-                              badgeLabel = "General Notice";
-
-                              if (isImportant) {
-                                cardTheme = isDark
-                                  ? "bg-red-500/5 border-red-500/20 text-slate-100 hover:border-red-500/35 shadow-red-950/10"
-                                  : "bg-red-50/50 border-red-200 text-slate-800 hover:border-red-300 shadow-red-100/50";
-                                iconContainerTheme = isDark
-                                  ? "bg-red-500/10 text-red-400"
-                                  : "bg-red-100 text-red-600";
-                                badgeTheme = isDark
-                                  ? "bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse"
-                                  : "bg-red-100 text-red-600 border border-red-200";
-                                badgeLabel = "Important Notice";
-                              } else if (isEvent) {
-                                cardTheme = isDark
-                                  ? "bg-purple-500/5 border-purple-500/20 text-slate-100 hover:border-purple-500/35"
-                                  : "bg-purple-50/50 border-purple-200 text-slate-800 hover:border-purple-300";
-                                iconContainerTheme = isDark
-                                  ? "bg-purple-500/10 text-purple-400"
-                                  : "bg-purple-100 text-purple-600";
-                                badgeTheme = isDark
-                                  ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
-                                  : "bg-purple-100 text-purple-600 border border-purple-200";
-                                badgeLabel = "Placement Event";
-                              }
-                            }
-
-                            return (
-                              <motion.div
-                                key={item.id}
-                                initial={{ opacity: 0, y: 15 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                layout
-                                transition={{
-                                  type: "spring",
-                                  stiffness: 400,
-                                  damping: 25,
-                                  layout: { duration: 0.2 }
-                                }}
-                                className={`rounded-[2rem] border p-5 flex flex-col md:flex-row md:items-start md:justify-between gap-5 transition-all shadow-sm ${cardTheme}`}
-                              >
-                                <div className="flex items-start gap-4 min-w-0">
-                                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 text-xl ${iconContainerTheme}`}>
-                                    {isImportant ? "🔥" : isEvent ? "📅" : "📢"}
-                                  </div>
-                                  <div className="min-w-0 space-y-2">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <span className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${badgeTheme}`}>
-                                        {badgeLabel}
-                                      </span>
-                                    </div>
-                                    <p className={`text-base font-semibold leading-relaxed tracking-tight ${isDark ? "text-slate-100" : "text-slate-800"} ${isRead ? "line-through opacity-85" : ""}`}>
-                                      {item.text.replace(/^(📅 Upcoming Event: |📢 )/, "")}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-3 self-end md:self-start shrink-0">
-                                  <Button
-                                    onClick={() => toggleNotificationRead(item.id)}
-                                    variant="outline"
-                                    className={`h-10 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all border ${
-                                      isRead
-                                        ? isDark
-                                          ? "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
-                                          : "border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-                                        : isImportant
-                                        ? isDark
-                                          ? "border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 hover:border-red-500/50"
-                                          : "border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:border-red-300"
-                                        : isDark
-                                          ? "border-white/10 hover:bg-white/10 text-slate-300 hover:text-white"
-                                          : "border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-slate-900"
-                                    }`}
-                                  >
-                                    {isRead ? (
-                                      <>
-                                        <Check className="w-4 h-4 text-green-500 animate-in zoom-in duration-200" />
-                                        <span>Mark Unread</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <CheckCircle2 className="w-4 h-4" />
-                                        <span>Mark as Read</span>
-                                      </>
-                                    )}
-                                  </Button>
-                                </div>
-                              </motion.div>
-                            );
-                          })}
-
-                          {filteredItems.length === 0 && (
-                            <motion.div
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              className={`text-center py-16 rounded-[2.5rem] border border-dashed ${
-                                isDark ? "border-white/10 bg-white/[0.01]" : "border-slate-200 bg-slate-50/50"
-                              }`}
+                      {/* Filter Toolbar */}
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { id: "all", label: "All Updates" },
+                            { id: "important", label: "🔥 Important" },
+                            { id: "announcements", label: "📢 Announcements" },
+                            { id: "events", label: "📅 Events" }
+                          ].map((tab) => (
+                            <button
+                              key={tab.id}
+                              onClick={() => setNoticeFilter(tab.id as any)}
+                              className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border ${noticeFilter === tab.id
+                                  ? isDark
+                                    ? "bg-blue-500/20 border-blue-400/40 text-blue-200 shadow-sm"
+                                    : "bg-blue-100 border-blue-200 text-blue-800 shadow-sm"
+                                  : isDark
+                                    ? "bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
+                                    : "bg-slate-50 border-slate-100 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                                }`}
                             >
-                              <Bell className="w-12 h-12 mx-auto mb-4 text-slate-500 opacity-30" />
-                              <h3 className={`text-lg font-black ${isDark ? "text-white" : "text-slate-800"}`}>No updates found</h3>
-                              <p className={`text-sm mt-1.5 max-w-sm mx-auto ${isDark ? "text-slate-400" : "text-slate-500"} font-medium`}>
-                                {noticeSearch
-                                  ? "Try searching for another keyword or check active filters."
-                                  : "You are all caught up! There are no new announcements."}
+                              {tab.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border w-full md:w-80 transition-all ${isDark ? "bg-[#0c0c14]/60 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
+                          }`}>
+                          <Search className="w-4 h-4 text-slate-500" />
+                          <input
+                            value={noticeSearch}
+                            onChange={(e) => setNoticeSearch(e.target.value)}
+                            placeholder="Search announcements..."
+                            className="bg-transparent border-0 outline-none w-full text-sm font-semibold placeholder:text-slate-500 placeholder:font-medium"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Notices List */}
+                      {(() => {
+                        const filteredItems = marqueeItems
+                          .filter((item) => {
+                            if (noticeFilter === "important") return item.isImportant;
+                            if (noticeFilter === "announcements") return item.type === "announcement";
+                            if (noticeFilter === "events") return item.type === "event";
+                            return true;
+                          })
+                          .filter((item) =>
+                            item.text.toLowerCase().includes(noticeSearch.toLowerCase())
+                          );
+
+                        return (
+                          <div className="grid grid-cols-1 gap-4">
+                            <AnimatePresence mode="popLayout">
+                              {filteredItems.map((item) => {
+                                const isEvent = item.type === "event";
+                                const isImportant = item.isImportant;
+                                const isRead = clearedNotifIds.has(item.id);
+
+                                // Visual theme for the card based on type/importance/read status
+                                let cardTheme = "";
+                                let iconContainerTheme = "";
+                                let badgeTheme = "";
+                                let badgeLabel = "";
+
+                                if (isRead) {
+                                  cardTheme = isDark
+                                    ? "bg-[#131320]/25 border-white/5 text-slate-500 opacity-60 hover:border-white/10"
+                                    : "bg-slate-50/40 border-slate-100 text-slate-400 opacity-60 hover:border-slate-200";
+                                  iconContainerTheme = isDark
+                                    ? "bg-white/5 text-slate-500"
+                                    : "bg-slate-100 text-slate-400";
+                                  badgeTheme = isDark
+                                    ? "bg-white/5 text-slate-500 border border-white/5"
+                                    : "bg-slate-100 text-slate-400 border border-slate-200/50";
+                                  badgeLabel = isImportant
+                                    ? "Important Notice (Read)"
+                                    : isEvent
+                                      ? "Placement Event (Read)"
+                                      : "General Notice (Read)";
+                                } else {
+                                  cardTheme = isDark
+                                    ? "bg-[#131320]/60 border-white/5 text-slate-100 hover:border-slate-800"
+                                    : "bg-white border-slate-100 text-slate-800 hover:border-slate-300";
+                                  iconContainerTheme = isDark
+                                    ? "bg-slate-800/40 text-slate-300"
+                                    : "bg-slate-100 text-slate-600";
+                                  badgeTheme = isDark
+                                    ? "bg-slate-500/10 text-slate-400 border border-slate-500/20"
+                                    : "bg-slate-100 text-slate-600 border border-slate-200";
+                                  badgeLabel = "General Notice";
+
+                                  if (isImportant) {
+                                    cardTheme = isDark
+                                      ? "bg-red-500/5 border-red-500/20 text-slate-100 hover:border-red-500/35 shadow-red-950/10"
+                                      : "bg-red-50/50 border-red-200 text-slate-800 hover:border-red-300 shadow-red-100/50";
+                                    iconContainerTheme = isDark
+                                      ? "bg-red-500/10 text-red-400"
+                                      : "bg-red-100 text-red-600";
+                                    badgeTheme = isDark
+                                      ? "bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse"
+                                      : "bg-red-100 text-red-600 border border-red-200";
+                                    badgeLabel = "Important Notice";
+                                  } else if (isEvent) {
+                                    cardTheme = isDark
+                                      ? "bg-purple-500/5 border-purple-500/20 text-slate-100 hover:border-purple-500/35"
+                                      : "bg-purple-50/50 border-purple-200 text-slate-800 hover:border-purple-300";
+                                    iconContainerTheme = isDark
+                                      ? "bg-purple-500/10 text-purple-400"
+                                      : "bg-purple-100 text-purple-600";
+                                    badgeTheme = isDark
+                                      ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                                      : "bg-purple-100 text-purple-600 border border-purple-200";
+                                    badgeLabel = "Placement Event";
+                                  }
+                                }
+
+                                return (
+                                  <motion.div
+                                    key={item.id}
+                                    initial={{ opacity: 0, y: 15 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    layout
+                                    transition={{
+                                      type: "spring",
+                                      stiffness: 400,
+                                      damping: 25,
+                                      layout: { duration: 0.2 }
+                                    }}
+                                    className={`rounded-[2rem] border p-5 flex flex-col md:flex-row md:items-start md:justify-between gap-5 transition-all shadow-sm ${cardTheme}`}
+                                  >
+                                    <div className="flex items-start gap-4 min-w-0">
+                                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 text-xl ${iconContainerTheme}`}>
+                                        {isImportant ? "🔥" : isEvent ? "📅" : "📢"}
+                                      </div>
+                                      <div className="min-w-0 space-y-2">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <span className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${badgeTheme}`}>
+                                            {badgeLabel}
+                                          </span>
+                                        </div>
+                                        <p className={`text-base font-semibold leading-relaxed tracking-tight ${isDark ? "text-slate-100" : "text-slate-800"} ${isRead ? "line-through opacity-85" : ""}`}>
+                                          {item.text.replace(/^(📅 Upcoming Event: |📢 )/, "")}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 self-end md:self-start shrink-0">
+                                      <Button
+                                        onClick={() => toggleNotificationRead(item.id)}
+                                        variant="outline"
+                                        className={`h-10 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all border ${isRead
+                                            ? isDark
+                                              ? "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
+                                              : "border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                                            : isImportant
+                                              ? isDark
+                                                ? "border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 hover:border-red-500/50"
+                                                : "border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:border-red-300"
+                                              : isDark
+                                                ? "border-white/10 hover:bg-white/10 text-slate-300 hover:text-white"
+                                                : "border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-slate-900"
+                                          }`}
+                                      >
+                                        {isRead ? (
+                                          <>
+                                            <Check className="w-4 h-4 text-green-500 animate-in zoom-in duration-200" />
+                                            <span>Mark Unread</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <CheckCircle2 className="w-4 h-4" />
+                                            <span>Mark as Read</span>
+                                          </>
+                                        )}
+                                      </Button>
+                                    </div>
+                                  </motion.div>
+                                );
+                              })}
+
+                              {filteredItems.length === 0 && (
+                                <motion.div
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  className={`text-center py-16 rounded-[2.5rem] border border-dashed ${isDark ? "border-white/10 bg-white/[0.01]" : "border-slate-200 bg-slate-50/50"
+                                    }`}
+                                >
+                                  <Bell className="w-12 h-12 mx-auto mb-4 text-slate-500 opacity-30" />
+                                  <h3 className={`text-lg font-black ${isDark ? "text-white" : "text-slate-800"}`}>No updates found</h3>
+                                  <p className={`text-sm mt-1.5 max-w-sm mx-auto ${isDark ? "text-slate-400" : "text-slate-500"} font-medium`}>
+                                    {noticeSearch
+                                      ? "Try searching for another keyword or check active filters."
+                                      : "You are all caught up! There are no new announcements."}
+                                  </p>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+
+                  {/* Internships Tab (Resume-driven) */}
+                  {activeTab === "internships" && (
+                    <Internships
+                      isDark={isDark}
+                      resumeSections={resumeSections}
+                      isEditing={isEditingInternships}
+                      setIsEditing={setIsEditingInternships}
+                      onAfterSectionsSave={async () => {
+                        try {
+                          await refreshUser();
+                          setRoadmapData(null);
+                        } catch (e) {
+                          console.error(e);
+                        }
+                      }}
+                    />
+                  )}
+
+                  {activeTab === "resume" && (
+                    <div className="space-y-8">
+                      <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[2.5rem] overflow-hidden`}>
+                        <CardContent className="p-6 sm:p-8">
+                          <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                            <div className="space-y-2">
+                              <p className={`text-xs font-black uppercase tracking-[0.2em] ${isDark ? "text-slate-500" : "text-slate-500"}`}>Resume</p>
+                              <h2 className={`text-2xl sm:text-3xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Projects & Experience</h2>
+                              <p className={`${isDark ? "text-slate-400" : "text-slate-600"} text-sm max-w-2xl`}>
+                                This tab shows structured details extracted from your engineering resume. If anything is missing, you can update manually.
                               </p>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    );
-                  })()}
-                </div>
-              )}
-
-              {/* Internships Tab (Resume-driven) */}
-              {activeTab === "internships" && (
-                <Internships
-                  isDark={isDark}
-                  resumeSections={resumeSections}
-                  onAfterSectionsSave={async () => {
-                    try {
-                      await refreshUser();
-                      setRoadmapData(null);
-                    } catch (e) {
-                      console.error(e);
-                    }
-                  }}
-                />
-              )}
-
-              {activeTab === "resume" && (
-                <div className="space-y-8">
-                  <Card className={`${isDark ? "bg-[#0c0c14]/40" : "bg-white/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-gray-200"} rounded-[2.5rem] overflow-hidden`}>
-                    <CardContent className="p-6 sm:p-8">
-                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                        <div className="space-y-2">
-                          <p className={`text-xs font-black uppercase tracking-[0.2em] ${isDark ? "text-slate-500" : "text-slate-500"}`}>Resume</p>
-                          <h2 className={`text-2xl sm:text-3xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Projects & Experience</h2>
-                          <p className={`${isDark ? "text-slate-400" : "text-slate-600"} text-sm max-w-2xl`}>
-                            This tab shows structured details extracted from your engineering resume. If anything is missing, you can update manually.
-                          </p>
-                        </div>
-                        <Button onClick={handleResumeClick} disabled={uploadingResume} className="h-12 rounded-2xl font-black">
-                          {uploadingResume ? "Uploading..." : "Upload Updated Resume"}
-                        </Button>
-                      </div>
-
-                      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
-                          <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Education</p>
-                          <div className="mt-3 space-y-2">
-                            {(Array.isArray(resumeSections?.education) ? resumeSections.education : []).slice(0, 10).map((e: string, idx: number) => (
-                              <div key={idx} className={`text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>{e}</div>
-                            ))}
-                            {(Array.isArray(resumeSections?.education) ? resumeSections.education.length : 0) === 0 && (
-                              <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No education extracted yet.</p>
-                            )}
+                            </div>
+                            <Button onClick={handleResumeClick} disabled={uploadingResume} className="h-12 rounded-2xl font-black">
+                              {uploadingResume ? "Uploading..." : "Upload Updated Resume"}
+                            </Button>
                           </div>
-                        </div>
 
-                        <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
-                          <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Certifications</p>
-                          <div className="mt-3 space-y-2">
-                            {(Array.isArray(resumeSections?.certifications) ? resumeSections.certifications : []).slice(0, 10).map((c: string, idx: number) => (
-                              <div key={idx} className={`text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>{c}</div>
-                            ))}
-                            {(Array.isArray(resumeSections?.certifications) ? resumeSections.certifications.length : 0) === 0 && (
-                              <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No certifications extracted yet.</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
-                          <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Projects</p>
-                          <div className="mt-3 space-y-3">
-                            {(Array.isArray(resumeSections?.projects) ? resumeSections.projects : []).slice(0, 6).map((p: any, idx: number) => (
-                              <div key={idx} className={`${isDark ? "bg-black/20" : "bg-slate-50"} rounded-xl p-4 border ${isDark ? "border-white/5" : "border-slate-200"}`}>
-                                <p className={`font-black text-sm ${isDark ? "text-white" : "text-slate-900"}`}>{p?.title || "Project"}</p>
-                                {Array.isArray(p?.bullets) && p.bullets.length > 0 && (
-                                  <ul className={`mt-2 space-y-1 text-xs ${isDark ? "text-slate-300" : "text-slate-700"}`}>
-                                    {p.bullets.slice(0, 5).map((b: string, i: number) => (
-                                      <li key={i} className="flex gap-2">
-                                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500/70 flex-shrink-0" />
-                                        <span>{b}</span>
-                                      </li>
-                                    ))}
-                                  </ul>
+                          <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
+                              <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Education</p>
+                              <div className="mt-3 space-y-2">
+                                {(Array.isArray(resumeSections?.education) ? resumeSections.education : []).slice(0, 10).map((e: string, idx: number) => (
+                                  <div key={idx} className={`text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>{e}</div>
+                                ))}
+                                {(Array.isArray(resumeSections?.education) ? resumeSections.education.length : 0) === 0 && (
+                                  <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No education extracted yet.</p>
                                 )}
                               </div>
-                            ))}
-                            {(Array.isArray(resumeSections?.projects) ? resumeSections.projects.length : 0) === 0 && (
-                              <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No projects extracted yet.</p>
-                            )}
-                          </div>
-                        </div>
+                            </div>
 
-                        <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
-                          <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Internships / Experience / Activities</p>
-                          <div className="mt-3 space-y-2">
-                            {(Array.isArray(resumeSections?.experience) ? resumeSections.experience : []).slice(0, 12).map((e: string, idx: number) => (
-                              <div key={idx} className={`flex items-start gap-2 text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>
-                                <span className="mt-2 w-1.5 h-1.5 rounded-full bg-emerald-500/70 flex-shrink-0" />
-                                <span>{e}</span>
-                              </div>
-                            ))}
-                            {(Array.isArray(resumeSections?.extracurricular) ? resumeSections.extracurricular : []).slice(0, 12).map((e: string, idx: number) => (
-                              <div key={`x-${idx}`} className={`flex items-start gap-2 text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>
-                                <span className="mt-2 w-1.5 h-1.5 rounded-full bg-purple-500/70 flex-shrink-0" />
-                                <span>{e}</span>
-                              </div>
-                            ))}
-                            {(Array.isArray(resumeSections?.experience) ? resumeSections.experience.length : 0) === 0 &&
-                              (Array.isArray(resumeSections?.extracurricular) ? resumeSections.extracurricular.length : 0) === 0 && (
-                                <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No experience extracted yet.</p>
-                              )}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-
-              {/* Opportunities Tab */}
-              {activeTab === "opportunities" && (
-                <div className="space-y-10">
-                  {drivesWithMatch.length === 0 ? (
-                    <div className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)] p-12 text-center`}>
-                      <p className={`${isDark ? "text-gray-400" : "text-gray-600"}`}>No drives yet. When your TPO creates a drive, it will appear here with JD, requirements, and your match %.</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                      {drivesWithMatch.map((drive, idx) => (
-                        <div key={drive.id} className={`group p-6 ${isDark ? "border-white/5 bg-[#0c0c14]/40 hover:bg-white/5" : "border-slate-200 bg-white hover:bg-slate-50"} rounded-3xl transition-all shadow-sm border flex flex-col`}>
-                          <div className="flex items-center justify-between mb-5">
-                            <div className="flex items-center gap-4">
-                              <div className={`w-12 h-12 ${drive.color || "bg-blue-500"} rounded-2xl flex items-center justify-center shadow-md shrink-0`}>
-                                <span className="text-xl font-black text-white">{drive.companyName ? drive.companyName.charAt(0) : "C"}</span>
-                              </div>
-                              <div>
-                                <h4 className={`text-lg font-black leading-tight ${isDark ? "text-white" : "text-slate-900"}`}>{drive.companyName}</h4>
-                                <p className="text-[11px] font-black text-blue-500 uppercase tracking-wider">{drive.role}</p>
+                            <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
+                              <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Certifications</p>
+                              <div className="mt-3 space-y-2">
+                                {(Array.isArray(resumeSections?.certifications) ? resumeSections.certifications : []).slice(0, 10).map((c: any, idx: number) => (
+                                  <div key={idx} className={`text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>
+                                    {typeof c === "string" ? c : String(c?.label || "")}
+                                  </div>
+                                ))}
+                                {(Array.isArray(resumeSections?.certifications) ? resumeSections.certifications.length : 0) === 0 && (
+                                  <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No certifications extracted yet.</p>
+                                )}
                               </div>
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-3 mb-5">
-                            {drive.package_value && (
-                              <div className={`flex items-center gap-2 p-2.5 rounded-xl border ${isDark ? "bg-white/5 border-white/5" : "bg-slate-50 border-slate-100"}`}>
-                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${isDark ? "bg-emerald-500/20 text-emerald-400" : "bg-emerald-100 text-emerald-600"}`}>
-                                  <Banknote className="w-3.5 h-3.5" />
-                                </div>
-                                <div className="flex flex-col min-w-0">
-                                  <span className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-500"}`}>CTC</span>
-                                  <span className={`text-xs font-black truncate ${isDark ? "text-slate-200" : "text-slate-800"}`} title={String(drive.package_value)}>{drive.package_value}</span>
-                                </div>
+                          <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
+                              <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Projects</p>
+                              <div className="mt-3 space-y-3">
+                                {(Array.isArray(resumeSections?.projects) ? resumeSections.projects : []).slice(0, 6).map((p: any, idx: number) => (
+                                  <div key={idx} className={`${isDark ? "bg-black/20" : "bg-slate-50"} rounded-xl p-4 border ${isDark ? "border-white/5" : "border-slate-200"}`}>
+                                    <p className={`font-black text-sm ${isDark ? "text-white" : "text-slate-900"}`}>{p?.title || "Project"}</p>
+                                    {Array.isArray(p?.bullets) && p.bullets.length > 0 && (
+                                      <ul className={`mt-2 space-y-1 text-xs ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                                        {p.bullets.slice(0, 5).map((b: string, i: number) => (
+                                          <li key={i} className="flex gap-2">
+                                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500/70 flex-shrink-0" />
+                                            <span>{b}</span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    )}
+                                  </div>
+                                ))}
+                                {(Array.isArray(resumeSections?.projects) ? resumeSections.projects.length : 0) === 0 && (
+                                  <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No projects extracted yet.</p>
+                                )}
                               </div>
-                            )}
-                            {drive.location && (
-                              <div className={`flex items-center gap-2 p-2.5 rounded-xl border ${isDark ? "bg-white/5 border-white/5" : "bg-slate-50 border-slate-100"}`}>
-                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${isDark ? "bg-blue-500/20 text-blue-400" : "bg-blue-100 text-blue-600"}`}>
-                                  <MapPin className="w-3.5 h-3.5" />
-                                </div>
-                                <div className="flex flex-col min-w-0">
-                                  <span className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-500"}`}>Location</span>
-                                  <span className={`text-xs font-black truncate ${isDark ? "text-slate-200" : "text-slate-800"}`} title={String(drive.location)}>{drive.location}</span>
-                                </div>
-                              </div>
-                            )}
-                            {(Number(drive.min_cgpa) > 0 || drive.max_backlogs_allowed !== null) && (
-                              <div className={`col-span-2 flex items-center gap-2 p-2.5 rounded-xl border ${isDark ? "bg-white/5 border-white/5" : "bg-slate-50 border-slate-100"}`}>
-                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${isDark ? "bg-purple-500/20 text-purple-400" : "bg-purple-100 text-purple-600"}`}>
-                                  <GraduationCap className="w-3.5 h-3.5" />
-                                </div>
-                                <div className="flex items-center gap-2 text-xs font-black min-w-0 truncate">
-                                  {Number(drive.min_cgpa) > 0 && (
-                                    <span className={isDark ? "text-slate-300" : "text-slate-700"}>{drive.min_cgpa}+ CGPA</span>
-                                  )}
-                                  {Number(drive.min_cgpa) > 0 && drive.max_backlogs_allowed !== null && (
-                                    <span className={isDark ? "text-slate-600" : "text-slate-400"}>•</span>
-                                  )}
-                                  {drive.max_backlogs_allowed !== null && (
-                                    <span className={isDark ? "text-slate-400" : "text-slate-600"}>
-                                      {drive.max_backlogs_allowed === 0 ? "No Backlogs" : `Up to ${drive.max_backlogs_allowed} Backlogs`}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                            </div>
 
-                          <div className="flex items-center justify-between mt-auto">
-                            <span className={`text-[10px] font-black uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-500"}`}>
-                              Deadline: {drive.deadline}
-                            </span>
-                            <Button
-                              className="h-9 px-5 rounded-lg font-black text-xs uppercase bg-blue-500 hover:bg-blue-600 text-white transition-all hover:scale-105"
-                              onClick={() => drive.applicationLink && drive.applicationLink !== "#" ? window.open(drive.applicationLink, "_blank") : alert("View details for applying.")}
-                            >
-                              Apply
-                            </Button>
+                            <div className={`rounded-2xl border p-5 ${isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"}`}>
+                              <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-500" : "text-slate-500"}`}>Internships / Experience / Activities</p>
+                              <div className="mt-3 space-y-2">
+                                {(Array.isArray(resumeSections?.experience) ? resumeSections.experience : []).slice(0, 12).map((e: string, idx: number) => (
+                                  <div key={idx} className={`flex items-start gap-2 text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>
+                                    <span className="mt-2 w-1.5 h-1.5 rounded-full bg-emerald-500/70 flex-shrink-0" />
+                                    <span>{e}</span>
+                                  </div>
+                                ))}
+                                {(Array.isArray(resumeSections?.extracurricular) ? resumeSections.extracurricular : []).slice(0, 12).map((e: string, idx: number) => (
+                                  <div key={`x-${idx}`} className={`flex items-start gap-2 text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>
+                                    <span className="mt-2 w-1.5 h-1.5 rounded-full bg-purple-500/70 flex-shrink-0" />
+                                    <span>{e}</span>
+                                  </div>
+                                ))}
+                                {(Array.isArray(resumeSections?.experience) ? resumeSections.experience.length : 0) === 0 &&
+                                  (Array.isArray(resumeSections?.extracurricular) ? resumeSections.extracurricular.length : 0) === 0 && (
+                                    <p className={`${isDark ? "text-slate-500" : "text-slate-500"} text-sm`}>No experience extracted yet.</p>
+                                  )}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        </CardContent>
+                      </Card>
                     </div>
                   )}
-                </div>
-              )}
 
-              {/* Learning Tab */}
-              {activeTab === "learning" && (
-                <div className="space-y-8">
-                  <div className={`relative rounded-3xl border p-5 sm:p-6 overflow-hidden ${isDark ? "border-white/10 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-transparent" : "border-blue-100 bg-gradient-to-br from-blue-50 to-white"}`}>
+                  {/* Opportunities Tab */}
+                  {activeTab === "opportunities" && (
+                    <div className="space-y-10">
+                      {drivesWithMatch.length === 0 ? (
+                        <div className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)] p-12 text-center`}>
+                          <p className={`${isDark ? "text-gray-400" : "text-gray-600"}`}>No drives yet. When your TPO creates a drive, it will appear here with JD, requirements, and your match %.</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                          {drivesWithMatch.map((drive, idx) => (
+                            <div key={drive.id} className={`group p-6 ${isDark ? "border-white/5 bg-[#0c0c14]/40 hover:bg-white/5" : "border-slate-200 bg-white hover:bg-slate-50"} rounded-3xl transition-all shadow-sm border flex flex-col`}>
+                              <div className="flex items-center justify-between mb-5">
+                                <div className="flex items-center gap-4">
+                                  <div className={`w-12 h-12 ${drive.color || "bg-blue-500"} rounded-2xl flex items-center justify-center shadow-md shrink-0`}>
+                                    <span className="text-xl font-black text-white">{drive.companyName ? drive.companyName.charAt(0) : "C"}</span>
+                                  </div>
+                                  <div>
+                                    <h4 className={`text-lg font-black leading-tight ${isDark ? "text-white" : "text-slate-900"}`}>{drive.companyName}</h4>
+                                    <p className="text-[11px] font-black text-blue-500 uppercase tracking-wider">{drive.role}</p>
+                                  </div>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <p className={`text-[9px] font-black uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-500"}`}>Match</p>
+                                  <p className="text-lg font-black text-blue-500">{drive.match}%</p>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-3 mb-5">
+                                {drive.package_value && (
+                                  <div className={`flex items-center gap-2 p-2.5 rounded-xl border ${isDark ? "bg-white/5 border-white/5" : "bg-slate-50 border-slate-100"}`}>
+                                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${isDark ? "bg-emerald-500/20 text-emerald-400" : "bg-emerald-100 text-emerald-600"}`}>
+                                      <Banknote className="w-3.5 h-3.5" />
+                                    </div>
+                                    <div className="flex flex-col min-w-0">
+                                      <span className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-500"}`}>CTC</span>
+                                      <span className={`text-xs font-black truncate ${isDark ? "text-slate-200" : "text-slate-800"}`} title={String(drive.package_value)}>{drive.package_value}</span>
+                                    </div>
+                                  </div>
+                                )}
+                                {drive.location && (
+                                  <div className={`flex items-center gap-2 p-2.5 rounded-xl border ${isDark ? "bg-white/5 border-white/5" : "bg-slate-50 border-slate-100"}`}>
+                                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${isDark ? "bg-blue-500/20 text-blue-400" : "bg-blue-100 text-blue-600"}`}>
+                                      <MapPin className="w-3.5 h-3.5" />
+                                    </div>
+                                    <div className="flex flex-col min-w-0">
+                                      <span className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-500"}`}>Location</span>
+                                      <span className={`text-xs font-black truncate ${isDark ? "text-slate-200" : "text-slate-800"}`} title={String(drive.location)}>{drive.location}</span>
+                                    </div>
+                                  </div>
+                                )}
+                                {(Number(drive.min_cgpa) > 0 || drive.max_backlogs_allowed !== null) && (
+                                  <div className={`col-span-2 flex items-center gap-2 p-2.5 rounded-xl border ${isDark ? "bg-white/5 border-white/5" : "bg-slate-50 border-slate-100"}`}>
+                                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${isDark ? "bg-purple-500/20 text-purple-400" : "bg-purple-100 text-purple-600"}`}>
+                                      <GraduationCap className="w-3.5 h-3.5" />
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs font-black min-w-0 truncate">
+                                      {Number(drive.min_cgpa) > 0 && (
+                                        <span className={isDark ? "text-slate-300" : "text-slate-700"}>{drive.min_cgpa}+ CGPA</span>
+                                      )}
+                                      {Number(drive.min_cgpa) > 0 && drive.max_backlogs_allowed !== null && (
+                                        <span className={isDark ? "text-slate-600" : "text-slate-400"}>•</span>
+                                      )}
+                                      {drive.max_backlogs_allowed !== null && (
+                                        <span className={isDark ? "text-slate-400" : "text-slate-600"}>
+                                          {drive.max_backlogs_allowed === 0 ? "No Backlogs" : `Up to ${drive.max_backlogs_allowed} Backlogs`}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex items-center justify-between mt-auto gap-3">
+                                <span className={`text-[10px] font-black uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-500"}`}>
+                                  Deadline: {drive.deadline}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  {drive.application_status && (
+                                    <Badge className="font-black text-[10px] uppercase bg-emerald-500/20 text-emerald-500 border-emerald-500/30">
+                                      Applied
+                                    </Badge>
+                                  )}
+                                  <Button
+                                    variant="outline"
+                                    className={`h-9 px-4 rounded-lg font-black text-xs uppercase ${isDark ? "border-white/20 text-white hover:bg-white/10" : ""}`}
+                                    onClick={() => openDriveDialog(drive)}
+                                  >
+                                    <Eye className="w-3.5 h-3.5 mr-1.5" />
+                                    Details
+                                  </Button>
+                                  <Button
+                                    className="h-9 px-5 rounded-lg font-black text-xs uppercase bg-blue-500 hover:bg-blue-600 text-white transition-all hover:scale-105"
+                                    onClick={() => openDriveDialog(drive)}
+                                  >
+                                    {drive.application_status ? "View" : "Apply"}
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <PlacementDriveDetailDialog
+                        open={driveDialogOpen}
+                        onOpenChange={setDriveDialogOpen}
+                        drive={selectedDrive}
+                        isDark={isDark}
+                        isApplied={Boolean(selectedDrive && appliedJobMap[selectedDrive.id])}
+                        onApplied={(jobId, status) => {
+                          setAppliedJobMap((prev) => ({ ...prev, [jobId]: status || "APPLIED" }));
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Learning Tab */}
+                  {activeTab === "learning" && (
+                    <div className="space-y-8">
+                      <div className={`relative rounded-3xl border p-5 sm:p-6 overflow-hidden ${isDark ? "border-white/10 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-transparent" : "border-blue-100 bg-gradient-to-br from-blue-50 to-white"}`}>
                         <div className={`absolute -top-20 -right-20 w-48 h-48 rounded-full blur-3xl ${isDark ? "bg-blue-500/15" : "bg-blue-300/30"}`} />
                         <div className={`absolute -bottom-20 -left-20 w-48 h-48 rounded-full blur-3xl ${isDark ? "bg-purple-500/15" : "bg-purple-300/30"}`} />
 
@@ -3474,7 +3565,7 @@ export default function StudentDashboard() {
                           {[
                             { label: "Readiness", value: pct(dynamic.overallReadiness), tone: "blue" },
                             { label: "Placement Fit", value: pct(dynamic.placementProbability), tone: "violet" },
-                            { label: "AI Confidence", value: pct(dynamic.aiConfidence), tone: "emerald" },
+                            { label: "Profile Completeness", value: pct(dynamic.aiConfidence), tone: "emerald" },
                             {
                               label: "Active Tasks",
                               value: String(
@@ -3627,8 +3718,8 @@ export default function StudentDashboard() {
                                               key={taskId}
                                               onClick={() => toggleTaskCompletion(taskId)}
                                               className={`group flex items-start gap-3 p-3 rounded-xl border transition-all duration-300 cursor-pointer select-none ${isCompleted
-                                                  ? (isDark ? "bg-black/40 border-green-500/20 opacity-60" : "bg-green-50/30 border-green-200/50 opacity-70")
-                                                  : (isDark ? "bg-[#0c0c14]/60 border-white/5 hover:border-white/15 hover:bg-black/20" : "bg-white border-slate-100 shadow-sm hover:shadow-md hover:border-slate-300/80")
+                                                ? (isDark ? "bg-black/40 border-green-500/20 opacity-60" : "bg-green-50/30 border-green-200/50 opacity-70")
+                                                : (isDark ? "bg-[#0c0c14]/60 border-white/5 hover:border-white/15 hover:bg-black/20" : "bg-white border-slate-100 shadow-sm hover:shadow-md hover:border-slate-300/80")
                                                 }`}
                                             >
                                               <div className="flex-shrink-0 mt-0.5 transition-transform duration-200 group-hover:scale-110">
@@ -3643,15 +3734,15 @@ export default function StudentDashboard() {
                                               </div>
                                               <div className="min-w-0 flex-1">
                                                 <div className={`text-xs sm:text-sm break-words font-extrabold leading-snug transition-all duration-300 ${isCompleted
-                                                    ? (isDark ? "text-slate-500 line-through" : "text-slate-400 line-through")
-                                                    : (isDark ? "text-slate-100 group-hover:text-white" : "text-slate-800 group-hover:text-slate-900")
+                                                  ? (isDark ? "text-slate-500 line-through" : "text-slate-400 line-through")
+                                                  : (isDark ? "text-slate-100 group-hover:text-white" : "text-slate-800 group-hover:text-slate-900")
                                                   }`}>
                                                   {t.title}
                                                 </div>
                                                 {t.reason && (
                                                   <div className={`text-xs sm:text-sm break-words leading-snug mt-1 font-medium transition-all duration-300 ${isCompleted
-                                                      ? (isDark ? "text-slate-600" : "text-slate-400")
-                                                      : (isDark ? "text-slate-400 group-hover:text-slate-300" : "text-slate-500 group-hover:text-slate-600")
+                                                    ? (isDark ? "text-slate-600" : "text-slate-400")
+                                                    : (isDark ? "text-slate-400 group-hover:text-slate-300" : "text-slate-500 group-hover:text-slate-600")
                                                     }`}>
                                                     {t.reason}
                                                   </div>
@@ -3683,89 +3774,89 @@ export default function StudentDashboard() {
                         </div>
                       </div>
 
-                </div>
-              )}
-
-              {/* Careers Tab */}
-              {activeTab === "careers" && (
-                <div className="space-y-10">
-                  <Careers isDashboard />
-                </div>
-              )}
-
-              {/* Webinars Tab */}
-              {activeTab === "webinars" && (
-                <div className="space-y-10">
-                  <StudentWebinar isDashboard={true} />
-                </div>
-              )}
-
-              {/* Corporate News Tab */}
-              {activeTab === "corporateNews" && (
-                <div className="space-y-10">
-                  <CorporateNewsPage isDashboard />
-                </div>
-              )}
-
-              {/* Feedback Tab */}
-              {activeTab === "feedback" && (
-                <div className="space-y-10">
-                  <StudentFeedbackForm isDashboard={true} />
-                </div>
-              )}
-
-              {/* Assessment Hub Tab */}
-              {activeTab === "assessment-hub" && (
-                <div className="space-y-10">
-                  <AssessmentHub isDashboard={true} onBack={() => setActiveTab("feedback")} />
-                </div>
-              )}
-
-              {/* Company Wise Kit Tab - fill viewport so list covers entire page */}
-              {activeTab === "company-kit" && (
-                <CompanyWiseKit isDashboard={true} />
-              )}
-
-              {/* CTA Footer - Only show on overview tab */}
-              {activeTab === "overview" && (
-                <motion.div
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.5 }}
-                  className={`cta-shimmer cta-gradient-animate bg-gradient-to-r ${isDark ? "from-blue-500/10 via-purple-500/10 to-indigo-500/10" : "from-blue-50 via-purple-50/80 to-indigo-50"} backdrop-blur-xl ${isDark ? "border border-white/[0.06]" : "border border-slate-200"} p-8 rounded-3xl shadow-2xl relative overflow-hidden group mt-12 mb-4`}
-                >
-                  <div className={`absolute top-0 right-0 w-80 h-80 ${isDark ? "bg-blue-500/5" : "bg-blue-500/5"} rounded-full -mr-40 -mt-40 blur-3xl group-hover:scale-110 transition-all duration-700`}></div>
-                  <div className="flex flex-col lg:flex-row items-center justify-between gap-6 relative z-10">
-                    <div>
-                      <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-gray-900"} mb-2 tracking-tight`}>Accelerate company-wise prep 🚀</h3>
-                      <p className={`text-base font-bold ${isDark ? "text-gray-400" : "text-gray-600"} opacity-80`}>Focus on targeted company kits, patterns, and role-specific practice paths.</p>
                     </div>
-                    <div className="flex flex-wrap gap-4">
-                      <Button
-                        variant="outline"
-                        className={`h-12 px-6 rounded-2xl font-black text-sm uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95 ${isDark ? "border-white/30 text-white hover:bg-white/10 hover:border-white/50 hover:shadow-lg hover:shadow-white/5" : "border-gray-300 text-gray-900 hover:bg-gray-100 hover:border-gray-400 hover:shadow-lg hover:shadow-slate-200/50"}`}
-                        onClick={() => {
-                          setActiveTab("opportunities");
-                          navigate("/student/dashboard?tab=opportunities");
-                        }}
-                      >
-                        <Briefcase className="w-5 h-5 mr-3" />
-                        View Drives
-                      </Button>
-                      <Button
-                        className="h-12 px-6 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/30 gap-3 text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/40 active:scale-95"
-                        onClick={() => {
-                          setActiveTab("company-kit");
-                          navigate("/student/dashboard?tab=company-kit");
-                        }}
-                      >
-                        <Building2 className="w-6 h-6" />
-                        Open Company Kit
-                      </Button>
+                  )}
+
+                  {/* Careers Tab */}
+                  {activeTab === "careers" && (
+                    <div className="space-y-10">
+                      <Careers isDashboard />
                     </div>
-                  </div>
-                </motion.div>
-              )}
+                  )}
+
+                  {/* Webinars Tab */}
+                  {activeTab === "webinars" && (
+                    <div className="space-y-10">
+                      <StudentWebinar isDashboard={true} />
+                    </div>
+                  )}
+
+                  {/* Corporate News Tab */}
+                  {activeTab === "corporateNews" && (
+                    <div className="space-y-10">
+                      <CorporateNewsPage isDashboard />
+                    </div>
+                  )}
+
+                  {/* Feedback Tab */}
+                  {activeTab === "feedback" && (
+                    <div className="space-y-10">
+                      <StudentFeedbackForm isDashboard={true} />
+                    </div>
+                  )}
+
+                  {/* Assessment Hub Tab */}
+                  {activeTab === "assessment-hub" && (
+                    <div className="space-y-10">
+                      <AssessmentHub isDashboard={true} onBack={() => setActiveTab("feedback")} />
+                    </div>
+                  )}
+
+                  {/* Company Wise Kit Tab - fill viewport so list covers entire page */}
+                  {activeTab === "company-kit" && (
+                    <CompanyWiseKit isDashboard={true} />
+                  )}
+
+                  {/* CTA Footer - Only show on overview tab */}
+                  {activeTab === "overview" && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.5 }}
+                      className={`cta-shimmer cta-gradient-animate bg-gradient-to-r ${isDark ? "from-blue-500/10 via-purple-500/10 to-indigo-500/10" : "from-blue-50 via-purple-50/80 to-indigo-50"} backdrop-blur-xl ${isDark ? "border border-white/[0.06]" : "border border-slate-200"} p-8 rounded-3xl shadow-2xl relative overflow-hidden group mt-12 mb-4`}
+                    >
+                      <div className={`absolute top-0 right-0 w-80 h-80 ${isDark ? "bg-blue-500/5" : "bg-blue-500/5"} rounded-full -mr-40 -mt-40 blur-3xl group-hover:scale-110 transition-all duration-700`}></div>
+                      <div className="flex flex-col lg:flex-row items-center justify-between gap-6 relative z-10">
+                        <div>
+                          <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-gray-900"} mb-2 tracking-tight`}>Accelerate company-wise prep 🚀</h3>
+                          <p className={`text-base font-bold ${isDark ? "text-gray-400" : "text-gray-600"} opacity-80`}>Focus on targeted company kits, patterns, and role-specific practice paths.</p>
+                        </div>
+                        <div className="flex flex-wrap gap-4">
+                          <Button
+                            variant="outline"
+                            className={`h-12 px-6 rounded-2xl font-black text-sm uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95 ${isDark ? "border-white/30 text-white hover:bg-white/10 hover:border-white/50 hover:shadow-lg hover:shadow-white/5" : "border-gray-300 text-gray-900 hover:bg-gray-100 hover:border-gray-400 hover:shadow-lg hover:shadow-slate-200/50"}`}
+                            onClick={() => {
+                              setActiveTab("opportunities");
+                              navigate("/student/dashboard?tab=opportunities");
+                            }}
+                          >
+                            <Briefcase className="w-5 h-5 mr-3" />
+                            View Drives
+                          </Button>
+                          <Button
+                            className="h-12 px-6 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/30 gap-3 text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/40 active:scale-95"
+                            onClick={() => {
+                              setActiveTab("company-kit");
+                              navigate("/student/dashboard?tab=company-kit");
+                            }}
+                          >
+                            <Building2 className="w-6 h-6" />
+                            Open Company Kit
+                          </Button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
                 </motion.div>
               </AnimatePresence>
             </>

@@ -56,9 +56,15 @@ export function ThemeProvider({
 
   const toggleTheme = switchable
     ? () => {
-      isTogglingRef.current = true;
-      document.documentElement.classList.add("disable-transitions");
-      setTheme(prev => (prev === "light" ? "dark" : "light"));
+      if (document.startViewTransition) {
+        document.startViewTransition(() => {
+          setTheme(prev => (prev === "light" ? "dark" : "light"));
+        });
+      } else {
+        isTogglingRef.current = true;
+        document.documentElement.classList.add("disable-transitions");
+        setTheme(prev => (prev === "light" ? "dark" : "light"));
+      }
     }
     : undefined;
 

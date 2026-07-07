@@ -133,6 +133,8 @@ function calculateAcademicScore(student: StudentProfile): { score: number; detai
   const backlogs = numberValue(student.active_backlogs);
   const tenth = numberValue(student.tenth_percentage);
   const twelfth = numberValue(student.twelfth_percentage);
+  const diploma = numberValue(student.diploma_percentage);
+  const max12thOrDiploma = Math.max(twelfth, diploma);
   
   // CGPA (10 points)
   if (cgpa >= 8.5) { score += 10; details.push('Excellent CGPA (8.5+)'); }
@@ -147,13 +149,13 @@ function calculateAcademicScore(student: StudentProfile): { score: number; detai
   else if (backlogs <= 2) { score += 4; details.push(`${backlogs} backlog(s) - manageable`); }
   else { details.push(`${backlogs} backlogs - urgent attention needed`); }
   
-  // 10th/12th performance (7 points)
-  if (tenth >= 75 || twelfth >= 75) {
+  // 10th/12th/Diploma performance (7 points)
+  if (tenth >= 75 || max12thOrDiploma >= 75) {
     score += 4;
-    details.push('Strong 10th/12th performance');
-  } else if (tenth >= 60 || twelfth >= 60) {
+    details.push('Strong 10th/12th/Diploma performance');
+  } else if (tenth >= 60 || max12thOrDiploma >= 60) {
     score += 2;
-    details.push('Average 10th/12th scores');
+    details.push('Average 10th/12th/Diploma scores');
   }
   
   // Academic achievements

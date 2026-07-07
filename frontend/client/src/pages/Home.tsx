@@ -179,10 +179,10 @@ export default function PremiumLandingPage() {
     },
     {
       icon: BarChart3,
-      title: "Predictive Analytics Dashboard",
-      description: "ML-powered placement probability across company tiers. Get data-driven insights to optimize your preparation strategy.",
+      title: "Readiness Analytics Dashboard",
+      description: "Unified readiness scores, placement fit index, and profile completeness — computed from academics, assessments, and verified resume data.",
       gradient: "from-green-500 via-emerald-500 to-teal-500",
-      stats: "92% prediction rate",
+      stats: "4 core metrics",
       benefits: ["Real-time placement pipeline", "Curriculum effectiveness analysis", "Budget optimization insights"]
     },
     {
@@ -359,14 +359,14 @@ export default function PremiumLandingPage() {
     { category: 'Course Content & Curriculum', question: "Are there practical projects included?", answer: "Yes, our curriculum includes several capstone projects ranging from full-stack web applications to machine learning models to help build your portfolio." },
 
     // Account Management
-    { category: 'Account Management', question: "How do I add multiple college administrators?", answer: "From your dashboard, go to Settings > Team and click 'Invite Member'. You can assign different roles like TPO, Department Head, or Faculty." },
+    { category: 'Account Management', question: "How do I add multiple college TPOistrators?", answer: "From your dashboard, go to Settings > Team and click 'Invite Member'. You can assign different roles like TPO, Department Head, or Faculty." },
     { category: 'Account Management', question: "Can students update their profiles after graduation?", answer: "Yes, students retain access to their alumni profiles indefinitely, helping you track long-term career progression and build an alumni network." },
     { category: 'Account Management', question: "How do I reset my password?", answer: "Click on 'Forgot Password' on the login screen. You will receive an email with instructions to securely reset your password." },
     { category: 'Account Management', question: "Can I change my registered email address?", answer: "Yes, you can update your primary email address from your account settings. You will need to verify the new email before the change takes effect." },
     { category: 'Account Management', question: "How can I delete my account?", answer: "If you wish to permanently delete your account, please contact our support team. Please note that this action is irreversible and all your data will be erased." },
     { category: 'Account Management', question: "Can I merge two different accounts?", answer: "Currently, we do not support merging accounts. We recommend choosing one primary account and completing all your modules there." },
     { category: 'Account Management', question: "Where can I download my invoice?", answer: "Invoices for all your transactions can be downloaded from the 'Billing History' section in your account settings." },
-    { category: 'Account Management', question: "How do role-based access controls work?", answer: "Enterprise admins can assign granular permissions. For example, a 'Faculty' role can view student progress, while a 'TPO' role can manage job postings and campus drives." },
+    { category: 'Account Management', question: "How do role-based access controls work?", answer: "Enterprise TPOs can assign granular permissions. For example, a 'Faculty' role can view student progress, while a 'TPO' role can manage job postings and campus drives." },
 
     // Course Access & Technical Support
     { category: 'Course Access & Technical Support', question: "How long does implementation take?", answer: "Typical implementation for colleges takes 2-4 weeks. Individual students can get started instantly by creating a free account." },
@@ -541,7 +541,6 @@ export default function PremiumLandingPage() {
                       { label: 'Platform Features', href: '#features', icon: Sparkles, color: 'text-blue-500', bg: 'bg-blue-500/10' },
                       { label: 'How It Works', href: '#how-it-works', icon: Zap, color: 'text-purple-500', bg: 'bg-purple-500/10' },
                       { label: 'Success Stories', href: '#testimonials', icon: Award, color: 'text-pink-500', bg: 'bg-pink-500/10' },
-                      { label: 'For Colleges', href: '/college/college_info', icon: Building2, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
                       { label: 'For Students', href: '/student/student_info', icon: GraduationCap, color: 'text-orange-500', bg: 'bg-orange-500/10' },
                     ].map((item) => (
                       <a
@@ -654,7 +653,7 @@ export default function PremiumLandingPage() {
       {/* Features Grid and Tabs */}
       <section className="pt-0 pb-12 px-4 sm:px-6 relative" id="features">
         <div className="container mx-auto max-w-7xl">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
@@ -700,7 +699,7 @@ export default function PremiumLandingPage() {
       <section className="py-16 relative overflow-hidden transition-colors duration-500">
 
         <div className="container mx-auto max-w-5xl px-4 relative z-10">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
@@ -841,7 +840,7 @@ export default function PremiumLandingPage() {
       <section className="relative overflow-hidden px-4 pt-20 pb-0 sm:px-6 sm:pt-32 lg:px-8" id="how-it-works" ref={journeySectionRef}>
 
         <div className="container mx-auto max-w-7xl relative z-10 text-center">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 40 }}
             whileInView={{ opacity: 1, scale: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
@@ -1222,7 +1221,7 @@ export default function PremiumLandingPage() {
       {/* Testimonials */}
       <section className="py-16 px-4 sm:px-6 relative" id="testimonials" >
         <div className="container mx-auto max-w-7xl">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
@@ -1233,7 +1232,7 @@ export default function PremiumLandingPage() {
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 leading-relaxed">Trusted by tier-1 institutions and high-growth recruiters.</p>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 30 }}
             whileInView={{ opacity: 1, scale: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
@@ -1319,7 +1318,7 @@ export default function PremiumLandingPage() {
       {/* FAQ */}
       <section className="py-16 px-4 sm:px-6 relative overflow-hidden transition-colors duration-500" id="faq">
         <div className="container mx-auto max-w-6xl relative z-10 px-4">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
@@ -1334,7 +1333,7 @@ export default function PremiumLandingPage() {
           <div className="flex flex-col lg:flex-row gap-12 lg:gap-20">
 
             {/* Left Sidebar: Categories */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-100px" }}
@@ -1350,8 +1349,8 @@ export default function PremiumLandingPage() {
                       setActiveFaq(null);
                     }}
                     className={`relative px-4 py-2 sm:px-5 sm:py-2.5 rounded-full text-[14px] sm:text-[15px] font-medium transition-colors text-left border ${activeCategory === category
-                        ? 'border-transparent text-slate-900 dark:text-white'
-                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:bg-[#0c0814] dark:border-white/10 dark:text-slate-400 dark:hover:text-white dark:hover:border-white/20'
+                      ? 'border-transparent text-slate-900 dark:text-white'
+                      : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:bg-[#0c0814] dark:border-white/10 dark:text-slate-400 dark:hover:text-white dark:hover:border-white/20'
                       }`}
                   >
                     {activeCategory === category && (
@@ -1369,7 +1368,7 @@ export default function PremiumLandingPage() {
             </motion.div>
 
             {/* Right Content Area: Accordion */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-100px" }}
@@ -1377,7 +1376,7 @@ export default function PremiumLandingPage() {
               className="w-full lg:w-2/3 min-h-[400px]"
             >
               <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0c0814] divide-y divide-slate-100 dark:divide-white/5 overflow-hidden shadow-sm">
-                <AnimatePresence mode="wait">
+                <AnimatePresence>
                   {faqs.filter(faq => faq.category === activeCategory).map((faq, i) => (
                     <motion.div
                       key={faq.question}
@@ -1429,7 +1428,7 @@ export default function PremiumLandingPage() {
       <section className="py-8 sm:py-10 px-4 sm:px-6 relative overflow-hidden">
         <div className="container mx-auto max-w-4xl relative z-10 text-center px-4">
 
-          <motion.h2 
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
@@ -1441,7 +1440,7 @@ export default function PremiumLandingPage() {
               Future?
             </span>
           </motion.h2>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
@@ -1450,7 +1449,7 @@ export default function PremiumLandingPage() {
           >
             Join 50,000+ students already using AI to unlock their peak placement potential.
           </motion.p>
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true, margin: "-50px" }}

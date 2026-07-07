@@ -1,58 +1,83 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { studentApi } from "@/services/studentApi";
-import { toast } from "sonner";
+import {
+  DASHBOARD_CACHE_KEYS,
+  readDashboardCache,
+  writeDashboardCache,
+  clearAllDashboardCaches,
+} from "@/lib/dashboardCache";
+import { clearClientAuthState } from "@/lib/authSession";
 
 interface UserContextType {
   user: any;
   loading: boolean;
-  refreshUser: () => Promise<void>;
+  refreshUser: (options?: { silent?: boolean }) => Promise<void>;
   updateUserLocally: (data: any) => void;
   logout: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
+function isStudentSession(): boolean {
+  const role = sessionStorage.getItem("userRole") || localStorage.getItem("userRole");
+  return role === "STUDENT";
+}
+
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(() =>
+    isStudentSession() ? readDashboardCache(DASHBOARD_CACHE_KEYS.studentProfile) : null
+  );
+  const [loading, setLoading] = useState(() => {
+    if (!isStudentSession()) return false;
+    return !readDashboardCache(DASHBOARD_CACHE_KEYS.studentProfile);
+  });
 
-  const refreshUser = useCallback(async () => {
-    const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
-    const role = localStorage.getItem("userRole");
+  const refreshUser = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
 
-    if (!token || role !== "STUDENT") {
+    if (!isStudentSession()) {
       setLoading(false);
       setUser(null);
       return;
     }
 
+    const hasCachedUser = !!readDashboardCache(DASHBOARD_CACHE_KEYS.studentProfile);
+
     try {
-      setLoading(true);
+      if (!silent && !hasCachedUser) {
+        setLoading(true);
+      }
       const profile = await studentApi.getProfile();
+      writeDashboardCache(DASHBOARD_CACHE_KEYS.studentProfile, profile);
       setUser(profile);
     } catch (error) {
       console.error("Failed to fetch user profile:", error);
-      // Don't toast error on mount as it might just be an expired session
-      setUser(null);
+      if (!silent && !hasCachedUser) {
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
   }, []);
 
   const updateUserLocally = useCallback((newData: any) => {
-    setUser((prev: any) => ({ ...prev, ...newData }));
+    setUser((prev: any) => {
+      const merged = { ...prev, ...newData };
+      writeDashboardCache(DASHBOARD_CACHE_KEYS.studentProfile, merged);
+      return merged;
+    });
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("authToken");
+    clearClientAuthState();
+    clearAllDashboardCaches();
     setUser(null);
     window.location.href = "/login";
   }, []);
 
   useEffect(() => {
-    refreshUser();
+    const cached = readDashboardCache(DASHBOARD_CACHE_KEYS.studentProfile);
+    refreshUser({ silent: !!cached });
   }, [refreshUser]);
 
   return (

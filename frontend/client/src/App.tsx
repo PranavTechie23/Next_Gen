@@ -20,8 +20,6 @@ import StudentInfo from "./pages/student/student_info";
 import TPODashboard from "./pages/tpo/TPODashboard";
 import TPOSetting from "./pages/tpo/Setting";
 import TPOFeedback from "./pages/tpo/feedbackForm";
-import TPOInfo from "./pages/tpo/college_info";
-
 import DepartmentDashboard from "./pages/department/DepartmentDashboard";
 
 import PrivacyPage from "./pages/PrivacyPage";
@@ -82,11 +80,6 @@ function Router() {
       <Route path="/TPO/feedbackForm">
         <ProtectedRoute allowedRoles={["TPO_ADMIN"]}>
           <TPOFeedback />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/TPO/college_info">
-        <ProtectedRoute allowedRoles={["TPO_ADMIN"]}>
-          <TPOInfo />
         </ProtectedRoute>
       </Route>
 
