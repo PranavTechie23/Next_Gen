@@ -95,6 +95,10 @@ export function StudentProfileDrawer({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex w-full max-w-[min(100vw,24rem)] flex-col p-0 sm:max-w-[540px] sm:w-[540px] border-border/40 bg-background/95">
+        <SheetTitle className="sr-only">Student Profile</SheetTitle>
+        <div className="sr-only" aria-describedby="student-profile-description" id="student-profile-description">
+            Detailed profile and academic record of the selected student.
+        </div>
         {isLoading || !data ? (
           <div className="flex-1 flex items-center justify-center p-6">
             <div className="flex flex-col items-center gap-4">
@@ -112,9 +116,9 @@ export function StudentProfileDrawer({
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <SheetTitle className="text-xl font-black text-foreground truncate">
+                    <h2 className="text-xl font-black text-foreground truncate">
                       {data.full_name || (data.email?.split('@')[0] || 'Student Profile').replace('.', ' ')}
-                    </SheetTitle>
+                    </h2>
                     <Badge className={`rounded-full font-bold text-[9px] uppercase tracking-wider ${data.is_placed
                         ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
                         : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
