@@ -105,6 +105,23 @@ export const TPOApi = {
     window.URL.revokeObjectURL(url);
   },
 
+  downloadCustomReportCsv: async (reportType: string, filename: string) => {
+    const response = await api.post('reports/custom', { reportType }, {
+      params: { format: "csv" },
+      responseType: "blob",
+    });
+
+    const blob = new Blob([response.data], { type: "text/csv;charset=utf-8" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename.endsWith(".csv") ? filename : `${filename}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
   getWebinars: async (params?: {
     scope?: "all" | "upcoming" | "past";
     status?: "DRAFT" | "PUBLISHED" | "COMPLETED" | "CANCELLED";
@@ -144,13 +161,18 @@ export const TPOApi = {
     return response.data;
   },
 
-  quickCreateDrive: async (payload: any) => {
-    const response = await api.post("drives/quick", payload);
+  updateDriveStatus: async (
+    id: string | number, 
+    status: string, 
+    details?: { selectedStudents?: number[], malesSelected?: number, femalesSelected?: number }
+  ) => {
+    const payload = { status, ...details };
+    const response = await api.put(`drives/${id}/status`, payload);
     return response.data;
   },
 
-  updateDriveStatus: async (id: string | number, status: string) => {
-    const response = await api.put(`drives/${id}/status`, { status });
+  quickCreateDrive: async (payload: any) => {
+    const response = await api.post("drives/quick", payload);
     return response.data;
   },
 

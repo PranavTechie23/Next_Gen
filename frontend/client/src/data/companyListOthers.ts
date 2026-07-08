@@ -6,7 +6,7 @@ export const OTHER_COMPANIES: Company[] = [
     {
         id: "accenture",
         name: "Accenture",
-        logo: "https://logo.clearbit.com/accenture.com",
+        logo: "https://unavatar.io/accenture.com?fallback=https://ui-avatars.com/api/?name=A&background=random",
         gradient: "from-purple-600 to-purple-500",
         tier: "Service",
         description: "Global IT services, consulting & outsourcing",
@@ -59,7 +59,7 @@ export const OTHER_COMPANIES: Company[] = [
     {
         id: "cognizant",
         name: "Cognizant",
-        logo: "https://logo.clearbit.com/cognizant.com",
+        logo: "https://unavatar.io/cognizant.com?fallback=https://ui-avatars.com/api/?name=C&background=random",
         gradient: "from-blue-600 to-blue-500",
         tier: "Service",
         description: "IT services, consulting and digital transformation",
@@ -109,7 +109,7 @@ export const OTHER_COMPANIES: Company[] = [
     {
         id: "capgemini",
         name: "Capgemini",
-        logo: "https://logo.clearbit.com/capgemini.com",
+        logo: "https://unavatar.io/capgemini.com?fallback=https://ui-avatars.com/api/?name=C&background=random",
         gradient: "from-blue-700 to-indigo-500",
         tier: "Service",
         description: "Global IT consulting and technology services",
@@ -160,7 +160,7 @@ export const OTHER_COMPANIES: Company[] = [
     {
         id: "hcl",
         name: "HCL Technologies",
-        logo: "https://logo.clearbit.com/hcltech.com",
+        logo: "https://unavatar.io/hcltech.com?fallback=https://ui-avatars.com/api/?name=H&background=random",
         gradient: "from-blue-600 to-blue-400",
         tier: "Service",
         description: "IT services, engineering and R&D company",
@@ -207,8 +207,8 @@ export const OTHER_COMPANIES: Company[] = [
             { id: "hcl30", title: "Binary Tree Maximum Path Sum", difficulty: "Hard", topic: "Tree", url: "https://leetcode.com/problems/binary-tree-maximum-path-sum/", frequency: "High", acceptance: "39.0%" }
         ]
     },
-    mkSvc("hexaware", "Hexaware Technologies", "https://logo.clearbit.com/hexaware.com", "from-blue-500 to-cyan-500", "IT and BPO services company", "₹5-8 LPA", 1),
-    mkSvc("ltinfotech", "L&T Infotech", "https://logo.clearbit.com/ltimindtree.com", "from-orange-600 to-yellow-500", "Global technology consulting and digital solutions", "₹6-11 LPA", 2, ["Online Assessment", "Technical Round", "HR Round"],
+    mkSvc("hexaware", "Hexaware Technologies", "https://unavatar.io/hexaware.com?fallback=https://ui-avatars.com/api/?name=H&background=random", "from-blue-500 to-cyan-500", "IT and BPO services company", "₹5-8 LPA", 1),
+    mkSvc("ltinfotech", "L&T Infotech", "https://unavatar.io/ltimindtree.com?fallback=https://ui-avatars.com/api/?name=L&background=random", "from-orange-600 to-yellow-500", "Global technology consulting and digital solutions", "₹6-11 LPA", 2, ["Online Assessment", "Technical Round", "HR Round"],
         [
             "LTIMindtree's assessment is long (120+ mins); build endurance and focus.",
             "Technical round focuses on OOPs and DBMS. Practice 'Normalization' and 'Joins'.",
@@ -221,7 +221,7 @@ export const OTHER_COMPANIES: Company[] = [
     {
         id: "persistent",
         name: "Persistent Systems",
-        logo: "https://logo.clearbit.com/persistent.com",
+        logo: "https://unavatar.io/persistent.com?fallback=https://ui-avatars.com/api/?name=P&background=random",
         gradient: "from-orange-600 to-red-500",
         tier: "Service",
         description: "Digital engineering and enterprise modernization",
@@ -268,9 +268,9 @@ export const OTHER_COMPANIES: Company[] = [
             { id: "ps30", title: "Minimum Window Substring", difficulty: "Hard", topic: "Sliding Window", url: "https://leetcode.com/problems/minimum-window-substring/", frequency: "High", acceptance: "40.0%" }
         ]
     },
-    mkSvc("atos", "Atos", "https://logo.clearbit.com/atos.net", "from-blue-700 to-blue-500", "Digital transformation and IT services", "₹5-10 LPA", 1),
-    mkSvc("nttdata", "NTT Data", "https://logo.clearbit.com/nttdata.com", "from-blue-600 to-indigo-500", "Global IT services and consulting", "₹5-10 LPA", 2),
-    mkSvc("quantiphi", "Quantiphi", "https://logo.clearbit.com/quantiphi.com", "from-blue-600 to-indigo-400", "AI-first digital engineering company", "₹7-14 LPA", 0, ["Online Assessment", "Technical Interview 1", "Technical Interview 2", "HR"],
+    mkSvc("atos", "Atos", "https://unavatar.io/atos.net?fallback=https://ui-avatars.com/api/?name=A&background=random", "from-blue-700 to-blue-500", "Digital transformation and IT services", "₹5-10 LPA", 1),
+    mkSvc("nttdata", "NTT Data", "https://unavatar.io/nttdata.com?fallback=https://ui-avatars.com/api/?name=N&background=random", "from-blue-600 to-indigo-500", "Global IT services and consulting", "₹5-10 LPA", 2),
+    mkSvc("quantiphi", "Quantiphi", "https://unavatar.io/quantiphi.com?fallback=https://ui-avatars.com/api/?name=Q&background=random", "from-blue-600 to-indigo-400", "AI-first digital engineering company", "₹7-14 LPA", 0, ["Online Assessment", "Technical Interview 1", "Technical Interview 2", "HR"],
         [
             "Quantiphi is an AI company; know basic ML terminology even for SDE roles.",
             "Technical rounds involve solving DSA problems on a shared screen compiler.",
@@ -280,11 +280,11 @@ export const OTHER_COMPANIES: Company[] = [
             { label: "Quantiphi Careers", url: "https://quantiphi.com/careers/" }
         ]
     ),
-    mkSvc("igt", "IGT Solutions", "https://logo.clearbit.com/igtsolutions.com", "from-blue-500 to-blue-400", "Customer experience and digital services", "₹4-7 LPA", 1),
+    mkSvc("igt", "IGT Solutions", "https://unavatar.io/igtsolutions.com?fallback=https://ui-avatars.com/api/?name=I&background=random", "from-blue-500 to-blue-400", "Customer experience and digital services", "₹4-7 LPA", 1),
     {
         id: "zsassociates",
         name: "ZS Associates",
-        logo: "https://logo.clearbit.com/zs.com",
+        logo: "https://unavatar.io/zs.com?fallback=https://ui-avatars.com/api/?name=Z&background=random",
         gradient: "from-red-600 to-red-400",
         tier: "Service",
         description: "Global professional services firm — consulting & analytics",
@@ -321,12 +321,12 @@ export const OTHER_COMPANIES: Company[] = [
             { id: "zs20", title: "N-Queens", difficulty: "Hard", topic: "Backtracking", url: "https://leetcode.com/problems/n-queens/", frequency: "Medium", acceptance: "60.0%" }
         ]
     },
-    mkSvc("ezest", "e-Zest", "https://logo.clearbit.com/e-zest.com", "from-orange-500 to-amber-500", "Digital engineering and IT services", "₹5-8 LPA", 0),
-    mkSvc("codenation", "Code Nation", "https://logo.clearbit.com/codenation.co.in", "from-purple-600 to-indigo-500", "Coding education and tech talent pipeline", "₹5-10 LPA", 1),
-    mkSvc("inteliment", "Inteliment", "https://logo.clearbit.com/inteliment.com", "from-blue-600 to-blue-400", "Data analytics and cloud services", "₹5-10 LPA", 2),
+    mkSvc("ezest", "e-Zest", "https://unavatar.io/e-zest.com?fallback=https://ui-avatars.com/api/?name=E&background=random", "from-orange-500 to-amber-500", "Digital engineering and IT services", "₹5-8 LPA", 0),
+    mkSvc("codenation", "Code Nation", "https://unavatar.io/codenation.co.in?fallback=https://ui-avatars.com/api/?name=C&background=random", "from-purple-600 to-indigo-500", "Coding education and tech talent pipeline", "₹5-10 LPA", 1),
+    mkSvc("inteliment", "Inteliment", "https://unavatar.io/inteliment.com?fallback=https://ui-avatars.com/api/?name=I&background=random", "from-blue-600 to-blue-400", "Data analytics and cloud services", "₹5-10 LPA", 2),
 
     {
-        id: "tcsdigital", name: "TCS Digital", logo: "https://logo.clearbit.com/tcs.com", gradient: "from-blue-600 to-blue-400",
+        id: "tcsdigital", name: "TCS Digital", logo: "https://unavatar.io/tcs.com?fallback=https://ui-avatars.com/api/?name=T&background=random", gradient: "from-blue-600 to-blue-400",
         tier: "Service", description: "TCS premium hiring — digital & innovation roles",
         avgPackage: "₹8-13 LPA",
         interviewRounds: ["TCS NQT (Advanced)", "Technical Interview", "Managerial", "HR"],
@@ -383,7 +383,7 @@ export const OTHER_COMPANIES: Company[] = [
         ]
     },
     {
-        id: "tcsninja", name: "TCS Ninja", logo: "https://logo.clearbit.com/tcs.com", gradient: "from-blue-500 to-sky-500",
+        id: "tcsninja", name: "TCS Ninja", logo: "https://unavatar.io/tcs.com?fallback=https://ui-avatars.com/api/?name=T&background=random", gradient: "from-blue-500 to-sky-500",
         tier: "Service", description: "TCS standard hiring — IT services roles",
         avgPackage: "₹4-8 LPA",
         interviewRounds: ["TCS NQT (Aptitude + Coding)", "Technical Interview", "HR"],
@@ -426,7 +426,7 @@ export const OTHER_COMPANIES: Company[] = [
 
     // ═══ SERVICE — Infosys & Wipro (custom data) ═══
     {
-        id: "infosys", name: "Infosys", logo: "https://logo.clearbit.com/infosys.com", gradient: "from-blue-600 to-cyan-500",
+        id: "infosys", name: "Infosys", logo: "https://unavatar.io/infosys.com?fallback=https://ui-avatars.com/api/?name=I&background=random", gradient: "from-blue-600 to-cyan-500",
         tier: "Service", description: "Global IT consulting and outsourcing company",
         avgPackage: "₹4-10 LPA",
         interviewRounds: ["InfyTQ / HackWithInfy", "Technical Round", "HR Round"],
@@ -500,7 +500,7 @@ export const OTHER_COMPANIES: Company[] = [
         ]
     },
     {
-        id: "wipro", name: "Wipro", logo: "https://logo.clearbit.com/wipro.com", gradient: "from-violet-600 to-purple-500",
+        id: "wipro", name: "Wipro", logo: "https://unavatar.io/wipro.com?fallback=https://ui-avatars.com/api/?name=W&background=random", gradient: "from-violet-600 to-purple-500",
         tier: "Service", description: "IT services, consulting and business process services",
         avgPackage: "₹4-7 LPA",
         interviewRounds: ["Wipro NLTH (Aptitude + Coding)", "Technical Interview", "HR"],
@@ -577,7 +577,7 @@ export const OTHER_COMPANIES: Company[] = [
         ]
     },
     {
-        id: "deloitte", name: "Deloitte", logo: "https://logo.clearbit.com/deloitte.com", gradient: "from-green-700 to-green-500",
+        id: "deloitte", name: "Deloitte", logo: "https://unavatar.io/deloitte.com?fallback=https://ui-avatars.com/api/?name=D&background=random", gradient: "from-green-700 to-green-500",
         tier: "Service", description: "Professional services — audit, consulting, advisory, tax",
         avgPackage: "₹7-17 LPA",
         interviewRounds: ["Aptitude Test", "Technical Round", "Case Study", "Partner Interview"],
@@ -627,7 +627,7 @@ export const OTHER_COMPANIES: Company[] = [
     },
 
     // ═══ MORE SERVICE COMPANIES ═══
-    mkSvc("techmahindra", "Tech Mahindra", "https://logo.clearbit.com/techmahindra.com", "from-blue-700 to-blue-500", "IT services, BPO, and digital transformation", "₹4-8 LPA", 0, ["Aptitude & Essay", "Technical & Psychometric", "Conversational Test", "Technical Interview"],
+    mkSvc("techmahindra", "Tech Mahindra", "https://unavatar.io/techmahindra.com?fallback=https://ui-avatars.com/api/?name=T&background=random", "from-blue-700 to-blue-500", "IT services, BPO, and digital transformation", "₹4-8 LPA", 0, ["Aptitude & Essay", "Technical & Psychometric", "Conversational Test", "Technical Interview"],
         [
             "The 'Essay Writing' round is unique; focus on grammar and coherence.",
             "Psychometric test assesses personality; be consistent in your answers.",
@@ -638,7 +638,7 @@ export const OTHER_COMPANIES: Company[] = [
             { label: "GFG Tech Mahindra Prep", url: "https://www.geeksforgeeks.org/tech-mahindra-recruitment-process/" }
         ]
     ),
-    mkSvc("mphasis", "Mphasis", "https://logo.clearbit.com/mphasis.com", "from-purple-600 to-purple-400", "IT services and applied technology", "₹5-10 LPA", 1, ["Online Assessment", "Technical Interview", "HR Round"],
+    mkSvc("mphasis", "Mphasis", "https://unavatar.io/mphasis.com?fallback=https://ui-avatars.com/api/?name=M&background=random", "from-purple-600 to-purple-400", "IT services and applied technology", "₹5-10 LPA", 1, ["Online Assessment", "Technical Interview", "HR Round"],
         [
             "Assessment includes a dedicated 'Computer Science Fundamentals' section (OS, DBMS).",
             "Be prepared to explain your project architecture and DB schema in detail.",
@@ -648,8 +648,8 @@ export const OTHER_COMPANIES: Company[] = [
             { label: "Mphasis Careers", url: "https://careers.mphasis.com/" }
         ]
     ),
-    mkSvc("mindtree", "Mindtree", "https://logo.clearbit.com/mindtree.com", "from-green-600 to-green-400", "Digital transformation and technology services", "₹5-10 LPA", 2),
-    mkSvc("kpit", "KPIT Technologies", "https://logo.clearbit.com/kpit.com", "from-blue-600 to-indigo-500", "Automotive embedded tech and mobility solutions", "₹6-12 LPA", 0, ["Aptitude & Technical MCQ", "Coding & English", "Technical Interview", "HR"],
+    mkSvc("mindtree", "Mindtree", "https://unavatar.io/mindtree.com?fallback=https://ui-avatars.com/api/?name=M&background=random", "from-green-600 to-green-400", "Digital transformation and technology services", "₹5-10 LPA", 2),
+    mkSvc("kpit", "KPIT Technologies", "https://unavatar.io/kpit.com?fallback=https://ui-avatars.com/api/?name=K&background=random", "from-blue-600 to-indigo-500", "Automotive embedded tech and mobility solutions", "₹6-12 LPA", 0, ["Aptitude & Technical MCQ", "Coding & English", "Technical Interview", "HR"],
         [
             "Heavy, heavy focus on C/C++ pointers and Embedded Systems concepts.",
             "Gamified assessment rounds test memory and speed/accuracy.",
@@ -659,7 +659,7 @@ export const OTHER_COMPANIES: Company[] = [
             { label: "KPIT Careers", url: "https://www.kpit.com/careers/" }
         ]
     ),
-    mkSvc("cyient", "Cyient", "https://logo.clearbit.com/cyient.com", "from-blue-500 to-teal-500", "Engineering, manufacturing and geospatial services", "₹5-10 LPA", 1, ["Online Test", "Technical Round", "HR Round"],
+    mkSvc("cyient", "Cyient", "https://unavatar.io/cyient.com?fallback=https://ui-avatars.com/api/?name=C&background=random", "from-blue-500 to-teal-500", "Engineering, manufacturing and geospatial services", "₹5-10 LPA", 1, ["Online Test", "Technical Round", "HR Round"],
         [
             "Technical round may involve writing pseudo-code on a notepad.",
             "Java 8 features (Lambdas, Streams) are frequently asked.",
@@ -669,7 +669,7 @@ export const OTHER_COMPANIES: Company[] = [
             { label: "Cyient Careers", url: "https://www.cyient.com/careers" }
         ]
     ),
-    mkSvc("birlasoft", "Birlasoft", "https://logo.clearbit.com/birlasoft.com", "from-emerald-600 to-green-500", "Enterprise digital solutions and IT services", "₹5-8 LPA", 2, ["English Assessment", "Technical MCQ & Coding", "Technical Interview", "HR"],
+    mkSvc("birlasoft", "Birlasoft", "https://unavatar.io/birlasoft.com?fallback=https://ui-avatars.com/api/?name=B&background=random", "from-emerald-600 to-green-500", "Enterprise digital solutions and IT services", "₹5-8 LPA", 2, ["English Assessment", "Technical MCQ & Coding", "Technical Interview", "HR"],
         [
             "English Assessment evaluates listening and speaking skills (Versant-style).",
             "Technical MCQs cover a broad range: C/C++, DBMS, OS, Networking.",
@@ -682,36 +682,36 @@ export const OTHER_COMPANIES: Company[] = [
 
 
     // ═══ STARTUP COMPANIES (A-Z from placement list) ═══
-    mkSvc("3ea", "3EA", "https://logo.clearbit.com/3ea.in", "from-red-600 to-red-400", "Management consulting and business transformation", "₹5-10 LPA", 1),
-    mkSvc("64squares", "64squares", "https://logo.clearbit.com/64squares.com", "from-slate-700 to-slate-500", "Data analytics and digital solutions", "₹7-14 LPA", 2),
-    mkSvc("agiliad", "Agiliad", "https://logo.clearbit.com/agiliad.com", "from-blue-600 to-blue-400", "Software engineering and digital product development", "₹6-12 LPA", 0),
-    mkStart("abs", "ABS", "https://logo.clearbit.com/abs-solutions.com", "from-blue-600 to-blue-400", "Technology solutions provider", "₹4-7 LPA", 2),
-    mkStart("aligned", "Aligned Automation", "https://logo.clearbit.com/alignedautomation.com", "from-blue-500 to-blue-400", "Business process automation", "₹5-8 LPA", 1),
-    mkStart("altizon", "Altizon Inc.", "https://logo.clearbit.com/altizon.com", "from-orange-500 to-amber-500", "Industrial IoT platform company", "₹6-12 LPA", 2),
+    mkSvc("3ea", "3EA", "https://unavatar.io/3ea.in?fallback=https://ui-avatars.com/api/?name=3&background=random", "from-red-600 to-red-400", "Management consulting and business transformation", "₹5-10 LPA", 1),
+    mkSvc("64squares", "64squares", "https://unavatar.io/64squares.com?fallback=https://ui-avatars.com/api/?name=6&background=random", "from-slate-700 to-slate-500", "Data analytics and digital solutions", "₹7-14 LPA", 2),
+    mkSvc("agiliad", "Agiliad", "https://unavatar.io/agiliad.com?fallback=https://ui-avatars.com/api/?name=A&background=random", "from-blue-600 to-blue-400", "Software engineering and digital product development", "₹6-12 LPA", 0),
+    mkStart("abs", "ABS", "https://unavatar.io/abs-solutions.com?fallback=https://ui-avatars.com/api/?name=A&background=random", "from-blue-600 to-blue-400", "Technology solutions provider", "₹4-7 LPA", 2),
+    mkStart("aligned", "Aligned Automation", "https://unavatar.io/alignedautomation.com?fallback=https://ui-avatars.com/api/?name=A&background=random", "from-blue-500 to-blue-400", "Business process automation", "₹5-8 LPA", 1),
+    mkStart("altizon", "Altizon Inc.", "https://unavatar.io/altizon.com?fallback=https://ui-avatars.com/api/?name=A&background=random", "from-orange-500 to-amber-500", "Industrial IoT platform company", "₹6-12 LPA", 2),
 
-    mkStart("amura", "Amura", "https://logo.clearbit.com/amuratech.com", "from-pink-500 to-rose-500", "Marketing technology solutions", "₹5-10 LPA", 3),
-    mkStart("anchanto", "Anchanto", "https://logo.clearbit.com/anchanto.com", "from-indigo-500 to-blue-500", "SaaS platform for e-commerce logistics", "₹6-12 LPA", 0),
+    mkStart("amura", "Amura", "https://unavatar.io/amuratech.com?fallback=https://ui-avatars.com/api/?name=A&background=random", "from-pink-500 to-rose-500", "Marketing technology solutions", "₹5-10 LPA", 3),
+    mkStart("anchanto", "Anchanto", "https://unavatar.io/anchanto.com?fallback=https://ui-avatars.com/api/?name=A&background=random", "from-indigo-500 to-blue-500", "SaaS platform for e-commerce logistics", "₹6-12 LPA", 0),
 
-    mkStart("apisero", "Apisero", "https://logo.clearbit.com/apisero.com", "from-green-600 to-teal-500", "MuleSoft and Salesforce consulting", "₹6-12 LPA", 1),
+    mkStart("apisero", "Apisero", "https://unavatar.io/apisero.com?fallback=https://ui-avatars.com/api/?name=A&background=random", "from-green-600 to-teal-500", "MuleSoft and Salesforce consulting", "₹6-12 LPA", 1),
 
-    mkStart("bitwise", "Bitwise", "https://logo.clearbit.com/bitwiseglobal.com", "from-blue-600 to-indigo-500", "IT and software services company", "₹5-10 LPA", 2),
+    mkStart("bitwise", "Bitwise", "https://unavatar.io/bitwiseglobal.com?fallback=https://ui-avatars.com/api/?name=B&background=random", "from-blue-600 to-indigo-500", "IT and software services company", "₹5-10 LPA", 2),
 
-    mkSvc("bizamica", "bizAmica Software", "https://logo.clearbit.com/bizamica.com", "from-blue-500 to-indigo-500", "AI and machine learning based software solutions", "₹6-11 LPA", 1),
-    mkStart("brightchamps", "BrightChamps", "https://logo.clearbit.com/brightchamps.com", "from-orange-500 to-yellow-400", "EdTech — coding & STEM for kids", "₹5-10 LPA", 0),
+    mkSvc("bizamica", "bizAmica Software", "https://unavatar.io/bizamica.com?fallback=https://ui-avatars.com/api/?name=B&background=random", "from-blue-500 to-indigo-500", "AI and machine learning based software solutions", "₹6-11 LPA", 1),
+    mkStart("brightchamps", "BrightChamps", "https://unavatar.io/brightchamps.com?fallback=https://ui-avatars.com/api/?name=B&background=random", "from-orange-500 to-yellow-400", "EdTech — coding & STEM for kids", "₹5-10 LPA", 0),
 
-    mkSvc("buddi-ai", "BUDDI.AI", "https://logo.clearbit.com/buddi.ai", "from-green-600 to-emerald-500", "AI-driven healthcare revenue cycle management", "₹7-14 LPA", 2),
-    mkStart("cakesoft", "CakeSoft Technologies", "https://logo.clearbit.com/cakesoft.com", "from-pink-500 to-red-500", "Web and mobile app development", "₹4-7 LPA", 2),
-    mkSvc("centiro", "Centiro", "https://logo.clearbit.com/centiro.com", "from-blue-600 to-sky-500", "Cloud-based delivery management and logistics", "₹10-17 LPA", 1),
-    mkSvc("cloudwerx", "Cloudwerx", "https://logo.clearbit.com/cloudwerx.tech", "from-blue-500 to-cyan-500", "Google Cloud consulting and digital transformation", "₹10-18 LPA", 1),
-    mkStart("codevita", "Codevita Live", "https://logo.clearbit.com/codevita.live", "from-blue-500 to-purple-500", "Coding competition and talent platform", "₹5-10 LPA", 1),
-    mkStart("deqode", "Deqode", "https://logo.clearbit.com/deqode.com", "from-indigo-600 to-blue-500", "Blockchain and web3 development", "₹6-12 LPA", 2),
+    mkSvc("buddi-ai", "BUDDI.AI", "https://unavatar.io/buddi.ai?fallback=https://ui-avatars.com/api/?name=B&background=random", "from-green-600 to-emerald-500", "AI-driven healthcare revenue cycle management", "₹7-14 LPA", 2),
+    mkStart("cakesoft", "CakeSoft Technologies", "https://unavatar.io/cakesoft.com?fallback=https://ui-avatars.com/api/?name=C&background=random", "from-pink-500 to-red-500", "Web and mobile app development", "₹4-7 LPA", 2),
+    mkSvc("centiro", "Centiro", "https://unavatar.io/centiro.com?fallback=https://ui-avatars.com/api/?name=C&background=random", "from-blue-600 to-sky-500", "Cloud-based delivery management and logistics", "₹10-17 LPA", 1),
+    mkSvc("cloudwerx", "Cloudwerx", "https://unavatar.io/cloudwerx.tech?fallback=https://ui-avatars.com/api/?name=C&background=random", "from-blue-500 to-cyan-500", "Google Cloud consulting and digital transformation", "₹10-18 LPA", 1),
+    mkStart("codevita", "Codevita Live", "https://unavatar.io/codevita.live?fallback=https://ui-avatars.com/api/?name=C&background=random", "from-blue-500 to-purple-500", "Coding competition and talent platform", "₹5-10 LPA", 1),
+    mkStart("deqode", "Deqode", "https://unavatar.io/deqode.com?fallback=https://ui-avatars.com/api/?name=D&background=random", "from-indigo-600 to-blue-500", "Blockchain and web3 development", "₹6-12 LPA", 2),
 
-    mkProd("elasticrun", "ElasticRun", "https://logo.clearbit.com/elasticrun.com", "from-blue-600 to-blue-400", "B2B eCommerce Platform for rural India", "₹14-30 LPA", 3, ["Coding Round", "Technical x2", "Managerial"], ["Focus on Graph/Tree algorithms.", "Expect deep questions on your Resume Projects."], [{ label: "ElasticRun Careers", url: "https://www.elastic.run/" }]),
+    mkProd("elasticrun", "ElasticRun", "https://unavatar.io/elasticrun.com?fallback=https://ui-avatars.com/api/?name=E&background=random", "from-blue-600 to-blue-400", "B2B eCommerce Platform for rural India", "₹14-30 LPA", 3, ["Coding Round", "Technical x2", "Managerial"], ["Focus on Graph/Tree algorithms.", "Expect deep questions on your Resume Projects."], [{ label: "ElasticRun Careers", url: "https://www.elastic.run/" }]),
 
-    mkStart("enthralltech", "EnthrallTech", "https://logo.clearbit.com/enthralltech.com", "from-green-500 to-emerald-500", "Digital solutions and consultancy", "₹4-7 LPA", 0),
-    mkStart("epikindifi", "EPIKInDiFi", "https://logo.clearbit.com/epikindifi.com", "from-purple-600 to-indigo-500", "Fintech and digital finance solutions", "₹5-10 LPA", 1),
+    mkStart("enthralltech", "EnthrallTech", "https://unavatar.io/enthralltech.com?fallback=https://ui-avatars.com/api/?name=E&background=random", "from-green-500 to-emerald-500", "Digital solutions and consultancy", "₹4-7 LPA", 0),
+    mkStart("epikindifi", "EPIKInDiFi", "https://unavatar.io/epikindifi.com?fallback=https://ui-avatars.com/api/?name=E&background=random", "from-purple-600 to-indigo-500", "Fintech and digital finance solutions", "₹5-10 LPA", 1),
     {
-        ...mkSvc("eqtechnologic", "eQ Technologic", "https://logo.clearbit.com/eqtechnologic.com", "from-blue-700 to-blue-500", "Enterprise data synchronization and analytics", "₹10-19 LPA", 1),
+        ...mkSvc("eqtechnologic", "eQ Technologic", "https://unavatar.io/eqtechnologic.com?fallback=https://ui-avatars.com/api/?name=E&background=random", "from-blue-700 to-blue-500", "Enterprise data synchronization and analytics", "₹10-19 LPA", 1),
         interviewExperiences: [
             {
                 title: "eQ Technologic Interview Experience (On-Campus SDE)",
@@ -721,21 +721,21 @@ export const OTHER_COMPANIES: Company[] = [
             }
         ]
     },
-    mkStart("eumentis", "Eumentis Cloud", "https://logo.clearbit.com/eumentis.com", "from-sky-500 to-blue-500", "Cloud infrastructure and DevOps", "₹5-10 LPA", 3),
-    mkSvc("extramarks", "Extramarks Education", "https://logo.clearbit.com/extramarks.com", "from-orange-500 to-red-500", "Digital learning solutions and edtech platform", "₹6-12 LPA", 1),
-    mkStart("fabricinc", "Fabric Inc", "https://logo.clearbit.com/fabric.inc", "from-purple-500 to-violet-500", "Micro-fulfillment technology", "₹6-12 LPA", 1),
-    mkStart("flogroup", "Flo Group", "https://logo.clearbit.com/flo-group.com", "from-blue-500 to-blue-400", "Technology and business consulting", "₹4-7 LPA", 2),
-    mkStart("gns", "GNS Engineering India", "https://logo.clearbit.com/gns-mbh.com", "from-blue-600 to-blue-500", "Engineering design services", "₹4-7 LPA", 3),
-    mkSvc("growisto", "Growisto", "https://logo.clearbit.com/growisto.com", "from-blue-600 to-blue-400", "E-commerce marketing and technology services", "₹7-14 LPA", 4),
-    mkStart("helpshift", "Helpshift Technologies", "https://logo.clearbit.com/helpshift.com", "from-blue-500 to-indigo-500", "AI-powered customer service platform", "₹7-14 LPA", 1),
+    mkStart("eumentis", "Eumentis Cloud", "https://unavatar.io/eumentis.com?fallback=https://ui-avatars.com/api/?name=E&background=random", "from-sky-500 to-blue-500", "Cloud infrastructure and DevOps", "₹5-10 LPA", 3),
+    mkSvc("extramarks", "Extramarks Education", "https://unavatar.io/extramarks.com?fallback=https://ui-avatars.com/api/?name=E&background=random", "from-orange-500 to-red-500", "Digital learning solutions and edtech platform", "₹6-12 LPA", 1),
+    mkStart("fabricinc", "Fabric Inc", "https://unavatar.io/fabric.inc?fallback=https://ui-avatars.com/api/?name=F&background=random", "from-purple-500 to-violet-500", "Micro-fulfillment technology", "₹6-12 LPA", 1),
+    mkStart("flogroup", "Flo Group", "https://unavatar.io/flo-group.com?fallback=https://ui-avatars.com/api/?name=F&background=random", "from-blue-500 to-blue-400", "Technology and business consulting", "₹4-7 LPA", 2),
+    mkStart("gns", "GNS Engineering India", "https://unavatar.io/gns-mbh.com?fallback=https://ui-avatars.com/api/?name=G&background=random", "from-blue-600 to-blue-500", "Engineering design services", "₹4-7 LPA", 3),
+    mkSvc("growisto", "Growisto", "https://unavatar.io/growisto.com?fallback=https://ui-avatars.com/api/?name=G&background=random", "from-blue-600 to-blue-400", "E-commerce marketing and technology services", "₹7-14 LPA", 4),
+    mkStart("helpshift", "Helpshift Technologies", "https://unavatar.io/helpshift.com?fallback=https://ui-avatars.com/api/?name=H&background=random", "from-blue-500 to-indigo-500", "AI-powered customer service platform", "₹7-14 LPA", 1),
 
-    mkSvc("hexaview", "Hexaview Technologies", "https://logo.clearbit.com/hexaviewtech.com", "from-blue-700 to-indigo-500", "Digital transformation and software consulting", "₹7-14 LPA", 1),
-    mkStart("infogenlabs", "Infogen Labs", "https://logo.clearbit.com/infogenlabs.com", "from-green-600 to-green-500", "Software development services", "₹4-7 LPA", 3),
-    mkSvc("integrichain", "IntegriChain", "https://logo.clearbit.com/integrichain.com", "from-blue-600 to-sky-500", "Life sciences data and analytics platform", "₹10-19 LPA", 1),
-    mkStart("iqdigital", "iQ Digital", "https://logo.clearbit.com/iqdigital.com", "from-purple-500 to-pink-500", "Digital marketing and technology", "₹4-7 LPA", 1),
-    mkSvc("jaro", "Jaro Education", "https://logo.clearbit.com/jaroeducation.com", "from-blue-800 to-blue-600", "Online higher education and executive programs", "₹7-14 LPA", 1),
-    mkStart("jisasoftech", "JISA Softech", "https://logo.clearbit.com/jisasoftech.com", "from-blue-500 to-blue-400", "Payment solutions and fintech", "₹4-7 LPA", 3),
-    mkSvc("jombay", "Jombay", "https://logo.clearbit.com/jombay.com", "from-blue-600 to-blue-400", "Talent assessment and leadership development", "₹7-14 LPA", 1, ["Online Assessment", "Technical Interview", "HR Round"],
+    mkSvc("hexaview", "Hexaview Technologies", "https://unavatar.io/hexaviewtech.com?fallback=https://ui-avatars.com/api/?name=H&background=random", "from-blue-700 to-indigo-500", "Digital transformation and software consulting", "₹7-14 LPA", 1),
+    mkStart("infogenlabs", "Infogen Labs", "https://unavatar.io/infogenlabs.com?fallback=https://ui-avatars.com/api/?name=I&background=random", "from-green-600 to-green-500", "Software development services", "₹4-7 LPA", 3),
+    mkSvc("integrichain", "IntegriChain", "https://unavatar.io/integrichain.com?fallback=https://ui-avatars.com/api/?name=I&background=random", "from-blue-600 to-sky-500", "Life sciences data and analytics platform", "₹10-19 LPA", 1),
+    mkStart("iqdigital", "iQ Digital", "https://unavatar.io/iqdigital.com?fallback=https://ui-avatars.com/api/?name=I&background=random", "from-purple-500 to-pink-500", "Digital marketing and technology", "₹4-7 LPA", 1),
+    mkSvc("jaro", "Jaro Education", "https://unavatar.io/jaroeducation.com?fallback=https://ui-avatars.com/api/?name=J&background=random", "from-blue-800 to-blue-600", "Online higher education and executive programs", "₹7-14 LPA", 1),
+    mkStart("jisasoftech", "JISA Softech", "https://unavatar.io/jisasoftech.com?fallback=https://ui-avatars.com/api/?name=J&background=random", "from-blue-500 to-blue-400", "Payment solutions and fintech", "₹4-7 LPA", 3),
+    mkSvc("jombay", "Jombay", "https://unavatar.io/jombay.com?fallback=https://ui-avatars.com/api/?name=J&background=random", "from-blue-600 to-blue-400", "Talent assessment and leadership development", "₹7-14 LPA", 1, ["Online Assessment", "Technical Interview", "HR Round"],
         [
             "Focus on Backend (Node.js/Ruby) and DBs (MongoDB/Postgres).",
             "Understanding of RESTful APIs and Linux basics is crucial.",
@@ -745,25 +745,25 @@ export const OTHER_COMPANIES: Company[] = [
             { label: "Jombay Careers", url: "https://www.jombay.com/careers/" }
         ]
     ),
-    mkStart("k12techno", "K12 Techno Services", "https://logo.clearbit.com/k12techno.com", "from-blue-600 to-blue-400", "K-12 education technology services", "₹4-7 LPA", 1),
-    mkSvc("kylas", "Kylas", "https://logo.clearbit.com/kylas.io", "from-indigo-600 to-blue-500", "Sales CRM for small and medium businesses", "₹6-12 LPA", 1),
-    mkStart("mastercard2", "McKinley & Rice", "https://logo.clearbit.com/mckinleyrice.com", "from-orange-600 to-orange-400", "Design and technology agency", "₹5-10 LPA", 3),
-    mkStart("medlypharmacy", "Medly Pharmacy", "https://logo.clearbit.com/medly.com", "from-green-500 to-teal-500", "Digital pharmacy platform", "₹5-10 LPA", 0),
+    mkStart("k12techno", "K12 Techno Services", "https://unavatar.io/k12techno.com?fallback=https://ui-avatars.com/api/?name=K&background=random", "from-blue-600 to-blue-400", "K-12 education technology services", "₹4-7 LPA", 1),
+    mkSvc("kylas", "Kylas", "https://unavatar.io/kylas.io?fallback=https://ui-avatars.com/api/?name=K&background=random", "from-indigo-600 to-blue-500", "Sales CRM for small and medium businesses", "₹6-12 LPA", 1),
+    mkStart("mastercard2", "McKinley & Rice", "https://unavatar.io/mckinleyrice.com?fallback=https://ui-avatars.com/api/?name=M&background=random", "from-orange-600 to-orange-400", "Design and technology agency", "₹5-10 LPA", 3),
+    mkStart("medlypharmacy", "Medly Pharmacy", "https://unavatar.io/medly.com?fallback=https://ui-avatars.com/api/?name=M&background=random", "from-green-500 to-teal-500", "Digital pharmacy platform", "₹5-10 LPA", 0),
 
-    mkStart("mindstix", "Mindstix Software Labs", "https://logo.clearbit.com/mindstix.com", "from-blue-500 to-blue-400", "Software product engineering", "₹4-7 LPA", 1),
-    mkStart("miniorange", "miniOrange", "https://logo.clearbit.com/miniorange.com", "from-orange-500 to-yellow-400", "Identity and access management", "₹5-10 LPA", 2),
+    mkStart("mindstix", "Mindstix Software Labs", "https://unavatar.io/mindstix.com?fallback=https://ui-avatars.com/api/?name=M&background=random", "from-blue-500 to-blue-400", "Software product engineering", "₹4-7 LPA", 1),
+    mkStart("miniorange", "miniOrange", "https://unavatar.io/miniorange.com?fallback=https://ui-avatars.com/api/?name=M&background=random", "from-orange-500 to-yellow-400", "Identity and access management", "₹5-10 LPA", 2),
 
-    mkStart("moxie", "Moxie", "https://logo.clearbit.com/moxie.ai", "from-purple-600 to-pink-500", "Customer experience analytics", "₹5-10 LPA", 3),
-    mkStart("onextel", "oneXtel", "https://logo.clearbit.com/onextel.com", "from-blue-600 to-blue-500", "Cloud communication platform", "₹4-7 LPA", 0),
-    mkSvc("planetspark", "PlanetSpark", "https://logo.clearbit.com/planetspark.in", "from-orange-500 to-red-500", "Edtech platform for communication skills", "₹6-12 LPA", 1),
-    mkStart("productdossier", "Product Dossier", "https://logo.clearbit.com/productdossier.com", "from-blue-500 to-blue-400", "Project management SaaS", "₹5-10 LPA", 2),
-    mkProd("purplle", "Purplle", "https://logo.clearbit.com/purplle.com", "from-purple-500 to-pink-500", "Online beauty and personal care unicorn", "₹18-36 LPA", 3, ["DSA Round", "HLD Round", "Culture Fit"], ["HLD for E-commerce (Scalability) is key.", "DSA often involves Strings/Palindromes."], [{ label: "Purplle Careers", url: "https://www.purplle.com/careers" }]),
+    mkStart("moxie", "Moxie", "https://unavatar.io/moxie.ai?fallback=https://ui-avatars.com/api/?name=M&background=random", "from-purple-600 to-pink-500", "Customer experience analytics", "₹5-10 LPA", 3),
+    mkStart("onextel", "oneXtel", "https://unavatar.io/onextel.com?fallback=https://ui-avatars.com/api/?name=O&background=random", "from-blue-600 to-blue-500", "Cloud communication platform", "₹4-7 LPA", 0),
+    mkSvc("planetspark", "PlanetSpark", "https://unavatar.io/planetspark.in?fallback=https://ui-avatars.com/api/?name=P&background=random", "from-orange-500 to-red-500", "Edtech platform for communication skills", "₹6-12 LPA", 1),
+    mkStart("productdossier", "Product Dossier", "https://unavatar.io/productdossier.com?fallback=https://ui-avatars.com/api/?name=P&background=random", "from-blue-500 to-blue-400", "Project management SaaS", "₹5-10 LPA", 2),
+    mkProd("purplle", "Purplle", "https://unavatar.io/purplle.com?fallback=https://ui-avatars.com/api/?name=P&background=random", "from-purple-500 to-pink-500", "Online beauty and personal care unicorn", "₹18-36 LPA", 3, ["DSA Round", "HLD Round", "Culture Fit"], ["HLD for E-commerce (Scalability) is key.", "DSA often involves Strings/Palindromes."], [{ label: "Purplle Careers", url: "https://www.purplle.com/careers" }]),
 
-    mkStart("rackware", "RackWare Technologies", "https://logo.clearbit.com/rackware.com", "from-blue-700 to-blue-500", "Cloud migration and DR solutions", "₹5-10 LPA", 0),
-    mkStart("raydendesign", "Rayden Design", "https://logo.clearbit.com/raydendesign.com", "from-pink-500 to-rose-500", "UI/UX design and development", "₹4-7 LPA", 1),
-    mkStart("redpanda", "Red Panda", "https://logo.clearbit.com/redpanda.com", "from-red-500 to-orange-400", "Technology consulting services", "₹4-7 LPA", 2),
-    mkStart("riaadvisory", "RIA Advisory", "https://logo.clearbit.com/riaadvisory.com", "from-blue-600 to-blue-400", "Technology advisory and consulting", "₹5-10 LPA", 3),
-    mkStart("rtcamp", "rtCamp", "https://logo.clearbit.com/rtcamp.com", "from-orange-500 to-red-500", "WordPress VIP and web engineering", "₹6-12 LPA", 0, ["Assignment/GitHub Review", "Technical Round 1", "Technical Round 2", "HR"],
+    mkStart("rackware", "RackWare Technologies", "https://unavatar.io/rackware.com?fallback=https://ui-avatars.com/api/?name=R&background=random", "from-blue-700 to-blue-500", "Cloud migration and DR solutions", "₹5-10 LPA", 0),
+    mkStart("raydendesign", "Rayden Design", "https://unavatar.io/raydendesign.com?fallback=https://ui-avatars.com/api/?name=R&background=random", "from-pink-500 to-rose-500", "UI/UX design and development", "₹4-7 LPA", 1),
+    mkStart("redpanda", "Red Panda", "https://unavatar.io/redpanda.com?fallback=https://ui-avatars.com/api/?name=R&background=random", "from-red-500 to-orange-400", "Technology consulting services", "₹4-7 LPA", 2),
+    mkStart("riaadvisory", "RIA Advisory", "https://unavatar.io/riaadvisory.com?fallback=https://ui-avatars.com/api/?name=R&background=random", "from-blue-600 to-blue-400", "Technology advisory and consulting", "₹5-10 LPA", 3),
+    mkStart("rtcamp", "rtCamp", "https://unavatar.io/rtcamp.com?fallback=https://ui-avatars.com/api/?name=R&background=random", "from-orange-500 to-red-500", "WordPress VIP and web engineering", "₹6-12 LPA", 0, ["Assignment/GitHub Review", "Technical Round 1", "Technical Round 2", "HR"],
         [
             "Selection often based on Github profile & Open Source contributions (WordPress/React).",
             "Deep questions on Web Fundamentals (DNS, HTTP, Cookies, Sessions).",
@@ -775,42 +775,42 @@ export const OTHER_COMPANIES: Company[] = [
         ]
     ),
 
-    mkStart("rudder", "Rudder Analytics", "https://logo.clearbit.com/rudderanalytics.com", "from-teal-500 to-green-500", "Business intelligence solutions", "₹5-10 LPA", 1),
-    mkStart("ryussi", "Ryussi Technologies", "https://logo.clearbit.com/ryussi.com", "from-blue-500 to-indigo-500", "AI-powered analytics platform", "₹5-10 LPA", 2),
-    mkSvc("sagitec", "Sagitec", "https://logo.clearbit.com/sagitec.com", "from-blue-700 to-blue-500", "Software solutions for pension and healthcare", "₹7-14 LPA", 0),
-    mkStart("scalex", "Scalex Technology", "https://logo.clearbit.com/scalex.in", "from-green-500 to-emerald-500", "Scalable technology solutions", "₹4-7 LPA", 0),
-    mkProd("gupshup", "Gupshup", "https://logo.clearbit.com/gupshup.io", "from-purple-500 to-indigo-500", "Conversational messaging unicorn", "₹12-24 LPA", 1, ["Online Assessment", "Code Review", "Technical"], ["OA is unique: 1 question in 3 hours (Clean Code focus).", "Manual Code Review is a distinct stage."], [{ label: "Gupshup Careers", url: "https://www.gupshup.io/careers" }]),
-    mkStart("se2", "SE2", "https://logo.clearbit.com/se2.com", "from-blue-700 to-blue-500", "Life insurance administration platform", "₹6-12 LPA", 2),
-    mkStart("sedemac", "Sedemac Mechatronics", "https://logo.clearbit.com/sedemac.com", "from-green-600 to-green-400", "Automotive electronics systems", "₹5-10 LPA", 3),
-    mkStart("selldo", "Sell.do", "https://logo.clearbit.com/sell.do", "from-blue-600 to-cyan-500", "Real estate CRM platform", "₹5-10 LPA", 0),
+    mkStart("rudder", "Rudder Analytics", "https://unavatar.io/rudderanalytics.com?fallback=https://ui-avatars.com/api/?name=R&background=random", "from-teal-500 to-green-500", "Business intelligence solutions", "₹5-10 LPA", 1),
+    mkStart("ryussi", "Ryussi Technologies", "https://unavatar.io/ryussi.com?fallback=https://ui-avatars.com/api/?name=R&background=random", "from-blue-500 to-indigo-500", "AI-powered analytics platform", "₹5-10 LPA", 2),
+    mkSvc("sagitec", "Sagitec", "https://unavatar.io/sagitec.com?fallback=https://ui-avatars.com/api/?name=S&background=random", "from-blue-700 to-blue-500", "Software solutions for pension and healthcare", "₹7-14 LPA", 0),
+    mkStart("scalex", "Scalex Technology", "https://unavatar.io/scalex.in?fallback=https://ui-avatars.com/api/?name=S&background=random", "from-green-500 to-emerald-500", "Scalable technology solutions", "₹4-7 LPA", 0),
+    mkProd("gupshup", "Gupshup", "https://unavatar.io/gupshup.io?fallback=https://ui-avatars.com/api/?name=G&background=random", "from-purple-500 to-indigo-500", "Conversational messaging unicorn", "₹12-24 LPA", 1, ["Online Assessment", "Code Review", "Technical"], ["OA is unique: 1 question in 3 hours (Clean Code focus).", "Manual Code Review is a distinct stage."], [{ label: "Gupshup Careers", url: "https://www.gupshup.io/careers" }]),
+    mkStart("se2", "SE2", "https://unavatar.io/se2.com?fallback=https://ui-avatars.com/api/?name=S&background=random", "from-blue-700 to-blue-500", "Life insurance administration platform", "₹6-12 LPA", 2),
+    mkStart("sedemac", "Sedemac Mechatronics", "https://unavatar.io/sedemac.com?fallback=https://ui-avatars.com/api/?name=S&background=random", "from-green-600 to-green-400", "Automotive electronics systems", "₹5-10 LPA", 3),
+    mkStart("selldo", "Sell.do", "https://unavatar.io/sell.do?fallback=https://ui-avatars.com/api/?name=S&background=random", "from-blue-600 to-cyan-500", "Real estate CRM platform", "₹5-10 LPA", 0),
 
-    mkStart("swasthyaai", "Swasthya AI", "https://logo.clearbit.com/swasthya.ai", "from-green-500 to-teal-500", "AI-powered healthcare diagnostics", "₹6-12 LPA", 1),
+    mkStart("swasthyaai", "Swasthya AI", "https://unavatar.io/swasthya.ai?fallback=https://ui-avatars.com/api/?name=S&background=random", "from-green-500 to-teal-500", "AI-powered healthcare diagnostics", "₹6-12 LPA", 1),
 
-    mkStart("symblai", "Symbl.ai", "https://logo.clearbit.com/symbl.ai", "from-purple-600 to-indigo-500", "Conversational intelligence API platform", "₹7-14 LPA", 2),
+    mkStart("symblai", "Symbl.ai", "https://unavatar.io/symbl.ai?fallback=https://ui-avatars.com/api/?name=S&background=random", "from-purple-600 to-indigo-500", "Conversational intelligence API platform", "₹7-14 LPA", 2),
 
-    mkStart("talentio", "Talentio", "https://logo.clearbit.com/talentio.in", "from-blue-500 to-blue-400", "HR tech and recruitment platform", "₹4-7 LPA", 3),
+    mkStart("talentio", "Talentio", "https://unavatar.io/talentio.in?fallback=https://ui-avatars.com/api/?name=T&background=random", "from-blue-500 to-blue-400", "HR tech and recruitment platform", "₹4-7 LPA", 3),
 
-    mkStart("techverito", "TechVerito", "https://logo.clearbit.com/techverito.com", "from-orange-500 to-amber-500", "Agile software development services", "₹6-12 LPA", 0),
-    mkProd("tracelink", "Tracelink", "https://logo.clearbit.com/tracelink.com", "from-blue-600 to-sky-500", "Digital supply chain network for life sciences", "₹10-19 LPA", 1),
-    mkProd("tripstack", "TripStack", "https://logo.clearbit.com/tripstack.com", "from-blue-500 to-cyan-500", "Travel technology and flight booking solutions", "₹10-19 LPA", 1),
-    mkStart("udchalo", "udChalo", "https://logo.clearbit.com/udchalo.com", "from-orange-500 to-red-500", "Travel platform for armed forces", "₹5-10 LPA", 3),
+    mkStart("techverito", "TechVerito", "https://unavatar.io/techverito.com?fallback=https://ui-avatars.com/api/?name=T&background=random", "from-orange-500 to-amber-500", "Agile software development services", "₹6-12 LPA", 0),
+    mkProd("tracelink", "Tracelink", "https://unavatar.io/tracelink.com?fallback=https://ui-avatars.com/api/?name=T&background=random", "from-blue-600 to-sky-500", "Digital supply chain network for life sciences", "₹10-19 LPA", 1),
+    mkProd("tripstack", "TripStack", "https://unavatar.io/tripstack.com?fallback=https://ui-avatars.com/api/?name=T&background=random", "from-blue-500 to-cyan-500", "Travel technology and flight booking solutions", "₹10-19 LPA", 1),
+    mkStart("udchalo", "udChalo", "https://unavatar.io/udchalo.com?fallback=https://ui-avatars.com/api/?name=U&background=random", "from-orange-500 to-red-500", "Travel platform for armed forces", "₹5-10 LPA", 3),
 
-    mkStart("unschool", "Unschool", "https://logo.clearbit.com/unschool.in", "from-purple-500 to-pink-500", "Online professional learning platform", "₹4-7 LPA", 0),
+    mkStart("unschool", "Unschool", "https://unavatar.io/unschool.in?fallback=https://ui-avatars.com/api/?name=U&background=random", "from-purple-500 to-pink-500", "Online professional learning platform", "₹4-7 LPA", 0),
 
-    mkStart("uolocom", "Uolo.com", "https://logo.clearbit.com/uolo.com", "from-blue-500 to-indigo-500", "EdTech for schools and parents", "₹4-7 LPA", 1),
+    mkStart("uolocom", "Uolo.com", "https://unavatar.io/uolo.com?fallback=https://ui-avatars.com/api/?name=U&background=random", "from-blue-500 to-indigo-500", "EdTech for schools and parents", "₹4-7 LPA", 1),
 
-    mkStart("vadini", "Vadini Infocenter", "https://logo.clearbit.com/vadiniinfocenter.com", "from-green-500 to-green-400", "IT infrastructure services", "₹4-7 LPA", 2),
-    mkStart("valuence", "Valuence Holdings", "https://logo.clearbit.com/valuence.inc", "from-blue-600 to-blue-500", "Luxury brand marketplace", "₹5-10 LPA", 3),
-    mkStart("verticalfox", "Vertical Fox", "https://logo.clearbit.com/verticalfox.com", "from-orange-500 to-amber-400", "Digital marketing agency", "₹4-7 LPA", 0),
-    mkSvc("wednesday", "Wednesday Solutions", "https://logo.clearbit.com/wednesday.solutions", "from-blue-600 to-blue-400", "Digital product agency and software consulting", "₹10-19 LPA", 1),
-    mkStart("whizai", "Whiz.ai", "https://logo.clearbit.com/whiz.ai", "from-purple-600 to-blue-500", "AI analytics for life sciences", "₹7-14 LPA", 2),
+    mkStart("vadini", "Vadini Infocenter", "https://unavatar.io/vadiniinfocenter.com?fallback=https://ui-avatars.com/api/?name=V&background=random", "from-green-500 to-green-400", "IT infrastructure services", "₹4-7 LPA", 2),
+    mkStart("valuence", "Valuence Holdings", "https://unavatar.io/valuence.inc?fallback=https://ui-avatars.com/api/?name=V&background=random", "from-blue-600 to-blue-500", "Luxury brand marketplace", "₹5-10 LPA", 3),
+    mkStart("verticalfox", "Vertical Fox", "https://unavatar.io/verticalfox.com?fallback=https://ui-avatars.com/api/?name=V&background=random", "from-orange-500 to-amber-400", "Digital marketing agency", "₹4-7 LPA", 0),
+    mkSvc("wednesday", "Wednesday Solutions", "https://unavatar.io/wednesday.solutions?fallback=https://ui-avatars.com/api/?name=W&background=random", "from-blue-600 to-blue-400", "Digital product agency and software consulting", "₹10-19 LPA", 1),
+    mkStart("whizai", "Whiz.ai", "https://unavatar.io/whiz.ai?fallback=https://ui-avatars.com/api/?name=W&background=random", "from-purple-600 to-blue-500", "AI analytics for life sciences", "₹7-14 LPA", 2),
 
-    mkStart("winjit", "Winjit Technologies", "https://logo.clearbit.com/winjit.com", "from-blue-500 to-blue-400", "IoT and mobility solutions", "₹5-10 LPA", 3),
+    mkStart("winjit", "Winjit Technologies", "https://unavatar.io/winjit.com?fallback=https://ui-avatars.com/api/?name=W&background=random", "from-blue-500 to-blue-400", "IoT and mobility solutions", "₹5-10 LPA", 3),
 
-    mkStart("yardi", "Yardi Software", "https://logo.clearbit.com/yardi.com", "from-green-600 to-emerald-500", "Real estate investment and property management", "₹6-11 LPA", 0, ["Aptitude", "Technical (SQL/Java)", "Managerial"], ["SQL (Joins, Stored Procedures) is heavily tested.", "Java OOPs and String manipulation are common."], [{ label: "Yardi Careers", url: "https://www.yardi.com/about-us/careers/" }]),
+    mkStart("yardi", "Yardi Software", "https://unavatar.io/yardi.com?fallback=https://ui-avatars.com/api/?name=Y&background=random", "from-green-600 to-emerald-500", "Real estate investment and property management", "₹6-11 LPA", 0, ["Aptitude", "Technical (SQL/Java)", "Managerial"], ["SQL (Joins, Stored Procedures) is heavily tested.", "Java OOPs and String manipulation are common."], [{ label: "Yardi Careers", url: "https://www.yardi.com/about-us/careers/" }]),
 
-    mkStart("zlen", "Zlen", "https://logo.clearbit.com/zlen.io", "from-blue-600 to-cyan-500", "Technology solutions company", "₹4-7 LPA", 1),
-    mkStart("hashedin", "HashedIn Technologies", "https://logo.clearbit.com/hashedin.com", "from-orange-500 to-red-500", "Product engineering and cloud-native development", "₹7-14 LPA", 2, ["Coding Round", "Technical Interview 1", "Technical Interview 2", "HR"],
+    mkStart("zlen", "Zlen", "https://unavatar.io/zlen.io?fallback=https://ui-avatars.com/api/?name=Z&background=random", "from-blue-600 to-cyan-500", "Technology solutions company", "₹4-7 LPA", 1),
+    mkStart("hashedin", "HashedIn Technologies", "https://unavatar.io/hashedin.com?fallback=https://ui-avatars.com/api/?name=H&background=random", "from-orange-500 to-red-500", "Product engineering and cloud-native development", "₹7-14 LPA", 2, ["Coding Round", "Technical Interview 1", "Technical Interview 2", "HR"],
         [
             "HashedIn focuses heavily on 'Clean Code' and 'Design Patterns'.",
             "Expect 2-3 Medium/Hard LeetCode problems in the first tech round.",
@@ -820,7 +820,7 @@ export const OTHER_COMPANIES: Company[] = [
             { label: "HashedIn Careers", url: "https://hashedin.com/careers/" }
         ]
     ),
-    mkStart("geekyants", "GeekyAnts", "https://logo.clearbit.com/geekyants.com", "from-blue-500 to-indigo-500", "Mobile and web app development studio", "₹6-12 LPA", 3, ["Prelim Assessment", "Technical Assignment", "Technical Interview"],
+    mkStart("geekyants", "GeekyAnts", "https://unavatar.io/geekyants.com?fallback=https://ui-avatars.com/api/?name=G&background=random", "from-blue-500 to-indigo-500", "Mobile and web app development studio", "₹6-12 LPA", 3, ["Prelim Assessment", "Technical Assignment", "Technical Interview"],
         [
             "Strong focus on ReactJS, React Native, and Next.js ecosystem.",
             "Assignments are practical: 'Build a dashboard' or 'To-Do app' in 2-3 days.",
@@ -830,8 +830,8 @@ export const OTHER_COMPANIES: Company[] = [
             { label: "GeekyAnts Careers", url: "https://geekyants.com/careers" }
         ]
     ),
-    mkProd("clevertap", "CleverTap", "https://logo.clearbit.com/clevertap.com", "from-red-500 to-pink-500", "Customer retention and engagement platform", "₹17-34 LPA", 0, ["Phone Screen", "Onsite Coding", "Behavioral"], ["Java internals (GC, Memory Model) are asked.", "DB concepts (MongoDB, JSON structure)."], [{ label: "CleverTap Engineering", url: "https://clevertap.com/blog/category/engineering/" }]),
-    mkProd("postman", "Postman", "https://logo.clearbit.com/postman.com", "from-orange-500 to-orange-400", "API development collaboration platform", "₹10-22 LPA", 1, ["Online Coding", "System Design", "Technical Round", "Behavioral"],
+    mkProd("clevertap", "CleverTap", "https://unavatar.io/clevertap.com?fallback=https://ui-avatars.com/api/?name=C&background=random", "from-red-500 to-pink-500", "Customer retention and engagement platform", "₹17-34 LPA", 0, ["Phone Screen", "Onsite Coding", "Behavioral"], ["Java internals (GC, Memory Model) are asked.", "DB concepts (MongoDB, JSON structure)."], [{ label: "CleverTap Engineering", url: "https://clevertap.com/blog/category/engineering/" }]),
+    mkProd("postman", "Postman", "https://unavatar.io/postman.com?fallback=https://ui-avatars.com/api/?name=P&background=random", "from-orange-500 to-orange-400", "API development collaboration platform", "₹10-22 LPA", 1, ["Online Coding", "System Design", "Technical Round", "Behavioral"],
         [
             "Postman bar is very high. Focus on System Design (API Design, Rate Limiting, Latency).",
             "Be an expert in at least one backend language (Node.js/Go/Java).",

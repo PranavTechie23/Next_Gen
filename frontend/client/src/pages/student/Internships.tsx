@@ -870,7 +870,7 @@ export default function Internships(props: {
                 {!isEditing && (showAllExperiences ? [...experience, ...extracurricular] : [...experience, ...extracurricular].slice(0, 3)).map((e, idx) => (
                   <div key={idx} className={`flex items-start gap-2 text-sm ${isDark ? "text-slate-200" : "text-slate-800"}`}>
                     <span className="mt-2 w-1.5 h-1.5 rounded-full bg-emerald-500/70 flex-shrink-0" />
-                    <span>{e}</span>
+                    <span className="whitespace-pre-wrap">{e}</span>
                   </div>
                 ))}
                 {!isEditing && [...experience, ...extracurricular].length > 3 && (

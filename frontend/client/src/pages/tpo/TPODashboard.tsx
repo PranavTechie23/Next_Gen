@@ -22,6 +22,7 @@ import { TPOApi } from "@/services/TPOApi";
 import { performClientLogout } from "@/lib/logout";
 import { TPO_TABS, TPO_TAB_ITEMS, TPO_TAB_HEADINGS, initialTPOTabFromUrl, type TPOTab } from "@/pages/tpo/dashboard/constants";
 import { TPOPlacementsTab } from "@/features/tpo/placements/PlacementsTab";
+import { CompleteDriveDialog } from "@/features/tpo/shared/CompleteDriveDialog";
 import { TPOStudentsTab } from "@/features/tpo/students/StudentsTab";
 import { useUnreadNotificationCount } from "@/features/notifications/queries";
 import {
@@ -32,11 +33,113 @@ import { useManualRefresh } from "@/hooks/useManualRefresh";
 import { DashboardSyncBar, TabNav } from "@/components/layouts";
 import { queryClient, queryKeys } from "@/lib/queryClient";
 
+const EmptyChartState = ({ message = "No analytics data available yet" }: { message?: string }) => (
+  <div className="flex flex-col items-center justify-center h-[200px] text-center p-6 bg-muted/5 border border-dashed border-border/80 rounded-xl">
+    <BarChart3 className="w-10 h-10 text-muted-foreground/40 mb-2 animate-pulse" />
+    <p className="text-sm font-semibold text-foreground/80">{message}</p>
+    <p className="text-xs text-muted-foreground mt-1 max-w-[280px]">Placement data, conversion funnels, and trends will appear here once students register.</p>
+  </div>
+);
+
 export default function TPODashboard() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [, navigate] = useLocation();
   const [selectedView, setSelectedView] = useState<TPOTab>(() => initialTPOTabFromUrl());
+  const [recentReports, setRecentReports] = useState<any[]>(() => {
+    try {
+      const stored = localStorage.getItem("tpo_recent_reports");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleDeleteReport = (nameToDelete: string) => {
+    setRecentReports(prev => {
+      const updated = prev.filter(r => r.name !== nameToDelete);
+      localStorage.setItem("tpo_recent_reports", JSON.stringify(updated));
+      return updated;
+    });
+    toast.success("Report reference removed.");
+  };
+
+  const [customReportOpen, setCustomReportOpen] = useState(false);
+  const [customReportType, setCustomReportType] = useState("placement");
+
+  const generateCustomReport = async () => {
+    try {
+      setGeneratingReport("custom_company_analysis");
+      setCustomReportOpen(false);
+      const filename = `Custom_${customReportType}_${new Date().toISOString().slice(0, 10)}.csv`;
+      await TPOApi.downloadCustomReportCsv(customReportType, filename);
+      toast.success("Custom report generated.");
+
+      // Format report details for local history
+      const typeLabel = customReportType
+        .split('_')
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+      const label = `Custom ${typeLabel} Report`;
+      
+      const newReport = {
+        name: label,
+        type: "CSV",
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        size: "12 KB",
+        path: `reports/custom_${customReportType}`,
+        kind: `custom_${customReportType}`
+      };
+
+      setRecentReports(prev => {
+        const filtered = prev.filter(r => r.name !== label);
+        const updated = [newReport, ...filtered].slice(0, 50);
+        localStorage.setItem("tpo_recent_reports", JSON.stringify(updated));
+        return updated;
+      });
+    } catch (e) {
+      console.error("generateCustomReport failed", e);
+      toast.error("Failed to generate custom report.");
+    } finally {
+      setGeneratingReport(null);
+    }
+  };
+
+  const handleDownloadClick = async (kind: string, path: string) => {
+    if (kind.startsWith("custom_")) {
+      const type = kind.replace("custom_", "");
+      try {
+        setGeneratingReport(kind);
+        const filename = `Custom_${type}_${new Date().toISOString().slice(0, 10)}.csv`;
+        await TPOApi.downloadCustomReportCsv(type, filename);
+        toast.success("Report downloaded.");
+      } catch (e) {
+        console.error("Redownload custom report failed", e);
+        toast.error("Failed to download report.");
+      } finally {
+        setGeneratingReport(null);
+      }
+    } else {
+      await downloadReport(kind, path);
+    }
+  };
+
+  const [reportsSearchQuery, setReportsSearchQuery] = useState("");
+  const [reportsTypeFilter, setReportsTypeFilter] = useState("all");
+  const [reportsPage, setReportsPage] = useState(1);
+  const REPORTS_PAGE_SIZE = 5;
+
+  const filteredReports = recentReports.filter((report) => {
+    const matchesSearch = report.name.toLowerCase().includes(reportsSearchQuery.toLowerCase());
+    const matchesType = reportsTypeFilter === "all" || report.type.toLowerCase() === reportsTypeFilter.toLowerCase();
+    return matchesSearch && matchesType;
+  });
+
+  const paginatedReports = filteredReports.slice(
+    (reportsPage - 1) * REPORTS_PAGE_SIZE,
+    reportsPage * REPORTS_PAGE_SIZE
+  );
+
   const [selectedBranch, setSelectedBranch] = useState("all");
   const [timeRange, setTimeRange] = useState("year");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -312,8 +415,31 @@ export default function TPODashboard() {
   const downloadReport = async (kind: string, path: string) => {
     try {
       setGeneratingReport(kind);
-      await TPOApi.downloadReportCsv(path, `${kind}_${new Date().toISOString().slice(0, 10)}.csv`);
+      const filename = `${kind}_${new Date().toISOString().slice(0, 10)}.csv`;
+      await TPOApi.downloadReportCsv(path, filename);
       toast.success("Report generated.");
+
+      // Format report details for local history
+      const label = kind
+        .split('_')
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+      
+      const newReport = {
+        name: label,
+        type: "CSV",
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        size: "12 KB",
+        path: path,
+        kind: kind
+      };
+
+      setRecentReports(prev => {
+        const filtered = prev.filter(r => r.name !== label);
+        const updated = [newReport, ...filtered].slice(0, 50);
+        localStorage.setItem("tpo_recent_reports", JSON.stringify(updated));
+        return updated;
+      });
     } catch (e) {
       console.error("downloadReport failed", e);
       toast.error("Failed to generate report.");
@@ -352,24 +478,42 @@ export default function TPODashboard() {
 
   // Create Drive (ticket) modal
   const [createDriveOpen, setCreateDriveOpen] = useState(false);
+  const [editingDriveId, setEditingDriveId] = useState<string | number | null>(null);
   const [createDriveForm, setCreateDriveForm] = useState({
     companyName: "",
     role: "",
     description: "",
+    jobType: "PLACEMENT" as "PLACEMENT" | "INTERNSHIP",
     requirements: [] as string[],
+    eligibleBranches: [] as string[],
     dos: [] as string[],
     donts: [] as string[],
     minCgpa: 7.0,
     maxBacklogs: 0,
+    packageValue: "",
+    stipendValue: "",
+    location: "",
+    website: "",
+    scheduleNote: "",
+    activitySchedule: "",
     applicationLink: "",
     deadline: "",
   });
   const [driveReqSkill, setDriveReqSkill] = useState("");
+  const [driveBranch, setDriveBranch] = useState("");
   const [driveDoItem, setDriveDoItem] = useState("");
   const [driveDontItem, setDriveDontItem] = useState("");
   const [drivesList, setDrivesList] = useState<any[]>([]);
   const [loadingDrives, setLoadingDrives] = useState(false);
   const [creatingDrive, setCreatingDrive] = useState(false);
+  const [viewAllDrivesOpen, setViewAllDrivesOpen] = useState(false);
+  const [searchDrivesQuery, setSearchDrivesQuery] = useState("");
+  const [drivesPage, setDrivesPage] = useState(1);
+  const [jdEligibleCount, setJdEligibleCount] = useState<number | null>(null);
+  const [jdEligibleLoading, setJdEligibleLoading] = useState(false);
+  const [jdParseCount, setJdParseCount] = useState<number | null>(null);
+  const [completingDriveId, setCompletingDriveId] = useState<number | null>(null);
+  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
 
   const fetchTPODrives = useCallback(async () => {
     try {
@@ -387,8 +531,63 @@ export default function TPODashboard() {
   useEffect(() => {
     if (selectedView === "drives") {
       fetchTPODrives();
+      TPOApi.getJdParseStats()
+        .then((data) => setJdParseCount(data?.parseCount ?? 0))
+        .catch(() => setJdParseCount(null));
     }
   }, [selectedView, fetchTPODrives]);
+
+  useEffect(() => {
+    if (selectedView !== "drives") return;
+    let cancelled = false;
+    const loadShortlist = async () => {
+      setJdEligibleLoading(true);
+      try {
+        const data = await TPOApi.getShortlistCount({
+          minCgpa: jdFilters.cgpa,
+          maxBacklogs: jdFilters.backlogs,
+          skills: jdFilters.skills.join(","),
+        });
+        if (!cancelled) setJdEligibleCount(data?.count ?? 0);
+      } catch {
+        if (!cancelled) setJdEligibleCount(null);
+      } finally {
+        if (!cancelled) setJdEligibleLoading(false);
+      }
+    };
+    loadShortlist();
+    return () => { cancelled = true; };
+  }, [selectedView, jdFilters.cgpa, jdFilters.backlogs, jdFilters.skills]);
+
+  const activeDrivesCount = drivesList.filter((d) => d.status === "OPEN" || d.status === "ONGOING").length;
+  const drivesThisWeek = drivesList.filter((d) => {
+    if (!d.created_at) return false;
+    const created = new Date(d.created_at).getTime();
+    return Date.now() - created <= 7 * 24 * 60 * 60 * 1000;
+  }).length;
+  const totalDriveApplications = drivesList.reduce((sum, d) => sum + Number(d.application_count || 0), 0);
+
+  const formatDriveDeadline = (drive: any) => {
+    if (drive.schedule_note) return drive.schedule_note;
+    if (drive.deadline_note) return drive.deadline_note;
+    if (drive.deadline) {
+      return new Date(drive.deadline).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    }
+    return "TBD";
+  };
+
+  const driveStatusBadge = (status: string) => {
+    const s = status || "OPEN";
+    const open = s === "OPEN" || s === "ONGOING";
+    return (
+      <Badge
+        variant={open ? "default" : "secondary"}
+        className={`text-[10px] px-1.5 py-0 ${open ? "bg-green-500 text-white" : ""}`}
+      >
+        {s}
+      </Badge>
+    );
+  };
 
   const handleCreateDriveSubmit = async () => {
     if (!createDriveForm.companyName.trim() || !createDriveForm.role.trim()) {
@@ -397,36 +596,64 @@ export default function TPODashboard() {
     }
     try {
       setCreatingDrive(true);
-      await TPOApi.quickCreateDrive({
+      const payload = {
         companyName: createDriveForm.companyName.trim(),
         role: createDriveForm.role.trim(),
         description: createDriveForm.description.trim(),
+        jobType: createDriveForm.jobType,
         requirements: createDriveForm.requirements,
+        eligibleBranches: createDriveForm.eligibleBranches,
         dos: createDriveForm.dos,
         donts: createDriveForm.donts,
         minCgpa: createDriveForm.minCgpa,
         maxBacklogs: createDriveForm.maxBacklogs,
+        packageValue: createDriveForm.packageValue ? Number(createDriveForm.packageValue) : undefined,
+        stipendValue: createDriveForm.stipendValue ? Number(createDriveForm.stipendValue) : undefined,
+        location: createDriveForm.location.trim() || undefined,
+        website: createDriveForm.website.trim() || undefined,
+        scheduleNote: createDriveForm.scheduleNote.trim() || undefined,
+        activitySchedule: createDriveForm.activitySchedule.trim() || undefined,
         applicationLink: createDriveForm.applicationLink.trim() || undefined,
         deadline: createDriveForm.deadline.trim() || undefined,
-      });
-      toast.success("Drive created. Students will see it under Drives.");
+      };
+
+      if (editingDriveId) {
+        await TPOApi.updateDrive(editingDriveId, payload);
+        toast.success("Drive updated successfully");
+      } else {
+        await TPOApi.quickCreateDrive(payload);
+        toast.success(
+          createDriveForm.jobType === "INTERNSHIP"
+            ? "Internship drive created."
+            : "Placement drive created."
+        );
+      }
+      setEditingDriveId(null);
       setCreateDriveForm({
         companyName: "",
         role: "",
         description: "",
+        jobType: "PLACEMENT",
         requirements: [],
+        eligibleBranches: [],
         dos: [],
         donts: [],
         minCgpa: 7.0,
         maxBacklogs: 0,
+        packageValue: "",
+        stipendValue: "",
+        location: "",
+        website: "",
+        scheduleNote: "",
+        activitySchedule: "",
         applicationLink: "",
         deadline: "",
       });
       setCreateDriveOpen(false);
       await fetchTPODrives();
-    } catch (e) {
+    } catch (e: any) {
       console.error("createDrive failed", e);
-      toast.error("Could not create drive.");
+      toast.error(e.response?.data?.error || "Could not create drive.");
     } finally {
       setCreatingDrive(false);
     }
@@ -507,6 +734,11 @@ export default function TPODashboard() {
     };
   });
 
+  const totalStudentsCount = Number(
+    dashboardData?.collegeStats?.find((s: any) => s.key === "total_students")?.value || 0
+  );
+  const hasStudents = totalStudentsCount > 0;
+
   const branchDataRaw: any[] = dashboardData?.branchData || [];
   const branchData: any[] = branchDataRaw.length > 0 ? [
     ...branchDataRaw,
@@ -519,14 +751,7 @@ export default function TPODashboard() {
   const skillsRadarData: any[] = dashboardData?.skillsRadarData || [];
   const placementDistribution: any[] = dashboardData?.placementDistribution || [];
   const monthlyActivityRaw: any[] = dashboardData?.monthlyActivity || [];
-  const monthlyActivity: any[] = monthlyActivityRaw.length > 5 ? monthlyActivityRaw : [
-    { month: "Jan", applications: 1250, interviews: 450, offers: 120 },
-    { month: "Feb", applications: 1800, interviews: 680, offers: 190 },
-    { month: "Mar", applications: 2400, interviews: 950, offers: 320 },
-    { month: "Apr", applications: 3100, interviews: 1200, offers: 480 },
-    { month: "May", applications: 2800, interviews: 1450, offers: 650 },
-    { month: "Jun", applications: 3500, interviews: 1800, offers: 890 },
-  ];
+  const monthlyActivity: any[] = hasStudents ? (monthlyActivityRaw.length > 0 ? monthlyActivityRaw : []) : [];
   const atRiskStudents: any[] = dashboardData?.atRiskStudents || [];
   const topPerformers: any[] = dashboardData?.topPerformers || [];
   const suggestions: any[] = dashboardData?.suggestions || [];
@@ -809,8 +1034,14 @@ export default function TPODashboard() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-1">12</h3>
-                      <span className="px-2 py-0.5 bg-blue-500/10 dark:bg-blue-500/20 rounded-md text-[10px] font-bold border border-blue-500/20 text-blue-600 dark:text-blue-400 shadow-sm">+2 this week</span>
+                      <h3 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-1">
+                        {loadingDrives ? "—" : activeDrivesCount}
+                      </h3>
+                      {drivesThisWeek > 0 && (
+                        <span className="px-2 py-0.5 bg-blue-500/10 dark:bg-blue-500/20 rounded-md text-[10px] font-bold border border-blue-500/20 text-blue-600 dark:text-blue-400 shadow-sm">
+                          +{drivesThisWeek} this week
+                        </span>
+                      )}
                     </div>
                     <p className="text-muted-foreground text-base font-semibold mt-1">Active Drives</p>
                   </div>
@@ -824,8 +1055,10 @@ export default function TPODashboard() {
                     <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-1">892</h3>
-                    <p className="text-muted-foreground text-base font-semibold mt-1">Eligible Students (Avg)</p>
+                    <h3 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-1">
+                      {loadingDrives ? "—" : drivesList.filter(d => d.status === "COMPLETED").length}
+                    </h3>
+                    <p className="text-muted-foreground text-base font-semibold mt-1">Completed Drives</p>
                   </div>
                 </CardContent>
               </Card>
@@ -837,8 +1070,10 @@ export default function TPODashboard() {
                     <Zap className="w-8 h-8 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-1">45</h3>
-                    <p className="text-muted-foreground text-base font-semibold mt-1">JDs Processed</p>
+                    <h3 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-1">
+                      {totalDriveApplications}
+                    </h3>
+                    <p className="text-muted-foreground text-base font-semibold mt-1">Total Applications</p>
                   </div>
                 </CardContent>
               </Card>
@@ -941,14 +1176,13 @@ export default function TPODashboard() {
                       {/* Live Results Preview */}
                       <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center">
                         <div className="flex items-center gap-4 mb-4">
-                          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center relative">
+                          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
                             <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                            <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-[10px] ring-2 ring-white dark:ring-slate-950">
-                              92%
-                            </div>
                           </div>
                           <div className="text-left">
-                            <h4 className="text-3xl font-black text-slate-900 dark:text-white leading-none">142</h4>
+                            <h4 className="text-3xl font-black text-slate-900 dark:text-white leading-none">
+                              {jdEligibleLoading ? "…" : (jdEligibleCount ?? 0)}
+                            </h4>
                             <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px] mt-1">Students Eligible</p>
                           </div>
                         </div>
@@ -971,7 +1205,7 @@ export default function TPODashboard() {
                         <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 w-full text-left">
                           <p className="text-xs font-bold text-muted-foreground uppercase mb-2">Filters Applied:</p>
                           <ul className="text-sm space-y-1 text-slate-600 dark:text-slate-400">
-                            <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-500" /> CGPA &gt; {jdFilters.cgpa}</li>
+                            <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-500" /> CGPA &ge; {jdFilters.cgpa}</li>
                             <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-500" /> Max {jdFilters.backlogs} Backlogs</li>
                             <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-500" /> Skills match ({jdFilters.skills.length})</li>
                           </ul>
@@ -993,15 +1227,16 @@ export default function TPODashboard() {
                           <tr>
                             <th className="px-4 py-3 rounded-l-lg">Company</th>
                             <th className="px-4 py-3">Role</th>
-                            <th className="px-4 py-3">Jobs</th>
-                            <th className="px-4 py-3">Applied</th>
+                            <th className="px-4 py-3 text-center">Jobs</th>
+                            <th className="px-4 py-3 text-center">Applied</th>
+                            <th className="px-4 py-3 text-center">Selected</th>
                             <th className="px-4 py-3 text-right rounded-r-lg">Status</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
                           {loadingDrives ? (
                             <tr>
-                              <td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                              <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
                                 Loading drive performance...
                               </td>
                             </tr>
@@ -1010,8 +1245,19 @@ export default function TPODashboard() {
                               <tr key={drive.id} className="hover:bg-muted/20 transition-colors">
                                 <td className="px-4 py-2.5 font-bold text-sm">{drive.companyName || "—"}</td>
                                 <td className="px-4 py-2.5 text-muted-foreground text-xs">{drive.role || "—"}</td>
-                                <td className="px-4 py-2.5 font-semibold text-xs">{drive.job_count ?? 0}</td>
-                                <td className="px-4 py-2.5 font-semibold text-xs">{drive.application_count ?? 0}</td>
+                                <td className="px-4 py-2.5 font-semibold text-xs text-center">{drive.job_count ?? 0}</td>
+                                <td className="px-4 py-2.5 font-semibold text-xs text-center">
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <Users2 className="w-3.5 h-3.5 text-blue-500" />
+                                    <span>{drive.application_count ?? 0}</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-2.5 font-semibold text-xs text-center">
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <Award className="w-3.5 h-3.5 text-emerald-500" />
+                                    <span>{drive.selected_count ?? 0}</span>
+                                  </div>
+                                </td>
                                 <td className="px-4 py-2.5 text-right">
                                   <Badge variant={drive.status === "COMPLETED" ? "secondary" : "default"} className={`text-[10px] px-1.5 py-0 ${drive.status === "OPEN" || drive.status === "ONGOING" ? "bg-green-500 text-white" : ""}`}>
                                     {drive.status || "OPEN"}
@@ -1021,7 +1267,7 @@ export default function TPODashboard() {
                             ))
                           ) : (
                             <tr>
-                              <td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                              <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
                                 No recruitment drives yet. Create one to get started.
                               </td>
                             </tr>
@@ -1037,7 +1283,7 @@ export default function TPODashboard() {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h3 className="font-black text-xl">Active Drives</h3>
-                  <Button size="sm" variant="outline" className="h-8">View All</Button>
+                  <Button size="sm" variant="outline" className="h-8" onClick={() => setViewAllDrivesOpen(true)}>View All</Button>
                 </div>
 
                 {loadingDrives ? (
@@ -1045,7 +1291,7 @@ export default function TPODashboard() {
                 ) : drivesList.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-4">No drives yet. Create one below.</p>
                 ) : (
-                  drivesList.slice(0, 5).map((drive, i) => {
+                  drivesList.filter(d => d.status === "OPEN" || d.status === "ONGOING" || !d.status).slice(0, 5).map((drive, i) => {
                     const colors = ["bg-red-500", "bg-blue-500", "bg-green-500", "bg-purple-500", "bg-orange-500"];
                     const color = colors[i % colors.length];
                     const companyName = drive.companyName || "Company";
@@ -1053,22 +1299,68 @@ export default function TPODashboard() {
                       ? new Date(drive.deadline).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
                       : "Open";
                     return (
-                      <Card key={drive.id} className="border-0 shadow-sm hover:shadow-md transition-all cursor-pointer group">
-                        <CardContent className="p-3">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color} text-white shadow-sm font-black text-base flex-shrink-0`}>
-                              {companyName.charAt(0)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-sm truncate group-hover:text-blue-600 transition-colors">{companyName}</h4>
-                              <p className="text-xs text-muted-foreground truncate">{drive.role}</p>
-                            </div>
-                            <div className="text-right">
-                              <div className="flex items-center gap-1.5 text-[10px] font-semibold bg-muted/50 px-1.5 py-0.5 rounded text-muted-foreground">
+                      <Card key={drive.id} className="border border-border/40 shadow-sm hover:shadow-md transition-all cursor-pointer group bg-card hover:bg-accent/40">
+                        <CardContent className="p-4 flex items-center gap-4">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${color} text-white shadow-sm font-black text-xl flex-shrink-0`}>
+                            {companyName.charAt(0)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-base truncate group-hover:text-primary transition-colors">{companyName}</h4>
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                              <p className="text-sm text-muted-foreground truncate">{drive.role}</p>
+                              <span className="hidden sm:block w-1 h-1 rounded-full bg-border"></span>
+                              <div className="flex items-center gap-1.5 text-[11px] font-semibold bg-muted/50 px-2 py-0.5 rounded-md text-muted-foreground">
                                 <Calendar className="w-3 h-3" />
                                 {deadlineLabel}
                               </div>
                             </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="secondary" 
+                              size="icon" 
+                              className="h-8 w-8 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20 shadow-sm"
+                              onClick={(e) => { 
+                                e.stopPropagation();
+                                setEditingDriveId(drive.id);
+                                setCreateDriveForm({
+                                  companyName: drive.companyName || "",
+                                  role: drive.role || "",
+                                  description: drive.description || "",
+                                  jobType: drive.jobType || "PLACEMENT",
+                                  requirements: drive.requirements || [],
+                                  eligibleBranches: drive.eligibleBranches || [],
+                                  dos: drive.dos || [],
+                                  donts: drive.donts || [],
+                                  minCgpa: drive.minCgpa || 7.0,
+                                  maxBacklogs: drive.maxBacklogs || 0,
+                                  packageValue: drive.packageValue || "",
+                                  stipendValue: drive.stipendValue || "",
+                                  location: drive.location || "",
+                                  website: drive.website || "",
+                                  scheduleNote: drive.scheduleNote || "",
+                                  activitySchedule: drive.activitySchedule || "",
+                                  applicationLink: drive.applicationLink || "",
+                                  deadline: drive.deadline || "",
+                                });
+                                setCreateDriveOpen(true);
+                              }}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="secondary" 
+                              size="icon" 
+                              title="Mark as Completed"
+                              className="h-8 w-8 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20 shadow-sm"
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                setCompletingDriveId(drive.id);
+                                setIsCompleteDialogOpen(true);
+                              }}
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -1081,7 +1373,30 @@ export default function TPODashboard() {
                     <div className="relative z-10">
                       <h3 className="font-black text-xl mb-2 text-slate-900 dark:text-white">Post a New Drive</h3>
                       <p className="text-slate-600 dark:text-slate-300 text-sm mb-6">Create a new placement drive and notify students instantly.</p>
-                      <Button className="w-full bg-slate-950 text-white hover:bg-slate-900 font-bold h-11 rounded-full shadow-sm shadow-black/10 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200" onClick={() => setCreateDriveOpen(true)}>
+                      <Button className="w-full bg-slate-950 text-white hover:bg-slate-900 font-bold h-11 rounded-full shadow-sm shadow-black/10 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-slate-200" onClick={() => {
+                        setEditingDriveId(null);
+                        setCreateDriveForm({
+                          companyName: "",
+                          role: "",
+                          description: "",
+                          jobType: "PLACEMENT",
+                          requirements: [],
+                          eligibleBranches: [],
+                          dos: [],
+                          donts: [],
+                          minCgpa: 7.0,
+                          maxBacklogs: 0,
+                          packageValue: "",
+                          stipendValue: "",
+                          location: "",
+                          website: "",
+                          scheduleNote: "",
+                          activitySchedule: "",
+                          applicationLink: "",
+                          deadline: "",
+                        });
+                        setCreateDriveOpen(true);
+                      }}>
                         <Plus className="w-4 h-4 mr-2" />
                         Create Drive
                       </Button>
@@ -1091,48 +1406,207 @@ export default function TPODashboard() {
                 </Card>
 
                 {/* Create Drive Dialog */}
-                <Dialog open={createDriveOpen} onOpenChange={setCreateDriveOpen}>
-                  <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                <Dialog open={createDriveOpen} onOpenChange={(open) => { setCreateDriveOpen(open); if(!open) setEditingDriveId(null); }}>
+                  <DialogContent className="w-[95vw] sm:w-[90vw] sm:max-w-3xl lg:max-w-5xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Create placement drive</DialogTitle>
-                      <DialogDescription>Students will see this drive under Drives with JD, requirements, and match %.</DialogDescription>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                          <DialogTitle className="text-2xl font-black tracking-tight">{editingDriveId ? "Edit Drive" : "Create Drive"}</DialogTitle>
+                          <DialogDescription>All drives appear under Placement Drives for students. Choose the type so it is clearly labeled as Placement or Internship.</DialogDescription>
+                        </div>
+                        {!editingDriveId && drivesList.length > 0 && (
+                          <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            className="shrink-0 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400 font-bold"
+                            onClick={() => {
+                              const drive = drivesList[0];
+                              setCreateDriveForm({
+                                companyName: drive.companyName || "",
+                                role: drive.role || "",
+                                description: drive.description || "",
+                                jobType: drive.job_type || "PLACEMENT",
+                                requirements: drive.required_skills || [],
+                                eligibleBranches: drive.eligible_branches || [],
+                                dos: drive.dos || [],
+                                donts: drive.donts || [],
+                                minCgpa: drive.min_cgpa || 7.0,
+                                maxBacklogs: drive.max_backlogs_allowed || 0,
+                                packageValue: drive.package_value || "",
+                                stipendValue: drive.stipend_value || "",
+                                location: drive.venue || "",
+                                website: drive.website || "",
+                                scheduleNote: "", // don't copy dates
+                                activitySchedule: drive.activity_schedule || "",
+                                applicationLink: drive.application_link || "",
+                                deadline: "", // don't copy dates
+                              });
+                              toast.success("Form populated with last drive data.");
+                            }}
+                          >
+                            Auto-fill from Last Drive
+                          </Button>
+                        )}
+                      </div>
                     </DialogHeader>
-                    <div className="space-y-4 py-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                      {/* Basic Details Row 1 */}
                       <div>
-                        <Label>Company name</Label>
+                        <Label className="font-semibold text-slate-700 dark:text-slate-300">Drive type</Label>
+                        <Select
+                          value={createDriveForm.jobType}
+                          onValueChange={(value: "PLACEMENT" | "INTERNSHIP") =>
+                            setCreateDriveForm({ ...createDriveForm, jobType: value })
+                          }
+                        >
+                          <SelectTrigger className="mt-1.5 h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="PLACEMENT">Placement (full-time)</SelectItem>
+                            <SelectItem value="INTERNSHIP">Internship</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-slate-700 dark:text-slate-300">Company name</Label>
                         <Input
                           placeholder="e.g. Google, TCS"
                           value={createDriveForm.companyName}
                           onChange={(e) => setCreateDriveForm({ ...createDriveForm, companyName: e.target.value })}
-                          className="mt-1"
+                          className="mt-1.5 h-11"
                         />
                       </div>
+
+                      {/* Row 2 */}
                       <div>
-                        <Label>Role / designation</Label>
+                        <Label className="font-semibold text-slate-700 dark:text-slate-300">Role / profile offered</Label>
                         <Input
-                          placeholder="e.g. SDE I, System Engineer"
+                          placeholder="e.g. SDE I, Business Technology Solutions Associate"
                           value={createDriveForm.role}
                           onChange={(e) => setCreateDriveForm({ ...createDriveForm, role: e.target.value })}
-                          className="mt-1"
+                          className="mt-1.5 h-11"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="font-semibold text-slate-700 dark:text-slate-300">CTC (LPA)</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            placeholder="e.g. 13.50"
+                            value={createDriveForm.packageValue}
+                            onChange={(e) => setCreateDriveForm({ ...createDriveForm, packageValue: e.target.value })}
+                            className="mt-1.5 h-11"
+                          />
+                        </div>
+                        <div>
+                          <Label className="font-semibold text-slate-700 dark:text-slate-300">Stipend (optional)</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            placeholder="e.g. 75000"
+                            value={createDriveForm.stipendValue}
+                            onChange={(e) => setCreateDriveForm({ ...createDriveForm, stipendValue: e.target.value })}
+                            className="mt-1.5 h-11"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row 3 */}
+                      <div>
+                        <Label className="font-semibold text-slate-700 dark:text-slate-300">Day, date & time</Label>
+                        <Input
+                          type="datetime-local"
+                          value={createDriveForm.scheduleNote.includes('T') ? createDriveForm.scheduleNote.substring(0, 16) : createDriveForm.scheduleNote}
+                          onChange={(e) => setCreateDriveForm({ ...createDriveForm, scheduleNote: e.target.value })}
+                          className="mt-1.5 h-11"
                         />
                       </div>
                       <div>
-                        <Label>Job description (JD)</Label>
+                        <Label className="font-semibold text-slate-700 dark:text-slate-300">Venue</Label>
+                        <Input
+                          placeholder="e.g. Seminar Hall / T&P Cell / Virtual"
+                          value={createDriveForm.location}
+                          onChange={(e) => setCreateDriveForm({ ...createDriveForm, location: e.target.value })}
+                          className="mt-1.5 h-11"
+                        />
+                      </div>
+
+                      {/* Row 4 */}
+                      <div className="md:col-span-2">
+                        <Label className="font-semibold text-slate-700 dark:text-slate-300">Activity schedule</Label>
                         <Textarea
-                          placeholder="Paste or type the full JD here..."
-                          value={createDriveForm.description}
-                          onChange={(e) => setCreateDriveForm({ ...createDriveForm, description: e.target.value })}
-                          className="mt-1 min-h-[100px]"
-                          rows={4}
+                          placeholder="e.g. Pre-Placement Talk followed by Technical & HR interviews"
+                          value={createDriveForm.activitySchedule}
+                          onChange={(e) => setCreateDriveForm({ ...createDriveForm, activitySchedule: e.target.value })}
+                          className="mt-1.5 min-h-[70px] resize-none"
+                          rows={2}
+                        />
+                      </div>
+
+                      {/* Row 5 */}
+                      <div>
+                        <Label className="font-semibold text-slate-700 dark:text-slate-300">Company website</Label>
+                        <Input
+                          placeholder="e.g. www.barclays.com"
+                          value={createDriveForm.website}
+                          onChange={(e) => setCreateDriveForm({ ...createDriveForm, website: e.target.value })}
+                          className="mt-1.5 h-11"
                         />
                       </div>
                       <div>
-                        <Label>Required skills (add one by one)</Label>
-                        <div className="flex flex-wrap gap-2 mt-1 mb-2">
+                        <Label className="font-semibold text-slate-700 dark:text-slate-300">Deadline</Label>
+                        <Input
+                          type="date"
+                          value={createDriveForm.deadline.split('T')[0]}
+                          onChange={(e) => setCreateDriveForm({ ...createDriveForm, deadline: e.target.value })}
+                          className="mt-1.5 h-11"
+                        />
+                      </div>
+
+                      {/* Row 6 */}
+                      <div className="md:col-span-2">
+                        <Label className="font-semibold text-slate-700 dark:text-slate-300">Eligible branches (add one by one)</Label>
+                        <div className="flex flex-wrap gap-2 mt-1.5 mb-3">
+                          {createDriveForm.eligibleBranches.map((b) => (
+                            <Badge key={b} variant="secondary" className="gap-1.5 px-3 py-1 font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20">
+                              {b}
+                              <X className="w-3.5 h-3.5 cursor-pointer opacity-70 hover:opacity-100" onClick={() => setCreateDriveForm({ ...createDriveForm, eligibleBranches: createDriveForm.eligibleBranches.filter((x) => x !== b) })} />
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="e.g. CE, IT, E&TC"
+                            value={driveBranch}
+                            onChange={(e) => setDriveBranch(e.target.value)}
+                            className="h-11"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && driveBranch.trim()) {
+                                setCreateDriveForm({ ...createDriveForm, eligibleBranches: [...createDriveForm.eligibleBranches, driveBranch.trim()] });
+                                setDriveBranch("");
+                              }
+                            }}
+                          />
+                          <Button type="button" variant="secondary" className="h-11 px-6 font-bold" onClick={() => {
+                            if (driveBranch.trim()) {
+                              setCreateDriveForm({ ...createDriveForm, eligibleBranches: [...createDriveForm.eligibleBranches, driveBranch.trim()] });
+                              setDriveBranch("");
+                            }
+                          }}>Add</Button>
+                        </div>
+                      </div>
+
+                      {/* Row 7 */}
+                      <div className="md:col-span-2">
+                        <Label className="font-semibold text-slate-700 dark:text-slate-300">Skills required / JD details</Label>
+                        <div className="flex flex-wrap gap-2 mt-1.5 mb-3">
                           {createDriveForm.requirements.map((s) => (
-                            <Badge key={s} variant="secondary" className="gap-1">
+                            <Badge key={s} variant="secondary" className="gap-1.5 px-3 py-1 font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20">
                               {s}
-                              <X className="w-3 h-3 cursor-pointer" onClick={() => setCreateDriveForm({ ...createDriveForm, requirements: createDriveForm.requirements.filter((r) => r !== s) })} />
+                              <X className="w-3.5 h-3.5 cursor-pointer opacity-70 hover:opacity-100" onClick={() => setCreateDriveForm({ ...createDriveForm, requirements: createDriveForm.requirements.filter((r) => r !== s) })} />
                             </Badge>
                           ))}
                         </div>
@@ -1141,6 +1615,7 @@ export default function TPODashboard() {
                             placeholder="e.g. DSA, React"
                             value={driveReqSkill}
                             onChange={(e) => setDriveReqSkill(e.target.value)}
+                            className="h-11"
                             onKeyDown={(e) => {
                               if (e.key === "Enter" && driveReqSkill.trim()) {
                                 setCreateDriveForm({ ...createDriveForm, requirements: [...createDriveForm.requirements, driveReqSkill.trim()] });
@@ -1148,7 +1623,7 @@ export default function TPODashboard() {
                               }
                             }}
                           />
-                          <Button type="button" variant="secondary" onClick={() => {
+                          <Button type="button" variant="secondary" className="h-11 px-6 font-bold" onClick={() => {
                             if (driveReqSkill.trim()) {
                               setCreateDriveForm({ ...createDriveForm, requirements: [...createDriveForm.requirements, driveReqSkill.trim()] });
                               setDriveReqSkill("");
@@ -1156,9 +1631,23 @@ export default function TPODashboard() {
                           }}>Add</Button>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+
+                      {/* Row 8 */}
+                      <div className="md:col-span-2">
+                        <Label className="font-semibold text-slate-700 dark:text-slate-300">Additional JD notes (optional)</Label>
+                        <Textarea
+                          placeholder="Paste full JD or extra role details for the notice board..."
+                          value={createDriveForm.description}
+                          onChange={(e) => setCreateDriveForm({ ...createDriveForm, description: e.target.value })}
+                          className="mt-1.5 min-h-[100px]"
+                          rows={4}
+                        />
+                      </div>
+
+                      {/* Row 9 */}
+                      <div className="grid grid-cols-2 gap-6 md:col-span-2">
                         <div>
-                          <Label>Min CGPA</Label>
+                          <Label className="font-semibold text-slate-700 dark:text-slate-300">Min CGPA</Label>
                           <Input
                             type="number"
                             min={0}
@@ -1166,107 +1655,217 @@ export default function TPODashboard() {
                             step={0.1}
                             value={createDriveForm.minCgpa}
                             onChange={(e) => setCreateDriveForm({ ...createDriveForm, minCgpa: parseFloat(e.target.value) || 0 })}
-                            className="mt-1"
+                            className="mt-1.5 h-11"
                           />
                         </div>
                         <div>
-                          <Label>Max backlogs allowed</Label>
+                          <Label className="font-semibold text-slate-700 dark:text-slate-300">Max backlogs allowed</Label>
                           <Input
                             type="number"
                             min={0}
                             value={createDriveForm.maxBacklogs}
                             onChange={(e) => setCreateDriveForm({ ...createDriveForm, maxBacklogs: parseInt(e.target.value, 10) || 0 })}
-                            className="mt-1"
+                            className="mt-1.5 h-11"
                           />
                         </div>
                       </div>
-                      <div>
-                        <Label>Application link (Google Form URL)</Label>
+
+                      {/* Row 10 */}
+                      <div className="md:col-span-2">
+                        <Label className="font-semibold text-slate-700 dark:text-slate-300">Application link (Google Form URL)</Label>
                         <Input
                           placeholder="https://forms.google.com/..."
                           value={createDriveForm.applicationLink}
                           onChange={(e) => setCreateDriveForm({ ...createDriveForm, applicationLink: e.target.value })}
-                          className="mt-1"
+                          className="mt-1.5 h-11 border-blue-200 dark:border-blue-900 focus-visible:ring-blue-500"
                         />
                       </div>
-                      <div>
-                        <Label>Do&apos;s (add one by one)</Label>
-                        <div className="flex flex-wrap gap-2 mt-1 mb-2">
-                          {createDriveForm.dos.map((item) => (
-                            <Badge key={item} variant="secondary" className="gap-1 max-w-full">
-                              <span className="truncate">{item}</span>
-                              <X className="w-3 h-3 cursor-pointer shrink-0" onClick={() => setCreateDriveForm({ ...createDriveForm, dos: createDriveForm.dos.filter((d) => d !== item) })} />
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="e.g. Submit updated resume with the form"
-                            value={driveDoItem}
-                            onChange={(e) => setDriveDoItem(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && driveDoItem.trim()) {
+
+                      {/* Row 11: Dos and Donts Side by side */}
+                      <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100 dark:border-white/5">
+                        <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-500/20">
+                          <Label className="font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider text-xs">Do's (add one by one)</Label>
+                          <div className="flex flex-col gap-2 mt-3 mb-4">
+                            {createDriveForm.dos.map((item) => (
+                              <div key={item} className="flex items-start gap-2 text-sm p-2 rounded-xl bg-white dark:bg-[#0c0c14] border border-slate-100 dark:border-white/5 shadow-sm">
+                                <span className="flex-1 leading-snug">{item}</span>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-red-500" onClick={() => setCreateDriveForm({ ...createDriveForm, dos: createDriveForm.dos.filter((d) => d !== item) })}>
+                                  <X className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="e.g. Submit updated resume..."
+                              value={driveDoItem}
+                              onChange={(e) => setDriveDoItem(e.target.value)}
+                              className="h-10 text-sm bg-white dark:bg-[#0c0c14]"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && driveDoItem.trim()) {
+                                  setCreateDriveForm({ ...createDriveForm, dos: [...createDriveForm.dos, driveDoItem.trim()] });
+                                  setDriveDoItem("");
+                                }
+                              }}
+                            />
+                            <Button type="button" variant="secondary" className="h-10 px-4 font-bold bg-white dark:bg-[#0c0c14]" onClick={() => {
+                              if (driveDoItem.trim()) {
                                 setCreateDriveForm({ ...createDriveForm, dos: [...createDriveForm.dos, driveDoItem.trim()] });
                                 setDriveDoItem("");
                               }
-                            }}
-                          />
-                          <Button type="button" variant="secondary" onClick={() => {
-                            if (driveDoItem.trim()) {
-                              setCreateDriveForm({ ...createDriveForm, dos: [...createDriveForm.dos, driveDoItem.trim()] });
-                              setDriveDoItem("");
-                            }
-                          }}>Add</Button>
+                            }}>Add</Button>
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <Label>Don&apos;ts (add one by one)</Label>
-                        <div className="flex flex-wrap gap-2 mt-1 mb-2">
-                          {createDriveForm.donts.map((item) => (
-                            <Badge key={item} variant="secondary" className="gap-1 max-w-full">
-                              <span className="truncate">{item}</span>
-                              <X className="w-3 h-3 cursor-pointer shrink-0" onClick={() => setCreateDriveForm({ ...createDriveForm, donts: createDriveForm.donts.filter((d) => d !== item) })} />
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="e.g. Do not apply if CGPA is below minimum"
-                            value={driveDontItem}
-                            onChange={(e) => setDriveDontItem(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && driveDontItem.trim()) {
+
+                        <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-red-100 dark:border-red-500/20">
+                          <Label className="font-black text-red-600 dark:text-red-400 uppercase tracking-wider text-xs">Don'ts (add one by one)</Label>
+                          <div className="flex flex-col gap-2 mt-3 mb-4">
+                            {createDriveForm.donts.map((item) => (
+                              <div key={item} className="flex items-start gap-2 text-sm p-2 rounded-xl bg-white dark:bg-[#0c0c14] border border-slate-100 dark:border-white/5 shadow-sm">
+                                <span className="flex-1 leading-snug">{item}</span>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-red-500" onClick={() => setCreateDriveForm({ ...createDriveForm, donts: createDriveForm.donts.filter((d) => d !== item) })}>
+                                  <X className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="e.g. Do not apply if CGPA..."
+                              value={driveDontItem}
+                              onChange={(e) => setDriveDontItem(e.target.value)}
+                              className="h-10 text-sm bg-white dark:bg-[#0c0c14]"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && driveDontItem.trim()) {
+                                  setCreateDriveForm({ ...createDriveForm, donts: [...createDriveForm.donts, driveDontItem.trim()] });
+                                  setDriveDontItem("");
+                                }
+                              }}
+                            />
+                            <Button type="button" variant="secondary" className="h-10 px-4 font-bold bg-white dark:bg-[#0c0c14]" onClick={() => {
+                              if (driveDontItem.trim()) {
                                 setCreateDriveForm({ ...createDriveForm, donts: [...createDriveForm.donts, driveDontItem.trim()] });
                                 setDriveDontItem("");
                               }
-                            }}
-                          />
-                          <Button type="button" variant="secondary" onClick={() => {
-                            if (driveDontItem.trim()) {
-                              setCreateDriveForm({ ...createDriveForm, donts: [...createDriveForm.donts, driveDontItem.trim()] });
-                              setDriveDontItem("");
-                            }
-                          }}>Add</Button>
+                            }}>Add</Button>
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <Label>Deadline (e.g. Apply by: 15 Feb)</Label>
-                        <Input
-                          placeholder="Apply by: 15 Feb"
-                          value={createDriveForm.deadline}
-                          onChange={(e) => setCreateDriveForm({ ...createDriveForm, deadline: e.target.value })}
-                          className="mt-1"
-                        />
-                      </div>
                     </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setCreateDriveOpen(false)}>Cancel</Button>
-                      <Button onClick={handleCreateDriveSubmit} disabled={creatingDrive}>
-                        {creatingDrive ? "Creating..." : "Create drive"}
+                    <DialogFooter className="mt-6">
+                      <Button variant="outline" className="h-12 px-6 rounded-xl font-bold" onClick={() => { setCreateDriveOpen(false); setEditingDriveId(null); }}>Cancel</Button>
+                      <Button onClick={handleCreateDriveSubmit} disabled={creatingDrive} className="h-12 px-8 rounded-xl font-black bg-blue-600 hover:bg-blue-700 text-white">
+                        {creatingDrive ? "Saving..." : editingDriveId ? "Save Changes" : "Create Drive"}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
+
+                {/* View All Drives Dialog */}
+                <Dialog open={viewAllDrivesOpen} onOpenChange={setViewAllDrivesOpen}>
+                  <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="text-2xl font-black">All Recruitment Drives</DialogTitle>
+                      <DialogDescription>A complete list of all upcoming, ongoing, and past placement drives.</DialogDescription>
+                    </DialogHeader>
+                    <div className="mt-4 grid gap-4 grid-cols-1 md:grid-cols-2">
+                      {drivesList.length > 0 ? drivesList.map((drive) => {
+                        const deadlineLabel = drive.deadline
+                          ? new Date(drive.deadline).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+                          : "Open";
+                        return (
+                          <div key={drive.id} className="p-4 rounded-xl border border-border/50 hover:border-blue-500/30 bg-slate-50 dark:bg-slate-900/50 transition-colors">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h4 className="font-bold text-lg text-foreground">{drive.companyName || "Company"}</h4>
+                                <p className="text-sm text-muted-foreground">{drive.role || "Role not specified"}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={drive.status === "COMPLETED" ? "secondary" : "default"} className={drive.status === "OPEN" || drive.status === "ONGOING" ? "bg-green-500 text-white" : ""}>
+                                  {drive.status || "OPEN"}
+                                </Badge>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-6 w-6 text-slate-400 hover:text-blue-500"
+                                  onClick={(e) => { 
+                                    e.stopPropagation();
+                                    setEditingDriveId(drive.id);
+                                    setCreateDriveForm({
+                                      companyName: drive.companyName || "",
+                                      role: drive.role || "",
+                                      description: drive.description || "",
+                                      jobType: drive.jobType || "PLACEMENT",
+                                      requirements: drive.requirements || [],
+                                      eligibleBranches: drive.eligibleBranches || [],
+                                      dos: drive.dos || [],
+                                      donts: drive.donts || [],
+                                      minCgpa: drive.minCgpa || 7.0,
+                                      maxBacklogs: drive.maxBacklogs || 0,
+                                      packageValue: drive.packageValue || "",
+                                      stipendValue: drive.stipendValue || "",
+                                      location: drive.location || "",
+                                      website: drive.website || "",
+                                      scheduleNote: drive.scheduleNote || "",
+                                      activitySchedule: drive.activitySchedule || "",
+                                      applicationLink: drive.applicationLink || "",
+                                      deadline: drive.deadline || "",
+                                    });
+                                    setCreateDriveOpen(true);
+                                  }}
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  title="Mark as Completed"
+                                  className="h-6 w-6 text-slate-400 hover:text-emerald-500"
+                                  onClick={(e) => { 
+                                    e.stopPropagation(); 
+                                    setCompletingDriveId(drive.id);
+                                    setIsCompleteDialogOpen(true);
+                                  }}
+                                >
+                                  <CheckCircle2 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-border/50 text-center">
+                              <div>
+                                <div className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1">Jobs</div>
+                                <div className="font-semibold">{drive.job_count ?? 0}</div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1">Applied</div>
+                                <div className="font-semibold text-blue-600 dark:text-blue-400">{drive.application_count ?? 0}</div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1">Selected</div>
+                                <div className="font-semibold text-emerald-600 dark:text-emerald-400">{drive.selected_count ?? 0}</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-4 font-medium">
+                              <Calendar className="w-3.5 h-3.5" />
+                              Deadline: {deadlineLabel}
+                            </div>
+                          </div>
+                        );
+                      }) : (
+                        <div className="col-span-1 md:col-span-2 text-center py-8 text-muted-foreground">
+                          No drives available.
+                        </div>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                
+                <CompleteDriveDialog 
+                    open={isCompleteDialogOpen} 
+                    onOpenChange={setIsCompleteDialogOpen} 
+                    driveId={completingDriveId} 
+                    onSuccess={fetchTPODrives} 
+                />
               </div>
             </div>
           </div>
@@ -1665,38 +2264,42 @@ export default function TPODashboard() {
                     </Select>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={branchData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="colorStudents" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#9ca3af" stopOpacity={0.6} />
-                          <stop offset="95%" stopColor="#9ca3af" stopOpacity={0.1} />
-                        </linearGradient>
-                        <linearGradient id="colorReady" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#1e3a8a" stopOpacity={0.8} />
-                          <stop offset="95%" stopColor="#1e3a8a" stopOpacity={0.2} />
-                        </linearGradient>
-                        <linearGradient id="colorPlacedTPO" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8} />
-                          <stop offset="95%" stopColor="#22c55e" stopOpacity={0.2} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} vertical={false} />
-                      <XAxis dataKey="branch" tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} dy={10} />
-                      <YAxis tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} dx={-10} />
-                      <Tooltip
-                        cursor={{ fill: 'var(--muted)', opacity: 0.4 }}
-                        contentStyle={{ backgroundColor: 'var(--background)/95', backdropFilter: 'blur(8px)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
-                        labelStyle={{ fontWeight: 'black', color: 'var(--foreground)' }}
-                        itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
-                      />
-                      <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-                      <Bar dataKey="students" fill="url(#colorStudents)" name="Total Students" radius={[6, 6, 0, 0]} />
-                      <Bar dataKey="ready" fill="url(#colorReady)" name="Placement Ready" radius={[6, 6, 0, 0]} />
-                      <Bar dataKey="placed" fill="url(#colorPlacedTPO)" name="Placed" radius={[6, 6, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                 <CardContent>
+                  {hasStudents && branchData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={branchData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorStudents" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#9ca3af" stopOpacity={0.6} />
+                            <stop offset="95%" stopColor="#9ca3af" stopOpacity={0.1} />
+                          </linearGradient>
+                          <linearGradient id="colorReady" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#1e3a8a" stopOpacity={0.8} />
+                            <stop offset="95%" stopColor="#1e3a8a" stopOpacity={0.2} />
+                          </linearGradient>
+                          <linearGradient id="colorPlacedTPO" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8} />
+                            <stop offset="95%" stopColor="#22c55e" stopOpacity={0.2} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} vertical={false} />
+                        <XAxis dataKey="branch" tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} dy={10} />
+                        <YAxis tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} dx={-10} />
+                        <Tooltip
+                          cursor={{ fill: 'var(--muted)', opacity: 0.4 }}
+                          contentStyle={{ backgroundColor: 'var(--background)/95', backdropFilter: 'blur(8px)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
+                          labelStyle={{ fontWeight: 'black', color: 'var(--foreground)' }}
+                          itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                        />
+                        <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
+                        <Bar dataKey="students" fill="url(#colorStudents)" name="Total Students" radius={[6, 6, 0, 0]} />
+                        <Bar dataKey="ready" fill="url(#colorReady)" name="Placement Ready" radius={[6, 6, 0, 0]} />
+                        <Bar dataKey="placed" fill="url(#colorPlacedTPO)" name="Placed" radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <EmptyChartState message="No branch performance data available" />
+                  )}
                 </CardContent>
               </Card>
 
@@ -1709,37 +2312,43 @@ export default function TPODashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={160}>
-                    <PieChart>
-                      <Pie
-                        data={placementDistribution}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        paddingAngle={5}
-                        stroke="none"
-                      >
-                        {placementDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  {hasStudents && placementDistribution.some((p: any) => p.value > 0) ? (
+                    <>
+                      <ResponsiveContainer width="100%" height={160}>
+                        <PieChart>
+                          <Pie
+                            data={placementDistribution}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={50}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                            paddingAngle={5}
+                            stroke="none"
+                          >
+                            {placementDistribution.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip contentStyle={{ backgroundColor: 'var(--background)/95', backdropFilter: 'blur(8px)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="mt-4 space-y-3">
+                        {placementDistribution.map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-base">
+                            <div className="flex items-center gap-3">
+                              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: item.color }}></div>
+                              <span className="text-muted-foreground font-semibold">{item.name}</span>
+                            </div>
+                            <span className="font-black text-foreground text-lg">{item.value}%</span>
+                          </div>
                         ))}
-                      </Pie>
-                      <Tooltip contentStyle={{ backgroundColor: 'var(--background)/95', backdropFilter: 'blur(8px)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="mt-4 space-y-3">
-                    {placementDistribution.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between text-base">
-                        <div className="flex items-center gap-3">
-                          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: item.color }}></div>
-                          <span className="text-muted-foreground font-semibold">{item.name}</span>
-                        </div>
-                        <span className="font-black text-foreground text-lg">{item.value}%</span>
                       </div>
-                    ))}
-                  </div>
+                    </>
+                  ) : (
+                    <EmptyChartState message="No placement distribution data available" />
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -1755,28 +2364,32 @@ export default function TPODashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={180}>
-                    <AreaChart data={yearTrend} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="colorPlacements" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="colorSalary" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.8} />
-                          <stop offset="95%" stopColor="#fbbf24" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} vertical={false} />
-                      <XAxis dataKey="year" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} dy={10} />
-                      <YAxis yAxisId="left" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} dx={-10} />
-                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} dx={10} />
-                      <Tooltip contentStyle={{ backgroundColor: 'var(--background)/95', backdropFilter: 'blur(8px)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }} />
-                      <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-                      <Area yAxisId="left" type="monotone" dataKey="placements" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorPlacements)" name="Placement %" />
-                      <Area yAxisId="right" type="monotone" dataKey="avg_salary" stroke="#fbbf24" strokeWidth={3} fillOpacity={1} fill="url(#colorSalary)" name="Avg Salary (LPA)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                  {hasStudents && yearTrend.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={180}>
+                      <AreaChart data={yearTrend} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorPlacements" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="colorSalary" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.8} />
+                            <stop offset="95%" stopColor="#fbbf24" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} vertical={false} />
+                        <XAxis dataKey="year" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} dy={10} />
+                        <YAxis yAxisId="left" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} dx={-10} />
+                        <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} dx={10} />
+                        <Tooltip contentStyle={{ backgroundColor: 'var(--background)/95', backdropFilter: 'blur(8px)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }} />
+                        <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
+                        <Area yAxisId="left" type="monotone" dataKey="placements" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorPlacements)" name="Placement %" />
+                        <Area yAxisId="right" type="monotone" dataKey="avg_salary" stroke="#fbbf24" strokeWidth={3} fillOpacity={1} fill="url(#colorSalary)" name="Avg Salary (LPA)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <EmptyChartState message="No historical trend data available" />
+                  )}
                 </CardContent>
               </Card>
 
@@ -1789,21 +2402,25 @@ export default function TPODashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={180}>
-                    <BarChart data={topHiringCompanies.length > 0 ? topHiringCompanies : [{ name: "No offers yet", offers: 0 }]} margin={{ top: 10, right: 30, left: 0, bottom: 0 }} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} horizontal={false} />
-                      <XAxis type="number" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
-                      <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: "var(--foreground)", fontWeight: 'bold' }} axisLine={false} tickLine={false} width={80} />
-                      <Tooltip contentStyle={{ backgroundColor: 'var(--background)/95', backdropFilter: 'blur(8px)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }} cursor={{ fill: 'var(--muted)', opacity: 0.4 }} />
-                      <Bar dataKey="offers" name="Total Offers" radius={[0, 4, 4, 0]} barSize={16}>
-                        {
-                          [1, 2, 3, 4, 5, 6].map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][index % 6]} />
-                          ))
-                        }
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                  {hasStudents && topHiringCompanies.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={180}>
+                      <BarChart data={topHiringCompanies} margin={{ top: 10, right: 30, left: 0, bottom: 0 }} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} horizontal={false} />
+                        <XAxis type="number" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
+                        <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: "var(--foreground)", fontWeight: 'bold' }} axisLine={false} tickLine={false} width={80} />
+                        <Tooltip contentStyle={{ backgroundColor: 'var(--background)/95', backdropFilter: 'blur(8px)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }} cursor={{ fill: 'var(--muted)', opacity: 0.4 }} />
+                        <Bar dataKey="offers" name="Total Offers" radius={[0, 4, 4, 0]} barSize={16}>
+                          {
+                            topHiringCompanies.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][index % 6]} />
+                            ))
+                          }
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <EmptyChartState message="No company hiring records yet" />
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -1817,96 +2434,45 @@ export default function TPODashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={320}>
-                  <AreaChart data={monthlyActivity} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorApps" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="colorInt" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="colorOff" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
-                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--muted-foreground)', fontWeight: 600 }} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--muted-foreground)', fontWeight: 600 }} dx={-10} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: 'var(--background)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
-                      labelStyle={{ fontWeight: 'black', color: 'var(--foreground)', marginBottom: '8px' }}
-                      itemStyle={{ fontWeight: 'bold', fontSize: '13px' }}
-                      cursor={{ stroke: 'var(--muted-foreground)', strokeWidth: 1, strokeDasharray: '4 4' }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: '12px', fontWeight: 'bold', paddingTop: '20px' }} iconType="circle" />
-                    <Area type="monotone" dataKey="applications" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorApps)" name="Applications" activeDot={{ r: 6, strokeWidth: 0, fill: '#3b82f6' }} />
-                    <Area type="monotone" dataKey="interviews" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorInt)" name="Interviews" activeDot={{ r: 6, strokeWidth: 0, fill: '#f59e0b' }} />
-                    <Area type="monotone" dataKey="offers" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorOff)" name="Offers" activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981' }} />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {hasStudents && monthlyActivity.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={320}>
+                    <AreaChart data={monthlyActivity} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorApps" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="colorInt" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="colorOff" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--muted-foreground)', fontWeight: 600 }} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--muted-foreground)', fontWeight: 600 }} dx={-10} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: 'var(--background)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
+                        labelStyle={{ fontWeight: 'black', color: 'var(--foreground)', marginBottom: '8px' }}
+                        itemStyle={{ fontWeight: 'bold', fontSize: '13px' }}
+                        cursor={{ stroke: 'var(--muted-foreground)', strokeWidth: 1, strokeDasharray: '4 4' }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '12px', fontWeight: 'bold', paddingTop: '20px' }} iconType="circle" />
+                      <Area type="monotone" dataKey="applications" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorApps)" name="Applications" activeDot={{ r: 6, strokeWidth: 0, fill: '#3b82f6' }} />
+                      <Area type="monotone" dataKey="interviews" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorInt)" name="Interviews" activeDot={{ r: 6, strokeWidth: 0, fill: '#f59e0b' }} />
+                      <Area type="monotone" dataKey="offers" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorOff)" name="Offers" activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981' }} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyChartState message="No monthly activity pipeline data available" />
+                )}
               </CardContent>
             </Card>
 
           </>
-        )}
-
-        {/* SUGGESTIONS TAB */}
-        {selectedView === "suggestions" && (
-          <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-            <Card className="mb-8 md:mb-10 overflow-hidden border border-border/10 bg-muted/30 shadow-2xl shadow-black/10">
-              <CardContent className="px-6 pb-6 pt-0">
-                <div className="grid gap-4 md:grid-cols-2">
-                  {suggestions.map((suggestion, idx) => (
-                    <div key={idx} className="group overflow-hidden rounded-3xl border border-border/10 bg-background/80 p-5 shadow-sm shadow-black/5 transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
-                      <div className="flex items-start justify-between gap-3 mb-4">
-                        <h4 className="font-bold text-foreground text-base sm:text-lg tracking-tight leading-tight">{suggestion.title}</h4>
-                        <span className={`text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-[0.2em] ${suggestion.impact === "High"
-                          ? "bg-red-500/15 text-red-500"
-                          : "bg-orange-500/15 text-orange-500"
-                          }`}>
-                          {suggestion.impact}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{suggestion.description}</p>
-                      {suggestion.basis && (
-                        <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                          <span className="font-semibold text-foreground">Basis:</span> {suggestion.basis}
-                        </p>
-                      )}
-                      <div className="grid gap-3 sm:grid-cols-2 mb-5 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                          <Users2 className="w-4 h-4 text-primary flex-shrink-0" />
-                          <span className="font-medium text-foreground">Affected:</span>
-                          <span className="font-black text-foreground">{suggestion.affectedStudents}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-primary flex-shrink-0" />
-                          <span className="font-medium text-foreground">Timeline:</span>
-                          <span className="font-black text-foreground">{suggestion.timeline}</span>
-                        </div>
-                        <div className="flex items-center gap-2 sm:col-span-2">
-                          <DollarSign className="w-4 h-4 text-primary flex-shrink-0" />
-                          <span className="font-medium text-foreground">Cost:</span>
-                          <span className="font-black text-foreground">{suggestion.cost}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between pt-4 border-t border-border/10">
-                        <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">Priority {suggestion.priority}</span>
-                        <Button variant="ghost" size="sm" className="h-9 text-sm gap-2 font-semibold text-foreground transition-colors hover:text-primary">
-                          Learn More
-                          <ChevronRight className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         )}
 
         {/* PLACEMENTS TAB - Placement Records */}
@@ -1940,11 +2506,17 @@ export default function TPODashboard() {
                     <p className="text-sm text-muted-foreground mb-4">Comprehensive placement statistics and trends</p>
                     <Button
                       size="sm"
-                      className="w-full"
+                      className="w-full font-bold"
+                      variant={generatingReport === null ? "default" : (generatingReport === "placement_report" ? "default" : "secondary")}
                       onClick={() => downloadReport("placement_report", "/reports/placement")}
                       disabled={generatingReport !== null}
                     >
-                      {generatingReport === "placement_report" ? "Generating..." : "Generate"}
+                      {generatingReport === "placement_report" ? (
+                        <span className="flex items-center justify-center gap-1.5">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Generating...
+                        </span>
+                      ) : "Generate"}
                     </Button>
                   </div>
                 </CardContent>
@@ -1960,11 +2532,17 @@ export default function TPODashboard() {
                     <p className="text-sm text-muted-foreground mb-4">Student readiness scores and analytics</p>
                     <Button
                       size="sm"
-                      className="w-full"
+                      className="w-full font-bold"
+                      variant={generatingReport === null ? "default" : (generatingReport === "student_readiness" ? "default" : "secondary")}
                       onClick={() => downloadReport("student_readiness", "/reports/student-readiness")}
                       disabled={generatingReport !== null}
                     >
-                      {generatingReport === "student_readiness" ? "Generating..." : "Generate"}
+                      {generatingReport === "student_readiness" ? (
+                        <span className="flex items-center justify-center gap-1.5">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Generating...
+                        </span>
+                      ) : "Generate"}
                     </Button>
                   </div>
                 </CardContent>
@@ -1980,11 +2558,17 @@ export default function TPODashboard() {
                     <p className="text-sm text-muted-foreground mb-4">Company-wise placement breakdown</p>
                     <Button
                       size="sm"
-                      className="w-full"
+                      className="w-full font-bold"
+                      variant={generatingReport === null ? "default" : (generatingReport === "company_analysis" ? "default" : "secondary")}
                       onClick={() => downloadReport("company_analysis", "/reports/company-analysis")}
                       disabled={generatingReport !== null}
                     >
-                      {generatingReport === "company_analysis" ? "Generating..." : "Generate"}
+                      {generatingReport === "company_analysis" ? (
+                        <span className="flex items-center justify-center gap-1.5">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Generating...
+                        </span>
+                      ) : "Generate"}
                     </Button>
                   </div>
                 </CardContent>
@@ -2000,11 +2584,17 @@ export default function TPODashboard() {
                     <p className="text-sm text-muted-foreground mb-4">Department-wise performance metrics</p>
                     <Button
                       size="sm"
-                      className="w-full"
+                      className="w-full font-bold"
+                      variant={generatingReport === null ? "default" : (generatingReport === "branch_performance" ? "default" : "secondary")}
                       onClick={() => downloadReport("branch_performance", "/reports/branch-performance")}
                       disabled={generatingReport !== null}
                     >
-                      {generatingReport === "branch_performance" ? "Generating..." : "Generate"}
+                      {generatingReport === "branch_performance" ? (
+                        <span className="flex items-center justify-center gap-1.5">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Generating...
+                        </span>
+                      ) : "Generate"}
                     </Button>
                   </div>
                 </CardContent>
@@ -2020,11 +2610,17 @@ export default function TPODashboard() {
                     <p className="text-sm text-muted-foreground mb-4">List of students requiring attention</p>
                     <Button
                       size="sm"
-                      className="w-full"
+                      className="w-full font-bold"
+                      variant={generatingReport === null ? "default" : (generatingReport === "at_risk_students" ? "default" : "secondary")}
                       onClick={() => downloadReport("at_risk_students", "/reports/at-risk-students")}
                       disabled={generatingReport !== null}
                     >
-                      {generatingReport === "at_risk_students" ? "Generating..." : "Generate"}
+                      {generatingReport === "at_risk_students" ? (
+                        <span className="flex items-center justify-center gap-1.5">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Generating...
+                        </span>
+                      ) : "Generate"}
                     </Button>
                   </div>
                 </CardContent>
@@ -2040,11 +2636,17 @@ export default function TPODashboard() {
                     <p className="text-sm text-muted-foreground mb-4">Create a customized report</p>
                     <Button
                       size="sm"
-                      className="w-full"
-                      onClick={() => downloadReport("custom_company_analysis", "/reports/company-analysis")}
+                      className="w-full font-bold"
+                      variant={generatingReport === null ? "default" : (generatingReport === "custom_company_analysis" ? "default" : "secondary")}
+                      onClick={() => setCustomReportOpen(true)}
                       disabled={generatingReport !== null}
                     >
-                      {generatingReport === "custom_company_analysis" ? "Generating..." : "Create"}
+                      {generatingReport === "custom_company_analysis" ? (
+                        <span className="flex items-center justify-center gap-1.5">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Generating...
+                        </span>
+                      ) : "Create"}
                     </Button>
                   </div>
                 </CardContent>
@@ -2054,40 +2656,95 @@ export default function TPODashboard() {
             {/* Recent Reports */}
             <Card className="mb-12 shadow-lg border-0">
               <CardHeader className="pb-6">
-                <div className="space-y-2">
-                  <CardTitle className="text-2xl font-black">Recent Reports</CardTitle>
-                  <CardDescription className="text-base">Recently generated and exported reports</CardDescription>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-2">
+                    <CardTitle className="text-2xl font-black">Recent Reports</CardTitle>
+                    <CardDescription className="text-base">Recently generated and exported reports</CardDescription>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                    <Input
+                      placeholder="Search reports..."
+                      value={reportsSearchQuery}
+                      onChange={(e) => {
+                        setReportsSearchQuery(e.target.value);
+                        setReportsPage(1);
+                      }}
+                      className="w-full sm:w-60 h-10"
+                    />
+                    <Select value={reportsTypeFilter} onValueChange={(val) => {
+                      setReportsTypeFilter(val);
+                      setReportsPage(1);
+                    }}>
+                      <SelectTrigger className="w-full sm:w-36 h-10">
+                        <SelectValue placeholder="All Formats" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Formats</SelectItem>
+                        <SelectItem value="csv">CSV Format</SelectItem>
+                        <SelectItem value="pdf">PDF Format</SelectItem>
+                        <SelectItem value="excel">Excel Format</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {[
-                    { name: "Placement Report - Q4 2024", type: "PDF", date: "Jan 20, 2024", size: "2.4 MB" },
-                    { name: "Student Readiness Analysis", type: "Excel", date: "Jan 18, 2024", size: "1.8 MB" },
-                    { name: "Company Placement Breakdown", type: "PDF", date: "Jan 15, 2024", size: "3.1 MB" },
-                    { name: "Branch Performance Report", type: "Excel", date: "Jan 12, 2024", size: "1.5 MB" },
-                  ].map((report, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 border border-border rounded-xl hover:bg-muted/20 transition-colors">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                          <FileText className="w-6 h-6 text-primary" />
+                  {paginatedReports.length > 0 ? (
+                    <>
+                      {paginatedReports.map((report, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-4 border border-border rounded-xl hover:bg-muted/20 transition-colors">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                              <FileText className="w-6 h-6 text-primary" />
+                            </div>
+                            <div>
+                              <h4 className="font-black text-foreground text-base mb-1">{report.name}</h4>
+                              <p className="text-sm text-muted-foreground">{report.type} • {report.size} • {report.date}</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleDownloadClick(report.kind, report.path)}>
+                              <Download className="w-4 h-4" />
+                              Download
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleDeleteReport(report.name)}>
+                              <Trash2 className="w-4 h-4 text-red-500 hover:text-red-600" />
+                            </Button>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-black text-foreground text-base mb-1">{report.name}</h4>
-                          <p className="text-sm text-muted-foreground">{report.type} • {report.size} • {report.date}</p>
+                      ))}
+                      {filteredReports.length > REPORTS_PAGE_SIZE && (
+                        <div className="flex justify-between items-center pt-4">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            disabled={reportsPage === 1}
+                            onClick={() => setReportsPage(p => p - 1)}
+                          >
+                            Previous
+                          </Button>
+                          <span className="text-sm text-muted-foreground">
+                            Page {reportsPage} of {Math.ceil(filteredReports.length / REPORTS_PAGE_SIZE)}
+                          </span>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            disabled={reportsPage === Math.ceil(filteredReports.length / REPORTS_PAGE_SIZE)}
+                            onClick={() => setReportsPage(p => p + 1)}
+                          >
+                            Next
+                          </Button>
                         </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="gap-1.5">
-                          <Download className="w-4 h-4" />
-                          Download
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-center bg-muted/5 border border-dashed border-border/80 rounded-xl">
+                      <FileSpreadsheet className="w-10 h-10 text-muted-foreground/40 mb-2" />
+                      <p className="text-sm font-semibold text-foreground/80">No reports generated yet</p>
+                      <p className="text-xs text-muted-foreground mt-1">Exported Excel/CSV analysis will appear here in your session history.</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -2186,6 +2843,60 @@ export default function TPODashboard() {
                 })()
               )}
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Custom Report Dialog */}
+        <Dialog open={customReportOpen} onOpenChange={setCustomReportOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-indigo-500" /> Create Custom Report
+              </DialogTitle>
+              <DialogDescription>
+                Customize and generate a spreadsheet containing filtered campus analytics data.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground/80">Select Report Dataset</label>
+                <Select value={customReportType} onValueChange={setCustomReportType}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select report dataset" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="placement">Placement Records Summary</SelectItem>
+                    <SelectItem value="student_readiness">Student Placement Readiness</SelectItem>
+                    <SelectItem value="company_analysis">Company Placement Breakdown</SelectItem>
+                    <SelectItem value="branch_performance">Branch-wise Placement Performance</SelectItem>
+                    <SelectItem value="at_risk_students">At-Risk Student List</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="p-4 bg-muted/20 border border-border/80 rounded-xl space-y-2 text-xs text-muted-foreground">
+                <p className="font-semibold text-foreground/80">Included Information:</p>
+                {customReportType === "placement" && (
+                  <p>• Student personal details, placement eligibility status, active drives participation, and final placement packages.</p>
+                )}
+                {customReportType === "student_readiness" && (
+                  <p>• CGPA, manual skills counts, active backlogs, readiness score calculation, and profile completeness ratios.</p>
+                )}
+                {customReportType === "company_analysis" && (
+                  <p>• Company name, placement type (Product/Service/Startup), average offered packages, and shortlist conversion percentages.</p>
+                )}
+                {customReportType === "branch_performance" && (
+                  <p>• Department-wise counts of registered students, placement ready students, final placed student count, and average packages.</p>
+                )}
+                {customReportType === "at_risk_students" && (
+                  <p>• Names, emails, and branches of students whose CGPA, backlogs, or skill scores flag them as at-risk, with their specific risk reasons.</p>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCustomReportOpen(false)}>Cancel</Button>
+              <Button onClick={generateCustomReport}>Generate Custom CSV</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 

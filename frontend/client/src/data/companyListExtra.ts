@@ -1205,7 +1205,7 @@ export const EXTRA_COMPANIES: Company[] = [
         ],
     },
     {
-        id: "jio", name: "Jio Platforms", logo: "https://logo.clearbit.com/jio.com", gradient: "from-blue-700 to-indigo-600",
+        id: "jio", name: "Jio Platforms", logo: "https://unavatar.io/jio.com?fallback=https://ui-avatars.com/api/?name=J&background=random", gradient: "from-blue-700 to-indigo-600",
         tier: "Product", description: "Digital services, telecom and technology giant",
         avgPackage: "₹18-36 LPA",
         interviewRounds: ["Online Assessment", "Technical x2", "Managerial", "HR Round"],
@@ -1259,7 +1259,7 @@ export const EXTRA_COMPANIES: Company[] = [
         ],
     },
     {
-        id: "bny-mellon", name: "BNY Mellon", logo: "https://logo.clearbit.com/bny.com", gradient: "from-teal-600 to-emerald-500",
+        id: "bny-mellon", name: "BNY Mellon", logo: "https://unavatar.io/bny.com?fallback=https://ui-avatars.com/api/?name=B&background=random", gradient: "from-teal-600 to-emerald-500",
         tier: "Finance", description: "Global financial services company and oldest bank in the US",
         avgPackage: "₹18-34 LPA",
         interviewRounds: ["Online Assessment", "Technical x2", "HR Round"],
@@ -1302,7 +1302,7 @@ export const EXTRA_COMPANIES: Company[] = [
         ],
     },
     {
-        id: "fractal-ai", name: "Fractal AI", logo: "https://logo.clearbit.com/fractal.ai", gradient: "from-blue-600 to-indigo-500",
+        id: "fractal-ai", name: "Fractal AI", logo: "https://unavatar.io/fractal.ai?fallback=https://ui-avatars.com/api/?name=F&background=random", gradient: "from-blue-600 to-indigo-500",
         tier: "Product", description: "Global leader in artificial intelligence and analytics",
         avgPackage: "₹14-26 LPA",
         interviewRounds: ["Aptitude Test", "Technical x2", "Culture Fit"],
@@ -1340,7 +1340,7 @@ export const EXTRA_COMPANIES: Company[] = [
         ],
     },
     {
-        id: "concord-ai", name: "Concord AI", logo: "https://logo.clearbit.com/concordnow.com", gradient: "from-slate-700 to-slate-500",
+        id: "concord-ai", name: "Concord AI", logo: "https://unavatar.io/concordnow.com?fallback=https://ui-avatars.com/api/?name=C&background=random", gradient: "from-slate-700 to-slate-500",
         tier: "Startup", description: "Enterprise AI platform for contract management and workflow automation",
         avgPackage: "₹22-42 LPA",
         interviewRounds: ["Machine Coding", "DSA Round", "System Design"],
@@ -1380,7 +1380,7 @@ export const EXTRA_COMPANIES: Company[] = [
         ],
     },
     {
-        id: "bmc-software", name: "BMC Software", logo: "https://logo.clearbit.com/bmc.com", gradient: "from-red-700 to-red-500",
+        id: "bmc-software", name: "BMC Software", logo: "https://unavatar.io/bmc.com?fallback=https://ui-avatars.com/api/?name=B&background=random", gradient: "from-red-700 to-red-500",
         tier: "Product", description: "Enterprise software solutions for IT management and automation",
         avgPackage: "₹12-24 LPA",
         interviewRounds: ["Online Assessment", "Technical x2", "Managerial"],
@@ -1432,7 +1432,7 @@ export const EXTRA_COMPANIES: Company[] = [
         ],
     },
     {
-        id: "procdna", name: "ProcDNA", logo: "https://logo.clearbit.com/procdna.com", gradient: "from-cyan-600 to-blue-500",
+        id: "procdna", name: "ProcDNA", logo: "https://unavatar.io/procdna.com?fallback=https://ui-avatars.com/api/?name=P&background=random", gradient: "from-cyan-600 to-blue-500",
         tier: "Product", description: "Commercial strategy and technology firm for Life Sciences",
         avgPackage: "₹14-22 LPA",
         interviewRounds: ["Case Study", "Technical Round", "Behavioral"],
@@ -1471,7 +1471,7 @@ export const EXTRA_COMPANIES: Company[] = [
         ],
     },
     {
-        id: "sarvatra-tech", name: "Sarvatra Technologies", logo: "https://logo.clearbit.com/sarvatra.tech", gradient: "from-orange-600 to-amber-500",
+        id: "sarvatra-tech", name: "Sarvatra Technologies", logo: "https://unavatar.io/sarvatra.tech?fallback=https://ui-avatars.com/api/?name=S&background=random", gradient: "from-orange-600 to-amber-500",
         tier: "Finance", description: "Leader in providing end-to-end payment and banking solutions",
         avgPackage: "₹7-14 LPA",
         interviewRounds: ["Aptitude", "Technical Round", "Final Interview"],
@@ -1511,7 +1511,7 @@ export const EXTRA_COMPANIES: Company[] = [
         ],
     },
     {
-        id: "uptiq", name: "Uptiq", logo: "https://logo.clearbit.com/uptiq.ai", gradient: "from-indigo-600 to-purple-500",
+        id: "uptiq", name: "Uptiq", logo: "https://unavatar.io/uptiq.ai?fallback=https://ui-avatars.com/api/?name=U&background=random", gradient: "from-indigo-600 to-purple-500",
         tier: "Startup", description: "Enterprise AI platform modernizing financial services workflows",
         avgPackage: "₹18-36 LPA",
         interviewRounds: ["Machine Coding", "DSA", "Hiring Manager"],
@@ -1547,7 +1547,7 @@ export const EXTRA_COMPANIES: Company[] = [
     },
 
     {
-        id: "general-mills", name: "General Mills", logo: "https://logo.clearbit.com/generalmills.com", gradient: "from-blue-800 to-red-500",
+        id: "general-mills", name: "General Mills", logo: "https://unavatar.io/generalmills.com?fallback=https://ui-avatars.com/api/?name=G&background=random", gradient: "from-blue-800 to-red-500",
         tier: "Product", description: "Multinational manufacturer and marketer of branded consumer foods",
         avgPackage: "₹12-24 LPA",
         interviewRounds: ["Behavioral", "Technical Round", "Managerial"],
@@ -1588,7 +1588,7 @@ export const EXTRA_COMPANIES: Company[] = [
         ],
     },
     {
-        id: "fpl-tech", name: "FPL Technology", logo: "https://logo.clearbit.com/fpltech.com", gradient: "from-blue-700 to-cyan-500",
+        id: "fpl-tech", name: "FPL Technology", logo: "https://unavatar.io/fpltech.com?fallback=https://ui-avatars.com/api/?name=F&background=random", gradient: "from-blue-700 to-cyan-500",
         tier: "Finance", description: "Providing tech-powered solutions to reimagine credit solutions",
         avgPackage: "₹18-36 LPA",
         interviewRounds: ["Machine Coding", "DSA Round", "Culture Fit"],
@@ -1622,7 +1622,7 @@ export const EXTRA_COMPANIES: Company[] = [
         ],
     },
     {
-        id: "atlassian", name: "Atlassian", logo: "https://logo.clearbit.com/atlassian.com", gradient: "from-blue-600 to-sky-500",
+        id: "atlassian", name: "Atlassian", logo: "https://unavatar.io/atlassian.com?fallback=https://ui-avatars.com/api/?name=A&background=random", gradient: "from-blue-600 to-sky-500",
         tier: "Product", description: "Collaboration software company known for Jira, Confluence, and Trello",
         avgPackage: "₹24-60 LPA",
         interviewRounds: ["Online Assessment", "Technical x2", "System Design", "Values & Management"],
@@ -1656,7 +1656,7 @@ export const EXTRA_COMPANIES: Company[] = [
         resources: [{ label: "Atlassian Engineering", url: "https://www.atlassian.com/engineering" }],
     },
     {
-        id: "fiserv", name: "Fiserv", logo: "https://logo.clearbit.com/fiserv.com", gradient: "from-orange-600 to-amber-500",
+        id: "fiserv", name: "Fiserv", logo: "https://unavatar.io/fiserv.com?fallback=https://ui-avatars.com/api/?name=F&background=random", gradient: "from-orange-600 to-amber-500",
         tier: "Finance", description: "Global fintech and payments company",
         avgPackage: "₹12-22 LPA",
         interviewRounds: ["Aptitude", "Technical", "Managerial"],
@@ -1696,7 +1696,7 @@ export const EXTRA_COMPANIES: Company[] = [
         ],
     },
     {
-        id: "bajaj-finserv", name: "Bajaj Finserv", logo: "https://logo.clearbit.com/bajajfinserv.in", gradient: "from-blue-800 to-indigo-600",
+        id: "bajaj-finserv", name: "Bajaj Finserv", logo: "https://unavatar.io/bajajfinserv.in?fallback=https://ui-avatars.com/api/?name=B&background=random", gradient: "from-blue-800 to-indigo-600",
         tier: "Finance", description: "Indian non-banking financial services company",
         avgPackage: "₹14-24 LPA",
         interviewRounds: ["Online Test", "Technical", "HR"],

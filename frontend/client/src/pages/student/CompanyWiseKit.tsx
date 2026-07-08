@@ -386,6 +386,34 @@ const MANUAL_LOGOS: Record<string, string> = {
     "Screen Magic": "/logos/screen_magic.jpeg",
 };
 
+// ─── Typewriter Input Component ───────────────────────────────────────────
+const TypewriterInput = ({ value, onChange, isDark }: { value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; isDark: boolean }) => {
+    const phrases = ["Search by Company Name...", "Search for Specific Questions...", "Find FAANG Problems...", "Explore Startup Trends..."];
+    const [pIdx, setPIdx] = useState(0);
+    const [idx, setIdx] = useState(0);
+    const [isDel, setIsDel] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (!isDel && idx < phrases[pIdx].length) setIdx(i => i + 1);
+            else if (isDel && idx > 0) setIdx(i => i - 1);
+            else if (!isDel && idx === phrases[pIdx].length) setTimeout(() => setIsDel(true), 1500);
+            else { setIsDel(false); setPIdx(p => (p + 1) % phrases.length); }
+        }, isDel ? 40 : 80);
+        return () => clearTimeout(timer);
+    }, [idx, isDel, pIdx]);
+
+    return (
+        <input
+            type="text"
+            value={value}
+            onChange={onChange}
+            placeholder={phrases[pIdx].slice(0, idx)}
+            className={`w-full pl-12 pr-4 py-3 rounded-full text-sm font-bold border transition-all focus:outline-none focus:ring-4 focus:ring-blue-500/10 ${isDark ? "bg-white/[0.03] border-white/10 text-white placeholder:text-slate-600 focus:border-blue-500/50" : "bg-slate-50 border-slate-100 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-400"}`}
+        />
+    );
+};
+
 // ─── Logo Visibility Configuration ──────────────────────────────────────
 const INVERT_IN_DARK = new Set(["Amazon", "Uber", "CRED", "Cred", "Tesla", "Sony", "Samsung", "HP", "Dell", "IBM", "Intel", "Cisco", "Oracle", "Fabric Inc", "GNS Engineering India", "Cakesoft Tech", "TCS Ninja", "CodeVita", "Cyient", "HCL", "ElasticRun", "Amura", "Infogen Labs", "IDFC First Bank", "IDFC FIRST Bank", "Quantiphi", "Quantphi", "64squares", "eQ Technologic", "eQ Technology", "TCS Digital", "se2", "SE2", "Winjit", "Winjit Technology", "Scalex Technology", "IQ Digital", "iq digital", "Codevita Live", "Flo Group", "BNY", "BNY Mellon", "BMC", "BMC Software", "ProcDNA", "Sarvatra", "Sarvatra Technologies", "Fractal", "Fractal AI", "Concord AI", "Uptiq", "Ideas", "General Mills", "FPL Technology", "FPL Technologies"]);
 const INVERT_IN_LIGHT = new Set(["Apple", "Github"]);
@@ -399,10 +427,10 @@ const CompanyLogo = ({ name: rawName, logoValue: rawLogoValue, textSize = "text-
 
     let domain = "";
     if (isExplicitUrl) {
-        // Try to extract domain from Clearbit URL
-        const clearbitMatch = logoValue.match(/logo\.clearbit\.com\/([^/?]+)/i);
-        if (clearbitMatch?.[1]) {
-            domain = clearbitMatch[1];
+        // Try to extract domain from explicit unavatar URL
+        const domainMatch = logoValue.match(/unavatar\.io\/([^?]+)/i);
+        if (domainMatch?.[1]) {
+            domain = domainMatch[1];
         }
         // Fall back to our LOGO_MAP if we didn't get a domain
         if (!domain && LOGO_MAP[name]) {
@@ -433,7 +461,7 @@ const CompanyLogo = ({ name: rawName, logoValue: rawLogoValue, textSize = "text-
     const getInitialSrc = () => {
         if (manualLogo) return manualLogo;
         if (isExplicitUrl) return logoValue;
-        if (canFetchOnline) return `https://logo.clearbit.com/${domain}`;
+        if (canFetchOnline) return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
         return "";
     };
 
@@ -446,25 +474,19 @@ const CompanyLogo = ({ name: rawName, logoValue: rawLogoValue, textSize = "text-
             return;
         }
 
-        // 1) If manual logo failed, try Clearbit
+        // 1) If manual logo failed, try Google Favicon
         if (src === manualLogo) {
-            setSrc(`https://logo.clearbit.com/${domain}`);
+            setSrc(`https://www.google.com/s2/favicons?domain=${domain}&sz=128`);
             return;
         }
 
-        // 2) If Clearbit/Explicit failed, try Unavatar (High Quality)
-        if (src.includes("logo.clearbit.com") || (src === logoValue && isExplicitUrl)) {
-            setSrc(`https://unavatar.io/${domain}?fallback=false`);
+        // 2) If DuckDuckGo failed, try ui-avatars
+        if (!src.includes("ui-avatars.com")) {
+            setSrc(`https://ui-avatars.com/api/?name=${name.slice(0,2)}&background=random&color=fff&size=128&bold=true`);
             return;
         }
 
-        // 3) If Unavatar failed, try DuckDuckGo Icons (Better than Google)
-        if (src.includes("unavatar.io")) {
-            setSrc(`https://icons.duckduckgo.com/ip3/${domain}.ico`);
-            return;
-        }
-
-        // 4) Final fallback: show initials (prevent blurry globe)
+        // 3) Final fallback: show text initials
         setHasError(true);
     };
 
@@ -513,7 +535,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
     const userRole = (() => {
         try { return String(localStorage.getItem("userRole") || "STUDENT"); } catch { return "STUDENT"; }
     })();
-    const canUploadCompanyData = userRole === "TPO_HEAD" || userRole === "TPO_ADMIN";
+    const canUploadCompanyData = userRole === "TPO_HEAD" || userRole === "TPO_TPO";
     const companyStatsInputRef = useRef<HTMLInputElement>(null);
     const [uploadingCompanyStats, setUploadingCompanyStats] = useState(false);
 
@@ -582,10 +604,18 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
             }
         };
 
-        if (companies.length === 0) {
+        const hasStaleLogos = companies.some(c => 
+            c.logo && (
+                c.logo.includes("logo.clearbit.com") || 
+                c.logo.includes("unavatar.io") || 
+                c.logo.includes("google.com/s2/favicons")
+            )
+        );
+
+        if (companies.length === 0 || hasStaleLogos) {
             loadData();
         }
-    }, [companies.length]);
+    }, [companies]);
 
     useEffect(() => {
         localStorage.setItem("cwk-solved-titles", JSON.stringify(Array.from(solvedTitles)));
@@ -646,26 +676,6 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
         }
     };
 
-    // ─── Dynamic Placeholder Hook ─────────────────────────────────────
-    const searchPlaceholder = (() => {
-        const phrases = ["Search by Company Name...", "Search for Specific Questions...", "Find FAANG Problems...", "Explore Startup Trends..."];
-        const [pIdx, setPIdx] = useState(0);
-        const [idx, setIdx] = useState(0);
-        const [isDel, setIsDel] = useState(false);
-
-        useEffect(() => {
-            const timer = setTimeout(() => {
-                if (!isDel && idx < phrases[pIdx].length) setIdx(i => i + 1);
-                else if (isDel && idx > 0) setIdx(i => i - 1);
-                else if (!isDel && idx === phrases[pIdx].length) setTimeout(() => setIsDel(true), 1500);
-                else { setIsDel(false); setPIdx(p => (p + 1) % phrases.length); }
-            }, isDel ? 40 : 80);
-            return () => clearTimeout(timer);
-        }, [idx, isDel, pIdx]);
-
-        return phrases[pIdx].slice(0, idx);
-    })();
-
     // ─── Filtering Logic ──────────────────────────────────────────────
     const filteredCompanies = useMemo(() => {
         // 1) Basic filtering by tier + search (Company Name OR Question Title)
@@ -674,6 +684,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
             const searchTerm = search.toLowerCase();
             const matchesSearch = search === "" ||
                 c.name.toLowerCase().includes(searchTerm) ||
+                c.tier.toLowerCase().includes(searchTerm) ||
                 (c.problems || []).some(p => p.title.toLowerCase().includes(searchTerm));
 
             return matchesTier && matchesSearch;
@@ -1030,7 +1041,7 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                             </div>
                         )}
                     </div>
-                    
+
                     {/* Interview Experiences Card */}
                     {(company.interviewExperiences && company.interviewExperiences.length > 0) && (
                         <div className={`col-span-1 lg:col-span-2 rounded-3xl p-5 sm:p-6 border h-full transition-all hover:shadow-lg ${isDark ? "bg-purple-500/[0.03] border-purple-500/20 hover:border-purple-500/30" : "bg-gradient-to-br from-purple-50 to-fuchsia-50 border-purple-100 hover:border-purple-200"}`}>
@@ -1258,60 +1269,60 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
             )}
             {/* Header - Hide in dashboard as it already has a title */}
             {!isDashboard && (
-            <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-6 overflow-hidden">
-                <div className="max-w-2xl text-center md:text-left">
-                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
-                        <TypewriterText
-                            phrases={[
-                                "Target any company — Ace your interviews.",
-                                "Search by Company Name or Questions.",
-                                "Track progress & ace placements.",
-                                "Curated FAANG & Product resources."
-                            ]}
-                            speed={50}
-                            wait={3000}
-                            className={`text-xl sm:text-2xl lg:text-3xl font-black leading-tight bg-gradient-to-r ${isDark ? "from-blue-300 via-purple-300 to-pink-300" : "from-blue-600 via-purple-600 to-pink-600"} bg-clip-text text-transparent`}
-                        />
-                    </motion.div>
-                    {preferences.onboarded && (
-                        <div className={`mt-3 inline-flex px-3 py-1.5 rounded-lg text-[9px] font-black border items-center gap-2 uppercase tracking-widest ${isDark ? "bg-white/5 border-white/10 text-slate-500" : "bg-white border-slate-200 text-slate-400"}`}>
-                            <span>Target: {preferences.tiers.join(" • ")}</span>
-                            <button onClick={() => setShowModal(true)} className="text-blue-500 hover:underline">Edit</button>
-                        </div>
-                    )}
-                </div>
-                {/* Suggestion button */}
-                <div className="flex items-center gap-2">
-                    {canUploadCompanyData && (
-                        <>
-                            <button
-                                onClick={() => companyStatsInputRef.current?.click()}
-                                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all shadow-sm
-                                ${isDark ? "bg-white/5 border-white/10 text-slate-100 hover:bg-white/10" : "bg-white border-slate-200 text-slate-800 hover:bg-slate-50"}`}
-                                disabled={uploadingCompanyStats}
-                            >
-                                <Filter className="w-4 h-4 text-blue-400" />
-                                {uploadingCompanyStats ? "Uploading..." : "Upload Company Data"}
-                            </button>
-                            <input
-                                ref={companyStatsInputRef}
-                                type="file"
-                                accept=".xlsx,.xls"
-                                className="hidden"
-                                onChange={onUploadCompanyStatsFileChange}
+                <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-6 overflow-hidden">
+                    <div className="max-w-2xl text-center md:text-left">
+                        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
+                            <TypewriterText
+                                phrases={[
+                                    "Target any company — Ace your interviews.",
+                                    "Search by Company Name or Questions.",
+                                    "Track progress & ace placements.",
+                                    "Curated FAANG & Product resources."
+                                ]}
+                                speed={50}
+                                wait={3000}
+                                className={`text-xl sm:text-2xl lg:text-3xl font-black leading-tight bg-gradient-to-r ${isDark ? "from-blue-300 via-purple-300 to-pink-300" : "from-blue-600 via-purple-600 to-pink-600"} bg-clip-text text-transparent`}
                             />
-                        </>
-                    )}
-                    <button
-                        onClick={() => setShowSuggestion(true)}
-                        className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all shadow-sm
+                        </motion.div>
+                        {preferences.onboarded && (
+                            <div className={`mt-3 inline-flex px-3 py-1.5 rounded-lg text-[9px] font-black border items-center gap-2 uppercase tracking-widest ${isDark ? "bg-white/5 border-white/10 text-slate-500" : "bg-white border-slate-200 text-slate-400"}`}>
+                                <span>Target: {preferences.tiers.join(" • ")}</span>
+                                <button onClick={() => setShowModal(true)} className="text-blue-500 hover:underline">Edit</button>
+                            </div>
+                        )}
+                    </div>
+                    {/* Suggestion button */}
+                    <div className="flex items-center gap-2">
+                        {canUploadCompanyData && (
+                            <>
+                                <button
+                                    onClick={() => companyStatsInputRef.current?.click()}
+                                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all shadow-sm
+                                ${isDark ? "bg-white/5 border-white/10 text-slate-100 hover:bg-white/10" : "bg-white border-slate-200 text-slate-800 hover:bg-slate-50"}`}
+                                    disabled={uploadingCompanyStats}
+                                >
+                                    <Filter className="w-4 h-4 text-blue-400" />
+                                    {uploadingCompanyStats ? "Uploading..." : "Upload Company Data"}
+                                </button>
+                                <input
+                                    ref={companyStatsInputRef}
+                                    type="file"
+                                    accept=".xlsx,.xls"
+                                    className="hidden"
+                                    onChange={onUploadCompanyStatsFileChange}
+                                />
+                            </>
+                        )}
+                        <button
+                            onClick={() => setShowSuggestion(true)}
+                            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all shadow-sm
                         ${isDark ? "bg-white/5 border-white/10 text-slate-100 hover:bg-white/10" : "bg-white border-slate-200 text-slate-800 hover:bg-slate-50"}`}
-                    >
-                        <Lightbulb className="w-4 h-4 text-amber-400" />
-                        Suggest Insight
-                    </button>
+                        >
+                            <Lightbulb className="w-4 h-4 text-amber-400" />
+                            Suggest Insight
+                        </button>
+                    </div>
                 </div>
-            </div>
             )}
 
             {/* Stats Row */}
@@ -1340,12 +1351,15 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
                     {/* Search Input (Narrower) */}
                     <div className="relative group w-full lg:w-64 xl:w-72 pl-2">
                         <Search className={`absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isDark ? "text-slate-500 group-focus-within:text-blue-400" : "text-slate-400 group-focus-within:text-blue-600"}`} />
-                        <input
-                            type="text"
+                        <TypewriterInput
                             value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            placeholder={searchPlaceholder}
-                            className={`w-full pl-12 pr-4 py-3 rounded-full text-sm font-bold border transition-all focus:outline-none focus:ring-4 focus:ring-blue-500/10 ${isDark ? "bg-white/[0.03] border-white/10 text-white placeholder:text-slate-600 focus:border-blue-500/50" : "bg-slate-50 border-slate-100 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-400"}`}
+                            onChange={e => {
+                                setSearch(e.target.value);
+                                if (e.target.value.trim() !== "" && tierFilter !== "all") {
+                                    setTierFilter("all");
+                                }
+                            }}
+                            isDark={isDark}
                         />
                     </div>
 
@@ -1413,6 +1427,19 @@ const WiseKit: React.FC<{ isDashboard?: boolean }> = ({ isDashboard = false }) =
 
             {/* Company Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                {filteredCompanies.length === 0 && (
+                    <div className="col-span-full py-20 flex flex-col items-center justify-center text-center">
+                        <Search className={`w-16 h-16 mb-4 ${isDark ? "text-slate-700" : "text-slate-300"}`} />
+                        <h3 className={`text-xl font-black mb-2 ${isDark ? "text-white" : "text-slate-900"}`}>No companies found</h3>
+                        <p className={`text-sm max-w-md mb-6 ${isDark ? "text-slate-400" : "text-slate-500"}`}>We couldn't find any companies matching your current filters. Try adjusting your search or tier selection.</p>
+                        <Button 
+                            onClick={() => { setSearch(""); setTierFilter("all"); }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-blue-500/30 transition-all"
+                        >
+                            Clear All Filters
+                        </Button>
+                    </div>
+                )}
                 {filteredCompanies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(c => {
                     const cSolved = (c.problems || []).filter(p => solvedTitles.has(p.title)).length;
                     const cProgress = (c.problems && c.problems.length > 0) ? Math.round((cSolved / c.problems.length) * 100) : 0;

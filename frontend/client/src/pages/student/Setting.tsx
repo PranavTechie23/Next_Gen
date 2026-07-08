@@ -50,6 +50,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { studentApi } from "@/services/studentApi";
 import { toast } from "sonner";
 import { useUser } from "@/contexts/UserContext";
+import { resolveUploadUrl } from "@/lib/authSession";
 
 export default function StudentSettings(props: any) {
   const isDashboard = props?.isDashboard || false;
@@ -102,7 +103,7 @@ export default function StudentSettings(props: any) {
         portfolio: "",
         bio: profileData?.profile?.bio || ""
       });
-      setAvatarUrl(profileData?.profile?.avatar_url || "");
+      setAvatarUrl(resolveUploadUrl(profileData?.profile?.avatar_url) || "");
       setIsLoading(false);
     }
   }, [profileData]);
@@ -181,7 +182,7 @@ export default function StudentSettings(props: any) {
     try {
       setUploadingAvatar(true);
       const data = await studentApi.uploadAvatar(file);
-      setAvatarUrl(data.avatar_url);
+      setAvatarUrl(resolveUploadUrl(data.avatar_url) || "");
       setAvatarPreview("");
       // Update global context immediately
       updateUserLocally({
