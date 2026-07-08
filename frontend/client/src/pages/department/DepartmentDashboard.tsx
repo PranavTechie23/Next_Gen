@@ -300,7 +300,7 @@ export default function DepartmentDashboard() {
                 toast.success("Event updated successfully!");
             } else {
                 await deptApi.saveDeptEvent(payload);
-                toast.success("Event created successfully! It will be visible to your department students.");
+                toast.success("Event created successfully!");
             }
             setIsEventDialogOpen(false);
             await Promise.all([loadDeptDashboard({ silent: true }), loadDeptEvents()]);

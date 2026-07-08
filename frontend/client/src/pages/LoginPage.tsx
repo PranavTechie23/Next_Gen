@@ -35,6 +35,16 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email?.trim()) {
+      toast.error("Please enter your email address");
+      document.getElementById("email")?.focus();
+      return;
+    }
+    if (!password?.trim()) {
+      toast.error("Please enter your password");
+      document.getElementById("password")?.focus();
+      return;
+    }
     setIsLoading(true);
 
     try {
@@ -72,6 +82,9 @@ export default function LoginPage() {
 
         // Ensure consistent role mapping between backend roles and frontend redirects
         switch (user.role) {
+          case 'SUPER_ADMIN':
+            navigate("/super-admin");
+            break;
           case 'STUDENT':
             navigate("/student/dashboard?tab=overview");
             break;
@@ -146,9 +159,6 @@ export default function LoginPage() {
               <h1 className="text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">
                 NextGen
               </h1>
-              <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest mt-0.5 opacity-80">
-                AI-Driven
-              </p>
             </div>
           </div>
 
@@ -201,10 +211,13 @@ export default function LoginPage() {
             <form onSubmit={handleLogin} className="space-y-4">
               {/* Email Input */}
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-foreground/80">Email Address</label>
+                <label className="text-xs font-semibold text-foreground/80">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
                 <div className="relative group">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <input
+                    id="email"
                     type="email"
                     placeholder="you@example.com"
                     value={email}
@@ -217,10 +230,13 @@ export default function LoginPage() {
 
               {/* Password Input */}
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-foreground/80">Password</label>
+                <label className="text-xs font-semibold text-foreground/80">
+                  Password <span className="text-red-500">*</span>
+                </label>
                 <div className="relative group">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <input
+                    id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={password}
@@ -231,7 +247,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors z-10"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>

@@ -21,6 +21,7 @@ import TPODashboard from "./pages/tpo/TPODashboard";
 import TPOSetting from "./pages/tpo/Setting";
 import TPOFeedback from "./pages/tpo/feedbackForm";
 import DepartmentDashboard from "./pages/department/DepartmentDashboard";
+import { SuperAdminDashboard } from "./pages/super-admin/SuperAdminDashboard";
 
 import PrivacyPage from "./pages/PrivacyPage";
 import SignupPage from "./pages/SignupPage";
@@ -113,6 +114,13 @@ function Router() {
           <DeptLayout>
             <DepartmentDashboard />
           </DeptLayout>
+        </ProtectedRoute>
+      </Route>
+
+      {/* Super Admin Route */}
+      <Route path="/super-admin">
+        <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+          <SuperAdminDashboard />
         </ProtectedRoute>
       </Route>
 

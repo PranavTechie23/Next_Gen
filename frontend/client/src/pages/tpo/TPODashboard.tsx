@@ -740,13 +740,10 @@ export default function TPODashboard() {
   const hasStudents = totalStudentsCount > 0;
 
   const branchDataRaw: any[] = dashboardData?.branchData || [];
-  const branchData: any[] = branchDataRaw.length > 0 ? [
-    ...branchDataRaw,
-    { branch: "Information Technology", students: 48, ready: 35, placed: 20 },
-    { branch: "Electronics & Comm.", students: 55, ready: 40, placed: 25 },
-    { branch: "Mechanical Engg.", students: 30, ready: 15, placed: 5 },
-    { branch: "Electrical Engg.", students: 40, ready: 25, placed: 10 }
-  ] : [];
+  const branchData: any[] = branchDataRaw.map(b => ({
+    ...b,
+    unplaced: Math.max(0, (b.students || 0) - (b.placed || 0))
+  }));
   const yearTrend: any[] = dashboardData?.yearTrend || [];
   const skillsRadarData: any[] = dashboardData?.skillsRadarData || [];
   const placementDistribution: any[] = dashboardData?.placementDistribution || [];
@@ -2273,13 +2270,13 @@ export default function TPODashboard() {
                             <stop offset="5%" stopColor="#9ca3af" stopOpacity={0.6} />
                             <stop offset="95%" stopColor="#9ca3af" stopOpacity={0.1} />
                           </linearGradient>
-                          <linearGradient id="colorReady" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#1e3a8a" stopOpacity={0.8} />
-                            <stop offset="95%" stopColor="#1e3a8a" stopOpacity={0.2} />
-                          </linearGradient>
                           <linearGradient id="colorPlacedTPO" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8} />
                             <stop offset="95%" stopColor="#22c55e" stopOpacity={0.2} />
+                          </linearGradient>
+                          <linearGradient id="colorUnplaced" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8} />
+                            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.2} />
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" opacity={0.2} vertical={false} />
@@ -2293,8 +2290,8 @@ export default function TPODashboard() {
                         />
                         <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
                         <Bar dataKey="students" fill="url(#colorStudents)" name="Total Students" radius={[6, 6, 0, 0]} />
-                        <Bar dataKey="ready" fill="url(#colorReady)" name="Placement Ready" radius={[6, 6, 0, 0]} />
                         <Bar dataKey="placed" fill="url(#colorPlacedTPO)" name="Placed" radius={[6, 6, 0, 0]} />
+                        <Bar dataKey="unplaced" fill="url(#colorUnplaced)" name="Not Placed" radius={[6, 6, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (

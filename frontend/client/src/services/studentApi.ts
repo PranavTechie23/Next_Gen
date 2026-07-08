@@ -45,6 +45,11 @@ export const studentApi = {
     return response.data;
   },
 
+  getDashboardMetrics: async () => {
+    const response = await api.get("dashboard-metrics");
+    return response.data;
+  },
+
   // Dynamic Roadmap (Mentorship)
   getRoadmap: async () => {
     const response = await api.get("roadmap");
@@ -72,8 +77,8 @@ export const studentApi = {
   },
 
   // Jobs
-  getJobs: async () => {
-    const response = await api.get("jobs");
+  getJobs: async (params?: { type?: "PLACEMENT" | "INTERNSHIP" }) => {
+    const response = await api.get("jobs", { params });
     return response.data;
   },
 

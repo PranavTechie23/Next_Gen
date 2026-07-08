@@ -37,7 +37,6 @@ import {
   STUDENT_SIDEBAR_LINKS,
   type MarqueeItem,
 } from "@/pages/student/dashboard/sidebarConfig";
-import { computeDriveMatch } from "@/lib/driveMatch";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -697,7 +696,7 @@ export default function StudentDashboard() {
   };
   const cleanAchievementToken = (raw: any) => {
     const t = String(raw || "")
-      .replace(/^[•\-\u2022]\s*/, "")
+      .replace(/^[•\-\u2022*]\s*/, "")
       .replace(/\s{2,}/g, " ")
       .trim();
     if (!t || t.length < 6) return null;
@@ -1579,7 +1578,7 @@ export default function StudentDashboard() {
     ];
   })();
 
-  // Placement drives from TPO (ticket creation) — shown as "Drives" with match %
+  // Placement drives from TPO — fetched from API and shown under Opportunities
   const initialJobsCache = readDashboardCache<{ jobs: any[] }>(DASHBOARD_CACHE_KEYS.studentJobs);
   const [placementDrives, setPlacementDrives] = useState<any[]>(() => initialJobsCache?.jobs ?? []);
   const [loadingDrives, setLoadingDrives] = useState(() => !initialJobsCache);
@@ -1643,20 +1642,12 @@ export default function StudentDashboard() {
     }
   }, [backendProfile, loadingMarquee, loadingDrives, loadingRoadmap]);
 
-  const studentSkillsSet = [...currentSkills, ...previousSkills];
-  const studentBacklogs = backendProfile?.student?.active_backlogs || 0;
   const drivesWithMatch = placementDrives.map((d, idx) => {
     const requiredSkills = Array.isArray(d.required_skills)
       ? d.required_skills
       : Array.isArray(d.requirements)
         ? d.requirements
         : [];
-    const adaptedDrive = {
-      minCgpa: d.min_cgpa || 0,
-      maxBacklogs: d.max_backlogs_allowed || 0,
-      requirements: requiredSkills,
-      ...d,
-    };
 
     const deadlineLabel = d.deadline_note
       || (d.end_date ? new Date(d.end_date).toLocaleDateString() : "TBD");
@@ -1669,20 +1660,23 @@ export default function StudentDashboard() {
       description: d.job_description,
       job_description: d.job_description,
       drive_description: d.drive_description,
+      drive_name: d.drive_name,
       requirements: requiredSkills,
       required_skills: requiredSkills,
+      eligible_branches: Array.isArray(d.eligible_branches) ? d.eligible_branches : [],
       application_link: d.application_link,
       dos: d.dos,
       donts: d.donts,
       deadline: deadlineLabel,
       deadline_note: d.deadline_note,
+      start_date: d.start_date,
+      schedule_note: d.schedule_note,
+      activity_schedule: d.activity_schedule,
+      stipend_value: d.stipend_value,
+      website: d.website,
+      location: d.location,
       application_status: appliedJobMap[d.job_id] ?? null,
-      match: computeDriveMatch(
-        adaptedDrive as any,
-        studentProfile.cgpa,
-        studentSkillsSet,
-        studentBacklogs
-      ),
+      job_type: d.job_type || "PLACEMENT",
       color: [
         "bg-gradient-to-br from-blue-500 to-green-500",
         "bg-gradient-to-br from-orange-500 to-yellow-500",
@@ -3391,28 +3385,40 @@ export default function StudentDashboard() {
 
                   {/* Opportunities Tab */}
                   {activeTab === "opportunities" && (
-                    <div className="space-y-10">
+                    <div className="space-y-6">
                       {drivesWithMatch.length === 0 ? (
                         <div className={`${isDark ? "bg-[#0c0c14]/40" : "bg-card/80"} backdrop-blur-3xl ${isDark ? "border-white/5" : "border-slate-200/50"} rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.02)] p-12 text-center`}>
-                          <p className={`${isDark ? "text-gray-400" : "text-gray-600"}`}>No drives yet. When your TPO creates a drive, it will appear here with JD, requirements, and your match %.</p>
+                          <p className={`${isDark ? "text-gray-400" : "text-gray-600"}`}>No drives yet. When your TPO creates a placement or internship drive, it will appear here with full notice-board details.</p>
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                          {drivesWithMatch.map((drive, idx) => (
+                          {drivesWithMatch.map((drive, idx) => {
+                            const isInternship = drive.job_type === "INTERNSHIP";
+                            return (
                             <div key={drive.id} className={`group p-6 ${isDark ? "border-white/5 bg-[#0c0c14]/40 hover:bg-white/5" : "border-slate-200 bg-white hover:bg-slate-50"} rounded-3xl transition-all shadow-sm border flex flex-col`}>
-                              <div className="flex items-center justify-between mb-5">
-                                <div className="flex items-center gap-4">
-                                  <div className={`w-12 h-12 ${drive.color || "bg-blue-500"} rounded-2xl flex items-center justify-center shadow-md shrink-0`}>
-                                    <span className="text-xl font-black text-white">{drive.companyName ? drive.companyName.charAt(0) : "C"}</span>
-                                  </div>
-                                  <div>
-                                    <h4 className={`text-lg font-black leading-tight ${isDark ? "text-white" : "text-slate-900"}`}>{drive.companyName}</h4>
-                                    <p className="text-[11px] font-black text-blue-500 uppercase tracking-wider">{drive.role}</p>
-                                  </div>
+                              <div className="flex items-center justify-between mb-3">
+                                <Badge
+                                  className={`font-black text-[10px] uppercase tracking-wider ${
+                                    isInternship
+                                      ? "bg-emerald-500/20 text-emerald-500 border-emerald-500/30"
+                                      : "bg-blue-500/20 text-blue-500 border-blue-500/30"
+                                  }`}
+                                >
+                                  {isInternship ? "Internship Drive" : "Placement Drive"}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-4 mb-5">
+                                <div className={`w-12 h-12 ${drive.color || "bg-blue-500"} rounded-2xl flex items-center justify-center shadow-md shrink-0`}>
+                                  <span className="text-xl font-black text-white">{drive.companyName ? drive.companyName.charAt(0) : "C"}</span>
                                 </div>
-                                <div className="text-right shrink-0">
-                                  <p className={`text-[9px] font-black uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-500"}`}>Match</p>
-                                  <p className="text-lg font-black text-blue-500">{drive.match}%</p>
+                                <div className="min-w-0">
+                                  <h4 className={`text-lg font-black leading-tight ${isDark ? "text-white" : "text-slate-900"}`}>{drive.companyName}</h4>
+                                  <p className="text-[11px] font-black text-blue-500 uppercase tracking-wider">{drive.role}</p>
+                                  {drive.schedule_note && (
+                                    <p className={`text-[10px] font-semibold mt-1 truncate ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                                      {drive.schedule_note}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
 
@@ -3423,8 +3429,12 @@ export default function StudentDashboard() {
                                       <Banknote className="w-3.5 h-3.5" />
                                     </div>
                                     <div className="flex flex-col min-w-0">
-                                      <span className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-500"}`}>CTC</span>
-                                      <span className={`text-xs font-black truncate ${isDark ? "text-slate-200" : "text-slate-800"}`} title={String(drive.package_value)}>{drive.package_value}</span>
+                                      <span className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-500"}`}>
+                                        {isInternship ? "Stipend" : "CTC"}
+                                      </span>
+                                      <span className={`text-xs font-black truncate ${isDark ? "text-slate-200" : "text-slate-800"}`} title={String(drive.package_value)}>
+                                        {drive.package_value}{isInternship ? "K/mo" : " LPA"}
+                                      </span>
                                     </div>
                                   </div>
                                 )}
@@ -3488,7 +3498,8 @@ export default function StudentDashboard() {
                                 </div>
                               </div>
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                       <PlacementDriveDetailDialog

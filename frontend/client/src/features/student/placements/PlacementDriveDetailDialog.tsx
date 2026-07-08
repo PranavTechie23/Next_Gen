@@ -77,19 +77,32 @@ type PlacementDriveDetailDialogProps = {
 };
 
 function formatSchedule(drive: StudentPlacementDrive) {
-  if (drive.schedule_note?.trim()) return drive.schedule_note.trim();
+  if (drive.schedule_note?.trim()) {
+    const note = drive.schedule_note.trim();
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(note)) {
+      return new Date(note).toLocaleString("en-IN", {
+        weekday: "short", day: "2-digit", month: "short", year: "numeric",
+        hour: "numeric", minute: "2-digit", hour12: true
+      });
+    }
+    return note;
+  }
   const parts: string[] = [];
   if (drive.start_date) {
     parts.push(new Date(drive.start_date).toLocaleDateString("en-IN", {
-      weekday: "long",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
+      weekday: "long", day: "2-digit", month: "2-digit", year: "numeric",
     }));
   }
-  if (drive.deadline_note?.trim()) parts.push(drive.deadline_note.trim());
-  else if (drive.deadline) parts.push(drive.deadline);
-  else if (drive.end_date) {
+  if (drive.deadline_note?.trim()) {
+    const dNote = drive.deadline_note.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dNote)) {
+      parts.push("Apply by: " + new Date(dNote).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }));
+    } else {
+      parts.push(dNote);
+    }
+  } else if (drive.deadline) {
+    parts.push(drive.deadline);
+  } else if (drive.end_date) {
     parts.push(new Date(drive.end_date).toLocaleDateString("en-IN"));
   }
   return parts.length ? parts.join(" · ") : "As communicated by TPO";

@@ -44,10 +44,12 @@ export function isAuthenticated(): boolean {
 
 export function dashboardPathForRole(role: string | null | undefined): string {
   switch (normalizeRole(role)) {
+    case "SUPER_ADMIN":
+      return "/super-admin";
     case "STUDENT":
       return "/student/dashboard?tab=overview";
     case "TPO_ADMIN":
-      return "/TPO/dashboard?tab=overview";
+      return "/tpo/dashboard?tab=overview";
     case "TPO_HEAD":
       return "/department/dashboard?tab=overview";
     default:

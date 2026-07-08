@@ -1,11 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { buildApiUrl } from "@/lib/api";
-import { useState } from "react";
-import { Mail, ShieldCheck, ArrowRight, ArrowLeft, KeyRound } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Mail, ShieldCheck, ArrowRight, ArrowLeft, KeyRound, RefreshCw, Loader2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+
+const RESEND_COOLDOWN = 60; // seconds — must match backend
 
 export default function ForgotPassword() {
   const [, navigate] = useLocation();
@@ -14,18 +16,71 @@ export default function ForgotPassword() {
   const [newPassword, setNewPassword] = useState("");
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+
+  // Countdown for Resend OTP
+  const [countdown, setCountdown] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startCountdown = (seconds: number = RESEND_COOLDOWN) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setCountdown(seconds);
+    timerRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current!);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // Clean up timer on unmount
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
       const res = await axios.post(buildApiUrl("/auth/reset-password"), { email });
-      toast.success(res.data.message || "OTP sent to your email!");
+      if (res.data.message?.toLowerCase().includes("failed") || res.data.message?.toLowerCase().includes("fallback")) {
+        toast.error(res.data.message);
+      } else {
+        toast.success(res.data.message || "OTP sent to your email!");
+        startCountdown();
+      }
       setStep(2);
     } catch (error: any) {
+      const retryAfter = error.response?.data?.retryAfter;
+      if (error.response?.status === 429 && retryAfter) {
+        // If we're already on step 2 (resend was clicked), just restart the timer
+        if (step === 2) startCountdown(retryAfter);
+      }
       toast.error(error.response?.data?.message || "Failed to send OTP.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setIsResending(true);
+    try {
+      const res = await axios.post(buildApiUrl("/auth/reset-password"), { email });
+      if (res.data.message?.toLowerCase().includes("failed") || res.data.message?.toLowerCase().includes("fallback")) {
+        toast.error(res.data.message);
+      } else {
+        toast.success(res.data.message || "OTP resent successfully!");
+        startCountdown();
+      }
+    } catch (error: any) {
+      const retryAfter = error.response?.data?.retryAfter;
+      if (error.response?.status === 429 && retryAfter) {
+        startCountdown(retryAfter); // sync timer with server
+      }
+      toast.error(error.response?.data?.message || "Failed to resend OTP.");
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -93,7 +148,14 @@ export default function ForgotPassword() {
                 </div>
               </div>
               <Button type="submit" disabled={isLoading} className="w-full py-6 text-lg">
-                {isLoading ? "Sending..." : "Send OTP"}
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Sending...
+                  </span>
+                ) : (
+                  "Send OTP"
+                )}
               </Button>
             </form>
           )}
@@ -116,9 +178,41 @@ export default function ForgotPassword() {
                   />
                 </div>
               </div>
+
               <Button type="submit" disabled={isLoading} className="w-full py-6 text-lg">
-                {isLoading ? "Verifying..." : "Verify OTP"} <ArrowRight className="w-5 h-5 ml-2" />
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Verifying...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    Verify OTP <ArrowRight className="w-5 h-5 ml-2" />
+                  </span>
+                )}
               </Button>
+
+              {/* Resend OTP */}
+              <div className="flex items-center justify-center gap-2 pt-1">
+                <span className="text-sm text-muted-foreground">Didn't receive the OTP?</span>
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={countdown > 0 || isResending}
+                  className={`flex items-center gap-1 text-sm font-semibold transition-colors ${
+                    countdown > 0 || isResending
+                      ? "text-muted-foreground cursor-not-allowed"
+                      : "text-primary hover:text-primary/80 cursor-pointer"
+                  }`}
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isResending ? "animate-spin" : ""}`} />
+                  {isResending
+                    ? "Sending..."
+                    : countdown > 0
+                    ? `Resend in ${countdown}s`
+                    : "Resend OTP"}
+                </button>
+              </div>
             </form>
           )}
 
@@ -140,7 +234,14 @@ export default function ForgotPassword() {
                 </div>
               </div>
               <Button type="submit" disabled={isLoading} className="w-full py-6 text-lg">
-                {isLoading ? "Resetting..." : "Reset Password"}
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Resetting...
+                  </span>
+                ) : (
+                  "Reset Password"
+                )}
               </Button>
             </form>
           )}

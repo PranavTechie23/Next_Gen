@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { buildApiUrl } from "@/lib/api";
 import { useState } from "react";
-import { Lock, ArrowLeft } from "lucide-react";
+import { Lock, ArrowLeft, Loader2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -20,19 +20,19 @@ export default function ChangePassword() {
       toast.error("New passwords do not match.");
       return;
     }
-    
+
     setIsLoading(true);
     try {
       const res = await axios.post(buildApiUrl("/auth/change-password"), { currentPassword, newPassword }, { withCredentials: true });
       toast.success(res.data.message || "Password changed successfully!");
-      
-      const role = localStorage.getItem("userRole");
+
+      const role = sessionStorage.getItem("userRole");
       switch (role) {
         case 'STUDENT':
           window.location.href = "/student/dashboard?tab=overview";
           break;
         case 'TPO_ADMIN':
-          window.location.href = "/admin/dashboard?tab=overview";
+          navigate("/TPO/dashboard?tab=overview");
           break;
         case 'TPO_HEAD':
           window.location.href = "/department/dashboard?tab=overview";
@@ -75,7 +75,7 @@ export default function ChangePassword() {
                 />
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-semibold">New Password</label>
               <div className="relative">
@@ -105,7 +105,14 @@ export default function ChangePassword() {
             </div>
 
             <Button type="submit" disabled={isLoading} className="w-full py-6 text-lg">
-              {isLoading ? "Updating..." : "Update Password"}
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Updating...
+                </span>
+              ) : (
+                "Update Password"
+              )}
             </Button>
           </form>
         </CardContent>

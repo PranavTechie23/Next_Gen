@@ -50,11 +50,46 @@ export default function SignupPage() {
   };
 
   const handleNextStep = () => {
-    if (step === 1) {
-      if (formData.fullName && formData.email && formData.phone) {
-        setStep(2);
-      }
+    const fullName = formData.fullName?.trim();
+    const email = formData.email?.trim();
+    const phone = formData.phone?.trim();
+
+    if (!fullName) {
+      toast.error("Please enter your full name");
+      document.getElementById("fullName")?.focus();
+      return;
     }
+    const nameRegex = /^[a-zA-Z\s]{2,50}$/;
+    if (!nameRegex.test(fullName)) {
+      toast.error("Please enter a valid name (letters and spaces only, 2-50 characters)");
+      document.getElementById("fullName")?.focus();
+      return;
+    }
+
+    if (!email) {
+      toast.error("Please enter your email address");
+      document.getElementById("email")?.focus();
+      return;
+    }
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address");
+      document.getElementById("email")?.focus();
+      return;
+    }
+
+    if (!phone) {
+      toast.error("Please enter your phone number");
+      document.getElementById("phone")?.focus();
+      return;
+    }
+    const phoneRegex = /^(?:\+91|91|0)?[6-9]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      toast.error("Please enter a valid 10-digit Indian phone number (optional +91/91 prefix)");
+      document.getElementById("phone")?.focus();
+      return;
+    }
+    setStep(2);
   };
 
   const handlePrevStep = () => {
@@ -62,6 +97,37 @@ export default function SignupPage() {
   };
 
   const handleSignup = async () => {
+    if (!formData.institutionName?.trim()) {
+      toast.error("Please enter your institution name");
+      document.getElementById("institutionName")?.focus();
+      return;
+    }
+    if (!formData.institutionCode?.trim()) {
+      toast.error("Please enter your institution code");
+      document.getElementById("institutionCode")?.focus();
+      return;
+    }
+    if (!formData.TPOKey?.trim()) {
+      toast.error("Please enter your TPO Registration Key");
+      document.getElementById("TPOKey")?.focus();
+      return;
+    }
+    if (!formData.password?.trim()) {
+      toast.error("Please enter your password");
+      document.getElementById("password")?.focus();
+      return;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      document.getElementById("confirmPassword")?.focus();
+      return;
+    }
+    if (!formData.agreeToTerms) {
+      toast.error("You must agree to the Terms & Conditions and Privacy Policy");
+      document.getElementById("agreeToTerms")?.focus();
+      return;
+    }
+
     setIsLoading(true);
     try {
       const response = await axios.post(buildApiUrl("/auth/register-TPO"), {
@@ -233,10 +299,13 @@ export default function SignupPage() {
               <div className="space-y-3">
                 {/* Full Name */}
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-foreground/80">Full Name</label>
+                  <label className="text-xs font-semibold text-foreground/80">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative group">
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <input
+                      id="fullName"
                       type="text"
                       placeholder="TPO Name"
                       value={formData.fullName}
@@ -248,10 +317,13 @@ export default function SignupPage() {
 
                 {/* Email */}
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-foreground/80">Email Address (Official)</label>
+                  <label className="text-xs font-semibold text-foreground/80">
+                    Email Address (Official) <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative group">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <input
+                      id="email"
                       type="email"
                       placeholder="TPO@college.edu"
                       value={formData.email}
@@ -263,10 +335,13 @@ export default function SignupPage() {
 
                 {/* Phone */}
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-foreground/80">Phone Number</label>
+                  <label className="text-xs font-semibold text-foreground/80">
+                    Phone Number <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative group">
                     <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <input
+                      id="phone"
                       type="tel"
                       placeholder="+91-9876543210"
                       value={formData.phone}
@@ -279,8 +354,7 @@ export default function SignupPage() {
                 {/* Continue Button */}
                 <Button
                   onClick={handleNextStep}
-                  disabled={!formData.fullName || !formData.email || !formData.phone}
-                  className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white py-2.5 rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                  className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white py-2.5 rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transition-all group"
                 >
                   <span className="flex items-center justify-center gap-2">
                     Continue to Institution Details
@@ -292,17 +366,21 @@ export default function SignupPage() {
               <div className="space-y-3 max-h-[55vh] overflow-y-auto px-1 -mx-1 pb-2">
                 {/* Institution Name */}
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-foreground/80">Institution Name</label>
+                  <label className="text-xs font-semibold text-foreground/80">
+                    Institution Name <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative group">
                     <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                    <input type="text" placeholder="e.g. Stanford University" value={formData.institutionName} onChange={(e) => handleInputChange("institutionName", e.target.value)} className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm" />
+                    <input id="institutionName" type="text" placeholder="e.g. Stanford University" value={formData.institutionName} onChange={(e) => handleInputChange("institutionName", e.target.value)} className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm" />
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-foreground/80">Institution Code</label>
+                  <label className="text-xs font-semibold text-foreground/80">
+                    Institution Code <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative group">
                     <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                    <input type="text" placeholder="e.g. SU001" value={formData.institutionCode} onChange={(e) => handleInputChange("institutionCode", e.target.value)} className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm" />
+                    <input id="institutionCode" type="text" placeholder="e.g. SU001" value={formData.institutionCode} onChange={(e) => handleInputChange("institutionCode", e.target.value)} className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm" />
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -320,18 +398,22 @@ export default function SignupPage() {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-foreground/80">TPO Registration Key</label>
+                  <label className="text-xs font-semibold text-foreground/80">
+                    TPO Registration Key <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative group">
                     <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                    <input type="text" placeholder="Provided by platform" value={formData.TPOKey} onChange={(e) => handleInputChange("TPOKey", e.target.value)} className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm" />
+                    <input id="TPOKey" type="text" placeholder="Provided by platform" value={formData.TPOKey} onChange={(e) => handleInputChange("TPOKey", e.target.value)} className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm" />
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-foreground/80">Password</label>
+                  <label className="text-xs font-semibold text-foreground/80">
+                    Password <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative group">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                    <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={formData.password} onChange={(e) => handleInputChange("password", e.target.value)} className="w-full pl-9 pr-10 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                    <input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={formData.password} onChange={(e) => handleInputChange("password", e.target.value)} className="w-full pl-9 pr-10 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors z-10">
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
@@ -343,10 +425,12 @@ export default function SignupPage() {
                   )}
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-foreground/80">Confirm Password</label>
+                  <label className="text-xs font-semibold text-foreground/80">
+                    Confirm Password <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative group">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                    <input type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" value={formData.confirmPassword} onChange={(e) => handleInputChange("confirmPassword", e.target.value)} className="w-full pl-9 pr-10 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm" />
+                    <input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" value={formData.confirmPassword} onChange={(e) => handleInputChange("confirmPassword", e.target.value)} className="w-full pl-9 pr-10 py-2.5 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm" />
                     <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -356,14 +440,14 @@ export default function SignupPage() {
                   )}
                 </div>
                 <label className="flex items-start gap-2 cursor-pointer group mt-1">
-                  <input type="checkbox" checked={formData.agreeToTerms} onChange={(e) => handleInputChange("agreeToTerms", e.target.checked)} className="mt-0.5 w-4 h-4 text-primary border-border bg-background rounded focus:ring-primary cursor-pointer" />
+                  <input id="agreeToTerms" type="checkbox" checked={formData.agreeToTerms} onChange={(e) => handleInputChange("agreeToTerms", e.target.checked)} className="mt-0.5 w-4 h-4 text-primary border-border bg-background rounded focus:ring-primary cursor-pointer" />
                   <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors leading-tight">
                     I agree to the <a href="/terms_and_condition" className="text-primary font-bold hover:underline">Terms &amp; Conditions</a> and <a href="/PrivacyPage" className="text-primary font-bold hover:underline">Privacy Policy</a>
                   </span>
                 </label>
                 <div className="flex gap-2 pt-1">
                   <Button onClick={handlePrevStep} variant="outline" className="flex-1 border border-gray-300 hover:border-gray-400 py-2.5 rounded-lg font-semibold transition-all text-sm">Back</Button>
-                  <Button onClick={handleSignup} disabled={isLoading || !formData.institutionName || !formData.institutionCode || !formData.TPOKey || !formData.password || formData.password !== formData.confirmPassword || !formData.agreeToTerms} className="flex-[2] bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white py-2.5 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm">
+                  <Button onClick={handleSignup} disabled={isLoading} className="flex-[2] bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white py-2.5 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm">
                     {isLoading ? <span className="flex items-center justify-center gap-2"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Registering...</span> : "Register TPO"}
                   </Button>
                 </div>
