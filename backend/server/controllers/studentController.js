@@ -54,7 +54,7 @@ const getStudentProfile = async (req, res) => {
             db.execute(`
                 SELECT 
                     s.user_id, s.roll_number, s.current_cgpa, s.active_backlogs, 
-                    s.tenth_marks, s.twelfth_marks, s.diploma_marks, s.is_academic_data_locked, 
+                    s.tenth_marks, s.twelfth_marks, s.is_academic_data_locked, 
                     s.is_placed, s.current_package_value,
                     s.is_debarred, s.debar_reason, s.debar_lift_date,
                     u.email, u.is_active,
@@ -261,6 +261,12 @@ const getEligibleJobs = async (req, res) => {
         const cgpa = student.current_cgpa || 0;
         const backlogs = student.active_backlogs || 0;
 
+        const typeFilter = String(req.query.type || '').toUpperCase();
+        const typeClause = typeFilter === 'INTERNSHIP' || typeFilter === 'PLACEMENT'
+            ? 'AND j.job_type = ?'
+            : '';
+        const typeParams = typeClause ? [typeFilter] : [];
+
         const scope = scopeFromInstitutionId(req.user.institution_id);
         if (!scope) {
             return res.status(403).json({ message: 'Institution context is required.' });
@@ -283,11 +289,17 @@ const getEligibleJobs = async (req, res) => {
                 j.required_skills,
                 j.dos,
                 j.donts,
+                j.job_type,
+                j.stipend_value,
+                j.schedule_note,
+                j.activity_schedule,
                 d.id AS drive_id, 
                 d.drive_name, 
                 d.description AS drive_description,
+                d.start_date,
                 d.end_date,
-                r.company_name
+                r.company_name,
+                r.website
             FROM job_postings j
             JOIN recruitment_drives d ON j.drive_id = d.id
             JOIN recruiters r ON d.recruiter_id = r.id
@@ -295,9 +307,10 @@ const getEligibleJobs = async (req, res) => {
               AND j.is_active = TRUE
               AND j.min_cgpa <= ?
               AND j.max_backlogs_allowed >= ?
+              ${typeClause}
               AND ${driveClause}
             ORDER BY d.end_date ASC
-        `, [cgpa, backlogs, ...driveParams]);
+        `, [cgpa, backlogs, ...typeParams, ...driveParams]);
 
         res.status(200).json({
             count: jobs.length,
@@ -343,6 +356,10 @@ const getJobDetails = async (req, res) => {
                 j.required_skills,
                 j.dos,
                 j.donts,
+                j.job_type,
+                j.stipend_value,
+                j.schedule_note,
+                j.activity_schedule,
                 d.id AS drive_id, 
                 d.drive_name, 
                 d.description AS drive_description,
@@ -393,7 +410,6 @@ const applyForJob = async (req, res) => {
                 active_backlogs, 
                 tenth_marks,
                 twelfth_marks,
-                diploma_marks,
                 is_debarred, 
                 debar_reason, 
                 is_placed, 
@@ -409,8 +425,8 @@ const applyForJob = async (req, res) => {
         const student = students[0];
 
         // Policy Check 0: Profile Completeness
-        if (student.tenth_marks === null || (student.twelfth_marks === null && student.diploma_marks === null)) {
-            return res.status(400).json({ message: "Incomplete academic profile. Please add your 10th and 12th/Diploma marks in your Profile before applying." });
+        if (student.tenth_marks === null || student.twelfth_marks === null) {
+            return res.status(400).json({ message: "Incomplete academic profile. Please add your 10th and 12th marks in your Profile before applying." });
         }
 
         // Policy Check 1: Is Debarred?
@@ -456,10 +472,16 @@ const applyForJob = async (req, res) => {
 
         // Policy Check 4: Dream Offer Rule
         // If the student is already placed, they can only apply if the new job offers a significantly higher package.
-        // Rule: New package must be strictly greater than current package (can inject 1.3x multiplier or Similar here if strict Dream Offer)
+        // Rule: If they are placed in a Dream Company (> 20 LPA), they cannot apply to ANY further drives.
         if (student.is_placed) {
             const currentPackage = parseFloat(student.current_package_value || 0);
             const newPackage = parseFloat(job.package_value || 0);
+
+            if (currentPackage >= 2000000) {
+                return res.status(403).json({ 
+                    message: "Dream Company Policy Violation: You are already placed in a Dream Company (>20 LPA) and are ineligible for further placement drives." 
+                });
+            }
 
             if (newPackage <= currentPackage) {
                 return res.status(403).json({ 

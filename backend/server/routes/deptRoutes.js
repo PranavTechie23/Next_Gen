@@ -6,10 +6,15 @@ const companyStatsController = require('../controllers/companyStatsController');
 const webinarRecommendationController = require('../controllers/webinarRecommendationController');
 const analyticsController = require('../controllers/analyticsController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const {
+    uploadLimiter,
+    exportLimiter,
+    analyticsRefreshLimiter,
+} = require('../middleware/rateLimiter');
 
 // Configure multer to use memory storage so the file isn't saved to disk
 const storage = multer.memoryStorage();
-const upload = multer({ 
+const upload = multer({
     storage: storage,
     limits: { fileSize: 5 * 1024 * 1024 } // Optional: limit file size to 5MB
 });
@@ -17,7 +22,8 @@ const upload = multer({
 // POST /api/dept/students/upload - Bulk upload students via Excel
 router.post('/students/upload',
     protect,
-    authorize('TPO_HEAD'), // Only Dept Heads can upload
+    authorize('TPO_HEAD'),
+    uploadLimiter,
     upload.single('file'),
     deptController.uploadStudents
 );
@@ -26,6 +32,7 @@ router.post('/students/upload',
 router.post('/company-stats/upload',
     protect,
     authorize('TPO_HEAD'),
+    uploadLimiter,
     upload.single('file'),
     companyStatsController.uploadCompanyStats
 );
@@ -41,7 +48,15 @@ router.get('/students',
 router.get('/dashboard/stats',
     protect,
     authorize('TPO_HEAD'),
+    analyticsRefreshLimiter,
     deptController.getDashboardStats
+);
+
+// GET /api/dept/analytics/amcat - Get AMCAT and academic section statistics
+router.get('/analytics/amcat',
+    protect,
+    authorize('TPO_HEAD'),
+    deptController.getAmcatStats
 );
 
 // GET /api/dept/me - Current department head profile
@@ -62,6 +77,7 @@ router.get('/readiness',
 router.get('/reports/placement-pdf',
     protect,
     authorize('TPO_HEAD'),
+    exportLimiter,
     deptController.exportDeptPlacementReportPdf
 );
 
@@ -69,30 +85,35 @@ router.get('/reports/placement-pdf',
 router.get('/reports/student-readiness.csv',
     protect,
     authorize('TPO_HEAD'),
+    exportLimiter,
     deptController.exportStudentReadinessCsv
 );
 
 router.get('/reports/unplaced-students.csv',
     protect,
     authorize('TPO_HEAD'),
+    exportLimiter,
     deptController.exportUnplacedStudentsCsv
 );
 
 router.get('/reports/profile-gaps.csv',
     protect,
     authorize('TPO_HEAD'),
+    exportLimiter,
     deptController.exportProfileGapsCsv
 );
 
 router.get('/reports/placed-packages.csv',
     protect,
     authorize('TPO_HEAD'),
+    exportLimiter,
     deptController.exportPlacedPackagesCsv
 );
 
 router.get('/reports/eligibility.csv',
     protect,
     authorize('TPO_HEAD'),
+    exportLimiter,
     deptController.exportEligibilityCsv
 );
 
@@ -103,7 +124,7 @@ router.get('/students/:id',
     deptController.getStudentDetails
 );
 
-// PUT /api/dept/students/:id - Update student information (academic/admin)
+// PUT /api/dept/students/:id - Update student information (academic/TPO)
 router.put('/students/:id',
     protect,
     authorize('TPO_HEAD'),
@@ -138,7 +159,7 @@ router.get('/analytics/department-stats',
     analyticsController.getDepartmentStats
 );
 
-// GET /api/dept/webinars/recommendations - AI webinar recommendations for Dept TPO
+// GET /api/dept/webinars/recommendations - AI webinar recommendations 
 router.get('/webinars/recommendations',
     protect,
     authorize('TPO_HEAD'),
@@ -156,6 +177,18 @@ router.get('/events',
     protect,
     authorize('TPO_HEAD'),
     deptController.getDeptEvents
+);
+
+router.put('/events/:id',
+    protect,
+    authorize('TPO_HEAD'),
+    deptController.updateDeptEvent
+);
+
+router.delete('/events/:id',
+    protect,
+    authorize('TPO_HEAD'),
+    deptController.deleteDeptEvent
 );
 
 module.exports = router;

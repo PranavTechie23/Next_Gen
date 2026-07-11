@@ -350,7 +350,7 @@ const getDepartmentStudents = async (req, res) => {
                 s.current_cgpa, 
                 s.active_backlogs, 
                 s.tenth_marks, 
-                s.twelfth_marks, s.diploma_marks,
+                s.twelfth_marks,
                 s.is_academic_data_locked,
                 s.is_placed,
                 sp.resume_url,
@@ -398,7 +398,7 @@ const getStudentDetails = async (req, res) => {
         const [studentInfo] = await db.execute(`
             SELECT 
                 s.user_id, s.roll_number, s.current_cgpa, s.active_backlogs, 
-                s.tenth_marks, s.twelfth_marks, s.diploma_marks, s.is_academic_data_locked, 
+                s.tenth_marks, s.twelfth_marks, s.is_academic_data_locked, 
                 s.is_placed, s.current_package_value,
                 s.is_debarred, s.debar_reason, s.debar_lift_date,
                 u.email, u.is_active,

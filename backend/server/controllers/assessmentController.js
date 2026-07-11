@@ -15,7 +15,9 @@ const getAllKits = async (req, res) => {
         const [kits] = await db.query(
             `SELECT ${KIT_FIELDS}
              FROM company_assessment_kits k
-             ORDER BY k.name ASC`
+             WHERE k.institution_id IS NULL OR k.institution_id = ?
+             ORDER BY k.name ASC`,
+            [scope.institution_id]
         );
 
         if (kits.length === 0) {
@@ -63,8 +65,8 @@ const getKitById = async (req, res) => {
         const [kits] = await db.query(
             `SELECT ${KIT_FIELDS}
              FROM company_assessment_kits k
-             WHERE k.id = ?`,
-            [id]
+             WHERE k.id = ? AND (k.institution_id IS NULL OR k.institution_id = ?)`,
+            [id, scope.institution_id]
         );
 
         if (kits.length === 0) {

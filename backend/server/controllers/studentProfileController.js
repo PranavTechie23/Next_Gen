@@ -1156,6 +1156,53 @@ const getDashboardMetrics = async (req, res) => {
 // STEP 3: RESUME UPLOAD API
 // Route: POST /api/student/profile/resume
 // --------------------------------------------------
+const extractResumeSectionsWithLLM = async (rawText) => {
+    if (!rawText || rawText.trim().length < 50) return null;
+
+    const payload = {
+        resume_text: String(rawText || '').slice(0, 20000),
+    };
+
+    const systemPrompt = `You are an expert ATS resume parser. Extract sections from the provided resume text and return STRICT JSON matching the schema exactly.
+Do not invent information. Ensure project titles are clean (do not include the tech stack in the title) and bullets are extracted as an array of strings.
+CRITICAL: Do NOT include bullet characters (like *, -, •) at the start of any string. Do NOT include section titles (like "Extracurricular", "Achievements") as items in the arrays.
+For 'experience', format each job/internship as a single string containing the company, role, dates, and bullets separated by newlines (e.g., "Company A - Role (Dates)\\n• bullet 1\\n• bullet 2").
+Schema:
+{
+  "fullName": "extracted full name or null",
+  "email": "email or null",
+  "phone": "phone or null",
+  "linkedinUrl": "linkedin URL or null",
+  "githubUrl": "github URL or null",
+  "skills": ["skill1", "skill2"],
+  "sections": {
+    "summary": "professional summary or null",
+    "education": ["raw education line 1", "raw education line 2"],
+    "projects": [{"title": "clean project name", "url": "project url or null", "bullets": ["bullet 1", "bullet 2"]}],
+    "experience": ["Company A - Role (Dates)\\n• bullet 1\\n• bullet 2", "Company B - Role\\n• bullet"],
+    "certifications": ["Cert 1", "Cert 2"],
+    "achievements": ["Achievement 1", "Achievement 2"],
+    "extracurricular": ["Extracurricular 1"],
+    "languages": ["Lang 1"],
+    "interests": ["Interest 1"]
+  }
+}`;
+
+    const template = await aiConfigService.getPrompt('resume_full_parse', systemPrompt);
+    const prompt = `Parse this resume text:\n\n${JSON.stringify(payload)}`;
+
+    try {
+        const parsed = await aiConfigService.callAI({ prompt, systemPrompt: template, temperature: 0.1 });
+        if (parsed && parsed.sections) {
+            return parsed;
+        }
+        return null;
+    } catch (err) {
+        console.error('[Profile] LLM full parsing failed:', err.message);
+        return null;
+    }
+};
+
 const uploadResume = async (req, res) => {
     try {
         // Multer attaches the `file` object to req
@@ -1224,6 +1271,33 @@ const uploadResume = async (req, res) => {
         }
 
         const resumeRawText = parsedResume.rawText || parsedText || '';
+
+        try {
+            const llmParsed = await extractResumeSectionsWithLLM(resumeRawText);
+            if (llmParsed && llmParsed.sections) {
+                console.log("[Profile] LLM successfully parsed the resume sections.");
+                const eduBundle = normalizeEducationEntries([], llmParsed.sections.education || []);
+                parsedResume = {
+                    ...parsedResume,
+                    fullName: llmParsed.fullName || parsedResume.fullName,
+                    email: llmParsed.email || parsedResume.email,
+                    phone: llmParsed.phone || parsedResume.phone,
+                    linkedinUrl: llmParsed.linkedinUrl || parsedResume.linkedinUrl,
+                    githubUrl: llmParsed.githubUrl || parsedResume.githubUrl,
+                    skills: uniq([...(llmParsed.skills || []), ...(parsedResume.skills || [])]),
+                    sections: {
+                        ...parsedResume.sections,
+                        ...llmParsed.sections,
+                        education: eduBundle.education,
+                        education_entries: eduBundle.education_entries,
+                    },
+                    rawText: resumeRawText
+                };
+            }
+        } catch (llmParseError) {
+            console.error("[Profile] Failed to apply LLM resume parsing:", llmParseError);
+        }
+
         const parseQuality = await scoreParsedResumeQuality(parsedResume);
 
         const fallbackRole = inferRoleFromResumeNlp({
@@ -1415,9 +1489,8 @@ const syncSchoolMarksFromEducation = async (studentId, educationEntries = []) =>
     
     const tenth = ssc?.marks ? parseMarksPercent(ssc.marks) : null;
     const twelfth = hsc?.marks ? parseMarksPercent(hsc.marks) : null;
-    const diplomaMarks = diploma?.marks ? parseMarksPercent(diploma.marks) : null;
     
-    if (tenth === null && twelfth === null && diplomaMarks === null) return;
+    if (tenth === null && twelfth === null) return;
 
     const updates = [];
     const values = [];
@@ -1428,10 +1501,6 @@ const syncSchoolMarksFromEducation = async (studentId, educationEntries = []) =>
     if (twelfth !== null) {
         updates.push('twelfth_marks = ?');
         values.push(twelfth);
-    }
-    if (diplomaMarks !== null) {
-        updates.push('diploma_marks = ?');
-        values.push(diplomaMarks);
     }
     
     if (!updates.length) return;

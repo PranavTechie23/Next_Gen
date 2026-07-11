@@ -10,15 +10,15 @@ async function getFallbackNews() {
     try {
         // Fetch all evergreen articles to rotate through them deterministically
         const [allArticles] = await db.query('SELECT title, description, url, urlToImage, created_at as publishedAt, source_name FROM news_articles WHERE is_evergreen = 1 ORDER BY id ASC');
-        
+
         if (allArticles.length === 0) return [];
 
         const numToShow = 6;
         const rotationIntervalHours = 6;
-        
+
         // Calculate the current "time block" index (changes every 6 hours)
         const timeBlock = Math.floor(Date.now() / (rotationIntervalHours * 60 * 60 * 1000));
-        
+
         // Calculate the starting index for this time block
         // Moving by numToShow ensures each block has unique articles
         const startIndex = (timeBlock * numToShow) % allArticles.length;
@@ -49,7 +49,7 @@ async function getFallbackNews() {
                 url: "#",
                 urlToImage: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&q=80&w=800",
                 publishedAt: new Date().toISOString(),
-                source: { name: "System Admin" }
+                source: { name: "System TPO" }
             }
         ];
     }
@@ -68,7 +68,7 @@ router.get('/tech-news', async (req, res) => {
 
         const newsApiBase = (process.env.NEWS_API_BASE_URL || 'https://newsdata.io/api/1/news').replace(/\/+$/, '');
         const url = `${newsApiBase}?apikey=${encodeURIComponent(apiKey)}&category=technology&language=en`;
-        
+
         // Fetch from external API
         https.get(url, { headers: { 'User-Agent': 'NextGenAINewsApp/1.0' } }, async (apiRes) => {
             let data = '';
@@ -86,7 +86,7 @@ router.get('/tech-news', async (req, res) => {
                     }
 
                     const parsedData = JSON.parse(data);
-                    
+
                     if (!parsedData.results || parsedData.results.length === 0) {
                         const articles = await getFallbackNews();
                         return res.status(200).json({ articles });
@@ -111,7 +111,7 @@ router.get('/tech-news', async (req, res) => {
                         // Create a normalized version of the title to catch slight variations
                         // (e.g. "OpenAI limits its latest..." vs "OpenAI limits latest...")
                         const normalizedTitle = (article.title || "").toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 40);
-                        
+
                         // If we have seen a very similar title, or the exact same image (and it's not null)
                         if (seenTitles.has(normalizedTitle)) {
                             continue;
@@ -119,12 +119,12 @@ router.get('/tech-news', async (req, res) => {
                         if (article.urlToImage && seenImages.has(article.urlToImage)) {
                             continue;
                         }
-                        
+
                         seenTitles.add(normalizedTitle);
                         if (article.urlToImage) {
                             seenImages.add(article.urlToImage);
                         }
-                        
+
                         uniqueArticles.push(article);
                     }
 

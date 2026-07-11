@@ -698,7 +698,6 @@ const getShortlistCount = async (req, res) => {
             SELECT COUNT(DISTINCT s.user_id) as count
             FROM students s
             JOIN users u ON u.id = s.user_id
-            LEFT JOIN student_skills ss ON ss.student_id = s.user_id
             WHERE s.current_cgpa >= ? 
               AND s.active_backlogs <= ?
               AND ${tenantFilter.clause}

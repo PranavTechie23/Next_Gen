@@ -356,18 +356,25 @@ const getAllDrives = async (req, res) => {
         const [drives] = await db.query(`
             SELECT 
                 d.id,
-                d.drive_name AS role,
+                d.drive_name,
                 r.company_name AS companyName,
                 d.description,
                 d.status,
                 d.start_date,
                 d.end_date AS deadline,
+                d.created_at,
+                (SELECT j.job_title FROM job_postings j WHERE j.drive_id = d.id AND j.is_active = TRUE ORDER BY j.id LIMIT 1) AS role,
+                (SELECT j.job_type FROM job_postings j WHERE j.drive_id = d.id AND j.is_active = TRUE ORDER BY j.id LIMIT 1) AS job_type,
+                (SELECT j.location FROM job_postings j WHERE j.drive_id = d.id AND j.is_active = TRUE ORDER BY j.id LIMIT 1) AS venue,
+                (SELECT j.package_value FROM job_postings j WHERE j.drive_id = d.id AND j.is_active = TRUE ORDER BY j.id LIMIT 1) AS package_value,
+                (SELECT j.stipend_value FROM job_postings j WHERE j.drive_id = d.id AND j.is_active = TRUE ORDER BY j.id LIMIT 1) AS stipend_value,
+                (SELECT j.schedule_note FROM job_postings j WHERE j.drive_id = d.id AND j.is_active = TRUE ORDER BY j.id LIMIT 1) AS schedule_note,
+                (SELECT j.deadline_note FROM job_postings j WHERE j.drive_id = d.id AND j.is_active = TRUE ORDER BY j.id LIMIT 1) AS deadline_note,
                 (SELECT COUNT(*) FROM job_postings j WHERE j.drive_id = d.id) AS job_count,
                 (SELECT COUNT(*) FROM applications a JOIN job_postings j ON a.job_id = j.id WHERE j.drive_id = d.id) AS application_count
             FROM recruitment_drives d
             JOIN recruiters r ON d.recruiter_id = r.id
             WHERE ${clause}
-            GROUP BY d.id
             ORDER BY d.created_at DESC
         `, params);
 
@@ -394,25 +401,61 @@ const updateDriveStatus = async (req, res) => {
             return res.status(driveCheck.status).json({ message: driveCheck.message });
         }
 
-        const { status } = req.body;
+        const { status, selectedStudents = [], malesSelected = 0, femalesSelected = 0 } = req.body;
 
         const validStatuses = ['OPEN', 'ONGOING', 'COMPLETED', 'CANCELLED'];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ message: "Invalid status. Must be one of: OPEN, ONGOING, COMPLETED, CANCELLED" });
         }
 
-        const [result] = await db.query(
-            'UPDATE recruitment_drives SET status = ? WHERE id = ?',
-            [status, driveId]
-        );
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: "Recruitment drive not found" });
+            const [result] = await connection.query(
+                'UPDATE recruitment_drives SET status = ?, males_placed = ?, females_placed = ? WHERE id = ?',
+                [status, status === 'COMPLETED' ? malesSelected : 0, status === 'COMPLETED' ? femalesSelected : 0, driveId]
+            );
+
+            if (result.affectedRows === 0) {
+                await connection.rollback();
+                connection.release();
+                return res.status(404).json({ message: "Recruitment drive not found" });
+            }
+
+            if (status === 'COMPLETED' && selectedStudents.length > 0) {
+                // Get the maximum package value for this drive
+                const [jobs] = await connection.query(
+                    'SELECT MAX(package_value) as max_package FROM job_postings WHERE drive_id = ? AND is_active = TRUE',
+                    [driveId]
+                );
+                const packageValue = jobs[0]?.max_package || 0;
+
+                // Update students
+                await connection.query(
+                    'UPDATE students SET is_placed = TRUE, current_package_value = ? WHERE user_id IN (?)',
+                    [packageValue, selectedStudents]
+                );
+
+                // Update applications
+                await connection.query(
+                    `UPDATE applications SET status = 'SELECTED' 
+                     WHERE student_id IN (?) AND job_id IN (SELECT id FROM job_postings WHERE drive_id = ?)`,
+                    [selectedStudents, driveId]
+                );
+            }
+
+            await connection.commit();
+            connection.release();
+
+            res.status(200).json({
+                message: "Drive status updated successfully"
+            });
+        } catch (txnError) {
+            await connection.rollback();
+            connection.release();
+            throw txnError;
         }
-
-        res.status(200).json({
-            message: "Drive status updated successfully"
-        });
 
     } catch (error) {
         console.error("Error updating drive status:", error);
@@ -791,7 +834,7 @@ const getStudentDetail = async (req, res) => {
                 s.current_cgpa,
                 s.active_backlogs,
                 s.tenth_marks,
-                s.twelfth_marks, s.diploma_marks,
+                s.twelfth_marks,
                 s.is_placed,
                 s.current_package_value,
                 s.is_debarred,
@@ -844,18 +887,30 @@ const getStudentDetail = async (req, res) => {
             ORDER BY a.applied_at DESC
         `, [studentId]);
 
-        const [performance] = await db.query(`
-            SELECT amcat_quant, amcat_verbal, amcat_logical, coding_test_score, mock_interview_score, endsem_percentage
-            FROM student_performance_metrics
-            WHERE student_id = ?
-        `, [studentId]);
+        let performance = [];
+        try {
+            const [perf] = await db.query(`
+                SELECT amcat_quant, amcat_verbal, amcat_logical, coding_test_score, mock_interview_score, endsem_percentage
+                FROM student_performance_metrics
+                WHERE student_id = ?
+            `, [studentId]);
+            performance = perf;
+        } catch (e) {
+            console.warn("Table student_performance_metrics might be missing. Skipping.");
+        }
 
-        const [resumeRows] = await db.query(`
-            SELECT sections_json
-            FROM resume_parsed_data
-            WHERE student_id = ?
-            LIMIT 1
-        `, [studentId]);
+        let resumeRows = [];
+        try {
+            const [resRows] = await db.query(`
+                SELECT sections_json
+                FROM resume_parsed_data
+                WHERE student_id = ?
+                LIMIT 1
+            `, [studentId]);
+            resumeRows = resRows;
+        } catch (e) {
+            console.warn("Table resume_parsed_data might be missing. Skipping.");
+        }
 
         let education_entries = [];
         let education = [];
@@ -926,6 +981,13 @@ const quickCreateDrive = async (req, res) => {
             donts,
             location,
             packageValue,
+            stipendValue,
+            scheduleNote,
+            activitySchedule,
+            eligibleBranches,
+            website,
+            startDate,
+            jobType,
         } = req.body;
 
         if (!companyName || !role) {
@@ -941,21 +1003,36 @@ const quickCreateDrive = async (req, res) => {
         const dosList = Array.isArray(dos) ? dos.filter(Boolean) : [];
         const dontsList = Array.isArray(donts) ? donts.filter(Boolean) : [];
         const endDate = parseDeadlineDate(deadline);
+        const startDateParsed = parseDeadlineDate(startDate);
+        const normalizedJobType = String(jobType || 'PLACEMENT').toUpperCase() === 'INTERNSHIP'
+            ? 'INTERNSHIP'
+            : 'PLACEMENT';
+        const branchesList = Array.isArray(eligibleBranches) ? eligibleBranches.filter(Boolean) : [];
+        const stipend = stipendValue != null && stipendValue !== '' ? Number(stipendValue) : null;
 
         // 1. Find or Create Recruiter (scoped to institution when column exists)
         let recruiterId = await findRecruiterIdByNameForScope(connection, scope, companyName);
         if (!recruiterId) {
             recruiterId = await insertRecruiterForScope(connection, scope, { companyName });
+            if (website) {
+                await connection.query('UPDATE recruiters SET website = ? WHERE id = ?', [website, recruiterId]);
+            }
+        } else if (website) {
+            await connection.query(
+                'UPDATE recruiters SET website = ? WHERE id = ?',
+                [website, recruiterId]
+            );
         }
 
         // 2. Create Drive
         const [driveResult] = await connection.query(
-            `INSERT INTO recruitment_drives (recruiter_id, drive_name, description, end_date, status)
-             VALUES (?, ?, ?, ?, "OPEN")`,
+            `INSERT INTO recruitment_drives (recruiter_id, drive_name, description, start_date, end_date, status)
+             VALUES (?, ?, ?, ?, ?, 'OPEN')`,
             [
                 recruiterId,
-                `${companyName} - ${role}`,
+                `${companyName} Campus Drive`,
                 description || null,
+                startDateParsed,
                 endDate,
             ]
         );
@@ -966,8 +1043,9 @@ const quickCreateDrive = async (req, res) => {
         const [jobResult] = await connection.query(
             `INSERT INTO job_postings 
             (drive_id, job_title, job_description, location, package_value, min_cgpa, max_backlogs_allowed,
-             eligible_branches, application_link, deadline_note, required_skills, dos, donts) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             eligible_branches, application_link, deadline_note, required_skills, dos, donts, job_type,
+             stipend_value, schedule_note, activity_schedule) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 driveId,
                 role,
@@ -976,12 +1054,16 @@ const quickCreateDrive = async (req, res) => {
                 Number.isFinite(pkg) ? pkg : 0,
                 minCgpa || 0,
                 maxBacklogs || 0,
-                JSON.stringify([]),
+                JSON.stringify(branchesList),
                 applicationLink || null,
                 deadline || null,
                 JSON.stringify(skillsList),
                 JSON.stringify(dosList),
                 JSON.stringify(dontsList),
+                normalizedJobType,
+                Number.isFinite(stipend) ? stipend : null,
+                scheduleNote || null,
+                activitySchedule || null,
             ]
         );
 
@@ -1001,8 +1083,8 @@ const quickCreateDrive = async (req, res) => {
         });
     } catch (error) {
         await connection.rollback();
-        console.error("Error in quickCreateDrive:", error);
-        res.status(500).json({ message: "Internal server error" });
+        console.error("Quick create drive error:", error);
+        res.status(500).json({ message: "Internal server error", error: error.message, stack: error.stack });
     } finally {
         connection.release();
     }

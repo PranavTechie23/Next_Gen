@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -115,17 +116,6 @@ exports.registerTPO = async (req, res) => {
     } = req.body;
 
 
-
-
-    // 1. Verify Secret Key — reject if server secret is not configured
-    const registrationSecret = process.env.TPO_REGISTRATION_SECRET?.trim();
-    if (!registrationSecret) {
-        return res.status(503).json({ message: 'TPO registration is not configured on this server.' });
-    }
-    if (TPOKey !== registrationSecret) {
-        return res.status(403).json({ message: "Forbidden: Invalid TPO Registration Key" });
-    }
-
     const passwordCheck = validatePassword(password);
     if (!passwordCheck.ok) {
         return res.status(400).json({ message: passwordCheck.message });
@@ -143,10 +133,51 @@ exports.registerTPO = async (req, res) => {
         return res.status(400).json({ message: `Please provide all required fields: ${missingFields.join(', ')}` });
     }
 
+    const nameRegex = /^[a-zA-Z\s]{2,50}$/;
+    if (!nameRegex.test(name.trim())) {
+        return res.status(400).json({ message: "Invalid name format. Letters and spaces only (2-50 characters)." });
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email.trim())) {
+        return res.status(400).json({ message: "Invalid email format." });
+    }
+
+    if (phone) {
+        const phoneRegex = /^(?:\+91|91|0)?[6-9]\d{9}$/;
+        if (!phoneRegex.test(phone.trim())) {
+            return res.status(400).json({ message: "Invalid phone number. Must be a valid 10-digit Indian number (with optional +91/91/0 prefix)." });
+        }
+    }
+
     const connection = await db.getConnection();
 
     try {
         await connection.beginTransaction();
+
+        // 1. Verify Dynamic Registration Key
+        if (!TPOKey) {
+            await connection.rollback();
+            return res.status(403).json({ message: "Forbidden: Missing TPO Registration Key" });
+        }
+
+        const hashedTPOKey = crypto.createHash('sha256').update(TPOKey.trim()).digest('hex');
+
+        const [keys] = await connection.execute(
+            'SELECT * FROM registration_keys WHERE key_value = ?',
+            [hashedTPOKey]
+        );
+
+        if (keys.length === 0) {
+            await connection.rollback();
+            return res.status(403).json({ message: "Forbidden: Invalid TPO Registration Key" });
+        }
+
+        const regKey = keys[0];
+        if (regKey.is_used) {
+            await connection.rollback();
+            return res.status(403).json({ message: "Forbidden: Registration Key has already been used" });
+        }
 
         // 3. Check if user already exists
         const [existingUser] = await connection.execute(
@@ -218,6 +249,12 @@ exports.registerTPO = async (req, res) => {
             [userId, name, employee_code || null, phone || null]
         );
 
+        // 8. Mark Registration Key as Used
+        await connection.execute(
+            'UPDATE registration_keys SET is_used = TRUE, used_by_institution_id = ? WHERE id = ?',
+            [institution_id, regKey.id]
+        );
+
         await connection.commit();
 
         res.status(201).json({ message: "Institution and TPO registered successfully." });
@@ -231,7 +268,6 @@ exports.registerTPO = async (req, res) => {
     }
 };
 
-const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
 // --- Generic Login (TPO, Head, Student) ---
@@ -273,6 +309,14 @@ exports.login = async (req, res) => {
         if (!user.is_active) {
             logger.auth('Account inactive', { email });
             return res.status(403).json({ message: "Account is inactive. Contact TPO." });
+        }
+
+        if (user.institution_id && user.role !== 'SUPER_ADMIN') {
+            const [inst] = await connection.execute('SELECT is_active FROM institutions WHERE id = ?', [user.institution_id]);
+            if (inst.length > 0 && !inst[0].is_active) {
+                logger.auth('Institution inactive', { email });
+                return res.status(403).json({ message: "Your institution's access has been suspended. Please contact platform support." });
+            }
         }
 
         // 5. Generate JWT Token

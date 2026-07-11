@@ -6,6 +6,7 @@ const roadmapController = require('../controllers/roadmapController');
 const companyStatsController = require('../controllers/companyStatsController');
 const webinarController = require('../controllers/webinarController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const { uploadLimiter } = require('../middleware/rateLimiter');
 
 // --------------------------------------------------
 // STUDENT PROFILE MODULE ROUTES (v2 - includes target-role endpoint)
@@ -16,6 +17,13 @@ router.get('/profile',
     protect,
     authorize('STUDENT'),
     studentProfileController.getProfile
+);
+
+// GET /api/student/dashboard-metrics - Unified placement readiness metrics
+router.get('/dashboard-metrics',
+    protect,
+    authorize('STUDENT'),
+    studentProfileController.getDashboardMetrics
 );
 
 // PUT /api/student/profile - Create or Update logged-in student's profile
@@ -29,6 +37,7 @@ router.put('/profile',
 router.post('/profile/resume',
     protect,
     authorize('STUDENT'),
+    uploadLimiter,
     studentProfileController.resumeUploadMiddleware,
     studentProfileController.uploadResume,
     studentProfileController.uploadErrorHandler
@@ -38,6 +47,7 @@ router.post('/profile/resume',
 router.post('/profile/target-role',
     protect,
     authorize('STUDENT'),
+    uploadLimiter,
     studentProfileController.evaluateTargetRole
 );
 
@@ -52,6 +62,7 @@ router.put('/profile/resume-sections',
 router.post('/profile/avatar',
     protect,
     authorize('STUDENT'),
+    uploadLimiter,
     studentProfileController.avatarUploadMiddleware,
     studentProfileController.uploadAvatar,
     studentProfileController.uploadErrorHandler
@@ -79,6 +90,7 @@ router.put('/performance',
 router.post('/performance/amcat-report',
     protect,
     authorize('STUDENT'),
+    uploadLimiter,
     roadmapController.amcatUploadMiddleware,
     roadmapController.uploadAmcatReport,
     roadmapController.amcatUploadErrorHandler
