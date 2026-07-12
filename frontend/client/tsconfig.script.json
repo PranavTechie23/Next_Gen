@@ -8,5 +8,5 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist-scripts"
   },
-  "include": ["src/scripts/export_data.ts", "src/data/**/*.ts"]
+  "include": ["src/data/**/*.ts"]
 }

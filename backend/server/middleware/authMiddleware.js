@@ -45,6 +45,18 @@ exports.protect = async (req, res, next) => {
                 req.user = currentUser[0];
                 req.token = token; // Attach token for logout
                 
+                // 5. Maintenance Mode Check
+                if (req.user.role !== 'SUPER_ADMIN') {
+                    const [settings] = await connection.execute(
+                        'SELECT setting_value FROM system_settings WHERE setting_key = ?',
+                        ['MAINTENANCE_MODE']
+                    );
+                    if (settings.length > 0 && settings[0].setting_value === 'true') {
+                        connection.release();
+                        return res.status(503).json({ message: "Platform is currently under maintenance. Please try again later." });
+                    }
+                }
+
                 if (process.env.NODE_ENV !== 'production') {
                     res.setHeader('X-Auth-Role', req.user.role || 'NONE');
                     res.setHeader('X-Auth-Id', req.user.id || 'NONE');
@@ -97,4 +109,12 @@ exports.authorize = (...roles) => {
         }
         next();
     };
+};
+
+exports.requireSuperAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'SUPER_ADMIN') {
+        next();
+    } else {
+        res.status(403).json({ message: 'Not authorized as a Super Admin' });
+    }
 };

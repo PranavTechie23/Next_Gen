@@ -17,7 +17,7 @@ services:
         value: 1d
       - key: JWT_REMEMBER_EXPIRE
         value: 30d
-      - key: ADMIN_REGISTRATION_SECRET
+      - key: TPO_REGISTRATION_SECRET
         sync: false
       - key: DB_HOST
         sync: false

@@ -47,9 +47,9 @@ class ConfigService {
      */
     async getBoolean(key, defaultValue = false) {
         const val = await this.get(key);
-        if (val == null)          return defaultValue;
+        if (val == null) return defaultValue;
         if (typeof val === 'boolean') return val;
-        if (val === 1 || val === '1' || val === 'true')  return true;
+        if (val === 1 || val === '1' || val === 'true') return true;
         if (val === 0 || val === '0' || val === 'false') return false;
         return defaultValue;
     }
@@ -58,7 +58,7 @@ class ConfigService {
      * PUBLIC WRITE API
      *
      * FIX (Problem 4): There was no set() or invalidate() method. Without them,
-     * any DB write from an admin panel or external process would leave the app
+     * any DB write from an TPO panel or external process would leave the app
      * serving stale values for up to the full 5-minute TTL with no way to force
      * a refresh short of restarting the process.
      * ───────────────────────────────────────────────────────────────────────── */
@@ -165,20 +165,20 @@ class ConfigService {
                  * objects and arrays; all scalar values are stored as plain strings.
                  */
                 const defaults = [
-                    ['READINESS_ACADEMIC_WEIGHT', '0.5',       'Weight for academic performance in readiness score',   'SCORING'],
-                    ['READINESS_SKILLS_WEIGHT',   '0.3',       'Weight for skills count in readiness score',           'SCORING'],
-                    ['READINESS_PORTFOLIO_WEIGHT','0.2',       'Weight for projects/resume in readiness score',        'SCORING'],
-                    ['MIN_CGPA_THRESHOLD',        '6.0',       'Minimum CGPA for placement eligibility',               'ELIGIBILITY'],
-                    ['MIN_SKILLS_THRESHOLD',      '5',         'Minimum skills count for at-risk signaling',           'ELIGIBILITY'],
-                    ['PRODUCT_PACKAGE_THRESHOLD', '10',        'Min package (LPA) to classify as Product-Based',       'ANALYTICS'],
-                    ['STARTUP_PACKAGE_THRESHOLD', '7',         'Max package (LPA) to classify as Startup',            'ANALYTICS'],
-                    ['APP_NAME',                  'NextGen',   'Application name for branding',                        'BRANDING'],
-                    ['INSTITUTION_NAME',          'Professional Institute of Technology', 'Institution name',          'BRANDING'],
-                    ['APP_LOGO_URL',              '/NG/NextGen_light.png', 'Logo URL for the platform',               'BRANDING'],
-                    ['SUPPORT_EMAIL',             'support@nextgen.com',   'Support email address',                   'BRANDING'],
-                    ['FOOTER_TEXT',               '© 2026 NextGen. All rights reserved.', 'Footer copyright text',   'BRANDING'],
+                    ['READINESS_ACADEMIC_WEIGHT', '0.5', 'Weight for academic performance in readiness score', 'SCORING'],
+                    ['READINESS_SKILLS_WEIGHT', '0.3', 'Weight for skills count in readiness score', 'SCORING'],
+                    ['READINESS_PORTFOLIO_WEIGHT', '0.2', 'Weight for projects/resume in readiness score', 'SCORING'],
+                    ['MIN_CGPA_THRESHOLD', '6.0', 'Minimum CGPA for placement eligibility', 'ELIGIBILITY'],
+                    ['MIN_SKILLS_THRESHOLD', '5', 'Minimum skills count for at-risk signaling', 'ELIGIBILITY'],
+                    ['PRODUCT_PACKAGE_THRESHOLD', '10', 'Min package (LPA) to classify as Product-Based', 'ANALYTICS'],
+                    ['STARTUP_PACKAGE_THRESHOLD', '7', 'Max package (LPA) to classify as Startup', 'ANALYTICS'],
+                    ['APP_NAME', 'NextGen', 'Application name for branding', 'BRANDING'],
+                    ['INSTITUTION_NAME', 'Professional Institute of Technology', 'Institution name', 'BRANDING'],
+                    ['APP_LOGO_URL', '/NG/NextGen_light.png', 'Logo URL for the platform', 'BRANDING'],
+                    ['SUPPORT_EMAIL', 'support@nextgen.com', 'Support email address', 'BRANDING'],
+                    ['FOOTER_TEXT', '© 2026 NextGen. All rights reserved.', 'Footer copyright text', 'BRANDING'],
                     ['llm_settings', { model: 'llama-3.1-8b-instant', temperature: 0.2, max_tokens: 1024 },
-                                               'Default LLM provider settings (JSON)',                                'AI'],
+                        'Default LLM provider settings (JSON)', 'AI'],
                 ];
 
                 for (const [key, val, desc, cat] of defaults) {
@@ -221,43 +221,43 @@ class ConfigService {
      * Refresh the in-memory cache from the DB when the TTL has expired
      * or the cache is empty.
      */
-   async _ensureCache() {
-    const now = Date.now();
+    async _ensureCache() {
+        const now = Date.now();
 
-    if (
-        now - this.lastFetch <= this.TTL &&
-        this.cache.size > 0
-    ) {
-        return;
-    }
+        if (
+            now - this.lastFetch <= this.TTL &&
+            this.cache.size > 0
+        ) {
+            return;
+        }
 
-    if (this.cacheRefreshing) {
+        if (this.cacheRefreshing) {
+            return this.cacheRefreshing;
+        }
+
+        this.cacheRefreshing = (async () => {
+            try {
+                const [rows] = await db.query(
+                    "SELECT config_key, config_value FROM platform_config"
+                );
+
+                this.cache.clear();
+
+                for (const row of rows) {
+                    this.cache.set(
+                        row.config_key,
+                        _deserializeValue(row.config_value)
+                    );
+                }
+
+                this.lastFetch = Date.now();
+            } finally {
+                this.cacheRefreshing = null;
+            }
+        })();
+
         return this.cacheRefreshing;
     }
-
-    this.cacheRefreshing = (async () => {
-        try {
-            const [rows] = await db.query(
-                "SELECT config_key, config_value FROM platform_config"
-            );
-
-            this.cache.clear();
-
-            for (const row of rows) {
-                this.cache.set(
-                    row.config_key,
-                    _deserializeValue(row.config_value)
-                );
-            }
-
-            this.lastFetch = Date.now();
-        } finally {
-            this.cacheRefreshing = null;
-        }
-    })();
-
-    return this.cacheRefreshing;
-}
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -277,8 +277,7 @@ class ConfigService {
  */
 function _serializeValue(val) {
     if (val === null || val === undefined) return 'null';
-    if (typeof val === 'object') return JSON.stringify(val);
-    return String(val);
+    return JSON.stringify(val);
 }
 
 /**

@@ -9,6 +9,7 @@
 # Build outputs
 dist/
 build/
+dist-scripts/
 *.dist
 
 # Environment variables

@@ -22,6 +22,7 @@ DROP TABLE IF EXISTS skills;
 DROP TABLE IF EXISTS students;
 DROP TABLE IF EXISTS token_blacklist;
 DROP TABLE IF EXISTS tpo_admins;
+DROP TABLE IF EXISTS tpo_TPOs;
 DROP TABLE IF EXISTS tpo_heads;
 DROP TABLE IF EXISTS webinars;
 DROP TABLE IF EXISTS dept_events;
@@ -45,6 +46,16 @@ CREATE TABLE institutions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE registration_keys (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    key_value VARCHAR(100) UNIQUE NOT NULL,
+    is_used BOOLEAN DEFAULT FALSE,
+    used_by_institution_id INT NULL,
+    notes TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (used_by_institution_id) REFERENCES institutions(id) ON DELETE SET NULL
+);
+
 CREATE TABLE departments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) UNIQUE NOT NULL, -- e.g. 'Computer Science'
@@ -61,7 +72,7 @@ CREATE TABLE users (
     institution_id INT,
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    role ENUM('TPO_ADMIN', 'TPO_HEAD', 'STUDENT') NOT NULL, -- No Recruiter Login
+    role ENUM('SUPER_ADMIN', 'TPO_ADMIN', 'TPO_HEAD', 'STUDENT') NOT NULL,
     
     is_active BOOLEAN DEFAULT TRUE,
     must_change_password BOOLEAN DEFAULT FALSE,
@@ -88,6 +99,8 @@ CREATE TABLE password_resets (
     email VARCHAR(100) NOT NULL,
     token VARCHAR(255) NOT NULL,
     otp VARCHAR(10),
+    otp_failed_attempts INT NOT NULL DEFAULT 0,
+    otp_locked_until TIMESTAMP NULL DEFAULT NULL,
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX (token),
@@ -126,6 +139,7 @@ CREATE TABLE students (
     active_backlogs INT DEFAULT 0,
     tenth_marks DECIMAL(5,2),
     twelfth_marks DECIMAL(5,2),
+    diploma_marks DECIMAL(5,2),
     
     -- SYSTEM FLAGS
     is_academic_data_locked BOOLEAN DEFAULT TRUE, -- TRUE = Student cannot edit CGPA
@@ -138,7 +152,10 @@ CREATE TABLE students (
     debar_lift_date DATE NULL,
     
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE RESTRICT
+    FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE RESTRICT,
+    INDEX idx_students_dept (department_id),
+    INDEX idx_students_placed (is_placed),
+    INDEX idx_students_cgpa (current_cgpa)
 );
 
 -- ====================================================
@@ -154,7 +171,8 @@ CREATE TABLE student_profiles (
     linkedin_url VARCHAR(255),
     github_url VARCHAR(255),
     address TEXT,
-    FOREIGN KEY (student_id) REFERENCES students(user_id) ON DELETE CASCADE
+    FOREIGN KEY (student_id) REFERENCES students(user_id) ON DELETE CASCADE,
+    INDEX idx_profile_name (full_name)
 );
 
 CREATE TABLE skills (
@@ -165,7 +183,7 @@ CREATE TABLE skills (
 CREATE TABLE student_skills (
     student_id INT,
     skill_id INT,
-    proficiency_level ENUM('BEGINNER', 'INTERMEDIATE', 'EXPERT') DEFAULT 'BEGINNER',
+
     PRIMARY KEY (student_id, skill_id),
     FOREIGN KEY (student_id) REFERENCES students(user_id) ON DELETE CASCADE,
     FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE
@@ -198,11 +216,14 @@ CREATE TABLE external_engagements (
 -- RECRUITERS ARE NOW JUST PROFILES (NO LOGIN)
 CREATE TABLE recruiters (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    institution_id INT,
     company_name VARCHAR(100) NOT NULL,
     industry_type VARCHAR(100),
     website VARCHAR(255),
     hr_name VARCHAR(100),
-    contact_email VARCHAR(100) -- Contact info for TPO to use
+    contact_email VARCHAR(100), -- Contact info for TPO to use
+    INDEX idx_recruiters_institution (institution_id),
+    FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE SET NULL
 );
 
 CREATE TABLE recruitment_drives (
@@ -215,7 +236,9 @@ CREATE TABLE recruitment_drives (
     -- TPO creates drives, so they are OPEN by default
     status ENUM('OPEN', 'ONGOING', 'COMPLETED', 'CANCELLED') DEFAULT 'OPEN',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (recruiter_id) REFERENCES recruiters(id) ON DELETE CASCADE
+    FOREIGN KEY (recruiter_id) REFERENCES recruiters(id) ON DELETE CASCADE,
+    INDEX idx_drives_status (status),
+    INDEX idx_drives_created (created_at DESC)
 );
 
 CREATE TABLE job_postings (
@@ -229,10 +252,22 @@ CREATE TABLE job_postings (
     package_value DECIMAL(10,2) NOT NULL,
     min_cgpa DECIMAL(4,2) DEFAULT 0.00,
     max_backlogs_allowed INT DEFAULT 0,
-    eligible_branches JSON, 
+    eligible_branches JSON,
+
+    -- TPO-provided drive details for students
+    application_link VARCHAR(500),
+    deadline_note VARCHAR(255),
+    required_skills JSON,
+    dos JSON,
+    donts JSON,
+    job_type ENUM('PLACEMENT', 'INTERNSHIP') NOT NULL DEFAULT 'PLACEMENT',
+    stipend_value DECIMAL(10,2) NULL,
+    schedule_note VARCHAR(255) NULL,
+    activity_schedule TEXT NULL,
     
     is_active BOOLEAN DEFAULT TRUE,
-    FOREIGN KEY (drive_id) REFERENCES recruitment_drives(id) ON DELETE CASCADE
+    FOREIGN KEY (drive_id) REFERENCES recruitment_drives(id) ON DELETE CASCADE,
+    INDEX idx_jobs_active (is_active)
 );
 
 CREATE TABLE applications (
@@ -246,7 +281,9 @@ CREATE TABLE applications (
     
     UNIQUE KEY unique_app (student_id, job_id),
     FOREIGN KEY (student_id) REFERENCES students(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (job_id) REFERENCES job_postings(id) ON DELETE CASCADE
+    FOREIGN KEY (job_id) REFERENCES job_postings(id) ON DELETE CASCADE,
+    INDEX idx_apps_status (status),
+    INDEX idx_apps_applied (applied_at DESC)
 );
 
 -- ====================================================
@@ -255,6 +292,7 @@ CREATE TABLE applications (
 
 CREATE TABLE webinars (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    institution_id INT,
     title VARCHAR(150) NOT NULL,
     summary TEXT NOT NULL,
     speaker_name VARCHAR(100) NOT NULL,
@@ -279,6 +317,8 @@ CREATE TABLE webinars (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_webinars_starts_at (starts_at),
     INDEX idx_webinars_status (status),
+    INDEX idx_webinars_institution (institution_id),
+    FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE SET NULL,
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 );
@@ -291,6 +331,8 @@ CREATE TABLE dept_events (
     type VARCHAR(100) NOT NULL,
     meeting_link VARCHAR(500),
     created_by INT NOT NULL,
+    target_batch VARCHAR(50) DEFAULT 'All',
+    expires_at DATETIME DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
@@ -329,7 +371,8 @@ CREATE TABLE audit_logs (
     target_id INT,
     description TEXT,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
+    FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_audit_timestamp (timestamp DESC)
 );
 
 CREATE TABLE notifications (
@@ -339,10 +382,11 @@ CREATE TABLE notifications (
     message TEXT,
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (recipient_user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (recipient_user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_notifications_user_unread (recipient_user_id, is_read, created_at DESC)
 );
 
--- Cached analytics snapshots for fast Admin dashboard loading
+-- Cached analytics snapshots for fast TPO dashboard loading
 CREATE TABLE placement_analytics (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     scope VARCHAR(100) NOT NULL,
@@ -351,4 +395,62 @@ CREATE TABLE placement_analytics (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_scope (scope)
+);
+
+CREATE TABLE IF NOT EXISTS roadmap_cache (
+    student_id INT PRIMARY KEY,
+    llm_data JSON,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES students(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS news_articles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    url VARCHAR(500),
+    urlToImage VARCHAR(500),
+    category VARCHAR(100),
+    source_name VARCHAR(100) DEFAULT 'Campus Career Portal',
+    is_evergreen BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS announcements (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    institution_id INT,
+    created_by INT,
+    expires_at DATETIME,
+    is_important BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_announcements_institution (institution_id, created_at DESC)
+);
+
+CREATE TABLE platform_feedback (
+    id          INT           NOT NULL AUTO_INCREMENT,
+    student_id  INT           NOT NULL,
+    type        ENUM(
+                    'Bug Report',
+                    'Feature Request',
+                    'General Feedback',
+                    'Placement Experience'
+                )             NOT NULL,
+    subject     VARCHAR(150)  NOT NULL,
+    description TEXT          NOT NULL,
+    status      ENUM(
+                    'Open',
+                    'In Progress',
+                    'Resolved'
+                )             NOT NULL DEFAULT 'Open',
+    created_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id),
+    CONSTRAINT fk_pf_student
+        FOREIGN KEY (student_id) REFERENCES students(user_id)
+        ON DELETE CASCADE
 );
