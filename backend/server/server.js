@@ -123,7 +123,7 @@ app.get('/', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running', timestamp: new Date() });
 });
 
-const TPORoutes = require('./routes/TPORoutes');
+const TPORoutes = require('./routes/tpoRoutes');
 const deptRoutes = require('./routes/deptRoutes');
 const newsRoutes = require('./routes/newsRoutes');
 const studentRoutes = require('./routes/studentRoutes');

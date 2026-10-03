@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const TPOController = require('../controllers/TPOController');
+const TPOController = require('../controllers/tpoController');
 const analyticsController = require('../controllers/analyticsController');
 const jdParserController = require('../controllers/jdParserController');
 const reportsController = require('../controllers/reportsController');
